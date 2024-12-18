@@ -1,0 +1,183 @@
+/* General */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f0f2f5;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Contenedor principal */
+.main-container {
+    width: 95%;
+    max-width: 1200px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Contenedor común */
+.container {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
+    margin-bottom: 20px;
+}
+
+/* Formulario */
+.form-container {
+    width: 100%;
+    text-align: center;
+}
+
+label {
+    display: block;
+    margin-top: 10px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+input[type="file"], select {
+    width: 98%;
+    padding: 10px;
+    margin-top: 5px;
+    font-size: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 15px;
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+    background-color: #4a90e2;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #357ab8;
+}
+
+/* Resultados */
+.result-container {
+    width: 100%;
+    display: none; /* Oculto inicialmente */
+    text-align: left;
+    background-color: #e9f7ef;
+    border: 1px solid #c3e6cb;
+    padding: 20px;
+}
+
+#resultadoContenido {
+    font-size: 15px;
+    color: #333;
+    line-height: 1.6;
+}
+
+h1 {
+    font-size: 24px;
+    color: #4a90e2;
+    margin-bottom: 20px;
+}
+
+p {
+    margin: 10px 0;
+    line-height: 1.5;
+}
+
+/* Mostrar Mes, Año, Jornada y Cargo en una sola línea */
+.single-line {
+    display: inline-block;
+    white-space: nowrap; /* Evitar que se rompa la línea */
+}
+
+.single-line strong {
+    margin-right: 10px; /* Espacio entre las etiquetas y el texto */
+}
+
+/* === Estilos para el cuadro de Gratificación Mec === */
+.gratificacion-container {
+    width: 100%;
+    background-color: #f4f9f4;
+    border: 1px solid #c3e6cb;
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 20px;
+    display: none; /* Inicialmente oculto */
+}
+
+.gratificacion-container h3 {
+    font-size: 20px;
+    color: #4a90e2;
+    margin-bottom: 15px;
+}
+
+.gratificacion-container ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.gratificacion-container li {
+    font-size: 16px;
+    padding: 5px 0;
+}
+
+/* === Estilos específicos para la impresión === */
+@media print {
+    body {
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Ocultar elementos que no se desean imprimir (como botones y elementos interactivos) */
+    .container, .form-container, button {
+        display: none !important;  /* Oculta los formularios y botones */
+    }
+
+    /* Asegurarse de que los resultados se muestren correctamente */
+    .result-container {
+        display: block !important;  /* Muestra los resultados de los cálculos */
+    }
+
+    #resultadoContenido {
+        font-size: 14px;  /* Ajustar el tamaño de la fuente para la impresión */
+        color: #333;
+        line-height: 1.5;
+    }
+
+    /* Mostrar los cuadros de gratificación mec */
+    .gratificacion-container {
+        display: block !important;
+    }
+
+    .gratificacion-container ul {
+        padding-left: 20px;  /* Aumentar el margen de la lista para la impresión */
+    }
+
+    /* Hacer que los títulos se vean bien en la impresión */
+    h1, h3 {
+        color: #4a90e2;
+    }
+
+    /* Asegurarse de que el salto de página funcione */
+    .page-break {
+        page-break-before: always;
+    }
+}
+#resultadoGratificacion {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    color: #333;
+    line-height: 1.6;
+}

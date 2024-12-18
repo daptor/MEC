@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <!-- ===Configuración básica del documento HTML=== -->
+    <meta charset="UTF-8"> <!-- Establece la codificación de caracteres como UTF-8 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Asegura que el diseño sea responsive -->
+    <title>MEC</title> <!-- Título que aparece en la pestaña del navegador -->
+    <link rel="stylesheet" href="style.css"> <!-- Vincula el archivo de estilos CSS -->
+</head>
+<body>
+    <div class="main-container">
+        <!-- ===Contenedor principal que organiza el formulario y los resultados=== -->
+        <!-- Contenedor de formulario a la izquierda -->
+        <div class="container form-container">
+            <!-- ===Título y descripción del formulario=== -->
+            <h1>MEC: Análisis de Liquidación</h1> <!-- Título principal de la página -->
+            <p>Ingresa una liquidación en PDF, para analizar, verificar y calcular sus items y otros requisitos. </p>
+
+            <!-- ===Formulario para ingresar datos=== -->
+            <form id="datosLiquidacion">
+                <!-- Selección de jornada de trabajo -->
+                <label for="jornada">Jornada de Trabajo:</label> <!-- Etiqueta para el selector de jornada -->
+                <select id="jornada" required> <!-- Selector desplegable para elegir la jornada -->
+                    <option value="">Selecciona la jornada</option> <!-- Opción por defecto -->
+                    <option value="45">Completa (45 horas)</option>
+                    <option value="44" selected>Completa (44 horas)</option> <!-- Opción preseleccionada -->
+                    <option value="43">Completa (43 horas)</option>
+                    <option value="42">Completa (42 horas)</option>
+                    <option value="41">Completa (41 horas)</option>
+                    <option value="40">Completa (40 horas)</option>
+                    <option value="30">Parcial (30 hrs)</option>
+                    <option value="25">Parcial (25 hrs)</option>
+                    <option value="20">Parcial (20 hrs)</option>
+                    <option value="18">Parcial (18 hrs)</option>
+                </select>
+
+                <!-- Subir archivo PDF -->
+                <label for="fileInput">Sube tu liquidación en PDF:</label> <!-- Etiqueta para el campo de archivo -->
+                <input type="file" id="fileInput" accept="application/pdf" required> <!-- Campo para subir archivos PDF -->
+                <button type="button" id="analizarBtn" onclick="analizarArchivo()">Analizar Liquidación</button>
+                <!-- Botón para activar la función de análisis del archivo -->
+            </form>
+        </div>
+
+        <!-- ===Contenedor de resultados a la derecha=== -->
+        <div class="container result-container" id="resultado" style="display: none;">
+            <!-- Contenedor interno donde se mostrarán los resultados del análisis -->
+            <div id="resultadoContenido"></div>
+        </div>
+
+        <!-- ===Contenedor adicional para Gratificación Mec=== -->
+        <div class="container gratificacion-container" id="gratificacionMec" style="display: none;">
+            <h3>Gratificación Mec</h3>
+            <ul id="listaGratificables"></ul>
+        </div>
+
+        <!-- Contenedor para los resultados del cálculo de gratificación -->
+        <div class="container" id="resultadoGratificacion"></div>
+
+        <!-- Botón para recargar la aplicación -->
+        <button type="button" id="recargarBtn" style="display: none;" onclick="recargarAplicacion()">Recargar Aplicación</button>
+
+        <!-- Botón para imprimir los resultados -->
+        <button type="button" id="imprimirBtn" style="display: none;" onclick="imprimirResultados()">Imprimir Resultados</button>
+
+    <!-- ===Biblioteca PDF.js para procesar archivos PDF=== -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>
+        // Configuración global de PDF.js para manejar el worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    </script>
+    <script src="script.js"></script> <!-- Enlace al archivo JavaScript con la lógica del análisis -->
+</body>
+</html>

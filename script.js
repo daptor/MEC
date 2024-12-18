@@ -261,7 +261,7 @@ if (matchFecha) {
     } else if (horasRecargoDomingo === "⛔ No tiene el tiempo realizado") {
         // Caso: Falta el tiempo realizado pero se encontró un monto pagado
         resultadoRecargoDomingo = `<span style="color: red;">❌ Falta el tiempo realizado</span>
-        <p><em>Cálculo:</em> Pagado ${formatCurrency(montoPagadoRecargoDomingo)}, Esperado: $0.</p>`;
+        <p><em>Pagado:</em> ${formatCurrency(montoPagadoRecargoDomingo)}, Calculado: $0.</p>`;
     } else {
         // Caso: Si se encuentran tanto las horas como el monto, calculamos la discrepancia
         const valorHoraNormal = (sueldoBaseContractual / 30) * 28 / (4 * jornadaSeleccionada);
@@ -273,10 +273,10 @@ if (matchFecha) {
         if (Math.abs(diferenciaRecargoDomingo) < 1) {
             // Si el cálculo es correcto, mostramos también el cálculo Pagado y Esperado
             resultadoRecargoDomingo = `<span style="color: green;">✅ Cálculo correcto</span>
-            <p><em>Cálculo:</em> Pagado ${formatCurrency(montoPagadoRecargoDomingo)}, Esperado ${formatCurrency(montoEsperadoRecargoDomingo)}.</p>`;
+            <p><em>Pagado:</em> ${formatCurrency(montoPagadoRecargoDomingo)}, Calculado ${formatCurrency(montoEsperadoRecargoDomingo)}.</p>`;
         } else {
             resultadoRecargoDomingo = `<span style="color: red;">❌ Discrepancia detectada: $${diferenciaRecargoDomingo.toFixed(2)}</span>
-            <p><em>Cálculo:</em> Pagado ${formatCurrency(montoPagadoRecargoDomingo)}, Esperado ${formatCurrency(montoEsperadoRecargoDomingo)}.</p>`;
+            <p><em>Pagado:</em> ${formatCurrency(montoPagadoRecargoDomingo)}, Calculado ${formatCurrency(montoEsperadoRecargoDomingo)}.</p>`;
         }
     }
 
@@ -648,27 +648,27 @@ if (detallesComisiones.length === 0) {
     // === Mostrar resultados en HTML ===
     document.getElementById('resultadoContenido').innerHTML = `
         <h2>Análisis MEC:</h2>
-        <p><strong>Mes y Año:</strong> ${mes.toUpperCase()} de ${año}. <strong>Jornada:</strong> ${jornadaSeleccionada} horas.</p>
+        <p><strong>Mes y Año:</strong> ${mes.toUpperCase()} DE ${año}. <strong>Jornada:</strong> ${jornadaSeleccionada} horas.</p>
         <p><strong>Cargo:</strong> ${cargo}</p>
         <p><strong>Sueldo Base:</strong> ${sueldoBaseContractual ? formatCurrency(sueldoBaseContractual) : 'No encontrado'}.</p>
         <p><strong>Días Trabajados:</strong> ${diasTrabajados || 'No encontrados'}. <strong>Pagado:</strong> ${sueldoProporcional ? formatCurrency(sueldoProporcional) : 'No encontrado'}.</p>
         <p><strong>1.- Resultado Sueldo Base:</strong> ${resultadoProporcional}.</p>
-        <p><em>Cálculo:</em> Base ${sueldoBaseContractual ? formatCurrency(sueldoBaseContractual) : 'No encontrado'}, ÷ 30 días, × ${diasTrabajados} días = ${sueldoBaseContractual ? formatCurrency(sueldoBaseContractual / 30 * diasTrabajados) : 'No encontrado'}.</p>
+        <p><em>Cálculo:</em> ${sueldoBaseContractual ? formatCurrency(sueldoBaseContractual) : 'No encontrado'} ÷ 30 días × ${diasTrabajados} días = ${sueldoBaseContractual ? formatCurrency(sueldoBaseContractual / 30 * diasTrabajados) : 'No encontrado'}.</p>
         <p><strong>2.- % Sueldo Base Contractual respecto al IMM:</strong> ${mensajeVariacion}</p>
         <!-- Punto 3: Resultado Hrs. Extras -->
         <p><strong>3.- Resultado Hrs. Extras:</strong> ${resultadoHorasExtras}</p>
-        <p><em>Cálculo:</em> Pagado ${montoPagadoHorasExtras !== "No encontrado" ? formatCurrency(montoPagadoHorasExtras) : 'No encontrado'},
-        Esperado ${horasExtrasRealizadas !== "No especificadas" ? formatCurrency(sueldoBaseContractual * factor * parseFloat(horasExtrasRealizadas)) : 'No encontrado'}.</p>
+        <p><em>Pagado:</em> ${montoPagadoHorasExtras !== "No encontrado" ? formatCurrency(montoPagadoHorasExtras) : 'No encontrado'},
+        Calculado ${horasExtrasRealizadas !== "No especificadas" ? formatCurrency(sueldoBaseContractual * factor * parseFloat(horasExtrasRealizadas)) : 'No encontrado'}.</p>
         <!-- Punto 4: Resultado Hrs. Extras Domingo-->
         <p><strong>4.- Resultado Hrs. Extras Domingo:</strong> ${resultadoHorasExtrasDomingo}</p>
-        <p><em>Cálculo:</em> Pagado ${montoPagadoHorasExtrasDomingo !== "No encontrado" ? formatCurrency(montoPagadoHorasExtrasDomingo) : 'No encontrado'},
-        Esperado ${horasExtrasDomingoRealizadas !== "No especificadas" ? formatCurrency(sueldoBaseContractual * factor * parseFloat(horasExtrasDomingoRealizadas)) : 'No encontrado'}.</p>
+        <p><em>Pagado:</em> ${montoPagadoHorasExtrasDomingo !== "No encontrado" ? formatCurrency(montoPagadoHorasExtrasDomingo) : 'No encontrado'},
+        Calculado ${horasExtrasDomingoRealizadas !== "No especificadas" ? formatCurrency(sueldoBaseContractual * factor * parseFloat(horasExtrasDomingoRealizadas)) : 'No encontrado'}.</p>
         <!-- Punto 5: Resultado Hrs. Recargo Domingo -->
         <p><strong>5.- Resultado Hrs. Recargo Domingo:</strong> ${resultadoRecargoDomingo}</p>
         <!-- Punto 6: Resultado Recargo 50% Festivo -->
         <p><strong>6.- Resultado Recargo 50% Festivo:</strong> ${resultadoRecargoFestivo}</p>
-        <p><em>Cálculo:</em> Pagado ${montoPagadoRecargoFestivo !== "No encontrado" ? formatCurrency(montoPagadoRecargoFestivo) : 'No encontrado'},
-        Esperado ${horasRecargoFestivoRealizadas !== "No especificadas" ? formatCurrency((sueldoBaseContractual / 30) * 28 / (4 * jornadaSeleccionada) * 1.5 * parseFloat(horasRecargoFestivoRealizadas)) : 'No encontrado'}.</p>
+        <p><em>Pagado:</em> ${montoPagadoRecargoFestivo !== "No encontrado" ? formatCurrency(montoPagadoRecargoFestivo) : 'No encontrado'},
+        Calculado ${horasRecargoFestivoRealizadas !== "No especificadas" ? formatCurrency((sueldoBaseContractual / 30) * 28 / (4 * jornadaSeleccionada) * 1.5 * parseFloat(horasRecargoFestivoRealizadas)) : 'No encontrado'}.</p>
         <!-- Punto 7: Movilización -->
         <p><strong>7.- Movilización:</strong> Días: ${diasMovilizacion}, Monto: ${montoMovilizacion !== "No encontrado" ? formatCurrency(montoMovilizacion) : 'No encontrado'}.
             <strong>Días Totales:</strong> ${diasTotalesMovilizacion.toFixed(2)}</p>
@@ -683,10 +683,10 @@ if (detallesComisiones.length === 0) {
         <p><strong>Total Comisiones:</strong> ${formatCurrency(totalComisiones)}</p>
         <!-- Punto 10: Semana Corrida -->
         <p><strong>10.- Semana Corrida</strong></p>
-        <p><strong>Domingos y Festivos:</strong> ${diasSemanaCorrida !== "No especificados" ? diasSemanaCorrida : 'No especificado'}
-            - <strong>Monto:</strong> ${formatCurrency(montoSemanaCorrida)}.</p>
+        <p><strong>Domingos y Festivos: </strong> (${diasSemanaCorrida !== "No especificados" ? diasSemanaCorrida : 'No especificado'}
+            dias)     <strong>Monto:</strong> ${formatCurrency(montoSemanaCorrida)}.</p>
         <p><strong>Resultado:</strong> ${resultadoSemanaCorrida}</p>
-        <p><em>Cálculo:</em> Total Comisiones: ${formatCurrency(totalComisiones)}, ÷ Días Usados: ${diasParaSemanaCorrida}, × Dom. y Fest.: ${diasSemanaCorrida !== "No especificados" ? diasSemanaCorrida : 'No especificado'} = ${formatCurrency(valorEsperadoSemanaCorrida)}.</p>
+        <p><em>Cálculo:</em> Comisiones: ${formatCurrency(totalComisiones)} ÷ Días Totales: (${diasParaSemanaCorrida}) × Dom. y Fest.: (${diasSemanaCorrida !== "No especificados" ? diasSemanaCorrida : 'No especificado'}) = ${formatCurrency(valorEsperadoSemanaCorrida)}.</p>
         <!-- Punto 11: Gratificación Mec -->
         <div class="container gratificacion-container" id="gratificacionMec" style="display: none;">
             <h3>Análisis MEC: Haberes Gratificables</h3>
@@ -784,7 +784,7 @@ if (detallesComisiones.length === 0) {
           <p><strong>Suma Total Haberes:</strong> ${formatCurrency(valorTotalGratificacion)}</p>
           <p><strong>25% de la Suma:</strong> ${formatCurrency(resultadoCalculado)}</p>
           <p><strong>IMM Vigente utilizado:</strong> ${formatCurrency(inm)}</p>
-          <p><strong>Jornada Máxima utilizada:</strong> ${jornadaMaxima} horas</p>
+          <p><strong>Jornada Máxima Vigente:</strong> ${jornadaMaxima} horas</p>
           <p><strong>Tope Mensual de Gratificación (4.75 x IMM / 12):</strong> ${formatCurrency(topeGratificacionRedondeado)}</p>
           <p><strong>Tope Proporcional Gratificación:</strong> ${formatCurrency(topeProporcionalRedondeado)}</p>
           <p><strong>Monto Calculado a Pagar:</strong> ${formatCurrency(valorAPagar)}</p>

@@ -6,8 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Asegura que el diseño sea responsive -->
     <title>MEC</title> <!-- Título que aparece en la pestaña del navegador -->
     <link rel="stylesheet" href="style.css"> <!-- Vincula el archivo de estilos CSS -->
+    <style>
+        /* Estilo para la fecha y hora */
+        #fecha-hora {
+            font-size: 0.9em;
+            color: #555;
+            text-align: right;
+            margin-top: 10px;
+            margin-right: 20px;
+        }
+    </style>
 </head>
 <body>
+    <div id="fecha-hora"></div> <!-- Contenedor para la fecha y hora -->
+
     <div class="main-container">
         <!-- ===Contenedor principal que organiza el formulario y los resultados=== -->
         <!-- Contenedor de formulario a la izquierda -->
@@ -63,12 +75,28 @@
         <!-- Botón para imprimir los resultados -->
         <button type="button" id="imprimirBtn" style="display: none;" onclick="imprimirResultados()">Imprimir Resultados</button>
 
-    <!-- ===Biblioteca PDF.js para procesar archivos PDF=== -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <script>
-        // Configuración global de PDF.js para manejar el worker
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-    </script>
-    <script src="script.js"></script> <!-- Enlace al archivo JavaScript con la lógica del análisis -->
+        <!-- ===Biblioteca PDF.js para procesar archivos PDF=== -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+        <script>
+            // Configuración global de PDF.js para manejar el worker
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+            // Función para actualizar la fecha y hora
+            function actualizarFechaHora() {
+                const ahora = new Date();
+                const dia = String(ahora.getDate()).padStart(2, '0');
+                const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+                const anio = String(ahora.getFullYear()).slice(2);
+                const horas = String(ahora.getHours()).padStart(2, '0');
+                const minutos = String(ahora.getMinutes()).padStart(2, '0');
+                document.getElementById('fecha-hora').textContent = `${dia}/${mes}/${anio} ${horas}:${minutos}`;
+            }
+
+            // Actualizar fecha y hora cada minuto
+            setInterval(actualizarFechaHora, 60000);
+            actualizarFechaHora();
+        </script>
+        <script src="script.js"></script> <!-- Enlace al archivo JavaScript con la lógica del análisis -->
+    </div>
 </body>
 </html>

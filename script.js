@@ -522,6 +522,7 @@ if (detallesComisiones.length === 0) {
     function mostrarGratificacionMec(gratificables) {
         const gratificacionContainer = document.getElementById('gratificacionMec');
 
+        // Verificamos si el contenido ya está visible para evitar duplicados
         if (gratificacionContainer.style.display === 'block') {
             return; // Si ya está visible, no agregar los datos nuevamente
         }
@@ -579,8 +580,12 @@ if (detallesComisiones.length === 0) {
         // Unir ambas secciones
         const gratificacionHTML = datosCalculadosHTML + gratificablesHTML + valorTotalHTML;
 
-        // Actualiza el contenido visible y también el contenido para impresión
-        document.getElementById('listaGratificables').innerHTML = gratificacionHTML;
+        // Evitar duplicación verificando el contenido del contenedor antes de actualizar
+        if (document.getElementById('listaGratificables').innerHTML !== gratificacionHTML) {
+            document.getElementById('listaGratificables').innerHTML = gratificacionHTML;
+        }
+
+        // Mostrar el contenedor
         document.getElementById('gratificacionMec').style.display = 'block';
     }
 
@@ -589,18 +594,32 @@ if (detallesComisiones.length === 0) {
         return isNaN(valor) || valor === null ? '$0' : new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(valor);
     }
 
-    // Imprimir resultados en hojas distintas
+    // fUNCION PARA IMPRIMIR RESULTADOS ANALISIS MEC
     window.imprimirResultados = function imprimirResultados() {
         const analisisMEC = document.querySelector('#resultado'); // Contenedor "Análisis MEC"
         const gratificacionMEC = document.querySelector('#gratificacionMec'); // Contenedor "Gratificación MEC"
+        const calculoGratificacion = document.querySelector('#resultadoGratificacion'); // Contenedor "Cálculo de Gratificación"
 
         // Verificar que los elementos tienen contenido
         const contenidoAnalisis = analisisMEC ? analisisMEC.innerHTML.trim() : '';
         const contenidoGratificacion = gratificacionMEC && gratificacionMEC.style.display !== 'none'
             ? gratificacionMEC.innerHTML.trim()
             : '<p>No hay datos disponibles en Gratificación MEC.</p>'; // Mensaje si no hay datos en Gratificación MEC
+        const contenidoCalculoGratificacion = calculoGratificacion ? calculoGratificacion.innerHTML.trim() : '';
 
-        if (!contenidoAnalisis || !contenidoGratificacion) {
+        // Asegurar que no se repita el "Haberes Gratificables" en el contenido
+        let contenidoFinal = contenidoAnalisis;
+        if (!contenidoFinal.includes('Haberes Gratificables') && contenidoGratificacion) {
+            contenidoFinal += `</div>${contenidoGratificacion}`;
+        }
+
+        // Solo agregar el "Cálculo de Gratificación" si está presente
+        if (contenidoCalculoGratificacion) {
+            contenidoFinal += `</div>${contenidoCalculoGratificacion}`;
+        }
+
+        // Verificar si todo el contenido necesario está disponible
+        if (!contenidoAnalisis || !contenidoGratificacion || !contenidoCalculoGratificacion) {
             alert('El contenido no está listo para imprimir. Por favor, verifica el análisis antes de imprimir.');
             return;
         }
@@ -615,7 +634,7 @@ if (detallesComisiones.length === 0) {
                     body {
                         font-family: Arial, sans-serif;
                         margin: 20px;
-                        line-height: 1.6;
+                        line-height: 1.8; /* Ajustar la separación entre líneas */
                     }
                     h2, h3 {
                         color: #4a90e2;
@@ -626,15 +645,13 @@ if (detallesComisiones.length === 0) {
                     h2 {
                         margin-top: 0;
                     }
+                    p {
+                        margin: 0; /* Reducir margen de los párrafos */
+                    }
                 </style>
             </head>
             <body>
-                <!-- Solo muestra el contenido del análisis -->
-                ${contenidoAnalisis}
-                <!-- Salto de página -->
-                <div class="page-break"></div>
-                <!-- Contenido de Gratificación MEC -->
-                ${contenidoGratificacion}
+                ${contenidoFinal}
             </body>
             </html>
         `);

@@ -26,7 +26,7 @@ const listaCargos = [
     "ASESOR DE CLIENTES", "ASESOR DE COMPRAS", "ASESOR DE MARCA", "ASESOR DE MARCA ETAM",
     "ASISTENTE DE DISPLAY", "ASISTENTE DE VISUAL", "CAJERA(O) - EMPAQUE", "CONSULTOR DE PERFUMERIA",
     "COORDINADORA DE VENTAS", "GUARDIA", "OPERADOR DE CCTV", "TRAINEE TIENDA","VENDEDOR JORNADA PARCIAL MAÑANA",
-    "VENDEDOR", "VENDEDOR JORNADA PARCIAL","ASISTENTE DE BODEGA"
+    "VENDEDOR", "VENDEDOR JORNADA PARCIAL","ASISTENTE DE BODEGA", "ASISTENTE DE PROBADORES"
 ];
 
 // Lista de Comisiones
@@ -145,7 +145,7 @@ if (matchFecha) {
         jornadaMaxima = 44; // Para mayo 2024 y adelante
     }
 
-    console.log(`Mes: ${mes}, Año: ${año}, Jornada Máxima: ${jornadaMaxima}`);
+    // console.log(`Mes: ${mes}, Año: ${año}, Jornada Máxima: ${jornadaMaxima}`);
 
     // === Cálculo del IMM ajustado a la jornada laboral ===
     const inm = ingresosMinimos[año] && ingresosMinimos[año][mes.toUpperCase()] ? ingresosMinimos[año][mes.toUpperCase()] : 0;
@@ -225,7 +225,11 @@ if (matchFecha) {
         montoEsperadoHorasExtrasDomingo = horaExtraDomingo * horasExtrasDomingoRealizadas; // Monto esperado
 
         const diferenciaHorasExtrasDomingo = montoPagadoHorasExtrasDomingo - montoEsperadoHorasExtrasDomingo;
-
+        //console.log(`Hora normal: ${valorHoraNormal}`);
+        //console.log(`hora domingo: ${valorHoraRecargoDomingo}`);
+        //console.log(`hora extra domingo: ${horaExtraDomingo}`);
+        //console.log(`Tiempo hrs. extra domingo: ${horasExtrasDomingoRealizadas}`);
+        //console.log(`A pago: ${montoEsperadoHorasExtrasDomingo}`);
         resultadoHorasExtrasDomingo = Math.abs(diferenciaHorasExtrasDomingo) < 1
             ? `<span style="color: green;">✅ Cálculo correcto</span>`
             : `<span style="color: red;">❌ Discrepancia detectada: $${diferenciaHorasExtrasDomingo.toFixed(2)}</span>`;
@@ -679,7 +683,7 @@ if (detallesComisiones.length === 0) {
         <!-- Punto 4: Resultado Hrs. Extras Domingo-->
         <p><strong>4.- Resultado Hrs. Extras Domingo:</strong> ${resultadoHorasExtrasDomingo}</p>
         <p><em>Pagado:</em> ${montoPagadoHorasExtrasDomingo !== "No encontrado" ? formatCurrency(montoPagadoHorasExtrasDomingo) : 'No encontrado'},
-        Calculado ${horasExtrasDomingoRealizadas !== "No especificadas" ? formatCurrency(sueldoBaseContractual * factor * parseFloat(horasExtrasDomingoRealizadas)) : 'No encontrado'}.</p>
+        Calculado ${horasExtrasDomingoRealizadas !== "No especificadas" ? formatCurrency(parseFloat(montoEsperadoHorasExtrasDomingo)) : 'No encontrado'}.</p>
         <!-- Punto 5: Resultado Hrs. Recargo Domingo -->
         <p><strong>5.- Resultado Hrs. Recargo Domingo:</strong> ${resultadoRecargoDomingo}</p>
         <!-- Punto 6: Resultado Recargo 50% Festivo -->

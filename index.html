@@ -20,22 +20,28 @@
 <body>
     <div id="fecha-hora"></div> <!-- Contenedor para la fecha y hora -->
 
-    <div class="main-container">
+    <!-- Modal de ingreso de clave -->
+    <div id="login-container">
+        <h1>Bienvenido a MEC</h1>
+        <p>Ingresa el código de acceso para continuar:</p>
+        <input type="text" id="codigoAcceso" maxlength="8" placeholder="8 dígitos o letras" />
+        <button type="button" id="ingresarBtn">Ingresar</button>
+        <p id="mensajeError" style="color: red; display: none;">Código incorrecto. Intenta nuevamente.</p>
+    </div>
+
+    <!-- Contenedor principal, inicialmente oculto -->
+    <div class="main-container" id="app-container" style="display: none;">
         <!-- ===Contenedor principal que organiza el formulario y los resultados=== -->
         <!-- Contenedor de formulario a la izquierda -->
         <div class="container form-container">
-            <!-- ===Título y descripción del formulario=== -->
-            <h1>MEC: Análisis de Liquidación</h1> <!-- Título principal de la página -->
+            <h1>MEC: Análisis de Liquidación</h1>
             <p>Ingresa una liquidación en PDF, para analizar, verificar y calcular sus items y otros requisitos. </p>
-
-            <!-- ===Formulario para ingresar datos=== -->
             <form id="datosLiquidacion">
-                <!-- Selección de jornada de trabajo -->
-                <label for="jornada">Jornada de Trabajo:</label> <!-- Etiqueta para el selector de jornada -->
-                <select id="jornada" required> <!-- Selector desplegable para elegir la jornada -->
-                    <option value="">Selecciona la jornada</option> <!-- Opción por defecto -->
+                <label for="jornada">Jornada de Trabajo:</label>
+                <select id="jornada" required>
+                    <option value="">Selecciona la jornada</option>
                     <option value="45">Completa (45 horas)</option>
-                    <option value="44" selected>Completa (44 horas)</option> <!-- Opción preseleccionada -->
+                    <option value="44" selected>Completa (44 horas)</option>
                     <option value="43">Completa (43 horas)</option>
                     <option value="42">Completa (42 horas)</option>
                     <option value="41">Completa (41 horas)</option>
@@ -46,42 +52,53 @@
                     <option value="18">Parcial (18 hrs)</option>
                 </select>
 
-                <!-- Subir archivo PDF -->
-                <label for="fileInput">Sube tu liquidación en PDF:</label> <!-- Etiqueta para el campo de archivo -->
-                <input type="file" id="fileInput" accept="application/pdf" required> <!-- Campo para subir archivos PDF -->
+                <label for="fileInput">Sube tu liquidación en PDF:</label>
+                <input type="file" id="fileInput" accept="application/pdf" required>
                 <button type="button" id="analizarBtn" onclick="analizarArchivo()">Analizar Liquidación</button>
-                <!-- Botón para activar la función de análisis del archivo -->
+
+                <!-- Pantalla Principal -->
+                <div id="pantalla-principal">
+                    <h1>MEC: Análisis de Vacaciones</h1>
+                    <button type="button" id="vacacionesBtn">Ir a cálculo de vacaciones</button>
+                </div>
+
+                <!-- Pantalla de Vacaciones -->
+                <div id="pantalla-vacaciones">
+                    <h1>Cálculo de Vacaciones</h1>
+                    <p>Sube los siguientes archivos:</p>
+                    <ul>
+                        <li>1 PDF con el pago de vacaciones</li>
+                        <li>3 PDFs con al menos 29 días trabajados</li>
+                    </ul>
+               <p>Sugerencia: Analiza con MEC cada PDF antes, así evitarás arrastrar errores en el promedio.</p>
+                    <input type="file" id="vacacionInput" multiple accept="application/pdf">
+                    <button type="button" id="calcularVacacionesBtn">Calcular Vacaciones</button>
+                    <button type="button" id="volverBtn">Volver</button>
+                    <button type="button" id="refrescarBtn">Refrescar Cálculo de Vacaciones</button>
+                    <div id="resultadoVacaciones" style="margin-top: 20px;"></div>
+                </div>
             </form>
         </div>
 
         <!-- ===Contenedor de resultados a la derecha=== -->
         <div class="container result-container" id="resultado" style="display: none;">
-            <!-- Contenedor interno donde se mostrarán los resultados del análisis -->
             <div id="resultadoContenido"></div>
         </div>
 
-        <!-- ===Contenedor adicional para Gratificación Mec=== -->
         <div class="container gratificacion-container" id="gratificacionMec" style="display: none;">
             <h3>Gratificación Mec</h3>
             <ul id="listaGratificables"></ul>
         </div>
 
-        <!-- Contenedor para los resultados del cálculo de gratificación -->
         <div class="container" id="resultadoGratificacion"></div>
 
-        <!-- Botón para recargar la aplicación -->
-        <button type="button" id="recargarBtn" style="display: none;" onclick="recargarAplicacion()">Recargar Aplicación</button>
-
-        <!-- Botón para imprimir los resultados -->
         <button type="button" id="imprimirBtn" style="display: none;" onclick="imprimirResultados()">Imprimir Resultados</button>
+        <button type="button" id="recargarBtn" style="display: none;" onclick="volverAPantallaPrincipal()">VOLVER</button>
 
-        <!-- ===Biblioteca PDF.js para procesar archivos PDF=== -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
         <script>
-            // Configuración global de PDF.js para manejar el worker
             pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-            // Función para actualizar la fecha y hora
             function actualizarFechaHora() {
                 const ahora = new Date();
                 const dia = String(ahora.getDate()).padStart(2, '0');
@@ -92,11 +109,25 @@
                 document.getElementById('fecha-hora').textContent = `${dia}/${mes}/${anio} ${horas}:${minutos}`;
             }
 
-            // Actualizar fecha y hora cada minuto
             setInterval(actualizarFechaHora, 60000);
             actualizarFechaHora();
+
+            // Función para verificar el código de acceso
+            function verificarAcceso() {
+                const codigoCorrecto = "miClave123"; // Ajusta la clave correcta
+                const codigoIngresado = document.getElementById("codigoAcceso").value;
+
+                if (codigoIngresado === codigoCorrecto) {
+                    document.getElementById("login-container").style.display = "none"; // Oculta el modal de acceso
+                    document.getElementById("app-container").style.display = "block"; // Muestra la aplicación
+                } else {
+                    document.getElementById("mensajeError").style.display = "block"; // Muestra el mensaje de error
+                }
+            }
+
+            document.getElementById("ingresarBtn").addEventListener("click", verificarAcceso);
         </script>
-        <script src="script.js"></script> <!-- Enlace al archivo JavaScript con la lógica del análisis -->
+        <script src="script.js"></script>
     </div>
 </body>
 </html>

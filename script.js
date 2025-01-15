@@ -1,3 +1,24 @@
+// Código de acceso predeterminado (puedes cambiarlo)
+const codigoCorrecto = "fthf1999";
+// Manejar el botón de ingreso
+document.getElementById('ingresarBtn').addEventListener('click', () => {
+    const codigoIngresado = document.getElementById('codigoAcceso').value;
+
+    if (codigoIngresado === codigoCorrecto) {
+        // Si el código es correcto, muestra la aplicación
+        document.getElementById('login-container').style.display = 'none';
+        document.querySelector('.main-container').style.display = 'block';
+    } else {
+        // Si el código es incorrecto, muestra un mensaje de error
+        document.getElementById('mensajeError').style.display = 'block';
+    }
+});
+
+// Asegúrate de ocultar la aplicación al cargar la página
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelector('.main-container').style.display = 'none';
+});
+
 // Definir los ingresos mínimos para cada año y mes
 const ingresosMinimos = {
     2020: { "ENERO": 301000, "FEBRERO": 301000, "MARZO": 301000, "ABRIL": 301000, "MAYO": 301000, "JUNIO": 301000, "JULIO": 320500, "AGOSTO": 320500, "SEPTIEMBRE": 320500, "OCTUBRE": 320500, "NOVIEMBRE": 326500, "DICIEMBRE": 326500 },
@@ -33,7 +54,7 @@ const listaCargos = [
 const listaComision = [
     "COM.EFECTIVAS", "COMISION CYD", "CONCURSO FPAY", "COMISION DIGITA Y GANA",
     "COMI. KIOSCO OTRAS EMPRESAS", "APERTURA CTA CTE", "ESCANEA Y PAGA", "DIF. ESCANEA Y PAGA",
-    "COMPENSACION PERMISO","DIF CONCURSO FPAY","PROMOCIONES CMR"
+    "COMPENSACION PERMISO","DIF CONCURSO FPAY","PROMOCIONES CMR","COMISION CONNECT"
 ];
 
 const listaGratificables = [
@@ -82,8 +103,6 @@ for (let i = 1; i <= pdf.numPages; i++) {
     const texto = await pagina.getTextContent();
     texto.items.forEach(item => textoCompleto += item.str + ' ');
 }
-
-// console.log('Texto extraído del PDF:', textoCompleto);
 
 // === Análisis de Mes y Año ===
 const regexFecha = /(\b(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\b) de (\d{4})/i;
@@ -144,8 +163,6 @@ if (matchFecha) {
     if (año > 2024 || (año === 2024 && mes === "MAYO")) {
         jornadaMaxima = 44; // Para mayo 2024 y adelante
     }
-
-    // console.log(`Mes: ${mes}, Año: ${año}, Jornada Máxima: ${jornadaMaxima}`);
 
     // === Cálculo del IMM ajustado a la jornada laboral ===
     const inm = ingresosMinimos[año] && ingresosMinimos[año][mes.toUpperCase()] ? ingresosMinimos[año][mes.toUpperCase()] : 0;
@@ -225,11 +242,6 @@ if (matchFecha) {
         montoEsperadoHorasExtrasDomingo = horaExtraDomingo * horasExtrasDomingoRealizadas; // Monto esperado
 
         const diferenciaHorasExtrasDomingo = montoPagadoHorasExtrasDomingo - montoEsperadoHorasExtrasDomingo;
-        //console.log(`Hora normal: ${valorHoraNormal}`);
-        //console.log(`hora domingo: ${valorHoraRecargoDomingo}`);
-        //console.log(`hora extra domingo: ${horaExtraDomingo}`);
-        //console.log(`Tiempo hrs. extra domingo: ${horasExtrasDomingoRealizadas}`);
-        //console.log(`A pago: ${montoEsperadoHorasExtrasDomingo}`);
         resultadoHorasExtrasDomingo = Math.abs(diferenciaHorasExtrasDomingo) < 1
             ? `<span style="color: green;">✅ Cálculo correcto</span>`
             : `<span style="color: red;">❌ Discrepancia detectada: $${diferenciaHorasExtrasDomingo.toFixed(2)}</span>`;
@@ -371,10 +383,6 @@ if (matchFecha) {
         }
     }
 
-    // Mostrar los resultados procesados
-    //console.log("Movilización: ", montoMovilizacion, ", Días Totales: ", diasTotalesMovilizacion);
-    //console.log("Colación: ", montoColacion, ", Días Totales: ", diasTotalesColacion);
-
     // === Análisis de Comisiones ===
 let totalComisiones = 0; // Asegúrate de que esta variable esté definida antes de usarla
 const detallesComisiones = [];
@@ -468,7 +476,7 @@ if (detallesComisiones.length === 0) {
         }
     }
 
-    // Cálculo de la semana corrida
+    // Cálculo de la semana corrida 2
     if (diasSemanaCorrida !== "No especificados" && diasParaSemanaCorrida > 0 && totalComisiones > 0) {
         const valorDiarioComisiones = totalComisiones / diasParaSemanaCorrida;
         valorEsperadoSemanaCorrida = (valorDiarioComisiones * diasSemanaCorrida).toFixed(2);
@@ -497,9 +505,6 @@ if (detallesComisiones.length === 0) {
 
         // Expresión regular con una flexibilidad mayor para el ítem exacto
         listaGratificables.forEach(item => {
-
-            // Añadir \b para asegurarse de que el término sea completamente exacto
-            // Permitir que haya números entre paréntesis opcionales justo después del ítem
             const regex = new RegExp(`${item.replace(/\s+/g, '\\s*')}\\s*(?:\\(\\d+\\))?\\s*\\$\\s*([\\d.,]+)`, 'i');
             const match = textoRestante.match(regex);
 
@@ -815,7 +820,240 @@ if (detallesComisiones.length === 0) {
       document.getElementById('resultadoGratificacion').innerHTML = resultadoHTML;
   }
 
-    function recargarAplicacion() {
-        // Recarga la página actual para reiniciar la aplicación
-        location.reload();
-    }
+  // Función para volver a la pantalla de análisis de liquidación
+  function volverAPantallaPrincipal() {
+      // Mostrar la pantalla principal (sin reiniciar la aplicación)
+      document.querySelector('.main-container').style.display = 'block';
+      document.getElementById('pantalla-principal').style.display = 'block';
+
+      // Ocultar resultados y botones adicionales
+      document.getElementById('resultado').style.display = 'none';
+      document.getElementById('gratificacionMec').style.display = 'none';
+      document.getElementById('resultadoGratificacion').innerHTML = '';
+      document.getElementById('resultadoContenido').innerHTML = '';
+
+      // Ocultar los botones "VOLVER" e "IMPRIMIR"
+      document.getElementById('recargarBtn').style.display = 'none';
+      document.getElementById('imprimirBtn').style.display = 'none';
+
+      // Limpiar solo el campo de selección de archivo (PDF)
+      const fileInput = document.getElementById('fileInput'); // Asegúrate de que este sea el ID correcto del input
+      if (fileInput) {
+          fileInput.value = ''; // Limpia el archivo seleccionado
+      }
+
+      // No tocar otros campos como el código de acceso o configuraciones
+      }
+
+      // ************** Cálculo de Vacaciones ********************
+
+      // 1 Lista fusionada de ítems para el cálculo de vacaciones
+      const listaComisionVacaciones = [
+          "COM.EFECTIVAS", "COMISION CYD", "CONCURSO FPAY", "COMISION DIGITA Y GANA", "COMI. KIOSCO OTRAS EMPRESAS",
+          "APERTURA CTA CTE", "ESCANEA Y PAGA", "DIF. ESCANEA Y PAGA", "COMPENSACION PERMISO", "DIF CONCURSO FPAY",
+          "PROMOCIONES CMR", "COMISION CONNECT", "SEMANA CORRIDA", "BONO CLICK AND COLLECT", "BONO CUMPLIMIENTO DE ",
+          "BONO CYBER", "BONO DICIEMBRE", "BONO INVENTARIO", "DIF PREMIO CLICK AND COLLECT", "DIF PREMIO VENTA TIENDA",
+          "GARANTIZADO", "HORAS TRABAJO SIND.", "INCENTIVO CONFIABILIDAD", "INCENTIVO PRODUC CAJAS AUT", "INCENTIVO RECUPERO",
+          "INCENTIVO SELF CHECK OUT", "INCENTIVO TIENDA CD/SFS", "PREMIO CLICK AND COLLECT", "PREMIO CUMPL.GRUPAL NPS",
+          "PREMIO CUMPL.GRUPAL VTAS", "PREMIO CUMPLIMIENTO DE PLAN", "PREMIO NPS", "PREMIO VENTA TIENDA", "PREMIO VENTA TIENDA AUT.",
+          "PROMEDIOS VARIOS", "QUIEBRE DE STOCK", "HORAS RECARGO NAVIDAD", "DIFERENCIA SEMANA CORRIDA", "BONO CERTIFICACION","DIF. COMISIONES"
+      ];
+
+      // 2 Navegación entre pantallas
+      document.getElementById('vacacionesBtn').addEventListener('click', () => {
+          document.getElementById('pantalla-principal').style.display = 'none';
+          document.getElementById('pantalla-vacaciones').style.display = 'block';
+      });
+
+      document.getElementById('volverBtn').addEventListener('click', () => {
+          document.getElementById('pantalla-vacaciones').style.display = 'none';
+          document.getElementById('pantalla-principal').style.display = 'block';
+      });
+
+      // Función para formatear montos como moneda
+      function formatearMonto(monto) {
+          return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(monto);
+      }
+
+      // Función para procesar montos eliminando separadores de miles y ajustando decimales
+      function procesarMonto(textoMonto) {
+          return parseFloat(textoMonto.replace(/\./g, '').replace(',', '.'));
+      }
+
+      // Función para extraer texto de un PDF
+      async function extraerTextoDePDF(archivo) {
+          const pdfData = await archivo.arrayBuffer();
+          const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+          let textoCompleto = '';
+
+          for (let i = 1; i <= pdf.numPages; i++) {
+              const pagina = await pdf.getPage(i);
+              const texto = await pagina.getTextContent();
+              texto.items.forEach(item => textoCompleto += item.str + ' ');
+          }
+
+          return textoCompleto;
+      }
+
+      // Función para obtener la comisión de vacaciones
+      function obtenerComisionVacaciones(texto) {
+          const regex = /COMISION VACACIONES.*?\((\d+)\)\s*\$\s*(\d{1,3}(?:\.\d{3})*(?:,\d+)?)/i;
+          const resultado = texto.match(regex);
+          if (resultado) {
+              return {
+                  dias: parseInt(resultado[1], 10),
+                  monto: procesarMonto(resultado[2])
+              };
+          }
+          return null;
+      }
+
+      // Función para obtener los días trabajados
+      function obtenerDiasTrabajados(texto) {
+          const regex = /SUELDO BASE.*?\((\d+)\)/i;
+          const resultado = texto.match(regex);
+          return resultado ? parseInt(resultado[1], 10) : 0;
+      }
+
+      // Función para obtener los ítems de la listaComisionVacaciones
+      function extraerItemsDePDF(texto) {
+          let items = [];
+          listaComisionVacaciones.forEach(item => {
+              const regex = new RegExp(`(${item}).*?\\$\\s*(\\d{1,3}(?:\\.\\d{3})*(?:,\\d+)?)`, 'i');
+              const resultado = texto.match(regex);
+              if (resultado) {
+                  items.push({ nombre: item, monto: procesarMonto(resultado[2]) });
+              }
+          });
+          return items;
+      }
+
+      // Función para obtener el mes y año
+      function obtenerMesYAnio(texto) {
+          const regex = /\b([A-Za-z]+)\s+de\s+(\d{4})\b/i;
+          const resultado = texto.match(regex);
+          return resultado ? `${resultado[1].toUpperCase()} de ${resultado[2]}` : 'Fecha no encontrada';
+      }
+
+      // Función para obtener los PDFs válidos anteriores, considerando los 29 días y sin "COMISION VACACIONES"
+      function obtenerTresPDFsValidos(datos, mesAnioEvaluado) {
+          // Filtra solo los PDFs con al menos 29 días trabajados, anteriores al mes de análisis y sin 'COMISION VACACIONES'
+          const tresPrevios = datos.filter(pdf => pdf.dias >= 29 && !pdf.comisionVacaciones && esAnteriorAlMes(pdf.mesAnio, mesAnioEvaluado));
+
+          if (tresPrevios.length < 3) {
+              return { error: true, mensaje: 'No hay suficientes PDFs válidos para realizar el cálculo.' };
+          }
+          return { error: false, tresPrevios: tresPrevios.slice(-3) };
+      }
+
+      // Función que determina si un mes es anterior a otro (formato 'Mes de Año')
+      function esAnteriorAlMes(mesAnio1, mesAnio2) {
+          const [mes1, anio1] = mesAnio1.split(' de ');
+          const [mes2, anio2] = mesAnio2.split(' de ');
+
+          const meses = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+
+          if (anio1 < anio2) return true;
+          if (anio1 === anio2 && meses.indexOf(mes1) < meses.indexOf(mes2)) return true;
+          return false;
+      }
+
+      // Función para manejar el cálculo de vacaciones
+      document.getElementById('calcularVacacionesBtn').addEventListener('click', async () => {
+          const archivos = document.getElementById('vacacionInput').files;
+          const resultadoDiv = document.getElementById('resultadoVacaciones');
+          resultadoDiv.innerHTML = '';
+
+          if (archivos.length < 4 || archivos.length > 7) {
+              resultadoDiv.innerHTML = '<p style="color: red;">Por favor, sube entre 4 y 7 archivos PDF.</p>';
+              return;
+          }
+
+          const datos = [];
+          const pdfsConComisionVacaciones = [];
+
+          for (let archivo of archivos) {
+              const texto = await extraerTextoDePDF(archivo);
+              const diasTrabajados = obtenerDiasTrabajados(texto);
+              const mesAnio = obtenerMesYAnio(texto);
+              const comisionVacaciones = obtenerComisionVacaciones(texto);
+              const items = extraerItemsDePDF(texto);
+
+              datos.push({ nombre: archivo.name, dias: diasTrabajados, mesAnio, comisionVacaciones, items });
+
+              if (comisionVacaciones) {
+                  pdfsConComisionVacaciones.push({ nombre: archivo.name, comisionVacaciones, mesAnio });
+              }
+          }
+
+          // Si hay más de un PDF con 'COMISION VACACIONES', el usuario debe elegir
+          if (pdfsConComisionVacaciones.length > 1) {
+              // Filtrar PDFs que tengan 3 PDFs anteriores válidos
+              const opcionesValidas = pdfsConComisionVacaciones.filter(pdf => {
+                  const resultado = obtenerTresPDFsValidos(datos, pdf.mesAnio);
+                  return !resultado.error; // Solo se muestran los que tienen 3 PDFs anteriores válidos
+              });
+
+              if (opcionesValidas.length > 0) {
+                  const opciones = opcionesValidas.map((pdf, idx) => `<button class="opcion" data-index="${idx}">${pdf.nombre} (${pdf.mesAnio})</button>`).join('');
+                  resultadoDiv.innerHTML = `<h3>Selecciona un PDF con 'COMISION VACACIONES':</h3>${opciones}`;
+
+                  document.querySelectorAll('.opcion').forEach(btn => {
+                      btn.addEventListener('click', () => {
+                          const index = btn.dataset.index;
+                          realizarCalculo(datos, opcionesValidas[index]);
+                      });
+                  });
+              } else {
+                  resultadoDiv.innerHTML = '<p style="color: red;">No hay PDFs con "COMISION VACACIONES" que cumplan con 3 PDFs anteriores válidos.</p>';
+              }
+          } else if (pdfsConComisionVacaciones.length === 1) {
+              realizarCalculo(datos, pdfsConComisionVacaciones[0]);
+          } else {
+              resultadoDiv.innerHTML = '<p style="color: red;">No se encontraron PDFs con "COMISION VACACIONES".</p>';
+          }
+      });
+
+      // Función para realizar el cálculo de vacaciones
+      function realizarCalculo(datos, pdfSeleccionado) {
+          const resultadoDiv = document.getElementById('resultadoVacaciones');
+          const resultado = obtenerTresPDFsValidos(datos, pdfSeleccionado.mesAnio);
+
+          if (resultado.error) {
+              resultadoDiv.innerHTML = `<p style="color: red;">${resultado.mensaje}</p>`;
+              return;
+          }
+
+          const tresPrevios = resultado.tresPrevios;
+
+          // Sumamos los valores de los ítems para obtener el total
+          const totalItems = tresPrevios.reduce((acc, pdf) => acc + pdf.items.reduce((sum, item) => sum + item.monto, 0), 0);
+          // Calculamos el promedio de vacaciones
+          const promedioVacaciones = (totalItems / 3) / 30 * pdfSeleccionado.comisionVacaciones.dias;
+          // Calculamos la diferencia
+          const diferencia = promedioVacaciones - pdfSeleccionado.comisionVacaciones.monto;
+
+          resultadoDiv.innerHTML = `
+              <h3>Resumen de Cálculo de Vacaciones:</h3>
+              <p>PDF seleccionado para cálculo: ${pdfSeleccionado.nombre} (${pdfSeleccionado.mesAnio})</p>
+              <p>Promedio de Vacaciones Calculado: ${formatearMonto(promedioVacaciones)}</p>
+              <p>Valor de 'COMISION VACACIONES': ${formatearMonto(pdfSeleccionado.comisionVacaciones.monto)}</p>
+              <p>Diferencia: ${formatearMonto(diferencia)}</p>
+              <p>PDFs utilizados en el cálculo:</p>
+              <ul>
+                  ${tresPrevios.map(pdf => `<li>${pdf.nombre} (${pdf.mesAnio})</li>`).join('')}
+              </ul>
+          `;
+      }
+
+    document.getElementById('refrescarBtn').addEventListener('click', () => {
+        // Restablecer el input de archivos
+        document.getElementById('vacacionInput').value = ''; // Borra los archivos cargados
+
+        // Limpiar el resultado
+        const resultadoDiv = document.getElementById('resultadoVacaciones');
+        resultadoDiv.innerHTML = '';
+
+        // Vuelve a mostrar la pantalla de vacaciones para que el usuario pueda cargar nuevos PDFs
+        document.getElementById('pantalla-vacaciones').style.display = 'block';
+    });

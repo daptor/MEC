@@ -30,7 +30,7 @@ body {
 /* Formulario */
 .form-container {
     width: 100%;
-    text-align: center;
+    text-align: left;
 }
 
 label {
@@ -180,4 +180,82 @@ p {
     border-radius: 5px;
     color: #333;
     line-height: 1.6;
+}
+#pantalla-vacaciones {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
+    margin-top: 20px;
+    display: none;
+}
+
+#pantalla-vacaciones h1 {
+    font-size: 24px;
+    color: #4a90e2;
+    margin-bottom: 20px;
+}
+
+#pantalla-vacaciones ul {
+    list-style-type: disc;
+    padding-left: 20px;
+    margin-bottom: 15px;
+}
+#resultadoVacaciones p {
+    font-size: 16px;
+}
+
+/* Diálogo de ingreso de clave */
+#login-container {
+    text-align: center;
+    background: linear-gradient(135deg, #4a90e2, #6fb1fc);
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+    margin-top: 100px;
+    width: 300px;
+    margin-left: auto;
+    margin-right: auto;
+    color: white;
+}
+
+#login-container h1 {
+    font-size: 24px;
+    color: white;
+    margin-bottom: 20px;
+}
+
+#login-container input {
+    width: 80%;
+    padding: 10px;
+    margin-bottom: 15px;
+    font-size: 16px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    text-align: center;
+}
+
+#login-container button {
+    width: 80%;
+    padding: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #4a90e2;
+    background-color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#login-container button:hover {
+    background-color: #e9f7ff;
+}
+
+/* Estilo para la fecha y hora */
+#fecha-hora {
+    font-size: 0.9em;
+    color: #555;
+    text-align: right;
+    margin-top: 10px;
+    margin-right: 20px;
 }

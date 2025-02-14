@@ -1,25 +1,50 @@
-// Código de acceso predeterminado (puedes cambiarlo)
+function actualizarFechaHora() {
+    const fechaHoraElement = document.getElementById('fecha-hora');
+    const ahora = new Date();
+
+    const opcionesFecha = { year: 'numeric', month: 'long', day: 'numeric' };
+    const opcionesHora = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
+    const fecha = ahora.toLocaleDateString('es-ES', opcionesFecha);
+    const hora = ahora.toLocaleTimeString('es-ES', opcionesHora);
+    fechaHoraElement.textContent = `${fecha} ${hora}`;
+}
+
+setInterval(actualizarFechaHora, 10);
+
+document.addEventListener("DOMContentLoaded", function () {
+    const contadorVisitasElement = document.getElementById("contador-visitas");
+    const resetButton = document.getElementById("reset-button");
+
+    let visitas = localStorage.getItem("contadorVisitas");
+    visitas = visitas ? parseInt(visitas) : 0;
+
+    visitas++;
+    localStorage.setItem("contadorVisitas", visitas);
+
+    contadorVisitasElement.textContent = `Visitante n°: ${visitas}`;
+
+    resetButton.addEventListener("click", function () {
+        localStorage.setItem("contadorVisitas", 0);
+        contadorVisitasElement.textContent = `Visita n°: 0`;
+    });
+});
+
 const codigoCorrecto = "fthf1999";
-// Manejar el botón de ingreso
 document.getElementById('ingresarBtn').addEventListener('click', () => {
     const codigoIngresado = document.getElementById('codigoAcceso').value;
 
     if (codigoIngresado === codigoCorrecto) {
-        // Si el código es correcto, muestra la aplicación
         document.getElementById('login-container').style.display = 'none';
         document.querySelector('.main-container').style.display = 'block';
     } else {
-        // Si el código es incorrecto, muestra un mensaje de error
         document.getElementById('mensajeError').style.display = 'block';
     }
 });
 
-// Asegúrate de ocultar la aplicación al cargar la página
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('.main-container').style.display = 'none';
 });
 
-// Definir los ingresos mínimos para cada año y mes
 const ingresosMinimos = {
     2020: { "ENERO": 301000, "FEBRERO": 301000, "MARZO": 301000, "ABRIL": 301000, "MAYO": 301000, "JUNIO": 301000, "JULIO": 320500, "AGOSTO": 320500, "SEPTIEMBRE": 320500, "OCTUBRE": 320500, "NOVIEMBRE": 326500, "DICIEMBRE": 326500 },
     2021: { "ENERO": 326500, "FEBRERO": 326500, "MARZO": 326500, "ABRIL": 326500, "MAYO": 337000, "JUNIO": 337000, "JULIO": 337000, "AGOSTO": 337000, "SEPTIEMBRE": 337000, "OCTUBRE": 337000, "NOVIEMBRE": 337000, "DICIEMBRE": 350000 },
@@ -28,7 +53,6 @@ const ingresosMinimos = {
     2024: { "ENERO": 460000, "FEBRERO": 460000, "MARZO": 460000, "ABRIL": 460000, "MAYO": 460000, "JUNIO": 460000, "JULIO": 500000, "AGOSTO": 500000, "SEPTIEMBRE": 500000, "OCTUBRE": 500000, "NOVIEMBRE": 500000, "DICIEMBRE": 500000 }
 };
 
-// Lista de factores de hora extra
 const listaHoraExtra = [
     { horas: "45", factor: 0.0077778 },
     { horas: "44", factor: 0.0079545 },
@@ -42,7 +66,7 @@ const listaHoraExtra = [
     { horas: "18", factor: 0.0194444 }
 ];
 
-// Lista de cargos para búsqueda
+
 const listaCargos = [
     "ASESOR DE CLIENTES", "ASESOR DE COMPRAS", "ASESOR DE MARCA", "ASESOR DE MARCA ETAM",
     "ASISTENTE DE DISPLAY", "ASISTENTE DE VISUAL", "CAJERA(O) - EMPAQUE", "CONSULTOR DE PERFUMERIA",
@@ -50,7 +74,6 @@ const listaCargos = [
     "VENDEDOR", "VENDEDOR JORNADA PARCIAL","ASISTENTE DE BODEGA", "ASISTENTE DE PROBADORES"
 ];
 
-// Lista de Comisiones
 const listaComision = [
     "COM.EFECTIVAS", "COMISION CYD", "CONCURSO FPAY", "COMISION DIGITA Y GANA",
     "COMI. KIOSCO OTRAS EMPRESAS", "APERTURA CTA CTE", "ESCANEA Y PAGA", "DIF. ESCANEA Y PAGA",
@@ -69,11 +92,9 @@ const listaGratificables = [
     "DIFERENCIA 70%"
 ];
 
-// Mostrar los resultados en formato compacto
 const formatCurrency = (value) =>
     new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(value);
 
-// Función principal para analizar el archivo
 async function analizarArchivo() {
     const archivo = document.getElementById('fileInput').files[0];
     const jornadaSeleccionada = document.getElementById('jornada').value;
@@ -104,18 +125,16 @@ for (let i = 1; i <= pdf.numPages; i++) {
     texto.items.forEach(item => textoCompleto += item.str + ' ');
 }
 
-// === Análisis de Mes y Año ===
 const regexFecha = /(\b(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\b) de (\d{4})/i;
 const matchFecha = textoCompleto.match(regexFecha);
 
 let mes = "No encontrado";
 let año = "No encontrado";
 if (matchFecha) {
-    mes = matchFecha[1].toUpperCase(); // Asegúrate de que el mes está en mayúsculas
-    año = parseInt(matchFecha[2]);    // Asegúrate de que el año sea un número
+    mes = matchFecha[1].toUpperCase();
+    año = parseInt(matchFecha[2]);
 }
 
-    // === Análisis de Cargo ===
     const regexCargo = /FECHA\s*INGRESO\s*(.*?)(?=\s*[\r\n]|$)/i;
     const matchCargo = textoCompleto.match(regexCargo);
 
@@ -128,7 +147,6 @@ if (matchFecha) {
         cargo = cargoEncontrado;
     }
 
-    // === Análisis de Sueldo Base Contractual ===
     const regexSueldoBaseContractual = /SUELDO\s*BASE.*?\$\s*(\d[\d.]*)/i;
     const matchSueldoBaseContractual = textoCompleto.match(regexSueldoBaseContractual);
 
@@ -148,8 +166,7 @@ if (matchFecha) {
         diasTrabajados = parseInt(matchSueldoBaseProporcional[1]);
         sueldoProporcional = parseFloat(matchSueldoBaseProporcional[2].replace('.', '').replace(',', '.'));
 
-    // === Calcular sueldo base diario y esperado ===
-        const diasDelMes = 30; // Usamos 30 días como referencia
+        const diasDelMes = 30;
         const sueldoEsperado = (sueldoBaseContractual / diasDelMes) * diasTrabajados;
 
         if (Math.abs(sueldoEsperado - sueldoProporcional) < 1) {
@@ -158,55 +175,49 @@ if (matchFecha) {
             resultadoProporcional = `<span style="color: red;">❌ Discrepancia detectada: Se esperaba $${sueldoEsperado.toFixed(2)}</span>`;
         }
     }
-    // === Determinación de jornada máxima ===
-    let jornadaMaxima = 45; // Por defecto hasta abril 2024
+
+    let jornadaMaxima = 45;
     if (año > 2024 || (año === 2024 && mes === "MAYO")) {
-        jornadaMaxima = 44; // Para mayo 2024 y adelante
+        jornadaMaxima = 44;
     }
 
-    // === Cálculo del IMM ajustado a la jornada laboral ===
     const inm = ingresosMinimos[año] && ingresosMinimos[año][mes.toUpperCase()] ? ingresosMinimos[año][mes.toUpperCase()] : 0;
 
     let inmProporcional = inm;
 
-    // Si la jornada es parcial (<= 30 horas), calcular proporcionalidad
     if (jornadaSeleccionada <= 30) {
         inmProporcional = (inm / jornadaMaxima) * jornadaSeleccionada;
     }
-    // === Cálculo de la Variación Porcentual entre Sueldo Base y IMM ===
+
     let variacionPorcentual = 0;
     let mensajeVariacion = '';
     if (sueldoBaseContractual > inmProporcional) {
 
-    // Sueldo base mayor que IMM ajustado
+
     variacionPorcentual = ((sueldoBaseContractual - inmProporcional) / inmProporcional) * 100;
     mensajeVariacion = `✅ Es un ${variacionPorcentual.toFixed(2)}% mayor que el IMM `;
     } else if (sueldoBaseContractual === inmProporcional) {
 
-    // Sueldo base igual al IMM ajustado
+
       mensajeVariacion = `Es igual al IMM `;
     } else {
 
-    // Sueldo base menor que IMM ajustado
       variacionPorcentual = ((inmProporcional - sueldoBaseContractual) / inmProporcional) * 100;
       mensajeVariacion = `❌ Es ${variacionPorcentual.toFixed(2)}% inferior al IMM `;
     }
 
-    // === Análisis de Horas Extras ===
-    let resultadoHorasExtras = ''; // Aseguramos que la variable esté definida
+    let resultadoHorasExtras = '';
     const regexHorasExtras = /HORAS\s*EXTRAS\s*50\s*%\s*\(([\d.,]+)\)\s*\$\s*([\d.,]+)/i;
     const matchHorasExtras = textoCompleto.match(regexHorasExtras);
 
     let horasExtrasRealizadas = "No especificadas";
     let montoPagadoHorasExtras = "No encontrado";
 
-    // Si se encuentra el patrón de horas extras
     if (matchHorasExtras) {
         horasExtrasRealizadas = matchHorasExtras[1].replace(',', '.'); // Extrae las horas y maneja la coma como decimal
         montoPagadoHorasExtras = parseFloat(matchHorasExtras[2].replace('.', '').replace(',', '.')); // Extrae el monto, manejando comas y puntos
     }
 
-    // Cálculo de Horas Extras
     if (horasExtrasRealizadas === "No especificadas" || montoPagadoHorasExtras === "No encontrado") {
         resultadoHorasExtras = `<span style="color: orange;">⛔ No se realizaron.</span>`;
     } else {
@@ -218,28 +229,25 @@ if (matchFecha) {
             : `<span style="color: red;">❌ Discrepancia detectada: $${diferenciaHorasExtras.toFixed(2)}</span>`;
     }
 
-    // === Análisis de Hrs. Extras Domingo ===
-    let resultadoHorasExtrasDomingo = ''; // Aseguramos que la variable esté definida
+    let resultadoHorasExtrasDomingo = '';
     const regexHorasExtrasDomingo = /HORAS\s*EXTRAS\s*DOMINGO\s*\(([\d.,]+)\)\s*\$\s*([\d.,]+)/i;
     const matchHorasExtrasDomingo = textoCompleto.match(regexHorasExtrasDomingo);
 
     let horasExtrasDomingoRealizadas = "No especificadas";
     let montoPagadoHorasExtrasDomingo = "No encontrado";
 
-    // Si se encuentran horas y monto para horas extras domingo
     if (matchHorasExtrasDomingo) {
-        horasExtrasDomingoRealizadas = parseFloat(matchHorasExtrasDomingo[1].replace(',', '.')); // Extrae las horas (maneja comas como decimales)
-        montoPagadoHorasExtrasDomingo = parseFloat(matchHorasExtrasDomingo[2].replace('.', '').replace(',', '.')); // Extrae el monto
+        horasExtrasDomingoRealizadas = parseFloat(matchHorasExtrasDomingo[1].replace(',', '.'));
+        montoPagadoHorasExtrasDomingo = parseFloat(matchHorasExtrasDomingo[2].replace('.', '').replace(',', '.'));
     }
 
-    // Cálculo de Horas Extras Domingo
     if (horasExtrasDomingoRealizadas === "No especificadas" || montoPagadoHorasExtrasDomingo === "No encontrado") {
         resultadoHorasExtrasDomingo = `<span style="color: orange;">⛔ No se realizaron.</span>`;
     } else {
-        const valorHoraNormal = (sueldoBaseContractual / 30) * 28 / (4 * jornadaSeleccionada); // Valor de una hora normal
-        const valorHoraRecargoDomingo = valorHoraNormal * 1.3; // Recargo del 30% por ser domingo
-        const horaExtraDomingo = valorHoraRecargoDomingo * 1.5; // Factor de 1.5 por ser hora extra
-        montoEsperadoHorasExtrasDomingo = horaExtraDomingo * horasExtrasDomingoRealizadas; // Monto esperado
+        const valorHoraNormal = (sueldoBaseContractual / 30) * 28 / (4 * jornadaSeleccionada);
+        const valorHoraRecargoDomingo = valorHoraNormal * 1.3;
+        const horaExtraDomingo = valorHoraRecargoDomingo * 1.5;
+        montoEsperadoHorasExtrasDomingo = horaExtraDomingo * horasExtrasDomingoRealizadas;
 
         const diferenciaHorasExtrasDomingo = montoPagadoHorasExtrasDomingo - montoEsperadoHorasExtrasDomingo;
         resultadoHorasExtrasDomingo = Math.abs(diferenciaHorasExtrasDomingo) < 1
@@ -247,47 +255,40 @@ if (matchFecha) {
             : `<span style="color: red;">❌ Discrepancia detectada: $${diferenciaHorasExtrasDomingo.toFixed(2)}</span>`;
     }
 
-    // === Análisis de Recargo Domingo ===
-    let resultadoRecargoDomingo = ''; // Aseguramos que la variable esté definida
+    let resultadoRecargoDomingo = '';
     const regexRecargoDomingo = /HORAS\s*RECARGO\s*DOMINGO\s*\((\d+[\.,]?\d*)\)\s*\$\s*([\d.,]+)/i;
     const matchRecargoDomingo = textoCompleto.match(regexRecargoDomingo);
 
     let horasRecargoDomingo = "No especificadas";
     let montoPagadoRecargoDomingo = "No encontrado";
-    let montoEsperadoRecargoDomingo = 0; // Inicializamos montoEsperadoRecargoDomingo
+    let montoEsperadoRecargoDomingo = 0;
 
-    // Caso 1: Si se encuentran horas entre paréntesis y monto
     if (matchRecargoDomingo) {
-        horasRecargoDomingo = matchRecargoDomingo[1].replace(',', '.'); // Extrae las horas y maneja la coma
-        montoPagadoRecargoDomingo = parseFloat(matchRecargoDomingo[2].replace('.', '').replace(',', '.')); // Extrae el monto
+        horasRecargoDomingo = matchRecargoDomingo[1].replace(',', '.');
+        montoPagadoRecargoDomingo = parseFloat(matchRecargoDomingo[2].replace('.', '').replace(',', '.'));
     } else {
-        // Caso 2: Si solo se encuentra el monto (sin horas)
+
         const regexRecargoDomingoSinHoras = /HORAS\s*RECARGO\s*DOMINGO.*?\$\s*([\d.,]+)/i;
         const matchRecargoDomingoSinHoras = textoCompleto.match(regexRecargoDomingoSinHoras);
 
         if (matchRecargoDomingoSinHoras) {
-            montoPagadoRecargoDomingo = parseFloat(matchRecargoDomingoSinHoras[1].replace('.', '').replace(',', '.')); // Solo el monto
-            horasRecargoDomingo = "⛔ No tiene el tiempo realizado"; // Informamos que no tiene el tiempo realizado
+            montoPagadoRecargoDomingo = parseFloat(matchRecargoDomingoSinHoras[1].replace('.', '').replace(',', '.'));
+            horasRecargoDomingo = "⛔ No tiene el tiempo realizado";
         }
     }
 
-    // Caso 3: Si no se encuentra ni el monto ni las horas
+
     if (montoPagadoRecargoDomingo === "No encontrado" && horasRecargoDomingo === "No especificadas") {
         resultadoRecargoDomingo = `<span style="color: orange;">⛔ No se realizaron.</span>`;
     } else if (horasRecargoDomingo === "⛔ No tiene el tiempo realizado") {
-        // Caso: Falta el tiempo realizado pero se encontró un monto pagado
         resultadoRecargoDomingo = `<span style="color: red;">❌ Falta el tiempo realizado</span>
         <p><em>Pagado:</em> ${formatCurrency(montoPagadoRecargoDomingo)}, Calculado: $0.</p>`;
     } else {
-        // Caso: Si se encuentran tanto las horas como el monto, calculamos la discrepancia
         const valorHoraNormal = (sueldoBaseContractual / 30) * 28 / (4 * jornadaSeleccionada);
-        const valorHoraRecargoDomingo = valorHoraNormal * 0.3; // Recargo del 30%
-        montoEsperadoRecargoDomingo = valorHoraRecargoDomingo * parseFloat(horasRecargoDomingo); // Monto esperado
-
+        const valorHoraRecargoDomingo = valorHoraNormal * 0.3;
+        montoEsperadoRecargoDomingo = valorHoraRecargoDomingo * parseFloat(horasRecargoDomingo);
         const diferenciaRecargoDomingo = montoPagadoRecargoDomingo - montoEsperadoRecargoDomingo;
-
         if (Math.abs(diferenciaRecargoDomingo) < 1) {
-            // Si el cálculo es correcto, mostramos también el cálculo Pagado y Esperado
             resultadoRecargoDomingo = `<span style="color: green;">✅ Cálculo correcto</span>
             <p><em>Pagado:</em> ${formatCurrency(montoPagadoRecargoDomingo)}, Calculado ${formatCurrency(montoEsperadoRecargoDomingo)}.</p>`;
         } else {
@@ -296,28 +297,24 @@ if (matchFecha) {
         }
     }
 
-    // === Análisis de Recargo 50% Festivo ===
-    let resultadoRecargoFestivo = ''; // Aseguramos que la variable esté definida
-    const regexRecargoFestivo = /RECARGO\s*50%\s*FESTIVO\s*\(([\d.,]+)\)\s*\$\s*([\d.,]+)/i; // Corrige el patrón
+    let resultadoRecargoFestivo = '';
+    const regexRecargoFestivo = /RECARGO\s*50%\s*FESTIVO\s*\(([\d.,]+)\)\s*\$\s*([\d.,]+)/i;
     const matchRecargoFestivo = textoCompleto.match(regexRecargoFestivo);
-
     let horasRecargoFestivoRealizadas = "No especificadas";
     let montoPagadoRecargoFestivo = "No encontrado";
-
     if (matchRecargoFestivo) {
-        horasRecargoFestivoRealizadas = matchRecargoFestivo[1].replace(',', '.'); // Extrae las horas, maneja la coma como decimal
+        horasRecargoFestivoRealizadas = matchRecargoFestivo[1].replace(',', '.');
         montoPagadoRecargoFestivo = parseFloat(
             matchRecargoFestivo[2].replace(/\./g, '').replace(',', '.')
-        ); // Extrae el monto, manejando puntos y comas
+        );
     }
 
-    // Cálculo de Recargo 50% Festivo
     if (horasRecargoFestivoRealizadas === "No especificadas" || montoPagadoRecargoFestivo === "No encontrado") {
         resultadoRecargoFestivo = `<span style="color: orange;">⛔ No se realizaron.</span>`;
     } else {
-        const valorHoraNormal = (sueldoBaseContractual / 30) * 28 / (4 * jornadaSeleccionada); // Calculamos el valor de la hora normal
-        const valorHoraRecargoFestivo = valorHoraNormal * 1.5; // Aplicamos el 50% de recargo
-        const montoEsperadoRecargoFestivo = valorHoraRecargoFestivo * parseFloat(horasRecargoFestivoRealizadas); // Calculamos el monto esperado
+        const valorHoraNormal = (sueldoBaseContractual / 30) * 28 / (4 * jornadaSeleccionada);
+        const valorHoraRecargoFestivo = valorHoraNormal * 1.5;
+        const montoEsperadoRecargoFestivo = valorHoraRecargoFestivo * parseFloat(horasRecargoFestivoRealizadas);
         const diferenciaRecargoFestivo = montoPagadoRecargoFestivo - montoEsperadoRecargoFestivo;
 
         resultadoRecargoFestivo = Math.abs(diferenciaRecargoFestivo) < 1
@@ -325,41 +322,36 @@ if (matchFecha) {
             : `<span style="color: red;">❌ Discrepancia detectada: $${diferenciaRecargoFestivo.toFixed(2)}</span>`;
     }
 
-    // === Análisis de Movilización ===
     const matchMovilizacion = textoCompleto.match(regexMovilizacion);
-    let diasMovilizacion = 21;  // Asumimos días promedio de trabajo si no se encuentran datos
-    let montoMovilizacion = "Dato no encontrado";  // Indicamos que no se encontró el dato
+    let diasMovilizacion = 21;
+    let montoMovilizacion = "Dato no encontrado";
     let valorDiaMovilizacion = 0;
 
     if (matchMovilizacion) {
-        diasMovilizacion = parseInt(matchMovilizacion[1]); // Días base de movilización
-        montoMovilizacion = parseFloat(matchMovilizacion[2].replace('.', '').replace(',', '.')); // Monto total de movilización
+        diasMovilizacion = parseInt(matchMovilizacion[1]);
+        montoMovilizacion = parseFloat(matchMovilizacion[2].replace('.', '').replace(',', '.'));
         if (diasMovilizacion > 0) {
-            valorDiaMovilizacion = montoMovilizacion / diasMovilizacion; // Valor diario de movilización
+            valorDiaMovilizacion = montoMovilizacion / diasMovilizacion;
         }
     }
 
-    // === Análisis de Diferencia Movilización ===
     const matchDiferenciaMovilizacion = textoCompleto.match(regexDiferenciaMovilizacion);
-    let montoDiferenciaMovilizacion = 0;  // Inicializamos las diferencias en 0
+    let montoDiferenciaMovilizacion = 0;
     let diasDiferenciaMovilizacion = 0;
-    let diasTotalesMovilizacion = diasMovilizacion;  // Inicializamos con los días base de movilización
+    let diasTotalesMovilizacion = diasMovilizacion;
 
     if (matchDiferenciaMovilizacion) {
         montoDiferenciaMovilizacion = parseFloat(matchDiferenciaMovilizacion[1].replace('.', '').replace(',', '.'));
-        // Si se encuentran las diferencias, las sumamos a los días totales
-        if (valorDiaMovilizacion > 0) {
+          if (valorDiaMovilizacion > 0) {
             diasDiferenciaMovilizacion = montoDiferenciaMovilizacion / valorDiaMovilizacion;
-            diasTotalesMovilizacion += diasDiferenciaMovilizacion;  // Sumamos días adicionales a los días base
+            diasTotalesMovilizacion += diasDiferenciaMovilizacion;
         }
     }
 
-    // === Análisis de Colación ===
     const matchColacion = textoCompleto.match(regexColacion);
-    let diasColacion = 21;  // Asumimos días promedio de trabajo si no se encuentran datos
-    let montoColacion = "Dato no encontrado";  // Indicamos que no se encontró el dato
+    let diasColacion = 21;
+    let montoColacion = "Dato no encontrado";
     let valorDiaColacion = 0;
-
     if (matchColacion) {
         diasColacion = parseInt(matchColacion[1]);
         montoColacion = parseFloat(matchColacion[2].replace('.', '').replace(',', '.'));
@@ -368,45 +360,37 @@ if (matchFecha) {
         }
     }
 
-    // === Análisis de Diferencia Colación ===
     const matchDiferenciaColacion = textoCompleto.match(regexDiferenciaColacion);
-    let montoDiferenciaColacion = 0;  // Inicializamos las diferencias en 0
+    let montoDiferenciaColacion = 0;
     let diasDiferenciaColacion = 0;
     let diasTotalesColacion = diasColacion;
-
     if (matchDiferenciaColacion) {
         montoDiferenciaColacion = parseFloat(matchDiferenciaColacion[1].replace('.', '').replace(',', '.'));
-        // Si se encuentran las diferencias, las sumamos a los días totales
-        if (valorDiaColacion > 0) {
+              if (valorDiaColacion > 0) {
             diasDiferenciaColacion = montoDiferenciaColacion / valorDiaColacion;
             diasTotalesColacion += diasDiferenciaColacion;
         }
     }
 
-    // === Análisis de Comisiones ===
-let totalComisiones = 0; // Asegúrate de que esta variable esté definida antes de usarla
+let totalComisiones = 0;
 const detallesComisiones = [];
 
-// Creamos un objeto para almacenar las sumas de "CONCURSO FPAY" y "DIF CONCURSO FPAY" por separado
 const comisionesSeparadas = {
     "CONCURSO FPAY": 0,
     "DIF CONCURSO FPAY": 0
 };
 
-// Iteramos sobre cada tipo de comisión en la lista
 listaComision.forEach(comision => {
     const regex = new RegExp(`${comision.replace('.', '\\.')}(?:\\s|\\S)*?\\$\\s*([\\d.,]+)`, 'gi');
     const matches = [...textoCompleto.matchAll(regex)];
 
-    // Recorremos cada coincidencia encontrada
     matches.forEach(match => {
         const monto = parseFloat(match[1].replace('.', '').replace(',', '.'));
 
-        // Separar y asignar el monto correctamente
         if (comision === "CONCURSO FPAY") {
-            comisionesSeparadas["CONCURSO FPAY"] = monto;  // Asignamos directamente el valor
+            comisionesSeparadas["CONCURSO FPAY"] = monto;
         } else if (comision === "DIF CONCURSO FPAY") {
-            comisionesSeparadas["DIF CONCURSO FPAY"] = monto; // Asignamos directamente el valor
+            comisionesSeparadas["DIF CONCURSO FPAY"] = monto;
         } else {
             totalComisiones += monto;
             detallesComisiones.push({ item: comision, monto });
@@ -414,7 +398,6 @@ listaComision.forEach(comision => {
     });
 });
 
-// Aseguramos que "CONCURSO FPAY" y "DIF CONCURSO FPAY" se sumen por separado
 if (comisionesSeparadas["CONCURSO FPAY"] > 0) {
     detallesComisiones.push({ item: "CONCURSO FPAY", monto: comisionesSeparadas["CONCURSO FPAY"] });
     totalComisiones += comisionesSeparadas["CONCURSO FPAY"];
@@ -425,17 +408,15 @@ if (comisionesSeparadas["DIF CONCURSO FPAY"] > 0) {
     totalComisiones += comisionesSeparadas["DIF CONCURSO FPAY"];
 }
 
-// Generar el HTML para mostrar las comisiones
 let detalleComisionesHTML = detallesComisiones.map(comision =>
     `<li>${comision.item}: ${formatCurrency(comision.monto)}</li>`
 ).join('');
 
-// Si no se encontraron comisiones, mostramos un mensaje
+
 if (detallesComisiones.length === 0) {
     detalleComisionesHTML = '<li>⛔ No tiene comisiones individuales.</li>';
 }
 
-    // === Cálculo de Semana Corrida ===
     const regexSemanaCorrida = /SEMANA\s*CORRIDA\s*\((\d+)\)\s*\$\s*([\d.,]+)/i;
     const matchSemanaCorrida = textoCompleto.match(regexSemanaCorrida);
 
@@ -445,25 +426,21 @@ if (detallesComisiones.length === 0) {
     let diasSemanaCorrida = "No especificados";
 
     if (matchSemanaCorrida) {
-        diasSemanaCorrida = parseInt(matchSemanaCorrida[1]); // Días especificados en el PDF
-        montoSemanaCorrida = parseFloat(matchSemanaCorrida[2].replace('.', '').replace(',', '.')); // Monto del PDF
+        diasSemanaCorrida = parseInt(matchSemanaCorrida[1]);
+        montoSemanaCorrida = parseFloat(matchSemanaCorrida[2].replace('.', '').replace(',', '.'));
     } else {
         montoSemanaCorrida = 0;
     }
+    let diasParaSemanaCorrida = diasTotalesMovilizacion;
 
-    let diasParaSemanaCorrida = diasTotalesMovilizacion; // Usamos los días totales de movilización
-
-    // Evaluamos el tope entre 21, 22, y 23 días
     if (diasParaSemanaCorrida > 23) {
         let mejorValor = 21;
         let menorDiscrepancia = Infinity;
 
         const valorEsperado21 = (totalComisiones / 21) * diasSemanaCorrida;
         const discrepancia21 = Math.abs(valorEsperado21 - montoSemanaCorrida);
-
         const valorEsperado22 = (totalComisiones / 22) * diasSemanaCorrida;
         const discrepancia22 = Math.abs(valorEsperado22 - montoSemanaCorrida);
-
         const valorEsperado23 = (totalComisiones / 23) * diasSemanaCorrida;
         const discrepancia23 = Math.abs(valorEsperado23 - montoSemanaCorrida);
 
@@ -476,13 +453,10 @@ if (detallesComisiones.length === 0) {
         }
     }
 
-    // Cálculo de la semana corrida 2
     if (diasSemanaCorrida !== "No especificados" && diasParaSemanaCorrida > 0 && totalComisiones > 0) {
         const valorDiarioComisiones = totalComisiones / diasParaSemanaCorrida;
         valorEsperadoSemanaCorrida = (valorDiarioComisiones * diasSemanaCorrida).toFixed(2);
-
         const diferenciaSemanaCorrida = valorEsperadoSemanaCorrida - montoSemanaCorrida;
-
         resultadoSemanaCorrida = Math.abs(diferenciaSemanaCorrida) < 1
             ? `<span style="color: green;">✅ Cálculo correcto</span>`
             : `<span style="color: red;">❌ Discrepancia detectada: Se esperaba ${formatCurrency(valorEsperadoSemanaCorrida)}. Diferencia: ${formatCurrency(diferenciaSemanaCorrida)}.</span>`;
@@ -490,20 +464,18 @@ if (detallesComisiones.length === 0) {
         resultadoSemanaCorrida = `<span style="color: orange;">⛔ Datos insuficientes para calcular la semana corrida.</span>`;
     }
 
-    // Función para procesar correctamente montos numéricos
     function procesarMonto(montoTexto) {
         return parseFloat(montoTexto.replace(/\./g, '').replace(',', '.'));
     }
 
-    // Función para identificar los valores de los ítems "Gratificables" en el texto extraído
+//*************************** gratificacion ***************************
+
     function identificarGratificables(texto) {
         let gratificablesEncontrados = [];
-        let textoRestante = texto.replace(/\s+/g, ' ').trim(); // Normalizar espacios y saltos de línea
+        let textoRestante = texto.replace(/\s+/g, ' ').trim();
 
-        // Eliminar caracteres no visibles (como saltos de línea, tabulaciones)
-        textoRestante = textoRestante.replace(/[^\x20-\x7E]/g, ' '); // Limpiar caracteres no imprimibles
+        textoRestante = textoRestante.replace(/[^\x20-\x7E]/g, ' ');
 
-        // Expresión regular con una flexibilidad mayor para el ítem exacto
         listaGratificables.forEach(item => {
             const regex = new RegExp(`${item.replace(/\s+/g, '\\s*')}\\s*(?:\\(\\d+\\))?\\s*\\$\\s*([\\d.,]+)`, 'i');
             const match = textoRestante.match(regex);
@@ -514,7 +486,6 @@ if (detallesComisiones.length === 0) {
                     monto: procesarMonto(match[1])
                 });
 
-                // Eliminar la coincidencia exacta del texto restante
                 textoRestante = textoRestante.replace(new RegExp(match[0].replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i'), '').trim();
             }
         });
@@ -522,29 +493,22 @@ if (detallesComisiones.length === 0) {
         return gratificablesEncontrados;
     }
 
-    // Función para calcular el total de los valores de "Gratificación Mec"
     function calcularTotalGratificacion(gratificables) {
         return gratificables.reduce((total, item) => total + item.monto, 0);
     }
 
-    // Función para mostrar los valores encontrados en el cuadro "Gratificación Mec"
     function mostrarGratificacionMec(gratificables) {
         const gratificacionContainer = document.getElementById('gratificacionMec');
 
-        // Verificamos si el contenido ya está visible para evitar duplicados
         if (gratificacionContainer.style.display === 'block') {
-            return; // Si ya está visible, no agregar los datos nuevamente
+            return;
         }
 
-        // Crear HTML para los gratificables
         const listaGratificablesHTML = gratificables.map(gratificable => {
             return `<li><strong>${gratificable.item}:</strong> ${mostrarValor(gratificable.monto)}</li>`;
         }).join('');
 
-        // Calcular el total de "Gratificación Mec"
         const totalGratificacion = calcularTotalGratificacion(gratificables);
-
-        // Valores consolidados del Análisis MEC
         const valoresConsolidados = [
             sueldoProporcional || 0,
             montoPagadoHorasExtras || 0,
@@ -555,13 +519,10 @@ if (detallesComisiones.length === 0) {
             valorEsperadoSemanaCorrida || 0
         ];
 
-        // Sumar valores consolidados y gratificables ********
         const valorTotalGratificacion = valoresConsolidados.reduce((total, valor) => total + (parseFloat(valor) || 0), totalGratificacion);
 
-        // Llamar a la función calcularGratificacion pasando el valor calculado
         calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada, mes, año, valorTotalGratificacion);
 
-        // Crear HTML para los datos calculados
         const datosCalculadosHTML = `
             <ul>
                 <li><strong>Sueldo Base:</strong> ${mostrarValor(sueldoProporcional)}</li>
@@ -574,66 +535,53 @@ if (detallesComisiones.length === 0) {
             </ul>
         `;
 
-        // Crear HTML para los conceptos de gratificación adicionales
         const gratificablesHTML = `
             <ul>
                 ${listaGratificablesHTML}
             </ul>
         `;
 
-        // Agregar el nuevo cálculo total
         const valorTotalHTML = `
             <p><strong>_______ SUMA TOTAL HABERES GRATIFICACION: ${mostrarValor(valorTotalGratificacion)} _______</strong></p>
         `;
 
-        // Unir ambas secciones
         const gratificacionHTML = datosCalculadosHTML + gratificablesHTML + valorTotalHTML;
-
-        // Evitar duplicación verificando el contenido del contenedor antes de actualizar
         if (document.getElementById('listaGratificables').innerHTML !== gratificacionHTML) {
             document.getElementById('listaGratificables').innerHTML = gratificacionHTML;
         }
 
-        // Mostrar el contenedor
         document.getElementById('gratificacionMec').style.display = 'block';
     }
 
-    // Función para mostrar el valor de un monto de manera adecuada
     function mostrarValor(valor) {
         return isNaN(valor) || valor === null ? '$0' : new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(valor);
     }
 
-    // fUNCION PARA IMPRIMIR RESULTADOS ANALISIS MEC
     window.imprimirResultados = function imprimirResultados() {
-        const analisisMEC = document.querySelector('#resultado'); // Contenedor "Análisis MEC"
-        const gratificacionMEC = document.querySelector('#gratificacionMec'); // Contenedor "Gratificación MEC"
-        const calculoGratificacion = document.querySelector('#resultadoGratificacion'); // Contenedor "Cálculo de Gratificación"
+        const analisisMEC = document.querySelector('#resultado');
+        const gratificacionMEC = document.querySelector('#gratificacionMec');
+        const calculoGratificacion = document.querySelector('#resultadoGratificacion');
 
-        // Verificar que los elementos tienen contenido
         const contenidoAnalisis = analisisMEC ? analisisMEC.innerHTML.trim() : '';
         const contenidoGratificacion = gratificacionMEC && gratificacionMEC.style.display !== 'none'
             ? gratificacionMEC.innerHTML.trim()
-            : '<p>No hay datos disponibles en Gratificación MEC.</p>'; // Mensaje si no hay datos en Gratificación MEC
+            : '<p>No hay datos disponibles en Gratificación MEC.</p>';
         const contenidoCalculoGratificacion = calculoGratificacion ? calculoGratificacion.innerHTML.trim() : '';
 
-        // Asegurar que no se repita el "Haberes Gratificables" en el contenido
         let contenidoFinal = contenidoAnalisis;
         if (!contenidoFinal.includes('Haberes Gratificables') && contenidoGratificacion) {
             contenidoFinal += `</div>${contenidoGratificacion}`;
         }
 
-        // Solo agregar el "Cálculo de Gratificación" si está presente
         if (contenidoCalculoGratificacion) {
             contenidoFinal += `</div>${contenidoCalculoGratificacion}`;
         }
 
-        // Verificar si todo el contenido necesario está disponible
         if (!contenidoAnalisis || !contenidoGratificacion || !contenidoCalculoGratificacion) {
             alert('El contenido no está listo para imprimir. Por favor, verifica el análisis antes de imprimir.');
             return;
         }
 
-        // Crear una nueva ventana para la impresión
         const ventanaImpresion = window.open('', '_blank');
         ventanaImpresion.document.write(`
             <html>
@@ -665,13 +613,11 @@ if (detallesComisiones.length === 0) {
             </html>
         `);
         ventanaImpresion.document.close();
-        ventanaImpresion.print(); // Ejecutar impresión
+        ventanaImpresion.print();
     };
 
-    // Después de extraer el texto del PDF, identificamos los "Gratificables"
     const gratificables = identificarGratificables(textoCompleto);
 
-    // === Mostrar resultados en HTML ===
     document.getElementById('resultadoContenido').innerHTML = `
         <h2>Análisis MEC:</h2>
         <p><strong>Mes y Año:</strong> ${mes.toUpperCase()} DE ${año}. <strong>Jornada:</strong> ${jornadaSeleccionada} horas.</p>
@@ -681,52 +627,42 @@ if (detallesComisiones.length === 0) {
         <p><strong>1.- Resultado Sueldo Base:</strong> ${resultadoProporcional}.</p>
         <p><em>Cálculo:</em> ${sueldoBaseContractual ? formatCurrency(sueldoBaseContractual) : 'No encontrado'} ÷ 30 días × ${diasTrabajados} días = ${sueldoBaseContractual ? formatCurrency(sueldoBaseContractual / 30 * diasTrabajados) : 'No encontrado'}.</p>
         <p><strong>2.- % Sueldo Base Contractual respecto al IMM:</strong> ${mensajeVariacion}</p>
-        <!-- Punto 3: Resultado Hrs. Extras -->
         <p><strong>3.- Resultado Hrs. Extras:</strong> ${resultadoHorasExtras}</p>
         <p><em>Pagado:</em> ${montoPagadoHorasExtras !== "No encontrado" ? formatCurrency(montoPagadoHorasExtras) : 'No encontrado'},
         Calculado ${horasExtrasRealizadas !== "No especificadas" ? formatCurrency(sueldoBaseContractual * factor * parseFloat(horasExtrasRealizadas)) : 'No encontrado'}.</p>
-        <!-- Punto 4: Resultado Hrs. Extras Domingo-->
         <p><strong>4.- Resultado Hrs. Extras Domingo:</strong> ${resultadoHorasExtrasDomingo}</p>
         <p><em>Pagado:</em> ${montoPagadoHorasExtrasDomingo !== "No encontrado" ? formatCurrency(montoPagadoHorasExtrasDomingo) : 'No encontrado'},
         Calculado ${horasExtrasDomingoRealizadas !== "No especificadas" ? formatCurrency(parseFloat(montoEsperadoHorasExtrasDomingo)) : 'No encontrado'}.</p>
-        <!-- Punto 5: Resultado Hrs. Recargo Domingo -->
         <p><strong>5.- Resultado Hrs. Recargo Domingo:</strong> ${resultadoRecargoDomingo}</p>
-        <!-- Punto 6: Resultado Recargo 50% Festivo -->
         <p><strong>6.- Resultado Recargo 50% Festivo:</strong> ${resultadoRecargoFestivo}</p>
         <p><em>Pagado:</em> ${montoPagadoRecargoFestivo !== "No encontrado" ? formatCurrency(montoPagadoRecargoFestivo) : 'No encontrado'},
         Calculado ${horasRecargoFestivoRealizadas !== "No especificadas" ? formatCurrency((sueldoBaseContractual / 30) * 28 / (4 * jornadaSeleccionada) * 1.5 * parseFloat(horasRecargoFestivoRealizadas)) : 'No encontrado'}.</p>
-        <!-- Punto 7: Movilización -->
         <p><strong>7.- Movilización:</strong> Días: ${diasMovilizacion}, Monto: ${montoMovilizacion !== "No encontrado" ? formatCurrency(montoMovilizacion) : 'No encontrado'}.
             <strong>Días Totales:</strong> ${diasTotalesMovilizacion.toFixed(2)}</p>
         <p><strong>Dif. Movilización:</strong> ${montoDiferenciaMovilizacion !== "No encontrado" ? formatCurrency(montoDiferenciaMovilizacion) : 'No encontrado'}.</p>
-        <!-- Punto 8: Colación -->
         <p><strong>8.- Colación:</strong> Días: ${diasColacion}, Monto: ${montoColacion !== "No encontrado" ? formatCurrency(montoColacion) : 'No encontrado'}.
             <strong>Días Totales:</strong> ${diasTotalesColacion.toFixed(2)}</p>
         <p><strong>Dif. Colación:</strong> ${montoDiferenciaColacion !== "No encontrado" ? formatCurrency(montoDiferenciaColacion) : 'No encontrado'}.</p>
-        <!-- Punto 9: Comisiones -->
         <h3>9.- Comisiones</h3>
         <ul>${detalleComisionesHTML}</ul>
         <p><strong>Total Comisiones:</strong> ${formatCurrency(totalComisiones)}</p>
-        <!-- Punto 10: Semana Corrida -->
         <p><strong>10.- Semana Corrida</strong></p>
         <p><strong>Domingos y Festivos: </strong> (${diasSemanaCorrida !== "No especificados" ? diasSemanaCorrida : 'No especificado'}
             dias)     <strong>Monto:</strong> ${formatCurrency(montoSemanaCorrida)}.</p>
         <p><strong>Resultado:</strong> ${resultadoSemanaCorrida}</p>
         <p><em>Cálculo:</em> Comisiones: ${formatCurrency(totalComisiones)} ÷ Días Totales: (${diasParaSemanaCorrida}) × Dom. y Fest.: (${diasSemanaCorrida !== "No especificados" ? diasSemanaCorrida : 'No especificado'}) = ${formatCurrency(valorEsperadoSemanaCorrida)}.</p>
-        <!-- Punto 11: Gratificación Mec -->
         <div class="container gratificacion-container" id="gratificacionMec" style="display: none;">
             <h3>Análisis MEC: Haberes Gratificables</h3>
             <ul id="listaGratificables"></ul>
         </div>
     `;
 
-    mostrarGratificacionMec(gratificables); // Llamar con los datos procesados de gratificables
+    mostrarGratificacionMec(gratificables);
     document.getElementById('resultado').style.display = 'block';
     document.getElementById('recargarBtn').style.display = 'block';
     document.getElementById('imprimirBtn').style.display = 'block';
     }
 
-    // === Función centralizada para determinar la jornada máxima según la fecha ===
   function obtenerJornadaMaxima(mes, año) {
       const meses = {
           ENERO: 1, FEBRERO: 2, MARZO: 3, ABRIL: 4, MAYO: 5, JUNIO: 6,
@@ -734,68 +670,48 @@ if (detallesComisiones.length === 0) {
       };
       const mesIndex = meses[mes.toUpperCase()] || 0;
 
-      // Para mayo 2024 en adelante, jornada máxima 44 horas
       if (año > 2024 || (año === 2024 && mesIndex >= 5)) {
-          return 44; // Desde mayo 2024
+          return 44;
       }
 
-      // Para abril 2024 y antes, jornada máxima 45 horas
-      return 45; // Hasta abril 2024
+      return 45;
   }
 
-  // === Función para calcular la gratificación con tope mensual ===
   function calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada, mes, año, valorTotalGratificacion) {
-      // Mapeo de meses a índices
+
       const meses = {
           ENERO: 1, FEBRERO: 2, MARZO: 3, ABRIL: 4, MAYO: 5, JUNIO: 6,
           JULIO: 7, AGOSTO: 8, SEPTIEMBRE: 9, OCTUBRE: 10, NOVIEMBRE: 11, DICIEMBRE: 12
       };
 
-      // Obtener el IMM del mes y año
       const inm = ingresosMinimos[año]?.[mes.toUpperCase()] || 0;
       if (inm === 0) {
           console.error("IMM no disponible para este mes y año.");
           return;
       }
 
-      // Determinar el índice del mes
       const mesIndex = meses[mes.toUpperCase()];
       if (!mesIndex) {
           console.error("Mes inválido.");
           return;
       }
 
-      // Determinar la jornada máxima según la fecha
-      let jornadaMaxima = 45; // Por defecto hasta abril 2024
+      let jornadaMaxima = 45;
       if (año > 2024 || (año === 2024 && mesIndex >= 5)) {
-          jornadaMaxima = 44; // A partir de mayo 2024
+          jornadaMaxima = 44;
       }
 
-      // Cálculo del 25% de la suma total
       const resultadoCalculado = valorTotalGratificacion * 0.25;
-
-      // Calcular el tope de gratificación
       const topeGratificacion = (4.75 * inm) / 12;
-
-      // Calcular el tope proporcional para jornada máxima
       const topeProporcional = (topeGratificacion / jornadaMaxima) * jornadaSeleccionada;
-
-      // Si la jornada es mayor a 30 horas, utilizar el 25% de la suma total como tope
       const topeCalculado = jornadaSeleccionada > 30 ? resultadoCalculado : topeProporcional;
-
-      // Si el tope calculado es mayor al tope de gratificación, utilizar el tope de gratificación
       const valorAPagar = Math.round(Math.min(topeCalculado, topeGratificacion));
-
-      // Redondear valores para mostrar
       const topeGratificacionRedondeado = Math.round(topeGratificacion);
       const topeProporcionalRedondeado = Math.round(topeProporcional);
-
-      // Extraer el valor de "GRATIFICACION 25% C.T." del PDF
       const regexGratificacionPDF = /GRATIFICACION\s*25%\s*C\.T\.\s*\$\s*([\d.,]+)/i;
       const matchGratificacionPDF = textoCompleto.match(regexGratificacionPDF);
       const gratificacionPDF = matchGratificacionPDF ? parseFloat(matchGratificacionPDF[1].replace(/\./g, '').replace(',', '.')) : 0;
 
-      // Comparar valores calculados y extraídos con tolerancia
       let comparacionHTML = "";
       const diferencia = gratificacionPDF - valorAPagar;
       if (Math.abs(diferencia) < 0.001) {
@@ -804,7 +720,6 @@ if (detallesComisiones.length === 0) {
           comparacionHTML = `<span style="color: red;">❌ Discrepancia de ${formatCurrency(diferencia)}</span>`;
       }
 
-      // Mostrar los resultados
       const resultadoHTML = `
           <h3>Cálculo de Gratificación</h3>
           <p><strong>Suma Total Haberes:</strong> ${formatCurrency(valorTotalGratificacion)}</p>
@@ -820,34 +735,24 @@ if (detallesComisiones.length === 0) {
       document.getElementById('resultadoGratificacion').innerHTML = resultadoHTML;
   }
 
-  // Función para volver a la pantalla de análisis de liquidación
   function volverAPantallaPrincipal() {
-      // Mostrar la pantalla principal (sin reiniciar la aplicación)
+
       document.querySelector('.main-container').style.display = 'block';
       document.getElementById('pantalla-principal').style.display = 'block';
-
-      // Ocultar resultados y botones adicionales
       document.getElementById('resultado').style.display = 'none';
       document.getElementById('gratificacionMec').style.display = 'none';
       document.getElementById('resultadoGratificacion').innerHTML = '';
       document.getElementById('resultadoContenido').innerHTML = '';
-
-      // Ocultar los botones "VOLVER" e "IMPRIMIR"
       document.getElementById('recargarBtn').style.display = 'none';
       document.getElementById('imprimirBtn').style.display = 'none';
 
-      // Limpiar solo el campo de selección de archivo (PDF)
-      const fileInput = document.getElementById('fileInput'); // Asegúrate de que este sea el ID correcto del input
+
+      const fileInput = document.getElementById('fileInput');
       if (fileInput) {
-          fileInput.value = ''; // Limpia el archivo seleccionado
+          fileInput.value = '';
+      }
       }
 
-      // No tocar otros campos como el código de acceso o configuraciones
-      }
-
-      // ************** Cálculo de Vacaciones ********************
-
-      // 1 Lista fusionada de ítems para el cálculo de vacaciones
       const listaComisionVacaciones = [
           "COM.EFECTIVAS", "COMISION CYD", "CONCURSO FPAY", "COMISION DIGITA Y GANA", "COMI. KIOSCO OTRAS EMPRESAS",
           "APERTURA CTA CTE", "ESCANEA Y PAGA", "DIF. ESCANEA Y PAGA", "COMPENSACION PERMISO", "DIF CONCURSO FPAY",
@@ -859,28 +764,22 @@ if (detallesComisiones.length === 0) {
           "PROMEDIOS VARIOS", "QUIEBRE DE STOCK", "HORAS RECARGO NAVIDAD", "DIFERENCIA SEMANA CORRIDA", "BONO CERTIFICACION","DIF. COMISIONES"
       ];
 
-      // 2 Navegación entre pantallas
+
       document.getElementById('vacacionesBtn').addEventListener('click', () => {
           document.getElementById('pantalla-principal').style.display = 'none';
           document.getElementById('pantalla-vacaciones').style.display = 'block';
       });
-
       document.getElementById('volverBtn').addEventListener('click', () => {
           document.getElementById('pantalla-vacaciones').style.display = 'none';
           document.getElementById('pantalla-principal').style.display = 'block';
       });
 
-      // Función para formatear montos como moneda
       function formatearMonto(monto) {
           return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(monto);
       }
-
-      // Función para procesar montos eliminando separadores de miles y ajustando decimales
       function procesarMonto(textoMonto) {
           return parseFloat(textoMonto.replace(/\./g, '').replace(',', '.'));
       }
-
-      // Función para extraer texto de un PDF
       async function extraerTextoDePDF(archivo) {
           const pdfData = await archivo.arrayBuffer();
           const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
@@ -891,11 +790,9 @@ if (detallesComisiones.length === 0) {
               const texto = await pagina.getTextContent();
               texto.items.forEach(item => textoCompleto += item.str + ' ');
           }
-
           return textoCompleto;
       }
 
-      // Función para obtener la comisión de vacaciones
       function obtenerComisionVacaciones(texto) {
           const regex = /COMISION VACACIONES.*?\((\d+)\)\s*\$\s*(\d{1,3}(?:\.\d{3})*(?:,\d+)?)/i;
           const resultado = texto.match(regex);
@@ -908,14 +805,12 @@ if (detallesComisiones.length === 0) {
           return null;
       }
 
-      // Función para obtener los días trabajados
       function obtenerDiasTrabajados(texto) {
           const regex = /SUELDO BASE.*?\((\d+)\)/i;
           const resultado = texto.match(regex);
           return resultado ? parseInt(resultado[1], 10) : 0;
       }
 
-      // Función para obtener los ítems de la listaComisionVacaciones
       function extraerItemsDePDF(texto) {
           let items = [];
           listaComisionVacaciones.forEach(item => {
@@ -928,37 +823,29 @@ if (detallesComisiones.length === 0) {
           return items;
       }
 
-      // Función para obtener el mes y año
       function obtenerMesYAnio(texto) {
           const regex = /\b([A-Za-z]+)\s+de\s+(\d{4})\b/i;
           const resultado = texto.match(regex);
           return resultado ? `${resultado[1].toUpperCase()} de ${resultado[2]}` : 'Fecha no encontrada';
       }
 
-      // Función para obtener los PDFs válidos anteriores, considerando los 29 días y sin "COMISION VACACIONES"
       function obtenerTresPDFsValidos(datos, mesAnioEvaluado) {
-          // Filtra solo los PDFs con al menos 29 días trabajados, anteriores al mes de análisis y sin 'COMISION VACACIONES'
           const tresPrevios = datos.filter(pdf => pdf.dias >= 29 && !pdf.comisionVacaciones && esAnteriorAlMes(pdf.mesAnio, mesAnioEvaluado));
-
           if (tresPrevios.length < 3) {
               return { error: true, mensaje: 'No hay suficientes PDFs válidos para realizar el cálculo.' };
           }
           return { error: false, tresPrevios: tresPrevios.slice(-3) };
       }
 
-      // Función que determina si un mes es anterior a otro (formato 'Mes de Año')
       function esAnteriorAlMes(mesAnio1, mesAnio2) {
           const [mes1, anio1] = mesAnio1.split(' de ');
           const [mes2, anio2] = mesAnio2.split(' de ');
-
           const meses = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
-
           if (anio1 < anio2) return true;
           if (anio1 === anio2 && meses.indexOf(mes1) < meses.indexOf(mes2)) return true;
           return false;
       }
 
-      // Función para manejar el cálculo de vacaciones
       document.getElementById('calcularVacacionesBtn').addEventListener('click', async () => {
           const archivos = document.getElementById('vacacionInput').files;
           const resultadoDiv = document.getElementById('resultadoVacaciones');
@@ -986,12 +873,10 @@ if (detallesComisiones.length === 0) {
               }
           }
 
-          // Si hay más de un PDF con 'COMISION VACACIONES', el usuario debe elegir
           if (pdfsConComisionVacaciones.length > 1) {
-              // Filtrar PDFs que tengan 3 PDFs anteriores válidos
               const opcionesValidas = pdfsConComisionVacaciones.filter(pdf => {
                   const resultado = obtenerTresPDFsValidos(datos, pdf.mesAnio);
-                  return !resultado.error; // Solo se muestran los que tienen 3 PDFs anteriores válidos
+                  return !resultado.error;
               });
 
               if (opcionesValidas.length > 0) {
@@ -1014,23 +899,17 @@ if (detallesComisiones.length === 0) {
           }
       });
 
-      // Función para realizar el cálculo de vacaciones
       function realizarCalculo(datos, pdfSeleccionado) {
           const resultadoDiv = document.getElementById('resultadoVacaciones');
           const resultado = obtenerTresPDFsValidos(datos, pdfSeleccionado.mesAnio);
-
           if (resultado.error) {
               resultadoDiv.innerHTML = `<p style="color: red;">${resultado.mensaje}</p>`;
               return;
           }
 
           const tresPrevios = resultado.tresPrevios;
-
-          // Sumamos los valores de los ítems para obtener el total
           const totalItems = tresPrevios.reduce((acc, pdf) => acc + pdf.items.reduce((sum, item) => sum + item.monto, 0), 0);
-          // Calculamos el promedio de vacaciones
           const promedioVacaciones = (totalItems / 3) / 30 * pdfSeleccionado.comisionVacaciones.dias;
-          // Calculamos la diferencia
           const diferencia = promedioVacaciones - pdfSeleccionado.comisionVacaciones.monto;
 
           resultadoDiv.innerHTML = `
@@ -1047,13 +926,8 @@ if (detallesComisiones.length === 0) {
       }
 
     document.getElementById('refrescarBtn').addEventListener('click', () => {
-        // Restablecer el input de archivos
-        document.getElementById('vacacionInput').value = ''; // Borra los archivos cargados
-
-        // Limpiar el resultado
+        document.getElementById('vacacionInput').value = '';
         const resultadoDiv = document.getElementById('resultadoVacaciones');
         resultadoDiv.innerHTML = '';
-
-        // Vuelve a mostrar la pantalla de vacaciones para que el usuario pueda cargar nuevos PDFs
         document.getElementById('pantalla-vacaciones').style.display = 'block';
     });

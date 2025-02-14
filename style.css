@@ -172,6 +172,7 @@ p {
         page-break-before: always;
     }
 }
+
 #resultadoGratificacion {
     margin-top: 20px;
     padding: 20px;
@@ -181,6 +182,7 @@ p {
     color: #333;
     line-height: 1.6;
 }
+
 #pantalla-vacaciones {
     background: #fff;
     padding: 20px;
@@ -201,6 +203,7 @@ p {
     padding-left: 20px;
     margin-bottom: 15px;
 }
+
 #resultadoVacaciones p {
     font-size: 16px;
 }

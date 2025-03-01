@@ -1,135 +1,118 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <!-- ===Configuración básica del documento HTML=== -->
-    <meta charset="UTF-8"> <!-- Establece la codificación de caracteres como UTF-8 -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Asegura que el diseño sea responsive -->
-    <title>MEC</title> <!-- Título que aparece en la pestaña del navegador -->
-    <link rel="stylesheet" href="style.css"> <!-- Vincula el archivo de estilos CSS -->
-    <style>
-        /* Estilo para la fecha y hora */
-        #fecha-hora {
-            font-size: 0.9em;
-            color: #555;
-            text-align: right;
-            margin-top: 10px;
-            margin-right: 2px;
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEC - Análisis</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="contador-visitas">Cargando visitas...</div>
-  <button type="button" id="reset-button" style="font-size: 1px; background-color: transparent; color: #988; border: none;
-   cursor: pointer; margin-top: 5px; padding: 3px; display: block;">Reset</button>
-  <div id="fecha-hora"></div>
-    <!-- Modal de ingreso de clave -->
-    <div id="login-container">
-        <h1>Bienvenido a MEC</h1>
-        <p>Ingresa el código de acceso para continuar:</p>
-        <input type="text" id="codigoAcceso" maxlength="8" placeholder="8 dígitos o letras" />
-        <button type="button" id="ingresarBtn">Ingresar</button>
-        <p id="mensajeError" style="color: red; display: none;">Código incorrecto. Intenta nuevamente.</p>
-    </div>
+  <!-- Contenedor de información de visitas, fecha y hora -->
+  <div id="info-container">
+      <p><span id="hora"></span>    <span id="fecha"></span></p>
+      <p>Visitas: <span id="contador">0</span></p>
+      <button id="resetContador" class="hidden-reset"></button>
+  </div>
 
-    <!-- Contenedor principal, inicialmente oculto -->
-    <div class="main-container" id="app-container" style="display: none;">
-        <!-- ===Contenedor principal que organiza el formulario y los resultados=== -->
-        <!-- Contenedor de formulario a la izquierda -->
-        <div class="container form-container">
-            <h1>MEC: Análisis de Liquidación</h1>
-            <p>Ingresa una liquidación en PDF, para analizar, verificar y calcular sus items y otros requisitos. </p>
-            <form id="datosLiquidacion">
-                <label for="jornada">Jornada de Trabajo:</label>
-                <select id="jornada" required>
-                    <option value="">Selecciona la jornada</option>
-                    <option value="45">Completa (45 horas)</option>
-                    <option value="44" selected>Completa (44 horas)</option>
-                    <option value="43">Completa (43 horas)</option>
-                    <option value="42">Completa (42 horas)</option>
-                    <option value="41">Completa (41 horas)</option>
-                    <option value="40">Completa (40 horas)</option>
-                    <option value="30">Parcial (30 hrs)</option>
-                    <option value="25">Parcial (25 hrs)</option>
-                    <option value="20">Parcial (20 hrs)</option>
-                    <option value="18">Parcial (18 hrs)</option>
-                </select>
+  <!-- Pantalla de Login -->
+  <div id="login-container">
+      <h1>Bienvenido a MEC</h1>
+      <p>Ingresa el código de acceso para continuar:</p>
+      <input type="text" id="codigoAcceso" maxlength="8" placeholder="8 dígitos o letras" autocomplete="off" />
+      <button type="button" id="ingresarBtn">Ingresar</button>
+      <p id="mensajeError" class="error-msg" style="display: none;">Código incorrecto. Intenta nuevamente.</p>
+  </div>
 
-                <label for="fileInput">Sube tu liquidación en PDF:</label>
-                <input type="file" id="fileInput" accept="application/pdf" required>
-                <button type="button" id="analizarBtn" onclick="analizarArchivo()">Analizar Liquidación</button>
 
-                <!-- Pantalla Principal -->
-                <div id="pantalla-principal">
-                    <h1>MEC: Análisis de Vacaciones</h1>
-                    <button type="button" id="vacacionesBtn">Ir a cálculo de vacaciones</button>
-                </div>
+  <!-- Menú Principal -->
+  <div id="menu-principal" class="pantalla" style="display: none;">
+      <h1>Menú Principal</h1>
+      <button onclick="mostrarPantalla('pantalla-analisis')">Ir a Análisis de Liquidación</button>
+      <button onclick="mostrarPantalla('pantalla-vacaciones')">Ir a Cálculo de Vacaciones</button>
+      <button data-target="screen-finiquito">Ir Cálculo de Finiquito</button>
+      <button onclick="salirAplicacion()">Salir de la Aplicación</button>
+  </div>
 
-                <!-- Pantalla de Vacaciones -->
-                <div id="pantalla-vacaciones">
-                    <h1>Cálculo de Vacaciones</h1>
-                    <p>Sube los siguientes archivos:</p>
-                    <ul>
-                        <li>1 PDF con el pago de vacaciones</li>
-                        <li>3 PDFs con al menos 29 días trabajados</li>
-                    </ul>
-               <p>Sugerencia: Analiza con MEC cada PDF antes, así evitarás arrastrar errores en el promedio.</p>
-                    <input type="file" id="vacacionInput" multiple accept="application/pdf">
-                    <button type="button" id="calcularVacacionesBtn">Calcular Vacaciones</button>
-                    <button type="button" id="volverBtn">Volver</button>
-                    <button type="button" id="refrescarBtn">Refrescar Cálculo de Vacaciones</button>
-                    <div id="resultadoVacaciones" style="margin-top: 20px;"></div>
-                </div>
-            </form>
-        </div>
+  <!-- Pantalla de Análisis de Liquidación -->
+  <div id="pantalla-analisis" class="pantalla" style="display: none;">
+      <h1>Análisis de Liquidación</h1>
+      <label for="jornada">Elige tu jornada laboral</label>
+      <select id="jornada" required>
+          <option value="">Selecciona la jornada</option>
+          <option value="45">Completa (45 horas)</option>
+          <option value="44" selected>Completa (44 horas)</option>
+          <option value="43">Completa (43 horas)</option>
+          <option value="42">Completa (42 horas)</option>
+          <option value="41">Completa (41 horas)</option>
+          <option value="40">Completa (40 horas)</option>
+          <option value="30">Parcial (30 hrs)</option>
+          <option value="25">Parcial (25 hrs)</option>
+          <option value="20">Parcial (20 hrs)</option>
+          <option value="18">Parcial (18 hrs)</option>
+      </select>
+      <p><label for="fileInput">Ingresa una liquidación de sueldo en formato PDF</label></p>
+      <input type="file" id="fileInput">
+      <button onclick="analizarArchivo()">Calcular</button>
+      <button onclick="mostrarPantalla('menu-principal')">Ir al Menu</button>
+      <div id="resultadoAnalisis"></div>
+      <div class="container gratificacion-container" id="gratificacionMec" style="display: none;">
+          <h3>Gratificación Mec</h3>
+          <ul id="listaGratificables"></ul>
+      </div>
+      <div class="container" id="resultadoGratificacion"></div>
+      <button id="refrescarBtnAnalisis">Refrescar</button>
+  </div>
 
-        <!-- ===Contenedor de resultados a la derecha=== -->
-        <div class="container result-container" id="resultado" style="display: none;">
-            <div id="resultadoContenido"></div>
-        </div>
+  <!-- Pantalla de Vacaciones -->
+  <div id="pantalla-vacaciones" class="pantalla" style="display: none;">
+      <h2>Cálculo de Vacaciones</h2>
+      <p>Sube los siguientes archivos:</p>
+      <ul>
+          <li>1 PDF con el pago de vacaciones</li>
+          <li>3 PDFs con al menos 29 días trabajados</li>
+      </ul>
+      <input type="file" id="vacacionInput" multiple>
+      <button id="calcularVacacionesBtn">Calcular Vacaciones</button>
+      <button id="volverBtn" onclick="mostrarPantalla('menu-principal')">Ir al Menu</button>
+      <div id="resultadoVacaciones"></div>
+      <button id="refrescarBtnVacaciones">Refrescar</button>
+  </div>
 
-        <div class="container gratificacion-container" id="gratificacionMec" style="display: none;">
-            <h3>Gratificación Mec</h3>
-            <ul id="listaGratificables"></ul>
-        </div>
+  <!-- Pantalla de Finiquito -->
+  <div id="screen-finiquito" class="pantalla" style="display: none;">
+      <h2>Cálculo de Finiquito</h2>
+      <!-- Reemplaza tu campo de entrada de años de trabajo con un select -->
+      <label for="añosTrabajados">Años de servicio:</label>
+      <select id="añosTrabajados">
+          <option value="1">1 año</option>
+          <option value="2">2 años</option>
+          <option value="3">3 años</option>
+          <option value="4">4 años</option>
+          <option value="5">5 años</option>
+          <option value="6">6 años</option>
+          <option value="7">7 años</option>
+          <option value="8">8 años</option>
+          <option value="9">9 años</option>
+          <option value="10">10 años</option>
+          <option value="11">11 años</option>
+      </select>
+      <label for="diasTrabajados">Días Trabajados en el Último Mes:</label>
+      <input type="number" id="diasTrabajados" min="0" max="30" />
+        <input type="file" id="fileFiniquito" multiple accept="application/pdf">
+      <div>
+          <label for="diasVacacionesPendientes">Ingrese días de vacaciones pendientes:</label>
+          <input type="number" id="diasVacacionesPendientes" placeholder="Días pendientes">
+      </div>
+      <button id="calcularFiniquito">Calcular</button>
+      <button class="backBtn" data-target="menu-principal">Ir al Menu</button>
+      <div id="resultadosFiniquito" class="result-container hidden"></div>
+      <div id="resultadosNoFiniquito" class="hidden"></div>
+      <button id="refrescarFiniquito">Refrescar</button>
+  </div>
 
-        <div class="container" id="resultadoGratificacion"></div>
 
-        <button type="button" id="imprimirBtn" style="display: none;" onclick="imprimirResultados()">Imprimir Resultados</button>
-        <button type="button" id="recargarBtn" style="display: none;" onclick="volverAPantallaPrincipal()">VOLVER</button>
-
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-        <script>
-            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-
-            function actualizarFechaHora() {
-                const ahora = new Date();
-                const dia = String(ahora.getDate()).padStart(2, '0');
-                const mes = String(ahora.getMonth() + 1).padStart(2, '0');
-                const anio = String(ahora.getFullYear()).slice(2);
-                const horas = String(ahora.getHours()).padStart(2, '0');
-                const minutos = String(ahora.getMinutes()).padStart(2, '0');
-                document.getElementById('fecha-hora').textContent = `${dia}/${mes}/${anio} ${horas}:${minutos}`;
-            }
-
-            setInterval(actualizarFechaHora, 60000);
-            actualizarFechaHora();
-
-            // Función para verificar el código de acceso
-            function verificarAcceso() {
-                const codigoCorrecto = "miClave123"; // Ajusta la clave correcta
-                const codigoIngresado = document.getElementById("codigoAcceso").value;
-
-                if (codigoIngresado === codigoCorrecto) {
-                    document.getElementById("login-container").style.display = "none"; // Oculta el modal de acceso
-                    document.getElementById("app-container").style.display = "block"; // Muestra la aplicación
-                } else {
-                    document.getElementById("mensajeError").style.display = "block"; // Muestra el mensaje de error
-                }
-            }
-
-            document.getElementById("ingresarBtn").addEventListener("click", verificarAcceso);
-        </script>
-        <script src="script.js"></script>
-    </div>
+  <!-- Cargar PDF.js antes del script principal -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>

@@ -104,12 +104,12 @@ button {
     height: 10px;
     background-color: rgba(255, 0, 0, 0.5); /* Solo temporalmente visible */
     position: absolute;
-    top: 20px;  /* Ajusta según sea necesario */
-    left: 20px;  /* Ajusta según sea necesario */
+    top: 10px;  /* Ajusta según sea necesario */
+    left: 10px;  /* Ajusta según sea necesario */
     cursor: pointer;
     z-index: 9999; /* Asegura que quede por encima de otros elementos */
     opacity: 0.1; /* Casi invisible */
-    transform: scale(0.2); /* Lo hace un 20% de su tamaño */
+    transform: scale(0.1); /* Lo hace un 20% de su tamaño */
 }
 
 /* Botones */

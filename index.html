@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MEC - Análisis</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MEC - Análisis</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <!-- Contenedor de información de visitas, fecha y hora -->
@@ -22,7 +22,6 @@
       <button type="button" id="ingresarBtn">Ingresar</button>
       <p id="mensajeError" class="error-msg" style="display: none;">Código incorrecto. Intenta nuevamente.</p>
   </div>
-
 
   <!-- Menú Principal -->
   <div id="menu-principal" class="pantalla" style="display: none;">
@@ -81,35 +80,28 @@
   <!-- Pantalla de Finiquito -->
   <div id="screen-finiquito" class="pantalla" style="display: none;">
       <h2>Cálculo de Finiquito</h2>
-      <!-- Reemplaza tu campo de entrada de años de trabajo con un select -->
-      <label for="añosTrabajados">Años de servicio:</label>
-      <select id="añosTrabajados">
-          <option value="1">1 año</option>
-          <option value="2">2 años</option>
-          <option value="3">3 años</option>
-          <option value="4">4 años</option>
-          <option value="5">5 años</option>
-          <option value="6">6 años</option>
-          <option value="7">7 años</option>
-          <option value="8">8 años</option>
-          <option value="9">9 años</option>
-          <option value="10">10 años</option>
-          <option value="11">11 años</option>
-      </select>
-      <label for="diasTrabajados">Días Trabajados en el Último Mes:</label>
-      <input type="number" id="diasTrabajados" min="0" max="30" />
-        <input type="file" id="fileFiniquito" multiple accept="application/pdf">
+      <!-- Fecha de inicio de contrato -->
+      <label for="fechaInicioContrato">Fecha de Inicio de Contrato:</label>
+      <input type="date" id="fechaInicioContrato" required>
+
+      <!-- Fecha de desvinculación -->
+      <label for="fechaDesvinculacion">Fecha de Desvinculación:</label>
+      <input type="date" id="fechaDesvinculacion" required>
+      <label for="diasTrabajadosUltimoMes">Ingrese días trabajados en el ultimo mes:</label>
+      <input type="number" id="diasTrabajadosUltimoMes" placeholder="Días trabajados en el último mes" />
+      <!-- Días de vacaciones pendientes -->
       <div>
           <label for="diasVacacionesPendientes">Ingrese días de vacaciones pendientes:</label>
           <input type="number" id="diasVacacionesPendientes" placeholder="Días pendientes">
       </div>
+      <!-- Archivos PDF para calcular el sueldo promedio -->
+      <input type="file" id="fileFiniquito" multiple accept="application/pdf">
       <button id="calcularFiniquito">Calcular</button>
       <button class="backBtn" data-target="menu-principal">Ir al Menu</button>
-      <div id="resultadosFiniquito" class="result-container hidden"></div>
+      <div id="resultadosFiniquito" class="result-container hidden"></div> <!-- Aquí se mostrarán los resultados -->
       <div id="resultadosNoFiniquito" class="hidden"></div>
       <button id="refrescarFiniquito">Refrescar</button>
   </div>
-
 
   <!-- Cargar PDF.js antes del script principal -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>

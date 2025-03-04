@@ -68,7 +68,6 @@ document.getElementById("ingresarBtn").addEventListener("click", function () {
     }
 });
 
-
 // Función para cambiar entre pantallas
 function mostrarPantalla(idPantalla) {
     document.querySelectorAll(".pantalla").forEach(pantalla => {
@@ -178,8 +177,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Función para refrescar la pantalla de Finiquito
   function refrescarFiniquito() {
       // Limpiar los campos de entrada
-      document.getElementById('añosTrabajados').value = '';
-      document.getElementById('diasTrabajados').value = '';
+      document.getElementById('fechaInicioContrato').value = '';  // Limpiar fecha inicio contrato
+      document.getElementById('fechaDesvinculacion').value = '';  // Limpiar fecha desvinculación
+      document.getElementById('diasVacacionesPendientes').value = ''; // Limpiar días de vacaciones pendientes
+      document.getElementById('diasTrabajadosUltimoMes').value = ''; // Limpiar días trabajados del último mes
       document.getElementById('fileFiniquito').value = ''; // Limpiar el campo de archivo
 
       // Limpiar los resultados de finiquito
@@ -195,6 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
           resultadosNoFiniquito.innerHTML = ''; // Limpiar los resultados de ítems no finiquito
       }
   }
+
 
   // Inicialmente muestra la pantalla principal
   if (pantallaPrincipal) pantallaPrincipal.style.display = 'block';
@@ -965,7 +967,7 @@ function obtenerDiasTrabajados(texto) {
 
 // Obtener comisión de vacaciones
 function obtenerComisionVacaciones(texto) {
-    const regex = /COMISION VACACIONES.*?\((\d+)\)\s*\$\s*(\d{1,3}(?:\.\d{3})*(?:,\d+)?)/i;
+    const regex = /COMISION VACACIONES\s*\(?(\d+)\)?\s*\$\s*([\d.]+)/i;
     const resultado = texto.match(regex);
     if (resultado) {
         return {
@@ -985,22 +987,44 @@ function obtenerMesYAnio(texto) {
 
 // Obtener tres PDFs previos válidos
 function obtenerTresPDFsValidos(datos, mesAnioEvaluado) {
-    const tresPrevios = datos.filter(pdf => pdf.dias >= 29 && !pdf.comisionVacaciones && esAnteriorAlMes(pdf.mesAnio, mesAnioEvaluado));
+    console.log("Evaluando mes y año:", mesAnioEvaluado);
+
+    // Filtrar solo los PDFs anteriores con 29 días o más y SIN "COMISION VACACIONES"
+    const tresPrevios = datos.filter(pdf => {
+        console.log(`Analizando: ${pdf.mesAnio} - Días: ${pdf.dias} - Comisión Vacaciones: ${pdf.comisionVacaciones ? "Sí" : "No"}`);
+
+        return pdf.dias >= 29 &&
+               !pdf.comisionVacaciones &&
+               esAnteriorAlMes(pdf.mesAnio, mesAnioEvaluado);
+    });
+
+    console.log("PDFs previos encontrados:", tresPrevios.map(pdf => pdf.mesAnio));
+
     if (tresPrevios.length < 3) {
-        return { error: true, mensaje: 'No hay suficientes PDFs válidos para realizar el cálculo.' };
+        return { error: true, mensaje: `No hay suficientes PDFs válidos para realizar el cálculo. Se encontraron: ${tresPrevios.length}` };
     }
+
     return { error: false, tresPrevios: tresPrevios.slice(-3) };
 }
 
-// Compara si un mes y año es anterior a otro
+
 function esAnteriorAlMes(mesAnio1, mesAnio2) {
+    const meses = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+
+    if (!mesAnio1 || !mesAnio2) return false; // Evitar errores con valores nulos
+
     const [mes1, anio1] = mesAnio1.split(' de ');
     const [mes2, anio2] = mesAnio2.split(' de ');
-    const meses = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+
+    const indexMes1 = meses.indexOf(mes1.trim().toUpperCase());
+    const indexMes2 = meses.indexOf(mes2.trim().toUpperCase());
+
     if (anio1 < anio2) return true;
-    if (anio1 === anio2 && meses.indexOf(mes1) < meses.indexOf(mes2)) return true;
+    if (anio1 === anio2 && indexMes1 < indexMes2) return true;
+
     return false;
 }
+
 
 // Calcular vacaciones
 document.getElementById('calcularVacacionesBtn').addEventListener('click', async () => {
@@ -1080,233 +1104,296 @@ function realizarCalculo(datos, pdfSeleccionado) {
 
 // ****************** Funcion Finiquito ****************
 document.addEventListener("DOMContentLoaded", function () {
-    // Función para mostrar la pantalla correcta
-    function mostrarPantalla(idPantalla) {
-        document.querySelectorAll(".pantalla").forEach(pantalla => {
-            pantalla.style.display = "none";
-        });
+  function mostrarPantalla(idPantalla) {
+    document.querySelectorAll(".pantalla").forEach(pantalla => {
+      pantalla.style.display = "none";
+    });
+    const pantallaSeleccionada = document.getElementById(idPantalla);
+    if (pantallaSeleccionada) {
+      pantallaSeleccionada.style.display = "block";
+    }
+  }
 
-        const pantallaSeleccionada = document.getElementById(idPantalla);
-        if (pantallaSeleccionada) {
-            pantallaSeleccionada.style.display = "block";
-        }
+  document.querySelectorAll("[data-target]").forEach(boton => {
+    boton.addEventListener("click", function () {
+      const pantallaObjetivo = boton.getAttribute("data-target");
+      mostrarPantalla(pantallaObjetivo);
+    });
+  });
+
+  const btnCalcularFiniquito = document.getElementById("calcularFiniquito");
+  const inputDiasVacacionesPendientes = document.getElementById("diasVacacionesPendientes");
+  const inputDiasTrabajadosUltimoMes = document.getElementById("diasTrabajadosUltimoMes"); // Nuevo input
+  const inputPDFs = document.getElementById("fileFiniquito");
+  const resultadosFiniquito = document.getElementById("resultadosFiniquito");
+
+  btnCalcularFiniquito.addEventListener("click", async function () {
+    const fechaInicio = new Date(document.getElementById("fechaInicioContrato").value);
+    const fechaDesvinculacion = new Date(document.getElementById("fechaDesvinculacion").value);
+
+    if (isNaN(fechaInicio) || isNaN(fechaDesvinculacion)) {
+      alert("Por favor, ingrese fechas válidas.");
+      return;
     }
 
-    // Configurar la navegación para los botones con "data-target"
-    document.querySelectorAll("[data-target]").forEach(boton => {
-        boton.addEventListener("click", function () {
-            const pantallaObjetivo = boton.getAttribute("data-target");
-            mostrarPantalla(pantallaObjetivo);
-        });
-    });
+    const añosTrabajados = calcularAñosDeServicio(fechaInicio, fechaDesvinculacion);
+    const diasVacPendientes = parseInt(inputDiasVacacionesPendientes.value) || 0;
+    const diasTrabajadosUltimoMes = parseInt(inputDiasTrabajadosUltimoMes.value) || 0;
 
-    // Obtener elementos del DOM
-    const btnCalcularFiniquito = document.getElementById("calcularFiniquito");
-    const inputDiasTrabajados = document.getElementById("diasTrabajados");
-    const inputPDFs = document.getElementById("fileFiniquito");
-    const resultadosFiniquito = document.getElementById("resultadosFiniquito");
-
-    // Evento para el botón de cálculo
-    btnCalcularFiniquito.addEventListener("click", async function () {
-        // Obtener años de servicio desde el select (entre 1 y 11 años)
-        const añosTrabajados = parseInt(document.getElementById("añosTrabajados").value) || 0;
-        const diasVacacionesPendientes = parseInt(inputDiasTrabajados.value) || 0;
-
-        // Verificar si hay 3 PDFs
-        if (inputPDFs.files.length !== 3) {
-            alert("Debes subir exactamente 3 archivos PDF con las últimas liquidaciones de sueldo.");
-            return;
-        }
-
-        // Calcular sueldo promedio a partir de los totales haberes y los items no finiquito
-        const sueldoMensual = await calcularSueldoPromedio(inputPDFs.files);
-        if (!sueldoMensual) {
-            alert("No se pudo extraer el sueldo promedio. Verifica que los PDFs sean correctos.");
-            return;
-        }
-
-        // Calcular finiquito
-        const resultado = calcularFiniquito(sueldoMensual, añosTrabajados, diasVacacionesPendientes);
-
-        // Mostrar resultados en la pantalla de finiquito, redondeando los valores
-        resultadosFiniquito.innerHTML = `
-            <p><strong>Sueldo Promedio:</strong> $${Math.round(sueldoMensual).toLocaleString()}</p>
-            <p><strong>Indemnización por años de servicio:</strong> $${Math.round(resultado.indemnizacion).toLocaleString()}</p>
-            <p><strong>Pago por vacaciones:</strong> $${Math.round(resultado.pagoVacaciones).toLocaleString()}</p>
-            <p><strong>Pago por aviso previo:</strong> $${Math.round(resultado.pagoAviso).toLocaleString()}</p>
-            <p><strong>Total Finiquito:</strong> <span style="color: green;">$${Math.round(resultado.totalFiniquito).toLocaleString()}</span></p>
-        `;
-
-        // Extraer ítems no finiquito para mostrarlos
-        const itemsNoFiniquito = await extraerItemsNoFiniquito(inputPDFs.files);
-        mostrarResultadosNoFiniquito(itemsNoFiniquito);
-
-        resultadosFiniquito.classList.remove("hidden");
-    });
-
-    // Función para calcular el finiquito
-    function calcularFiniquito(sueldoMensual, añosTrabajados, diasVacacionesPendientes) {
-        // Indemnización por años de servicio: sueldo promedio * años trabajados
-        let indemnizacion = sueldoMensual * añosTrabajados;
-        // Pago por vacaciones: sueldo promedio dividido en 30 (valor día) * días pendientes
-        let pagoVacaciones = (sueldoMensual / 30) * diasVacacionesPendientes;
-        // Pago por aviso previo: igual al sueldo promedio
-        let pagoAviso = sueldoMensual;
-
-        let totalFiniquito = indemnizacion + pagoVacaciones + pagoAviso;
-
-        return {
-            indemnizacion,
-            pagoVacaciones,
-            pagoAviso,
-            totalFiniquito
-        };
+    if (inputPDFs.files.length !== 3) {
+      alert("Debes subir exactamente 3 archivos PDF con las últimas liquidaciones de sueldo.");
+      return;
     }
 
-    // Función para leer los PDFs y calcular el sueldo promedio
-    async function calcularSueldoPromedio(files) {
-        let totalHaberesArray = [];
-        for (const file of files) {
-            const totalHaberes = await extraerTotalHaberesDePDF(file);
-            if (totalHaberes) {
-                totalHaberesArray.push(totalHaberes);
+    const sueldoMensual = await calcularSueldoPromedio(inputPDFs.files);
+    if (!sueldoMensual) {
+      alert("No se pudo extraer el sueldo promedio. Verifica que los PDFs sean correctos.");
+      return;
+    }
+
+    const diasVacProp = calcularVacacionesProporcionales(fechaInicio, fechaDesvinculacion);
+    const totalDiasVacHabil = diasVacPendientes + diasVacProp;
+
+    const fechaInicioVac = new Date(fechaDesvinculacion.getTime());
+    fechaInicioVac.setDate(fechaInicioVac.getDate() + 1);
+    const diasVacCorridos = calcularDiasCorridosVacaciones(totalDiasVacHabil, fechaInicioVac);
+
+    const valorDiaPromedio = sueldoMensual / 30;
+    const valorVacacionesPagadas = valorDiaPromedio * diasVacCorridos;
+
+    const resultado = calcularFiniquito(sueldoMensual, añosTrabajados, totalDiasVacHabil);
+
+    // Cálculo de monto de los días trabajados del último mes
+    const montoDiasTrabajadosUltimoMes = (sueldoMensual / 30) * diasTrabajadosUltimoMes;
+
+    // Modificación aquí: asegurándonos de usar "Monto Vacaciones (días Corridos)" en lugar del valor anterior.
+    const pagoPorVacaciones = valorVacacionesPagadas;  // Este es el valor correcto de vacaciones corridas.
+
+    // Modificación del "Total Finiquito"
+    const totalFiniquito = resultado.indemnizacion + pagoPorVacaciones + resultado.pagoAviso + montoDiasTrabajadosUltimoMes;
+
+    resultadosFiniquito.innerHTML = `
+      <p><strong>Sueldo Promedio:</strong> $${Math.round(sueldoMensual).toLocaleString()}</p>
+      <p><strong>Años de Servicio:</strong> ${añosTrabajados}</p>
+      <hr>
+      <p>Vacaciones Pendientes: ${diasVacPendientes} días</p>
+      <p>Vacaciones Proporcionales: ${diasVacProp} días</p>
+      <p>Suma Vacaciones (días hábiles): ${totalDiasVacHabil} días</p>
+      <p>Total Vacaciones (días Corridos): ${diasVacCorridos} días</p>
+      <p><strong>Monto Vacaciones (días Corridos):</strong> $${Math.round(valorVacacionesPagadas).toLocaleString()}</p>
+      <hr>
+      <p><strong>Monto Días Trabajados:</strong> $${Math.round(montoDiasTrabajadosUltimoMes).toLocaleString()} (${diasTrabajadosUltimoMes} días)</p>
+      <p><strong>Indemnización por Años:</strong> $${Math.round(resultado.indemnizacion).toLocaleString()}</p>
+      <p><strong>Pago por Vacaciones:</strong> $${Math.round(pagoPorVacaciones).toLocaleString()}</p> <!-- Ahora muestra el valor correcto -->
+      <p><strong>Pago por Aviso Previo:</strong> $${Math.round(resultado.pagoAviso).toLocaleString()}</p>
+      <p><strong>Total Finiquito:</strong> <span style="color: green;">$${Math.round(totalFiniquito).toLocaleString()}</span></p> <!-- Aquí se calcula correctamente -->
+      <hr>
+    `;
+
+    const itemsNoFiniquito = await extraerItemsNoFiniquito(inputPDFs.files);
+    mostrarResultadosNoFiniquito(itemsNoFiniquito);
+
+    resultadosFiniquito.classList.remove("hidden");
+  });
+
+  // Función para calcular las vacaciones proporcionales tomando en cuenta la anualidad
+  function calcularVacacionesProporcionales(fechaContrato, fechaDesvinculacion) {
+    let anioDesv = fechaDesvinculacion.getFullYear();
+    let fechaAnualidad = new Date(anioDesv, fechaContrato.getMonth(), fechaContrato.getDate());
+
+    if (fechaDesvinculacion < fechaAnualidad) {
+      fechaAnualidad = new Date(anioDesv - 1, fechaContrato.getMonth(), fechaContrato.getDate());
+    }
+
+    const diasTrabajados = Math.floor((fechaDesvinculacion - fechaAnualidad) / (1000 * 60 * 60 * 24));
+    const mesesCompletos = Math.floor(diasTrabajados / 30);
+    const diasRestantes = diasTrabajados - (mesesCompletos * 30);
+    const vacMeses = mesesCompletos * 1.25;
+    const vacDias = diasRestantes * 0.041666667;
+
+    return Math.ceil(vacMeses + vacDias);
+  }
+
+  // Función para convertir días hábiles de vacaciones a días corridos
+  function calcularDiasCorridosVacaciones(diasHabiles, fechaInicioVacaciones) {
+    let diasCorridos = 0;
+    let diasContados = 0;
+    let fechaActual = new Date(fechaInicioVacaciones.getTime());
+    while (diasContados < diasHabiles) {
+      if (!esFinDeSemana(fechaActual) && !esFeriado(fechaActual)) {
+        diasContados++;
+      }
+      diasCorridos++;
+      fechaActual.setDate(fechaActual.getDate() + 1);
+    }
+    return diasCorridos;
+  }
+
+  // Función para determinar si un día es fin de semana
+  function esFinDeSemana(fecha) {
+    const dia = fecha.getDay();
+    return (dia === 0 || dia === 6);
+  }
+
+  // Función para determinar si un día es feriado en Chile
+  function esFeriado(fecha) {
+    const feriadosChile = ["01-01", "01-05", "18-09", "19-09", "25-12", "01-11", "08-12"];
+    const mes = (fecha.getMonth() + 1).toString().padStart(2, "0");
+    const dia = fecha.getDate().toString().padStart(2, "0");
+    const fechaStr = `${mes}-${dia}`;
+    return feriadosChile.includes(fechaStr);
+  }
+
+  // Función para calcular el finiquito (método original)
+  function calcularFiniquito(sueldoMensual, añosTrabajados, diasVacacionesHabil, diasTrabajadosUltimoMes) {
+    let indemnizacion = sueldoMensual * añosTrabajados;
+    let pagoVacaciones = (sueldoMensual / 30) * diasVacacionesHabil;
+    let pagoAviso = sueldoMensual;
+    let totalFiniquito = indemnizacion + pagoVacaciones + pagoAviso + (sueldoMensual / 30) * diasTrabajadosUltimoMes;
+    return {
+      indemnizacion,
+      pagoVacaciones,
+      pagoAviso,
+      totalFiniquito
+    };
+  }
+
+  async function calcularSueldoPromedio(files) {
+    let totalHaberesArray = [];
+    for (const file of files) {
+      const totalHaberes = await extraerTotalHaberesDePDF(file);
+      if (totalHaberes) {
+        totalHaberesArray.push(totalHaberes);
+      }
+    }
+    if (totalHaberesArray.length !== 3) {
+      return null;
+    }
+    let sumTotalHaberes = totalHaberesArray.reduce((acc, val) => acc + val, 0);
+    const noFiniquitoResult = await extraerItemsNoFiniquito(files);
+    let totalNoFiniquito = noFiniquitoResult.noFiniquitoTotal;
+    let sueldoPromedio = Math.round((sumTotalHaberes - totalNoFiniquito) / 3);
+    return sueldoPromedio;
+  }
+
+  async function extraerTotalHaberesDePDF(file) {
+    const reader = new FileReader();
+    return new Promise((resolve, reject) => {
+      reader.onload = async function () {
+        const typedarray = new Uint8Array(this.result);
+        try {
+          const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
+          let totalHaberesEncontrado = null;
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const textItems = textContent.items.map(item => item.str);
+            const text = textItems.join(" ");
+            const regex = /TOTAL\s+HABERES\s*\$?\s*(\d{1,3}(?:\.\d{3})*(?:,\d{1,2})?)/i;
+            const match = regex.exec(text);
+            if (match) {
+              let valor = match[1].replace(/\./g, "").replace(",", ".");
+              totalHaberesEncontrado = parseFloat(valor);
+              break;
             }
+          }
+          resolve(totalHaberesEncontrado);
+        } catch (error) {
+          reject(error);
         }
+      };
+      reader.readAsArrayBuffer(file);
+    });
+  }
 
-        if (totalHaberesArray.length !== 3) {
-            return null;
+  async function extraerItemsNoFiniquito(files) {
+    const itemsNoFiniquito = [
+      "BONO VACACIONES", "HORAS EXTRAS 50 %", "AGUINALDO NAVIDAD", "AGUIN FIESTAS PATRIAS", "ASIG. FAMILIAR", "QUINQUENIO",
+      "CANASTA DE MERCADERIA", "RELIQUIDACION DE GRATIFICACI", "BONO DICIEMBRE", "BONO FIESTAS", "ESCOLARIDAD",
+      "BENEFICIO MATRIMONIO", "DIF. AGUINALDO", "BONO PRONTO ACUERDO", "HORAS EXTRAS DOMINGO", "ESC. SUPERIOR", "ESC. BASICA"
+    ];
+    let resultadosPDF = [];
+    let noFiniquitoTotal = 0;
+    let acumuladoGlobal = {};
+    for (const file of files) {
+      const textoPDF = await extraerTextoDePDF(file);
+      let itemsPDF = {};
+      let noFiniquitoPDF = 0;
+      itemsNoFiniquito.forEach(item => {
+        const regex = new RegExp(`${item}\\s*(?:\\(.*?\\))?\\s*\\$?\\s*(\\d{1,3}(?:[.,]\\d{3})*(?:[.,]\\d{2})?)`, 'gi');
+        let matches;
+        while ((matches = regex.exec(textoPDF)) !== null) {
+          let valor = matches[1].replace(/\./g, "").replace(",", ".");
+          valor = parseFloat(valor) || 0;
+          if (!itemsPDF[item]) {
+            itemsPDF[item] = 0;
+          }
+          itemsPDF[item] += valor;
+          if (!acumuladoGlobal[item]) {
+            acumuladoGlobal[item] = 0;
+          }
+          acumuladoGlobal[item] += valor;
+          noFiniquitoPDF += valor;
         }
-
-        let sumTotalHaberes = totalHaberesArray.reduce((acc, val) => acc + val, 0);
-
-        // Extraer la sumatoria de items no finiquito
-        const noFiniquitoResult = await extraerItemsNoFiniquito(files);
-        let totalNoFiniquito = noFiniquitoResult.noFiniquitoTotal;
-
-        // Calcular sueldo promedio
-        let sueldoPromedio = Math.round((sumTotalHaberes - totalNoFiniquito) / 3);
-        return sueldoPromedio;
+      });
+      resultadosPDF.push({ fileName: file.name, items: itemsPDF });
+      noFiniquitoTotal += noFiniquitoPDF;
     }
+    return { resultadosPDF, noFiniquitoTotal, acumuladoGlobal };
+  }
 
-    // Función para extraer el valor de "TOTAL HABERES" de un PDF
-    async function extraerTotalHaberesDePDF(file) {
-        const reader = new FileReader();
-        return new Promise((resolve, reject) => {
-            reader.onload = async function () {
-                const typedarray = new Uint8Array(this.result);
-                try {
-                    const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
-                    let totalHaberesEncontrado = null;
-                    for (let i = 1; i <= pdf.numPages; i++) {
-                        const page = await pdf.getPage(i);
-                        const textContent = await page.getTextContent();
-                        const textItems = textContent.items.map(item => item.str);
-                        const text = textItems.join(" ");
-                        // Buscar el item "TOTAL HABERES" y extraer su valor
-                        const regex = /TOTAL\s+HABERES\s*\$?\s*(\d{1,3}(?:\.\d{3})*(?:,\d{1,2})?)/i;
-                        const match = regex.exec(text);
-                        if (match) {
-                            let valor = match[1].replace(/\./g, "").replace(",", ".");
-                            totalHaberesEncontrado = parseFloat(valor);
-                            break;
-                        }
-                    }
-                    resolve(totalHaberesEncontrado);
-                } catch (error) {
-                    reject(error);
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        });
-    }
-
-    // Función para extraer ítems no finiquito de los PDFs
-    async function extraerItemsNoFiniquito(files) {
-        const itemsNoFiniquito = [
-            "BONO VACACIONES", "HORAS EXTRAS 50 %", "AGUINALDO NAVIDAD","AGUIN FIESTAS PATRIAS", "ASIG. FAMILIAR", "QUINQUENIO",
-            "CANASTA DE MERCADERIA", "RELIQUIDACION DE GRATIFICACI", "BONO DICIEMBRE", "BONO FIESTAS", "ESCOLARIDAD",
-            "BENEFICIO MATRIMONIO","DIF. AGUINALDO","BONO PRONTO ACUERDO","HORAS EXTRAS DOMINGO","ESC. SUPERIOR","ESC. BASICA"
-        ];
-
-        let resultadosPDF = [];
-        let noFiniquitoTotal = 0;
-        let acumuladoGlobal = {};
-
-        for (const file of files) {
-            const textoPDF = await extraerTextoDePDF(file);
-            let itemsPDF = {};
-            let noFiniquitoPDF = 0;
-
-            itemsNoFiniquito.forEach(item => {
-                // Expresión regular mejorada para ignorar valores entre paréntesis
-                const regex = new RegExp(`${item}\\s*(?:\\(.*?\\))?\\s*\\$?\\s*(\\d{1,3}(?:[.,]\\d{3})*(?:[.,]\\d{2})?)`, 'gi');
-                let matches;
-
-                while ((matches = regex.exec(textoPDF)) !== null) {
-                    let valor = matches[1].replace(/\./g, "").replace(",", ".");
-                    valor = parseFloat(valor) || 0;
-
-                    if (!itemsPDF[item]) {
-                        itemsPDF[item] = 0;
-                    }
-                    itemsPDF[item] += valor;
-
-                    if (!acumuladoGlobal[item]) {
-                        acumuladoGlobal[item] = 0;
-                    }
-                    acumuladoGlobal[item] += valor;
-
-                    noFiniquitoPDF += valor;
-                }
-            });
-
-            resultadosPDF.push({ fileName: file.name, items: itemsPDF });
-            noFiniquitoTotal += noFiniquitoPDF;
+  async function extraerTextoDePDF(file) {
+    const reader = new FileReader();
+    return new Promise((resolve, reject) => {
+      reader.onload = async function () {
+        const typedarray = new Uint8Array(this.result);
+        try {
+          const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
+          let textoCompleto = "";
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const textItems = textContent.items.map(item => item.str);
+            textoCompleto += textItems.join(" ");
+          }
+          resolve(textoCompleto);
+        } catch (error) {
+          reject(error);
         }
+      };
+      reader.readAsArrayBuffer(file);
+    });
+  }
 
-        return { resultadosPDF, noFiniquitoTotal, acumuladoGlobal };
+  function mostrarResultadosNoFiniquito(items) {
+    const resultadosDiv = document.getElementById("resultadosNoFiniquito");
+    let contenidoHTML = "<h4 style='font-size: 20px; margin-bottom: 6px;'>Valores Excluidos:</h4><hr>";
+    items.resultadosPDF.forEach(result => {
+      contenidoHTML += `<p style="margin: 8px;"><strong>${result.fileName}:</strong></p>`;
+      Object.entries(result.items).forEach(([item, valor]) => {
+        contenidoHTML += `<p style="margin: 8px;">${item}: $${Math.round(valor).toLocaleString()}</p>`;
+      });
+    });
+    contenidoHTML += `<h5 style="font-size: 18px; margin-top: 12px;">Total excluidos: $${Math.round(items.noFiniquitoTotal).toLocaleString()}</h5>`;
+    resultadosDiv.innerHTML = contenidoHTML;
+  }
+
+  function calcularAñosDeServicio(fechaInicio, fechaDesvinculacion) {
+    const diferencia = fechaDesvinculacion - fechaInicio;
+    const añosDeServicio = diferencia / (1000 * 60 * 60 * 24 * 365.25);
+    let añosRedondeados = Math.floor(añosDeServicio);
+    const mesesRestantes = (añosDeServicio - añosRedondeados) * 12;
+    if (mesesRestantes >= 6) {
+      añosRedondeados++;
     }
+    const añosLimitados = Math.min(añosRedondeados, 11);
+    return añosLimitados;
+  }
 
-    // Función para extraer texto de un PDF usando PDF.js
-    async function extraerTextoDePDF(file) {
-        const reader = new FileReader();
-
-        return new Promise((resolve, reject) => {
-            reader.onload = async function () {
-                const typedarray = new Uint8Array(this.result);
-                try {
-                    const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
-                    let textoCompleto = "";
-                    for (let i = 1; i <= pdf.numPages; i++) {
-                        const page = await pdf.getPage(i);
-                        const textContent = await page.getTextContent();
-                        const textItems = textContent.items.map(item => item.str);
-                        textoCompleto += textItems.join(" ");
-                    }
-                    resolve(textoCompleto);
-                } catch (error) {
-                    reject(error);
-                }
-            };
-            reader.readAsArrayBuffer(file);
-        });
-    }
-
-    // Función para mostrar los resultados de los ítems no finiquito con el nuevo estilo
-    function mostrarResultadosNoFiniquito(items) {
-        const resultadosDiv = document.getElementById("resultadosNoFiniquito");
-        let contenidoHTML = "<h4 style='font-size: 20px; margin-bottom: 6px;'>Valores Excluidos:</h4><hr>"; // Título más pequeño
-
-        items.resultadosPDF.forEach(result => {
-            contenidoHTML += `<p style="margin: 8px;"><strong>${result.fileName}:</strong></p>`; // Espaciado reducido
-            Object.entries(result.items).forEach(([item, valor]) => {
-                contenidoHTML += `<p style="margin: 8px;">${item}: $${Math.round(valor).toLocaleString()}</p>`; // Redondeando el valor
-            });
-        });
-
-        contenidoHTML += `<h5 style="font-size: 18px; margin-top: 12px;">Total excluidos: $${Math.round(items.noFiniquitoTotal).toLocaleString()}</h5>`; // Redondeando el total
-        resultadosDiv.innerHTML = contenidoHTML;
-    }
+  function calcularDiasTrabajadosUltimoMes(fechaInicio, fechaDesvinculacion) {
+    const diasUltimoMes = (fechaDesvinculacion - new Date(fechaDesvinculacion.getFullYear(), fechaDesvinculacion.getMonth(), 1)) / (1000 * 60 * 60 * 24);
+    return Math.ceil(diasUltimoMes);
+  }
 });
 
 // Función para salir

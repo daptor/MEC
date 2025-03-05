@@ -940,7 +940,8 @@ const listaComisionVacaciones = [
     "GARANTIZADO", "HORAS TRABAJO SIND.", "INCENTIVO CONFIABILIDAD", "INCENTIVO PRODUC CAJAS AUT", "INCENTIVO RECUPERO",
     "INCENTIVO SELF CHECK OUT", "INCENTIVO TIENDA CD/SFS", "PREMIO CLICK AND COLLECT", "PREMIO CUMPL.GRUPAL NPS",
     "PREMIO CUMPL.GRUPAL VTAS", "PREMIO CUMPLIMIENTO DE PLAN", "PREMIO NPS", "PREMIO VENTA TIENDA", "PREMIO VENTA TIENDA AUT.",
-    "PROMEDIOS VARIOS", "QUIEBRE DE STOCK", "HORAS RECARGO NAVIDAD", "DIFERENCIA SEMANA CORRIDA", "BONO CERTIFICACION", "DIF. COMISIONES"
+    "PROMEDIOS VARIOS", "QUIEBRE DE STOCK", "HORAS RECARGO NAVIDAD", "DIFERENCIA SEMANA CORRIDA", "BONO CERTIFICACION", "DIF. COMISIONES",
+    "COMISION VACACIONES"
 ];
 
 function extraerItemsDePDF(texto) {
@@ -985,18 +986,11 @@ function obtenerMesYAnio(texto) {
     return resultado ? `${resultado[1].toUpperCase()} de ${resultado[2]}` : 'Fecha no encontrada';
 }
 
-// Obtener tres PDFs previos válidos
 function obtenerTresPDFsValidos(datos, mesAnioEvaluado) {
     console.log("Evaluando mes y año:", mesAnioEvaluado);
 
-    // Filtrar solo los PDFs anteriores con 29 días o más y SIN "COMISION VACACIONES"
-    const tresPrevios = datos.filter(pdf => {
-        console.log(`Analizando: ${pdf.mesAnio} - Días: ${pdf.dias} - Comisión Vacaciones: ${pdf.comisionVacaciones ? "Sí" : "No"}`);
-
-        return pdf.dias >= 29 &&
-               !pdf.comisionVacaciones &&
-               esAnteriorAlMes(pdf.mesAnio, mesAnioEvaluado);
-    });
+    // Filtrar PDFs anteriores con 29 días o más
+    let tresPrevios = datos.filter(pdf => pdf.dias >= 29 && esAnteriorAlMes(pdf.mesAnio, mesAnioEvaluado));
 
     console.log("PDFs previos encontrados:", tresPrevios.map(pdf => pdf.mesAnio));
 
@@ -1004,7 +998,44 @@ function obtenerTresPDFsValidos(datos, mesAnioEvaluado) {
         return { error: true, mensaje: `No hay suficientes PDFs válidos para realizar el cálculo. Se encontraron: ${tresPrevios.length}` };
     }
 
-    return { error: false, tresPrevios: tresPrevios.slice(-3) };
+    // Tomar los últimos 3 PDFs en orden cronológico
+    tresPrevios = tresPrevios.slice(-3);
+
+    // Verificar si los 3 meses son consecutivos
+    const sonConsecutivos = mesesSonConsecutivos(tresPrevios.map(pdf => pdf.mesAnio));
+
+    // Si los meses son consecutivos, intentar excluir los PDFs con "COMISION VACACIONES"
+    if (sonConsecutivos) {
+        let filtrados = tresPrevios.filter(pdf => !pdf.comisionVacaciones);
+
+        // Si después de filtrar quedan menos de 3, mantener los originales sin excluir
+        if (filtrados.length >= 3) {
+            tresPrevios = filtrados;
+        }
+    }
+
+    return { error: false, tresPrevios };
+}
+
+function mesesSonConsecutivos(mesesAnios) {
+    const meses = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+
+    const indices = mesesAnios.map(mesAnio => {
+        const [mes, anio] = mesAnio.split(' de ');
+        return { mesIndex: meses.indexOf(mes.toUpperCase()), anio: parseInt(anio, 10) };
+    });
+
+    indices.sort((a, b) => a.anio - b.anio || a.mesIndex - b.mesIndex);
+
+    for (let i = 1; i < indices.length; i++) {
+        const { mesIndex: mes1, anio: anio1 } = indices[i - 1];
+        const { mesIndex: mes2, anio: anio2 } = indices[i];
+
+        if (!((anio1 === anio2 && mes2 === mes1 + 1) || (anio1 + 1 === anio2 && mes1 === 11 && mes2 === 0))) {
+            return false; // Hay una brecha entre meses
+        }
+    }
+    return true; // Todos los meses son consecutivos
 }
 
 

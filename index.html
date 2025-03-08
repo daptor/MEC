@@ -9,8 +9,7 @@
 <body>
   <!-- Contenedor de información de visitas, fecha y hora -->
   <div id="info-container">
-      <p><span id="hora"></span>    <span id="fecha"></span></p>
-      <p>Visitas: <span id="contador">0</span></p>
+      <p><span id="hora"></span>    <span id="fecha"></span>         Visitas: <span id="contador">0</span></p>
       <button id="resetContador" class="hidden-reset"></button>
   </div>
 
@@ -20,7 +19,7 @@
           <img src="logo.png" alt="Logotipo de MEC">
       </div>
       <h1>Bienvenido a MEC</h1>
-      <p>Ingresa el código de acceso para continuar:</p>
+      <p class="left-align">Ingresa el código de acceso para continuar:</p>
       <input type="text" id="codigoAcceso" maxlength="8" placeholder="8 dígitos o letras" autocomplete="off" />
       <button type="button" id="ingresarBtn">Ingresar</button>
       <p id="mensajeError" class="error-msg" style="display: none;">Código incorrecto. Intenta nuevamente.</p>
@@ -34,7 +33,8 @@
       <h1>Menú Principal</h1>
       <button onclick="mostrarPantalla('pantalla-analisis')">Ir a Análisis de Liquidación</button>
       <button onclick="mostrarPantalla('pantalla-vacaciones')">Ir a Cálculo de Vacaciones</button>
-      <button data-target="screen-finiquito">Ir Cálculo de Finiquito</button>
+      <button onclick="mostrarPantalla('screen-finiquito')">Ir a Cálculo de Finiquito</button>
+      <button onclick="mostrarPantalla('pantalla-recursos')">Recursos Útiles</button>
       <button onclick="salirAplicacion()">Salir de la Aplicación</button>
   </div>
 
@@ -84,31 +84,38 @@
       <button id="refrescarBtnVacaciones">Refrescar</button>
   </div>
 
-
   <!-- Pantalla de Finiquito -->
   <div id="screen-finiquito" class="pantalla" style="display: none;">
       <h2>Cálculo de Finiquito</h2>
-      <!-- Fecha de inicio de contrato -->
       <label for="fechaInicioContrato">Fecha de Inicio de Contrato:</label>
       <input type="date" id="fechaInicioContrato" required>
-
-      <!-- Fecha de desvinculación -->
       <label for="fechaDesvinculacion">Fecha de Desvinculación:</label>
       <input type="date" id="fechaDesvinculacion" required>
       <label for="diasTrabajadosUltimoMes">Ingrese días trabajados en el ultimo mes:</label>
       <input type="number" id="diasTrabajadosUltimoMes" placeholder="Días trabajados en el último mes" />
-      <!-- Días de vacaciones pendientes -->
       <div>
           <label for="diasVacacionesPendientes">Ingrese días de vacaciones pendientes:</label>
           <input type="number" id="diasVacacionesPendientes" placeholder="Días pendientes">
       </div>
-      <!-- Archivos PDF para calcular el sueldo promedio -->
       <input type="file" id="fileFiniquito" multiple accept="application/pdf">
       <button id="calcularFiniquito">Calcular</button>
       <button class="backBtn" data-target="menu-principal">Ir al Menu</button>
-      <div id="resultadosFiniquito" class="result-container hidden"></div> <!-- Aquí se mostrarán los resultados -->
+      <div id="resultadosFiniquito" class="result-container hidden"></div>
       <div id="resultadosNoFiniquito" class="hidden"></div>
       <button id="refrescarFiniquito">Refrescar</button>
+  </div>
+
+  <!-- Nueva Pantalla de Recursos -->
+  <div id="pantalla-recursos" class="pantalla" style="display: none;">
+      <h1>Recursos Útiles</h1>
+      <ul>
+          <li><a href="https://www.dt.gob.cl/portal/1626/w3-channel.html" target="_blank">Dirección del Trabajo</a></li>
+          <li><a href="https://www.dt.gob.cl/legislacion/1624/w3-article-95516.html" target="_blank">Descargar Código del Trabajo</a></li>
+          <li><a href="https://calculadoraipc.ine.cl/" target="_blank">Calculadora de IPC</a></li>
+          <li><a href="https://www.sii.cl/valores_y_fechas/utm/utm2024.htm" target="_blank">Servicio de Impuestos Internos</a></li>
+          <li><a href="https://www.pjud.cl/home" target="_blank">Poder Judicial</a></li>
+      </ul>
+      <button onclick="mostrarPantalla('menu-principal')">Volver al Menú</button>
   </div>
 
   <!-- Cargar PDF.js antes del script principal -->

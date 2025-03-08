@@ -1,32 +1,32 @@
 /* Estilos generales */
 body {
     font-family: Arial, sans-serif;
-    background: linear-gradient(135deg, #a8e063, #56ab2f); /* Fondo verde vibrante */
     margin: 0;
     padding: 20px;
-    color: #fff; /* Texto blanco para mejor contraste */
+    background: linear-gradient(135deg, #a8e063, #56ab2f); /* Fondo verde vibrante */
+    color: #fff;
 }
 
 /* Contenedor de información de visitas, fecha y hora */
 #info-container {
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
-    flex-direction: column;
     text-align: center;
-    margin-bottom: 20px;
-    font-size: 16px;
-    color: #fff; /* Texto blanco */
+    margin-bottom: 2px;
+    margin-top: 2px; /* Reducido a la mitad (anteriormente 20px) */
+    font-size: 14px;
     font-weight: bold;
 }
 
-/* Estilo del menú principal y pantallas */
-#menu-principal, .pantalla {
-    background: rgba(255, 255, 255, 0.9); /* Fondo blanco semitransparente */
+/* Contenedor de las pantallas */
+#menu-principal, .pantalla, #login-container, #pantalla-recursos {
+    background: rgba(255, 255, 255, 0.9);
     padding: 20px;
     border-radius: 15px;
     box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3);
-    max-width: 450px;
+    max-width: 400px;
     margin: auto;
     text-align: center;
     color: #333;
@@ -65,41 +65,11 @@ button:hover {
     box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.3);
 }
 
-/* Estilos del Login */
-#login-container {
-    background: rgba(255, 255, 255, 0.95);
-    padding: 30px;
-    border-radius: 15px;
-    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.3);
-    max-width: 400px;
-    margin: auto;
-    color: #333;
+button:disabled {
+    background-color: #cccccc;
 }
 
-#login-container input {
-    width: 90%;
-    padding: 10px;
-    margin-bottom: 15px;
-    font-size: 16px;
-    border-radius: 5px;
-    text-align: center;
-    border: 2px solid #28a745;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-#login-container input:focus {
-    border-color: #218838;
-    box-shadow: 0px 0px 8px rgba(33, 136, 56, 0.8);
-}
-
-/* Mensajes de error */
-.error-msg {
-    color: #dc3545;
-    font-weight: bold;
-    display: none;
-}
-
-/* Inputs y Select */
+/* Estilos de los inputs */
 input, select {
     width: 95%;
     padding: 10px;
@@ -107,15 +77,32 @@ input, select {
     font-size: 16px;
     border: 2px solid #28a745;
     border-radius: 8px;
-    transition: border-color 0.2s ease, box-shadow 0.3s ease;
     background: white;
     color: #333;
+    transition: border-color 0.2s ease, box-shadow 0.3s ease;
 }
 
 input:focus, select:focus {
     border-color: #218838;
     box-shadow: 0px 0px 8px rgba(33, 136, 56, 0.8);
     outline: none;
+}
+
+/* Estilos para el login */
+#login-container {
+    text-align: right; /* Alinea todo hacia la derecha */
+}
+
+#login-container input, #login-container button {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Mensajes de error */
+.error-msg {
+    color: #dc3545;
+    font-weight: bold;
+    display: none;
 }
 
 /* Animación */
@@ -128,20 +115,6 @@ input:focus, select:focus {
         opacity: 1;
         transform: translateY(0);
     }
-}
-
-/* Botón de reset casi invisible */
-.hidden-reset {
-    width: 10px;
-    height: 10px;
-    background-color: rgba(0, 255, 0, 0.2);
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    cursor: pointer;
-    z-index: 9999;
-    opacity: 0.1;
-    transform: scale(0.1);
 }
 
 /* Contenedor de resultados */
@@ -160,7 +133,7 @@ input:focus, select:focus {
 }
 
 .logo-container img {
-    width: 80px; /* Ajusta el tamaño si es necesario */
+    width: 80px;
     height: auto;
     display: block;
     margin: auto;
@@ -168,48 +141,138 @@ input:focus, select:focus {
 }
 
 .logo-container img:hover {
-    transform: scale(1.1); /* Efecto de zoom al pasar el mouse */
+    transform: scale(1.1);
 }
 
 /* Ajuste de alineación para los resultados del análisis */
 #resultadoAnalisis {
-    text-align: left; /* Alinear todo a la izquierda */
-    font-size: 16px; /* Tamaño adecuado para lectura */
-    line-height: 1.6; /* Espaciado entre líneas */
+    text-align: left;
+    font-size: 16px;
+    line-height: 1.6;
     margin-top: 10px;
 }
 
 #resultadoAnalisis h2 {
-    text-align: center; /* Mantener títulos centrados */
+    text-align: center;
     font-size: 20px;
     font-weight: bold;
     margin-top: 15px;
 }
 
-/* Eliminar los puntos innecesarios en listas */
 #resultadoAnalisis ul {
-    list-style: none; /* Quita los puntos de las listas */
-    padding-left: 0; /* Elimina la sangría */
+    list-style: none;
+    padding-left: 0;
 }
 
 #resultadoAnalisis ul li {
     margin-bottom: 5px;
-    padding-left: 10px; /* Añadir un pequeño margen a la izquierda */
-    border-left: 3px solid #28a745; /* Línea verde para mejor separación */
     padding-left: 10px;
+    border-left: 3px solid #28a745;
 }
 
-/* Alineación de resultados a la izquierda, excepto los títulos */
-#resultadoGratificacion {
-    text-align: left; /* Alinea todo a la izquierda */
-    font-size: 16px;
-    line-height: 1.6;
+/* Estilos para el contenedor principal de las pantallas */
+.pantalla {
+    display: none;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
-/* Alineación de títulos a la izquierda */
-#resultadoGratificacion h2 {
-    text-align: center; /* Mantén los títulos centrados */
-    font-size: 20px;
+/* Estilos para los enlaces de recursos */
+#pantalla-recursos a {
+    color: #007BFF;
+    text-decoration: none;
     font-weight: bold;
-    margin-top: 15px;
+}
+
+#pantalla-recursos a:hover {
+    text-decoration: underline;
+}
+
+/* Estilos para los botones específicos */
+button.backBtn {
+    background-color: #6c757d;
+}
+
+button.backBtn:hover {
+    background-color: #5a6268;
+}
+
+#pantalla-recursos li,
+button {
+    margin-bottom: 15px;
+}
+
+/* Eliminación de estilos repetidos */
+#login-container {
+    max-width: 400px;
+    padding: 30px;
+    margin: auto;
+    color: #333;
+}
+
+#pantalla-recursos {
+    text-align: center;
+}
+
+#pantalla-recursos ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+#pantalla-recursos li {
+    margin: 10px 0;
+}
+
+/* Botón de reset casi invisible */
+.hidden-reset {
+    width: 10px;
+    height: 10px;
+    background-color: rgba(0, 255, 0, 0.2);
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    cursor: pointer;
+    z-index: 9999;
+    opacity: 0.1;
+    transform: scale(0.1);
+}
+
+/* Estilo para los enlaces en la pantalla de Recursos Útiles */
+#pantalla-recursos a {
+  color: #28a745; /* Verde más suave y agradable */
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 18px; /* Aumentar el tamaño de la fuente */
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Espacio entre la imagen y el texto */
+  transition: color 0.3s ease, transform 0.2s ease;
+}
+
+/* Efecto de hover para los enlaces */
+#pantalla-recursos a:hover {
+  color: #218838; /* Un verde más oscuro al pasar el ratón */
+  text-decoration: underline;
+  transform: scale(1.05); /* Efecto de agrandar al pasar el ratón */
+}
+
+/* Estilo para la imagen dentro de los enlaces */
+#pantalla-recursos a img {
+  width: 20px; /* Tamaño pequeño del icono */
+  height: auto;
+  transition: transform 0.2s ease-in-out;
+}
+
+/* Efecto de hover para la imagen */
+#pantalla-recursos a:hover img {
+  transform: scale(1.1); /* Efecto de zoom al pasar el ratón */
+}
+
+.left-align {
+    text-align: left; /* Alinea solo este texto a la izquierda */
+    font-size: 16px;
+    font-weight: normal;
+    color: #333;
 }

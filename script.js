@@ -68,7 +68,7 @@ document.getElementById("ingresarBtn").addEventListener("click", function () {
     }
 });
 
-// Función para cambiar entre pantallas
+// Función para mostrar una pantalla específica (modificada para cumplir con todos los requisitos)
 function mostrarPantalla(idPantalla) {
     document.querySelectorAll(".pantalla").forEach(pantalla => {
         pantalla.style.display = "none";
@@ -80,6 +80,16 @@ function mostrarPantalla(idPantalla) {
     } else {
         console.error("No se encontró el elemento con id:", idPantalla);
     }
+}
+
+// Mostrar la pantalla de Recursos Útiles
+function mostrarPantallaRecursos() {
+    mostrarPantalla('pantalla-recursos');
+}
+
+// Función para volver al menú principal desde cualquier pantalla
+function volverAlMenu() {
+    mostrarPantalla('menu-principal');
 }
 
 // ==================== CONFIGURACIÓN DE NAVEGACIÓN ====================
@@ -1474,8 +1484,14 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
-// Función para salir
+// Función para salir con confirmación
 function salirAplicacion() {
-    alert("Cerrando la aplicación...");
-    window.location.reload();
+    // Mostrar cuadro de confirmación
+    const confirmacion = confirm("¿Desea salir de la aplicación?");
+
+    // Si el usuario confirma, se recarga la página o se redirige
+    if (confirmacion) {
+        alert("Cerrando la aplicación...");
+        window.location.href = "https://www.google.cl"; // Redirige a Google, o puedes poner la URL que prefieras
+    }
 }

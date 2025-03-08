@@ -801,10 +801,10 @@ if (detallesComisiones.length === 0) {
             const resultadoHTML = `
                 <h2>7. Cálculo de Gratificación</h2>
                 <p><strong>25% de la Suma Total Haberes:</strong> ${formatCurrency(resultadoCalculado)}</p>
-                <ul><em><p><strong>IMM Vigente utilizado:</strong> ${formatCurrency(inm)}</p>
+                <p><em><p><strong>IMM Vigente utilizado:</strong> ${formatCurrency(inm)}</p>
                 <p><strong>Jornada Máxima Vigente:</strong> ${jornadaMaxima} horas</p>
                 <p><strong>Tope Mensual (4.75 x IMM / 12):</strong> ${formatCurrency(topeGratificacionRedondeado)}</p>
-                <p><strong>Tope Proporcional:</strong> ${formatCurrency(topeProporcionalRedondeado)}</p></em></ul>
+                <p><strong>Tope Proporcional:</strong> ${formatCurrency(topeProporcionalRedondeado)}</p></em></p>
                 <p><strong>Monto Calculado a Pagar:</strong> ${formatCurrency(valorAPagar)}</p>
                 <p><strong>Extraído del PDF:</strong> ${formatCurrency(gratificacionPDF)}</p>
                 <p><strong>Comparación:</strong> ${comparacionHTML}</p>
@@ -853,7 +853,7 @@ ${montoDiferenciaColacion !== 0 ? `<p><strong>Dif. Colación:</strong> ${montoDi
 <p><strong>Días Totales:</strong> ${diasTotalesColacion.toFixed(2)}</p>
 <hr>
         <h2>4. Comisiones</h2>
-        <ul>${detalleComisionesHTML}</ul>
+        <p>${detalleComisionesHTML}</p>
         <p><strong>Total Comisiones:</strong> ${formatCurrency(totalComisiones)}</p>
 <hr>
         <h2>5. Semana Corrida</h2>
@@ -863,7 +863,7 @@ ${montoDiferenciaColacion !== 0 ? `<p><strong>Dif. Colación:</strong> ${montoDi
 <hr>
         <div class="container gratificacion-container" id="gratificacionMec" style="display: none;">
         <h2>6. Haberes Gratificables</h2>
-        <ul id="listaGratificables"></ul>
+        <p id="listaGratificables"></p>
         </div>
 <hr>
   `;

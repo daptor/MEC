@@ -170,3 +170,46 @@ input:focus, select:focus {
 .logo-container img:hover {
     transform: scale(1.1); /* Efecto de zoom al pasar el mouse */
 }
+
+/* Ajuste de alineación para los resultados del análisis */
+#resultadoAnalisis {
+    text-align: left; /* Alinear todo a la izquierda */
+    font-size: 16px; /* Tamaño adecuado para lectura */
+    line-height: 1.6; /* Espaciado entre líneas */
+    margin-top: 10px;
+}
+
+#resultadoAnalisis h2 {
+    text-align: center; /* Mantener títulos centrados */
+    font-size: 20px;
+    font-weight: bold;
+    margin-top: 15px;
+}
+
+/* Eliminar los puntos innecesarios en listas */
+#resultadoAnalisis ul {
+    list-style: none; /* Quita los puntos de las listas */
+    padding-left: 0; /* Elimina la sangría */
+}
+
+#resultadoAnalisis ul li {
+    margin-bottom: 5px;
+    padding-left: 10px; /* Añadir un pequeño margen a la izquierda */
+    border-left: 3px solid #28a745; /* Línea verde para mejor separación */
+    padding-left: 10px;
+}
+
+/* Alineación de resultados a la izquierda, excepto los títulos */
+#resultadoGratificacion {
+    text-align: left; /* Alinea todo a la izquierda */
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+/* Alineación de títulos a la izquierda */
+#resultadoGratificacion h2 {
+    text-align: center; /* Mantén los títulos centrados */
+    font-size: 20px;
+    font-weight: bold;
+    margin-top: 15px;
+}

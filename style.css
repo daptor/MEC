@@ -3,7 +3,7 @@ body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 20px;
-    background: linear-gradient(135deg, #a8e063, #56ab2f); /* Fondo verde vibrante */
+    background: linear-gradient(135deg, #a8e063, #56ab2f);
     color: #fff;
 }
 
@@ -15,7 +15,7 @@ body {
     align-items: center;
     text-align: center;
     margin-bottom: 2px;
-    margin-top: 2px; /* Reducido */
+    margin-top: 2px;
     font-size: 14px;
     font-weight: bold;
 }
@@ -28,13 +28,13 @@ body {
     box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3);
     max-width: 430px;
     margin: auto;
-    text-align: center;
+    text-align: left; /* Asegura que todo el contenido se alinee a la izquierda */
     color: #333;
 }
 
 /* Títulos dentro de las pantallas */
 h1, h2, h3 {
-    text-align: center;
+    text-align: center; /* Mantener los títulos centrados */
     font-weight: 700;
     font-size: 26px;
     margin-bottom: 15px;
@@ -57,6 +57,7 @@ button {
     cursor: pointer;
     transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+    text-align: center;
 }
 
 button:hover {
@@ -80,6 +81,7 @@ input, select {
     background: white;
     color: #333;
     transition: border-color 0.2s ease, box-shadow 0.3s ease;
+    text-align: left;
 }
 
 input:focus, select:focus {
@@ -96,12 +98,38 @@ input:focus, select:focus {
 }
 
 /* Contenedor de resultados */
-.result-container {
-    background: #c8e6c9;
-    padding: 15px;
-    border-radius: 5px;
-    margin-top: 10px;
-    font-weight: bold;
+.result-container,
+#resultadoAnalisis,
+#resultadoGratificacion,
+#listaGratificables,
+.gratificacion-container,
+#resultadoVacaciones,
+#resultadosFiniquito,
+#resultadosNoFiniquito {
+    text-align: left; /* Todo el contenido a la izquierda */
+}
+
+/* Mantener los títulos dentro de los resultados centrados */
+#resultadoAnalisis h1, #resultadoAnalisis h2, #resultadoAnalisis h3,
+#resultadoGratificacion h1, #resultadoGratificacion h2, #resultadoGratificacion h3,
+#listaGratificables h1, #listaGratificables h2, #listaGratificables h3 {
+    text-align: center; /* Títulos centrados */
+}
+
+/* Asegurar que las listas dentro de los resultados también estén alineadas a la izquierda */
+#resultadoAnalisis ul, #resultadoAnalisis li,
+#resultadoGratificacion ul, #resultadoGratificacion li,
+#listaGratificables ul, #listaGratificables li {
+    text-align: left;
+    padding-left: 0;
+    margin-left: 0;
+}
+
+/* Asegurar que los párrafos dentro de los resultados estén alineados a la izquierda */
+#resultadoAnalisis p,
+#resultadoGratificacion p,
+#listaGratificables p {
+    text-align: left;
 }
 
 /* Estilos para el logotipo */
@@ -120,50 +148,6 @@ input:focus, select:focus {
 
 .logo-container img:hover {
     transform: scale(1.1);
-}
-
-/* Ajuste de alineación para los resultados del análisis */
-#resultadoAnalisis {
-    text-align: left;
-    font-size: 16px;
-    line-height: 1.6;
-    margin-top: 10px;
-}
-
-#resultadoAnalisis h2 {
-    text-align: center;
-    font-size: 20px;
-    font-weight: bold;
-    margin-top: 15px;
-}
-
-#resultadoAnalisis ul {
-    list-style: none;
-    padding-left: 0;
-}
-
-#resultadoAnalisis ul li {
-    margin-bottom: 5px;
-    padding-left: 10px;
-    border-left: 3px solid #28a745;
-}
-
-/* Ajuste para la alineación de los resultados de gratificación */
-.gratificacion-container {
-    text-align: left; /* Alinea todos los elementos dentro del contenedor a la izquierda */
-    font-size: 16px;
-    font-weight: normal;
-    color: #333;
-}
-
-#resultadoGratificacion, #listaGratificables {
-    text-align: left; /* Asegura que el contenido de los cálculos se alinee a la izquierda */
-}
-
-#listaGratificables ul, #listaGratificables li {
-    text-align: left;
-    padding-left: 0;
-    margin-left: 0;
 }
 
 /* Botón de reset casi invisible */
@@ -209,28 +193,4 @@ input:focus, select:focus {
 /* Efecto de hover para la imagen */
 #pantalla-recursos a:hover img {
     transform: scale(1.1);
-}
-
-/* Alinear todos los resultados a la izquierda */
-.result-container,
-#resultadoAnalisis,
-#resultadoGratificacion,
-#listaGratificables,
-.gratificacion-container,
-#resultadoVacaciones,
-#resultadosFiniquito,
-#resultadosNoFiniquito {
-    text-align: left;
-}
-
-/* Asegurar que las listas dentro de los resultados también estén alineadas */
-#resultadoAnalisis ul,
-#resultadoAnalisis ul li,
-#resultadoGratificacion ul,
-#resultadoGratificacion ul li,
-#listaGratificables ul,
-#listaGratificables ul li {
-    text-align: left;
-    padding-left: 0;
-    margin-left: 0;
 }

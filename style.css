@@ -15,7 +15,7 @@ body {
     align-items: center;
     text-align: center;
     margin-bottom: 2px;
-    margin-top: 2px; /* Reducido a la mitad (anteriormente 20px) */
+    margin-top: 2px; /* Reducido */
     font-size: 14px;
     font-weight: bold;
 }
@@ -26,7 +26,7 @@ body {
     padding: 20px;
     border-radius: 15px;
     box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3);
-    max-width: 450px;
+    max-width: 430px;
     margin: auto;
     text-align: center;
     color: #333;
@@ -38,7 +38,7 @@ h1, h2, h3 {
     font-weight: 700;
     font-size: 26px;
     margin-bottom: 15px;
-    color: #1e4620; /* Verde más fuerte */
+    color: #1e4620;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
 }
 
@@ -51,7 +51,7 @@ button {
     font-size: 18px;
     font-weight: bold;
     color: white;
-    background: linear-gradient(135deg, #28a745, #218838); /* Verde más vibrante */
+    background: linear-gradient(135deg, #28a745, #218838);
     border: none;
     border-radius: 8px;
     cursor: pointer;
@@ -88,33 +88,11 @@ input:focus, select:focus {
     outline: none;
 }
 
-/* Estilos para el login */
-#login-container {
-    text-align: right; /* Alinea todo hacia la derecha */
-}
-
-#login-container input, #login-container button {
-    width: 100%;
-    box-sizing: border-box;
-}
-
 /* Mensajes de error */
 .error-msg {
     color: #dc3545;
     font-weight: bold;
     display: none;
-}
-
-/* Animación */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }
 
 /* Contenedor de resultados */
@@ -170,59 +148,22 @@ input:focus, select:focus {
     border-left: 3px solid #28a745;
 }
 
-/* Estilos para el contenedor principal de las pantallas */
-.pantalla {
-    display: none;
-    padding: 20px;
-    background-color: #f9f9f9;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-}
-
-/* Estilos para los enlaces de recursos */
-#pantalla-recursos a {
-    color: #007BFF;
-    text-decoration: none;
-    font-weight: bold;
-}
-
-#pantalla-recursos a:hover {
-    text-decoration: underline;
-}
-
-/* Estilos para los botones específicos */
-button.backBtn {
-    background-color: #6c757d;
-}
-
-button.backBtn:hover {
-    background-color: #5a6268;
-}
-
-#pantalla-recursos li,
-button {
-    margin-bottom: 15px;
-}
-
-/* Eliminación de estilos repetidos */
-#login-container {
-    max-width: 440px;
-    padding: 30px;
-    margin: auto;
+/* Ajuste para la alineación de los resultados de gratificación */
+.gratificacion-container {
+    text-align: left; /* Alinea todos los elementos dentro del contenedor a la izquierda */
+    font-size: 16px;
+    font-weight: normal;
     color: #333;
 }
 
-#pantalla-recursos {
-    text-align: center;
+#resultadoGratificacion, #listaGratificables {
+    text-align: left; /* Asegura que el contenido de los cálculos se alinee a la izquierda */
 }
 
-#pantalla-recursos ul {
-    list-style-type: none;
-    padding: 0;
-}
-
-#pantalla-recursos li {
-    margin: 10px 0;
+#listaGratificables ul, #listaGratificables li {
+    text-align: left;
+    padding-left: 0;
+    margin-left: 0;
 }
 
 /* Botón de reset casi invisible */
@@ -241,38 +182,31 @@ button {
 
 /* Estilo para los enlaces en la pantalla de Recursos Útiles */
 #pantalla-recursos a {
-  color: #28a745; /* Verde más suave y agradable */
-  text-decoration: none;
-  font-weight: bold;
-  font-size: 18px; /* Aumentar el tamaño de la fuente */
-  display: flex;
-  align-items: center;
-  gap: 10px; /* Espacio entre la imagen y el texto */
-  transition: color 0.3s ease, transform 0.2s ease;
+    color: #28a745;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: color 0.3s ease, transform 0.2s ease;
 }
 
 /* Efecto de hover para los enlaces */
 #pantalla-recursos a:hover {
-  color: #218838; /* Un verde más oscuro al pasar el ratón */
-  text-decoration: underline;
-  transform: scale(1.05); /* Efecto de agrandar al pasar el ratón */
+    color: #218838;
+    text-decoration: underline;
+    transform: scale(1.05);
 }
 
 /* Estilo para la imagen dentro de los enlaces */
 #pantalla-recursos a img {
-  width: 20px; /* Tamaño pequeño del icono */
-  height: auto;
-  transition: transform 0.2s ease-in-out;
+    width: 20px;
+    height: auto;
+    transition: transform 0.2s ease-in-out;
 }
 
 /* Efecto de hover para la imagen */
 #pantalla-recursos a:hover img {
-  transform: scale(1.1); /* Efecto de zoom al pasar el ratón */
-}
-
-.left-align {
-    text-align: left; /* Alinea solo este texto a la izquierda */
-    font-size: 16px;
-    font-weight: normal;
-    color: #333;
+    transform: scale(1.1);
 }

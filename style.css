@@ -194,3 +194,7 @@ input:focus, select:focus {
 #pantalla-recursos a:hover img {
     transform: scale(1.1);
 }
+
+#listaGratificables {
+    padding-left: 20px; /* Ajusta el valor según sea necesario */
+}

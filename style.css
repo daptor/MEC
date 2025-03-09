@@ -210,3 +210,27 @@ input:focus, select:focus {
 #pantalla-recursos a:hover img {
     transform: scale(1.1);
 }
+
+/* Alinear todos los resultados a la izquierda */
+.result-container,
+#resultadoAnalisis,
+#resultadoGratificacion,
+#listaGratificables,
+.gratificacion-container,
+#resultadoVacaciones,
+#resultadosFiniquito,
+#resultadosNoFiniquito {
+    text-align: left;
+}
+
+/* Asegurar que las listas dentro de los resultados también estén alineadas */
+#resultadoAnalisis ul,
+#resultadoAnalisis ul li,
+#resultadoGratificacion ul,
+#resultadoGratificacion ul li,
+#listaGratificables ul,
+#listaGratificables ul li {
+    text-align: left;
+    padding-left: 0;
+    margin-left: 0;
+}

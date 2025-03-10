@@ -35,6 +35,7 @@
       <button onclick="mostrarPantalla('pantalla-vacaciones')">Ir a Cálculo de Vacaciones</button>
       <button onclick="mostrarPantalla('screen-finiquito')">Ir a Cálculo de Finiquito</button>
       <button onclick="mostrarPantalla('pantalla-recursos')">Recursos Útiles</button>
+      <button onclick="mostrarPantalla('pantalla-archivosindical')">Contratos y Estatutos</button> <!-- Nuevo botón -->
       <button onclick="salirAplicacion()">Salir de la Aplicación</button>
   </div>
 
@@ -109,15 +110,61 @@
   <div id="pantalla-recursos" class="pantalla" style="display: none;">
       <h1>Recursos Útiles</h1>
       <ul>
-          <li><a href="https://falaweb.falabella.com/" target="_blank">Falaweb Falabella</a></li>
-          <li><a href="https://vbench.virtuaresearch.com/IR/IAC/?ticker=SACI&exchange=SANTIAGO" target="_blank">Centro de análisis interactivo Falabella</a></li>
+          <li><a href="https://falaweb.falabella.com/" target="_blank">Falaweb Falabella (Descarga tu PDF)</a></li>
+          <hr>
+          <li><a href="https://www.facebook.com/fetrahfal/?locale=es_LA" target="_blank">Facebook Fetrahfal</a></li>
           <li><a href="https://www.dt.gob.cl/portal/1626/w3-channel.html" target="_blank">Dirección del Trabajo</a></li>
           <li><a href="https://www.dt.gob.cl/legislacion/1624/w3-article-95516.html" target="_blank">Descargar Código del Trabajo</a></li>
-          <li><a href="https://calculadoraipc.ine.cl/" target="_blank">Calculadora de IPC</a></li>
           <li><a href="https://www.sii.cl/valores_y_fechas/utm/utm2024.htm" target="_blank">Servicio de Impuestos Internos</a></li>
+          <li><a href="https://calculadoraipc.ine.cl/" target="_blank">Calculadora de IPC</a></li>
           <li><a href="https://www.pjud.cl/home" target="_blank">Poder Judicial</a></li>
+          <li><a href="https://vbench.virtuaresearch.com/IR/IAC/?ticker=SACI&exchange=SANTIAGO" target="_blank">Centro de análisis interactivo Falabella</a></li>
+          <hr>
           <li><a href="https://arcadespot.com/game/mr-do/" target="_blank">Juego PC Mr Do!: Enter, flechas y X</a></li>
       </ul>
+      <button onclick="mostrarPantalla('menu-principal')">Volver al Menú</button>
+  </div>
+
+  <!-- Nueva Pantalla archivos sindical -->
+  <div id="pantalla-archivosindical" class="pantalla" style="display: none;">
+      <h1>Contratos y Estatutos</h1>
+      <p>Seleccione un sindicato para ver sus documentos:</p>
+
+      <!-- Lista desplegable para seleccionar sindicato -->
+      <select id="select-sindicato" onchange="mostrarClaveInput()">
+          <option value="" selected>Selecciona un Sindicato</option>
+          <option value="Concepción">Sindicato Concepción</option>
+          <option value="Costanera">Sindicato Costanera</option>
+          <option value="Curicó">Sindicato Curicó</option>
+          <option value="Iquique">Sindicato Iquique</option>
+          <option value="PlazaNorte">Sindicato Plaza Norte</option>
+          <option value="PuertoMontt">Sindicato Puerto Montt</option>
+          <option value="Rancagua">Sindicato Rancagua</option>
+          <option value="Trebol">Sindicato Trebol</option>
+      </select>
+
+      <!-- Modal para ingresar la clave -->
+      <div id="modal-clave" class="modal oculto">
+          <div class="modal-contenido">
+              <h3>Ingrese la clave de acceso</h3>
+              <input type="password" id="clave-input">
+              <button onclick="verificarClave()">Aceptar</button>
+              <button onclick="cerrarModalClave()">Cancelar</button> <!-- Botón para salir -->
+              <p id="mensaje-error" class="error-msg oculto"></p>
+          </div>
+      </div>
+
+      <!-- Botón Volver al menú -->
+      <button onclick="mostrarPantalla('menu-principal')">Volver al Menú</button>
+  </div>
+
+  <!-- Pantalla de Documentos Sindical (tras autenticación) -->
+  <div id="pantalla-documentos" class="pantalla" style="display: none;">
+      <h1>Documentos para <span id="nombre-sindicato"></span></h1>
+      <h2>Documentos Sindicales</h2>
+      <ul id="lista-documentos-sindicato"></ul>
+      <h2>Documentos Públicos</h2>
+      <ul id="lista-documentos-publicos"></ul>
       <button onclick="mostrarPantalla('menu-principal')">Volver al Menú</button>
   </div>
 

@@ -207,7 +207,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
   }
 
-
   // Inicialmente muestra la pantalla principal
   if (pantallaPrincipal) pantallaPrincipal.style.display = 'block';
   if (pantallaAnalizar) pantallaAnalizar.style.display = 'none';
@@ -1548,7 +1547,9 @@ const documentosSindicato = {
 // Documentos públicos, accesibles para todos los sindicatos autenticados
 const documentosPublicos = [
     { nombre: "Estatutos Federación 2019", url: "Documento Público General/Estatutos Federación 2019.pdf" },
-    { nombre: "estatutos federacion 2025", url: "Documento Público General/estatutos federacion 2025.pdf" }
+    { nombre: "Proyecto Estatutos Federacion 2025", url: "Documento Público General/estatutos federacion 2025.pdf" },
+    { nombre: "Contactos Canal de Integridad", url: "Documento Público General/Contactos Canal de Integridad.pdf" }
+
 ];
 
 // Variable para almacenar el sindicato seleccionado

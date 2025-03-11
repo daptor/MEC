@@ -1610,7 +1610,7 @@ function verificarClave() {
 
 // Función para mostrar la pantalla de documentos para el sindicato autenticado
 function mostrarDocumentos(sindicato) {
-    document.getElementById("nombre-sindicato").textContent = "información de " + sindicato;
+    document.getElementById("nombre-sindicato").textContent = "Sindicato de " + sindicato;
 
     const listaSindicato = document.getElementById("lista-documentos-sindicato");
     listaSindicato.innerHTML = ""; // Limpiar cualquier contenido previo

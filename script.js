@@ -1552,7 +1552,6 @@ const documentosPublicos = [
 ];
 
 // Variable para almacenar el sindicato seleccionado
-// Variable para almacenar el sindicato seleccionado
 let sindicatoSeleccionado = "";
 
 // Función para mostrar una pantalla y ocultar las demás
@@ -1611,7 +1610,7 @@ function verificarClave() {
 
 // Función para mostrar la pantalla de documentos para el sindicato autenticado
 function mostrarDocumentos(sindicato) {
-    document.getElementById("nombre-sindicato").textContent = "Documentos de " + sindicato;
+    document.getElementById("nombre-sindicato").textContent = "Archivo de " + sindicato;
 
     const listaSindicato = document.getElementById("lista-documentos-sindicato");
     listaSindicato.innerHTML = ""; // Limpiar cualquier contenido previo

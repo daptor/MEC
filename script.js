@@ -255,12 +255,12 @@ const listaComision = [
 
 const listaGratificables = [
     "APERTURA CTA CTE", "BONO ASISTENCIA AUT.", "BONO CERTIFICACION", "BONO CLICK AND COLLECT", "BONO CUMPLIMIENTO DE ",
-    "BONO CYBER", "BONO DICIEMBRE", "BONO INVENTARIO", "BONO PRONTO ACUERDO", "BONO PUNTUALIDAD AUT.", "BONO VACACIONES",
+    "BONO CYBER", "BONO DICIEMBRE", "BONO INVENTARIO", "BONO PUNTUALIDAD AUT.", "BONO VACACIONES",
     "COMISION VACACIONES", "DIF BONO CUMPLIMIENTO DE HP.", "DIF PREMIO CLICK AND COLLECT", "DIF PREMIO VENTA TIENDA",
-    "DIF. SB MES ANTERIOR", "DIF. SUELDO BASE", "DIF.HORAS EXTRAS ", "GARANTIZADO", "HORAS TRABAJO SIND.", "INCENTIVO CONFIABILIDAD",
+    "DIF. SB MES ANTERIOR", "DIF. SUELDO BASE", "DIF.HORAS EXTRAS ", "QUINQUENIO", "GARANTIZADO", "HORAS TRABAJO SIND.", "INCENTIVO CONFIABILIDAD",
     "INCENTIVO PRODUC CAJAS AUT", "INCENTIVO RECUPERO", "INCENTIVO SELF CHECK OUT", "INCENTIVO TIENDA CD/SFS", "PREMIO CLICK AND COLLECT",
     "PREMIO CUMPL.GRUPAL NPS", "PREMIO CUMPL.GRUPAL VTAS", "PREMIO CUMPLIMIENTO DE PLAN", "PREMIO NPS", "PREMIO VENTA TIENDA",
-    "PREMIO VENTA TIENDA AUT.", "PROMEDIOS VARIOS", "PROMOCIONES CMR", "QUIEBRE DE STOCK", "QUINQUENIO", "HORAS RECARGO NAVIDAD",
+    "PREMIO VENTA TIENDA AUT.", "PROMEDIOS VARIOS", "PROMOCIONES CMR", "QUIEBRE DE STOCK", "HORAS RECARGO NAVIDAD",
     "DIFERENCIA CONTINGENCIA", "BONO ASISTENCIA", "DIFERENCIA SEMANA CORRIDA", "DIF. CONTING. MES ANTERIOR", "DIF.SUELDO BASE CONTINGENCIA",
     "DIFERENCIA 70%"
 ];
@@ -765,7 +765,6 @@ if (detallesComisiones.length === 0) {
         }
 
         function calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada, mes, año, valorTotalGratificacion) {
-
             const meses = {
                 ENERO: 1, FEBRERO: 2, MARZO: 3, ABRIL: 4, MAYO: 5, JUNIO: 6,
                 JULIO: 7, AGOSTO: 8, SEPTIEMBRE: 9, OCTUBRE: 10, NOVIEMBRE: 11, DICIEMBRE: 12
@@ -783,21 +782,36 @@ if (detallesComisiones.length === 0) {
                 return;
             }
 
+            // Determinación de la jornada máxima vigente
             let jornadaMaxima = 45;
             if (año > 2024 || (año === 2024 && mesIndex >= 5)) {
                 jornadaMaxima = 44;
             }
 
+            // Cálculo base: 25% de la Suma Total Haberes
             const resultadoCalculado = valorTotalGratificacion * 0.25;
+
+            // Cálculo del tope mensual
             const topeGratificacion = (4.75 * inm) / 12;
+            // Cálculo del tope proporcional según la jornada seleccionada
             const topeProporcional = (topeGratificacion / jornadaMaxima) * jornadaSeleccionada;
-            const topeCalculado = jornadaSeleccionada > 30 ? resultadoCalculado : topeProporcional;
-            const valorAPagar = Math.round(Math.min(topeCalculado, topeGratificacion));
+
+            let valorAPagar;
+            // Para jornadas mayores a 30, se utiliza el tope mensual
+            if (jornadaSeleccionada > 30) {
+                valorAPagar = Math.round(Math.min(resultadoCalculado, topeGratificacion));
+            } else {
+                // Para jornadas menores o iguales a 30, se utiliza el tope proporcional
+                valorAPagar = Math.round(Math.min(resultadoCalculado, topeProporcional));
+            }
+
             const topeGratificacionRedondeado = Math.round(topeGratificacion);
             const topeProporcionalRedondeado = Math.round(topeProporcional);
             const regexGratificacionPDF = /GRATIFICACION\s*25%\s*C\.T\.\s*\$\s*([\d.,]+)/i;
             const matchGratificacionPDF = textoCompleto.match(regexGratificacionPDF);
-            const gratificacionPDF = matchGratificacionPDF ? parseFloat(matchGratificacionPDF[1].replace(/\./g, '').replace(',', '.')) : 0;
+            const gratificacionPDF = matchGratificacionPDF
+                ? parseFloat(matchGratificacionPDF[1].replace(/\./g, '').replace(',', '.'))
+                : 0;
 
             let comparacionHTML = "";
             const diferencia = gratificacionPDF - valorAPagar;
@@ -810,10 +824,14 @@ if (detallesComisiones.length === 0) {
             const resultadoHTML = `
                 <h2>7. Cálculo de Gratificación</h2>
                 <p><strong>25% de la Suma Total Haberes:</strong> ${formatCurrency(resultadoCalculado)}</p>
-                <p><em><p><strong>IMM Vigente utilizado:</strong> ${formatCurrency(inm)}</p>
-                <p><strong>Jornada Máxima Vigente:</strong> ${jornadaMaxima} horas</p>
-                <p><strong>Tope Mensual (4.75 x IMM / 12):</strong> ${formatCurrency(topeGratificacionRedondeado)}</p>
-                <p><strong>Tope Proporcional:</strong> ${formatCurrency(topeProporcionalRedondeado)}</p></em></p>
+                <p>
+                    <em>
+                        <p><strong>IMM Vigente utilizado:</strong> ${formatCurrency(inm)}</p>
+                        <p><strong>Jornada Máxima Vigente:</strong> ${jornadaMaxima} horas</p>
+                        <p><strong>Tope Mensual (4.75 x IMM / 12):</strong> ${formatCurrency(topeGratificacionRedondeado)}</p>
+                        <p><strong>Tope Proporcional:</strong> ${formatCurrency(topeProporcionalRedondeado)}</p>
+                    </em>
+                </p>
                 <p><strong>Monto Calculado a Pagar:</strong> ${formatCurrency(valorAPagar)}</p>
                 <p><strong>Extraído del PDF:</strong> ${formatCurrency(gratificacionPDF)}</p>
                 <p><strong>Comparación:</strong> ${comparacionHTML}</p>

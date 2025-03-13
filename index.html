@@ -35,7 +35,7 @@
       <button onclick="mostrarPantalla('pantalla-vacaciones')">Ir a Cálculo de Vacaciones</button>
       <button onclick="mostrarPantalla('screen-finiquito')">Ir a Cálculo de Finiquito</button>
       <button onclick="mostrarPantalla('pantalla-recursos')">Recursos Útiles</button>
-      <button onclick="mostrarPantalla('pantalla-archivosindical')">Contratos y Estatutos</button> <!-- Nuevo botón -->
+      <button onclick="mostrarPantalla('pantalla-archivosindical')">Archivo Sindical y Federación</button> <!-- Nuevo botón -->
       <button onclick="salirAplicacion()">Salir de la Aplicación</button>
   </div>
 
@@ -126,39 +126,39 @@
       <button onclick="mostrarPantalla('menu-principal')">Volver al Menú</button>
   </div>
 
-<!-- Nueva Pantalla archivos sindical -->
-<div id="pantalla-archivosindical" class="pantalla" style="display: none;">
-    <h1>Archivo Sindical y Federación.</h1>
-    <p>Seleccione un sindicato para ver sus documentos:</p>
+  <!-- Pantalla de Archivos Sindical -->
+  <div id="pantalla-archivosindical" class="pantalla" style="display: none;">
+      <h1>Contratos y Estatutos</h1>
+      <p>Seleccione un sindicato para ver sus documentos:</p>
 
-    <!-- Lista desplegable para seleccionar sindicato -->
-    <select id="select-sindicato" onchange="mostrarClaveInput()">
-        <option value="" selected>Selecciona un Sindicato</option>
-        <option value="Concepción">Sindicato Concepción</option>
-        <option value="Costanera">Sindicato Costanera</option>
-        <option value="Curicó">Sindicato Curicó</option>
-        <option value="Iquique">Sindicato Iquique</option>
-        <option value="PlazaNorte">Sindicato Plaza Norte</option>
-        <option value="PuertoMontt">Sindicato Puerto Montt</option>
-        <option value="Rancagua">Sindicato Rancagua</option>
-        <option value="Trebol">Sindicato Trebol</option>
-    </select>
+      <!-- Lista desplegable para seleccionar sindicato -->
+      <select id="select-sindicato" onchange="mostrarClaveInput()">
+          <option value="" selected>Selecciona un Sindicato</option>
+          <!-- Asegúrate de que los "value" coincidan con los nombres de las variables en Heroku -->
+          <option value="Concepcion">Sindicato Concepción</option>
+          <option value="Costanera">Sindicato Costanera</option>
+          <option value="Curico">Sindicato Curicó</option>
+          <option value="Iquique">Sindicato Iquique</option>
+          <option value="PlazaNorte">Sindicato Plaza Norte</option>
+          <option value="PuertoMontt">Sindicato Puerto Montt</option>
+          <option value="Rancagua">Sindicato Rancagua</option>
+          <option value="Trebol">Sindicato Trebol</option>
+      </select>
 
-    <!-- Modal para ingresar la clave -->
-    <div id="modal-clave" class="modal oculto">
-        <div class="modal-contenido">
-            <h3>Ingrese la clave de acceso</h3>
-            <input type="password" id="clave-input">
-            <button onclick="verificarClave()">Aceptar</button>
-            <button onclick="cerrarModalClave()">Cancelar</button> <!-- Botón para salir -->
-            <p id="mensaje-error" class="error-msg oculto"></p>
-        </div>
-    </div>
+      <!-- Modal para ingresar la clave -->
+      <div id="modal-clave" class="modal oculto">
+          <div class="modal-contenido">
+              <h3>Ingrese la clave de acceso</h3>
+              <input type="password" id="clave-input">
+              <button onclick="verificarClave()">Aceptar</button>
+              <button onclick="cerrarModalClave()">Cancelar</button>
+              <p id="mensaje-error" class="error-msg oculto"></p>
+          </div>
+      </div>
 
-    <!-- Botón Volver al menú -->
-    <button onclick="mostrarPantalla('menu-principal')">Volver al Menú</button>
-</div>
-
+      <!-- Botón Volver al menú -->
+      <button onclick="mostrarPantalla('menu-principal')">Volver al Menú</button>
+  </div>
 
       <!-- Botón Volver al menú -->
       <button onclick="mostrarPantalla('menu-principal')">Volver al Menú</button>

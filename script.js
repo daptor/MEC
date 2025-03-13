@@ -53,6 +53,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 
+// Verificación del código de acceso
 document.getElementById("ingresarBtn").addEventListener("click", function () {
     const codigoIngresado = document.getElementById("codigoAcceso").value;
 
@@ -66,6 +67,7 @@ document.getElementById("ingresarBtn").addEventListener("click", function () {
     .then(response => response.json())
     .then(data => {
         if (data.mensaje === "Acceso concedido") {
+            // Oculta la pantalla de login y muestra el menú principal
             document.getElementById("login-container").style.display = "none";
             document.getElementById("menu-principal").style.display = "block";
         } else {
@@ -81,6 +83,7 @@ document.getElementById("ingresarBtn").addEventListener("click", function () {
         mensajeError.textContent = "Hubo un error. Intenta nuevamente.";
     });
 });
+
 
 // Función para mostrar una pantalla específica (modificada para cumplir con todos los requisitos)
 function mostrarPantalla(idPantalla) {
@@ -1530,9 +1533,9 @@ function salirAplicacion() {
 //++++++++++++++++++++++++++++++ Archivo Sindical +++++++++++++++++++++++++++++
 // Lista de claves de acceso por sindicato
 const clavesAcceso = {
-    Concepcion:"135scc",
+    Concepción:"135scc",
     Costanera:"257scc",
-    Curico:"351scc",
+    Curicó:"351scc",
     Iquique:"456sic",
     PlazaNorte:"555spn",
     PuertoMontt:"660spm",
@@ -1614,21 +1617,23 @@ function mostrarPantalla(idPantalla) {
     }
 }
 
-// Función para mostrar el modal de clave
+// Función para mostrar el modal de clave al seleccionar un sindicato
 function mostrarClaveInput() {
-    sindicatoSeleccionado = document.getElementById("select-sindicato").value;
+    // Asegúrate de que el valor del select sea el que espera el servidor
+    // Ejemplo: "Concepcion" en lugar de "Concepción"
+    const sindicatoSeleccionado = document.getElementById("select-sindicato").value;
     const modalClave = document.getElementById("modal-clave");
 
     if (sindicatoSeleccionado) {
-        document.getElementById("clave-input").value = ""; // Resetear clave ingresada
-        document.getElementById("mensaje-error").style.display = "none"; // Ocultar mensaje error
+        document.getElementById("clave-input").value = ""; // Resetea el input
+        document.getElementById("mensaje-error").style.display = "none"; // Oculta mensajes de error previos
         modalClave.classList.remove("oculto");
     } else {
         modalClave.classList.add("oculto");
     }
 }
 
-// Función para verificar la clave ingresada
+// Función para verificar la clave ingresada (envía la solicitud al servidor)
 function verificarClave() {
     const claveIngresada = document.getElementById("clave-input").value;
     const sindicatoSeleccionado = document.getElementById("select-sindicato").value;
@@ -1638,12 +1643,16 @@ function verificarClave() {
         headers: {
             "Content-Type": "application/json"
         },
-        body: JSON.stringify({ nombreSindicato: sindicatoSeleccionado, claveSindicato: claveIngresada })
+        body: JSON.stringify({
+            nombreSindicato: sindicatoSeleccionado,
+            claveSindicato: claveIngresada
+        })
     })
     .then(response => response.json())
     .then(data => {
         if (data.mensaje === "Acceso al módulo de sindicatos concedido") {
-            mostrarDocumentos(sindicatoSeleccionado);  // Muestra los documentos sin alertas
+            // Si la verificación es correcta, muestra los documentos
+            mostrarDocumentos(sindicatoSeleccionado);
         } else {
             document.getElementById("mensaje-error").innerText = data.mensaje;
             document.getElementById("mensaje-error").style.display = "block";

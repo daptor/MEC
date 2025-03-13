@@ -54,10 +54,7 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 // Verificación del código de acceso
-// Verificación del código de acceso (con formulario y evitando recarga de página)
-document.getElementById("login-form").addEventListener("submit", function(event) {
-    event.preventDefault();  // Evita la recarga de la página
-
+document.getElementById("ingresarBtn").addEventListener("click", function () {
     const codigoIngresado = document.getElementById("codigoAcceso").value;
 
     fetch("https://mector-3427d913260a.herokuapp.com/verificar-codigo", {

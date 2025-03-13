@@ -54,7 +54,10 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 // Verificación del código de acceso
-document.getElementById("ingresarBtn").addEventListener("click", function () {
+// Verificación del código de acceso (con formulario y evitando recarga de página)
+document.getElementById("login-form").addEventListener("submit", function(event) {
+    event.preventDefault();  // Evita la recarga de la página
+
     const codigoIngresado = document.getElementById("codigoAcceso").value;
 
     fetch("https://mector-3427d913260a.herokuapp.com/verificar-codigo", {
@@ -83,7 +86,6 @@ document.getElementById("ingresarBtn").addEventListener("click", function () {
         mensajeError.textContent = "Hubo un error. Intenta nuevamente.";
     });
 });
-
 
 // Función para mostrar una pantalla específica (modificada para cumplir con todos los requisitos)
 function mostrarPantalla(idPantalla) {
@@ -1634,7 +1636,9 @@ function mostrarClaveInput() {
 }
 
 // Función para verificar la clave ingresada (envía la solicitud al servidor)
-function verificarClave() {
+document.getElementById("clave-form").addEventListener("submit", function(event) {
+    event.preventDefault();  // Evita la recarga de la página al hacer submit
+
     const claveIngresada = document.getElementById("clave-input").value;
     const sindicatoSeleccionado = document.getElementById("select-sindicato").value;
 
@@ -1663,8 +1667,7 @@ function verificarClave() {
         document.getElementById("mensaje-error").innerText = "Hubo un error. Intenta de nuevo.";
         document.getElementById("mensaje-error").style.display = "block";
     });
-}
-
+)
 
 // Función para mostrar la pantalla de documentos para el sindicato autenticado
 function mostrarDocumentos(sindicato) {

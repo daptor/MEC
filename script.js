@@ -1667,6 +1667,7 @@ document.getElementById("clave-form").addEventListener("submit", function(event)
         document.getElementById("mensaje-error").innerText = "Hubo un error. Intenta de nuevo.";
         document.getElementById("mensaje-error").style.display = "block";
     });
+  });
 
 // Función para mostrar la pantalla de documentos para el sindicato autenticado
 function mostrarDocumentos(sindicato) {

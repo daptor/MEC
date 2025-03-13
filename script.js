@@ -53,7 +53,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 
-// evaluacio acceso
+// Verificación del código de acceso
 document.getElementById("ingresarBtn").addEventListener("click", function () {
     const codigoIngresado = document.getElementById("codigoAcceso").value;
 
@@ -1656,7 +1656,6 @@ function verificarClave() {
         document.getElementById("mensaje-error").style.display = "block";
     });
 }
-
 
 // Función para mostrar la pantalla de documentos para el sindicato autenticado
 function mostrarDocumentos(sindicato) {

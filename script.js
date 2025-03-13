@@ -53,19 +53,33 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 
-// Verificación del código de acceso
 document.getElementById("ingresarBtn").addEventListener("click", function () {
     const codigoIngresado = document.getElementById("codigoAcceso").value;
-    const codigoCorrecto = "fthf1999";  // Cambiar si es necesario
 
-    if (codigoIngresado === codigoCorrecto) {
-        document.getElementById("login-container").style.display = "none";
-        document.getElementById("menu-principal").style.display = "block";
-    } else {
+    fetch("https://mector-3427d913260a.herokuapp.com/verificar-codigo", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ codigoAcceso: codigoIngresado })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.mensaje === "Acceso concedido") {
+            document.getElementById("login-container").style.display = "none";
+            document.getElementById("menu-principal").style.display = "block";
+        } else {
+            const mensajeError = document.getElementById("mensajeError");
+            mensajeError.style.display = "block";
+            mensajeError.textContent = data.mensaje;
+        }
+    })
+    .catch(error => {
+        console.error("Error:", error);
         const mensajeError = document.getElementById("mensajeError");
         mensajeError.style.display = "block";
-        mensajeError.textContent = "Código incorrecto. Intenta nuevamente."; // Asegura que el mensaje sea visible
-    }
+        mensajeError.textContent = "Hubo un error. Intenta nuevamente.";
+    });
 });
 
 // Función para mostrar una pantalla específica (modificada para cumplir con todos los requisitos)
@@ -1516,9 +1530,9 @@ function salirAplicacion() {
 //++++++++++++++++++++++++++++++ Archivo Sindical +++++++++++++++++++++++++++++
 // Lista de claves de acceso por sindicato
 const clavesAcceso = {
-    Concepción:"135scc",
+    Concepcion:"135scc",
     Costanera:"257scc",
-    Curicó:"351scc",
+    Curico:"351scc",
     Iquique:"456sic",
     PlazaNorte:"555spn",
     PuertoMontt:"660spm",
@@ -1617,15 +1631,31 @@ function mostrarClaveInput() {
 // Función para verificar la clave ingresada
 function verificarClave() {
     const claveIngresada = document.getElementById("clave-input").value;
-    const claveCorrecta = clavesAcceso[sindicatoSeleccionado];
+    const sindicatoSeleccionado = document.getElementById("select-sindicato").value;
 
-    if (claveIngresada === claveCorrecta) {
-        mostrarDocumentos(sindicatoSeleccionado);  // Muestra los documentos sin alertas
-    } else {
-        document.getElementById("mensaje-error").innerText = "Clave incorrecta, intenta de nuevo.";
+    fetch("https://mector-3427d913260a.herokuapp.com/verificar-sindicato", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ nombreSindicato: sindicatoSeleccionado, claveSindicato: claveIngresada })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.mensaje === "Acceso al módulo de sindicatos concedido") {
+            mostrarDocumentos(sindicatoSeleccionado);  // Muestra los documentos sin alertas
+        } else {
+            document.getElementById("mensaje-error").innerText = data.mensaje;
+            document.getElementById("mensaje-error").style.display = "block";
+        }
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        document.getElementById("mensaje-error").innerText = "Hubo un error. Intenta de nuevo.";
         document.getElementById("mensaje-error").style.display = "block";
-    }
+    });
 }
+
 
 // Función para mostrar la pantalla de documentos para el sindicato autenticado
 function mostrarDocumentos(sindicato) {

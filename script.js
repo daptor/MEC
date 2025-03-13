@@ -1617,54 +1617,32 @@ function mostrarPantalla(idPantalla) {
     }
 }
 
-// Función para mostrar el modal de clave al seleccionar un sindicato
+// Función para mostrar el modal de clave
 function mostrarClaveInput() {
-    // Asegúrate de que el valor del select sea el que espera el servidor
-    // Ejemplo: "Concepcion" en lugar de "Concepción"
-    const sindicatoSeleccionado = document.getElementById("select-sindicato").value;
+    sindicatoSeleccionado = document.getElementById("select-sindicato").value;
     const modalClave = document.getElementById("modal-clave");
 
     if (sindicatoSeleccionado) {
-        document.getElementById("clave-input").value = ""; // Resetea el input
-        document.getElementById("mensaje-error").style.display = "none"; // Oculta mensajes de error previos
+        document.getElementById("clave-input").value = ""; // Resetear clave ingresada
+        document.getElementById("mensaje-error").style.display = "none"; // Ocultar mensaje error
         modalClave.classList.remove("oculto");
     } else {
         modalClave.classList.add("oculto");
     }
 }
 
-// Función para verificar la clave ingresada (envía la solicitud al servidor)
+// Función para verificar la clave ingresada
 function verificarClave() {
     const claveIngresada = document.getElementById("clave-input").value;
-    const sindicatoSeleccionado = document.getElementById("select-sindicato").value;
+    const claveCorrecta = clavesAcceso[sindicatoSeleccionado];
 
-    fetch("https://mector-3427d913260a.herokuapp.com/verificar-sindicato", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            nombreSindicato: sindicatoSeleccionado,
-            claveSindicato: claveIngresada
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.mensaje === "Acceso al módulo de sindicatos concedido") {
-            // Si la verificación es correcta, muestra los documentos
-            mostrarDocumentos(sindicatoSeleccionado);
-        } else {
-            document.getElementById("mensaje-error").innerText = data.mensaje;
-            document.getElementById("mensaje-error").style.display = "block";
-        }
-    })
-    .catch(error => {
-        console.error("Error:", error);
-        document.getElementById("mensaje-error").innerText = "Hubo un error. Intenta de nuevo.";
+    if (claveIngresada === claveCorrecta) {
+        mostrarDocumentos(sindicatoSeleccionado);  // Muestra los documentos sin alertas
+    } else {
+        document.getElementById("mensaje-error").innerText = "Clave incorrecta, intenta de nuevo.";
         document.getElementById("mensaje-error").style.display = "block";
-    });
+    }
 }
-
 
 // Función para mostrar la pantalla de documentos para el sindicato autenticado
 function mostrarDocumentos(sindicato) {

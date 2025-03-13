@@ -53,7 +53,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 
-// Verificación del código de acceso
+// evaluacio acceso
 document.getElementById("ingresarBtn").addEventListener("click", function () {
     const codigoIngresado = document.getElementById("codigoAcceso").value;
 
@@ -67,7 +67,6 @@ document.getElementById("ingresarBtn").addEventListener("click", function () {
     .then(response => response.json())
     .then(data => {
         if (data.mensaje === "Acceso concedido") {
-            // Oculta la pantalla de login y muestra el menú principal
             document.getElementById("login-container").style.display = "none";
             document.getElementById("menu-principal").style.display = "block";
         } else {
@@ -83,7 +82,6 @@ document.getElementById("ingresarBtn").addEventListener("click", function () {
         mensajeError.textContent = "Hubo un error. Intenta nuevamente.";
     });
 });
-
 
 // Función para mostrar una pantalla específica (modificada para cumplir con todos los requisitos)
 function mostrarPantalla(idPantalla) {
@@ -1533,9 +1531,9 @@ function salirAplicacion() {
 //++++++++++++++++++++++++++++++ Archivo Sindical +++++++++++++++++++++++++++++
 // Lista de claves de acceso por sindicato
 const clavesAcceso = {
-    Concepción:"135scc",
+    Concepcion:"135scc",
     Costanera:"257scc",
-    Curicó:"351scc",
+    Curico:"351scc",
     Iquique:"456sic",
     PlazaNorte:"555spn",
     PuertoMontt:"660spm",
@@ -1634,15 +1632,31 @@ function mostrarClaveInput() {
 // Función para verificar la clave ingresada
 function verificarClave() {
     const claveIngresada = document.getElementById("clave-input").value;
-    const claveCorrecta = clavesAcceso[sindicatoSeleccionado];
+    const sindicatoSeleccionado = document.getElementById("select-sindicato").value;
 
-    if (claveIngresada === claveCorrecta) {
-        mostrarDocumentos(sindicatoSeleccionado);  // Muestra los documentos sin alertas
-    } else {
-        document.getElementById("mensaje-error").innerText = "Clave incorrecta, intenta de nuevo.";
+    fetch("https://mector-3427d913260a.herokuapp.com/verificar-sindicato", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ nombreSindicato: sindicatoSeleccionado, claveSindicato: claveIngresada })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.mensaje === "Acceso al módulo de sindicatos concedido") {
+            mostrarDocumentos(sindicatoSeleccionado);  // Muestra los documentos sin alertas
+        } else {
+            document.getElementById("mensaje-error").innerText = data.mensaje;
+            document.getElementById("mensaje-error").style.display = "block";
+        }
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        document.getElementById("mensaje-error").innerText = "Hubo un error. Intenta de nuevo.";
         document.getElementById("mensaje-error").style.display = "block";
-    }
+    });
 }
+
 
 // Función para mostrar la pantalla de documentos para el sindicato autenticado
 function mostrarDocumentos(sindicato) {

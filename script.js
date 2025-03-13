@@ -1703,3 +1703,4 @@ function cerrarModalClave() {
     document.getElementById("clave-input").value = "";
     document.getElementById("mensaje-error").style.display = "none";
 }
+}

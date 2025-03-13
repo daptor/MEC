@@ -87,6 +87,7 @@ document.getElementById("login-form").addEventListener("submit", function(event)
     });
 });
 
+
 // Función para mostrar una pantalla específica (modificada para cumplir con todos los requisitos)
 function mostrarPantalla(idPantalla) {
     document.querySelectorAll(".pantalla").forEach(pantalla => {
@@ -1636,9 +1637,7 @@ function mostrarClaveInput() {
 }
 
 // Función para verificar la clave ingresada (envía la solicitud al servidor)
-document.getElementById("clave-form").addEventListener("submit", function(event) {
-    event.preventDefault();  // Evita la recarga de la página al hacer submit
-
+function verificarClave() {
     const claveIngresada = document.getElementById("clave-input").value;
     const sindicatoSeleccionado = document.getElementById("select-sindicato").value;
 
@@ -1667,7 +1666,8 @@ document.getElementById("clave-form").addEventListener("submit", function(event)
         document.getElementById("mensaje-error").innerText = "Hubo un error. Intenta de nuevo.";
         document.getElementById("mensaje-error").style.display = "block";
     });
-});  // <-- Aquí faltaba la llave de cierre para el "addEventListener"
+}
+
 
 // Función para mostrar la pantalla de documentos para el sindicato autenticado
 function mostrarDocumentos(sindicato) {
@@ -1702,5 +1702,4 @@ function cerrarModalClave() {
     document.getElementById("modal-clave").classList.add("oculto");
     document.getElementById("clave-input").value = "";
     document.getElementById("mensaje-error").style.display = "none";
-}
 }

@@ -228,6 +228,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
 });
 
+// Solución de la verificación de la clave
+document.addEventListener("DOMContentLoaded", function () {
+    const claveForm = document.getElementById("clave-form");
+
+    if (claveForm) {
+        claveForm.addEventListener("submit", function (event) {
+            event.preventDefault(); // Evita que la página se recargue
+            verificarClave(); // Llama a la función para validar la clave
+        });
+    }
+});
+
+function verificarClave() {
+    const clave = document.getElementById("clave-input").value;
+
+    // Aquí va la lógica para verificar la clave ingresada
+    if (clave === "tuClaveCorrecta") {
+        alert("Clave correcta. Acceso concedido.");
+        // Aquí puedes redirigir o mostrar la siguiente pantalla
+    } else {
+        const errorMsg = document.getElementById("mensaje-error");
+        errorMsg.classList.remove("oculto");
+        errorMsg.textContent = "Clave incorrecta. Inténtalo nuevamente.";
+    }
+}
+
 // ==================== VARIABLES GLOBALES ====================
 // Ingresos mínimos para cada año y mes
 const ingresosMinimos = {

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MEC - Análisis</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="favicon.ico" type="image/x-icon"> <!-- Agregado para favicon -->
 </head>
 <body>
   <!-- Contenedor de información de visitas, fecha y hora -->
@@ -22,6 +23,7 @@
       <p class="left-align">Ingresa el código de acceso para continuar:</p>
       <!-- Formulario de login con campo de contraseña -->
       <form action="/verificar-codigo" method="POST" id="login-form">
+          <input type="text" id="username-input" placeholder="Usuario (opcional)" autocomplete="username"> <!-- Campo de nombre de usuario opcional -->
           <input type="password" id="codigoAcceso" name="codigoAcceso" maxlength="8" placeholder="8 dígitos o letras" autocomplete="off" required />
           <button type="submit" id="ingresarBtn">Ingresar</button>
       </form>

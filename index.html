@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>MEC - Análisis</title>
   <link rel="stylesheet" href="style.css">
-  <link rel="icon" href="favicon.ico" type="image/x-icon"> <!-- Agregado para favicon -->
 </head>
 <body>
   <!-- Contenedor de información de visitas, fecha y hora -->
@@ -21,12 +20,8 @@
       </div>
       <h1>Bienvenido a MEC</h1>
       <p class="left-align">Ingresa el código de acceso para continuar:</p>
-      <!-- Formulario de login con campo de contraseña -->
-      <form action="/verificar-codigo" method="POST" id="login-form">
-          <!-- El campo de usuario ya no está presente ni visible -->
-          <input type="password" id="codigoAcceso" name="codigoAcceso" maxlength="8" placeholder="8 dígitos o letras" autocomplete="off" required />
-          <button type="submit" id="ingresarBtn">Ingresar</button>
-      </form>
+      <input type="text" id="codigoAcceso" maxlength="8" placeholder="8 dígitos o letras" autocomplete="off" />
+      <button type="button" id="ingresarBtn">Ingresar</button>
       <p id="mensajeError" class="error-msg" style="display: none;">Código incorrecto. Intenta nuevamente.</p>
   </div>
 
@@ -153,12 +148,10 @@
       <div id="modal-clave" class="modal oculto">
           <div class="modal-contenido">
               <h3>Ingrese la clave de acceso</h3>
-              <form id="clave-form">
-                  <label for="clave-input">Clave:</label>
-                  <input type="password" id="clave-input" required autocomplete="new-password">
-                  <button type="submit">Aceptar</button>
-              </form>
-              <button onclick="cerrarModalClave()">Cancelar</button> <!-- Botón para salir -->
+              <label for="clave-input">Clave:</label>
+              <input type="password" id="clave-input" required autocomplete="new-password" placeholder="8 dígitos o letras">
+              <button type="button" onclick="verificarClave()">Aceptar</button>
+              <button type="button" onclick="cerrarModalClave()">Cancelar</button> <!-- Botón para salir -->
               <p id="mensaje-error" class="error-msg oculto"></p>
           </div>
       </div>

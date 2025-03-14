@@ -56,31 +56,16 @@ document.addEventListener("DOMContentLoaded", function () {
 // Verificación del código de acceso
 document.getElementById("ingresarBtn").addEventListener("click", function () {
     const codigoIngresado = document.getElementById("codigoAcceso").value;
+    const codigoCorrecto = "fthf1999";  // Cambiar si es necesario
 
-    fetch("https://mector-3427d913260a.herokuapp.com/verificar-codigo", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ codigoAcceso: codigoIngresado })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.mensaje === "Acceso concedido") {
-            document.getElementById("login-container").style.display = "none";
-            document.getElementById("menu-principal").style.display = "block";
-        } else {
-            const mensajeError = document.getElementById("mensajeError");
-            mensajeError.style.display = "block";
-            mensajeError.textContent = data.mensaje;
-        }
-    })
-    .catch(error => {
-        console.error("Error:", error);
+    if (codigoIngresado === codigoCorrecto) {
+        document.getElementById("login-container").style.display = "none";
+        document.getElementById("menu-principal").style.display = "block";
+    } else {
         const mensajeError = document.getElementById("mensajeError");
         mensajeError.style.display = "block";
-        mensajeError.textContent = "Hubo un error. Intenta nuevamente.";
-    });
+        mensajeError.textContent = "Código incorrecto. Intenta nuevamente."; // Asegura que el mensaje sea visible
+    }
 });
 
 // Función para mostrar una pantalla específica (modificada para cumplir con todos los requisitos)
@@ -227,32 +212,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (pantallaAnalizar) pantallaAnalizar.style.display = 'none';
 
 });
-
-// Solución de la verificación de la clave
-document.addEventListener("DOMContentLoaded", function () {
-    const claveForm = document.getElementById("clave-form");
-
-    if (claveForm) {
-        claveForm.addEventListener("submit", function (event) {
-            event.preventDefault(); // Evita que la página se recargue
-            verificarClave(); // Llama a la función para validar la clave
-        });
-    }
-});
-
-function verificarClave() {
-    const clave = document.getElementById("clave-input").value;
-
-    // Aquí va la lógica para verificar la clave ingresada
-    if (clave === "tuClaveCorrecta") {
-        alert("Clave correcta. Acceso concedido.");
-        // Aquí puedes redirigir o mostrar la siguiente pantalla
-    } else {
-        const errorMsg = document.getElementById("mensaje-error");
-        errorMsg.classList.remove("oculto");
-        errorMsg.textContent = "Clave incorrecta. Inténtalo nuevamente.";
-    }
-}
 
 // ==================== VARIABLES GLOBALES ====================
 // Ingresos mínimos para cada año y mes
@@ -1557,14 +1516,14 @@ function salirAplicacion() {
 //++++++++++++++++++++++++++++++ Archivo Sindical +++++++++++++++++++++++++++++
 // Lista de claves de acceso por sindicato
 const clavesAcceso = {
-    Concepcion:"135scc",
-    Costanera:"257scc",
-    Curico:"351scc",
-    Iquique:"456sic",
-    PlazaNorte:"555spn",
-    PuertoMontt:"660spm",
-    Rancagua:"736srm",
-    Trebol:"845stm"
+    Concepcion: "135scc",
+    Costanera: "257scc",
+    Curico: "351scc",
+    Iquique: "456sic",
+    PlazaNorte: "555spn",
+    PuertoMontt: "660spm",
+    Rancagua: "736srm",
+    Trebol: "845stm"
 };
 
 // Documentos específicos de cada sindicato (ruta y nombre de archivo)
@@ -1608,112 +1567,104 @@ const documentosPublicos = [
     { nombre: "Estatutos Federación 2019", url: "Documento Público General/Estatutos Federación 2019.pdf" },
     { nombre: "Proyecto Estatutos Federacion 2025", url: "Documento Público General/estatutos federacion 2025.pdf" },
     { nombre: "Contactos Canal de Integridad", url: "Documento Público General/Contactos Canal de Integridad.pdf" }
-
 ];
 
 // Variable para almacenar el sindicato seleccionado
 let sindicatoSeleccionado = "";
 
-// Función para mostrar una pantalla y ocultar las demás
-function mostrarPantalla(idPantalla) {
-    const pantallas = document.querySelectorAll(".pantalla");
-    pantallas.forEach(p => p.style.display = "none");
-    document.getElementById(idPantalla).style.display = "block";
-
-    if (idPantalla === "pantalla-archivosindical") {
-        // Limpiar cualquier valor anterior cuando se regresa a "Contratos y Estatutos"
-        const selectSindicato = document.getElementById("select-sindicato");
-        selectSindicato.value = ""; // Asegurarse de que esté vacía
-        sindicatoSeleccionado = ""; // Limpiar la variable
-        document.getElementById("lista-documentos-sindicato").innerHTML = ""; // Limpiar documentos previos
-        document.getElementById("nombre-sindicato").textContent = ""; // Limpiar el nombre del sindicato
-        document.getElementById("mensaje-error").style.display = "none"; // Esconder mensaje de error
-    }
-
-    if (idPantalla === "menu-principal") {
-        // También limpiamos el sindicato cuando se vuelve al menú principal
-        const selectSindicato = document.getElementById("select-sindicato");
-        selectSindicato.value = ""; // Asegurarse de que esté vacía
-        sindicatoSeleccionado = ""; // Limpiar la variable
-        document.getElementById("lista-documentos-sindicato").innerHTML = ""; // Limpiar documentos previos
-        document.getElementById("nombre-sindicato").textContent = ""; // Limpiar el nombre del sindicato
-        document.getElementById("mensaje-error").style.display = "none"; // Esconder mensaje de error
-    }
-}
-
-// Función para mostrar el modal de clave
-function mostrarClaveInput() {
-    sindicatoSeleccionado = document.getElementById("select-sindicato").value;
-    const modalClave = document.getElementById("modal-clave");
-
-    if (sindicatoSeleccionado) {
-        document.getElementById("clave-input").value = ""; // Resetear clave ingresada
-        document.getElementById("mensaje-error").style.display = "none"; // Ocultar mensaje error
-        modalClave.classList.remove("oculto");
-    } else {
-        modalClave.classList.add("oculto");
-    }
-}
-
-// Función para verificar la clave ingresada
-function verificarClave() {
-    const claveIngresada = document.getElementById("clave-input").value;
-    const sindicatoSeleccionado = document.getElementById("select-sindicato").value;
-
-    fetch("https://mector-3427d913260a.herokuapp.com/verificar-sindicato", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ nombreSindicato: sindicatoSeleccionado, claveSindicato: claveIngresada })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.mensaje === "Acceso al módulo de sindicatos concedido") {
-            mostrarDocumentos(sindicatoSeleccionado);  // Muestra los documentos sin alertas
-        } else {
-            document.getElementById("mensaje-error").innerText = data.mensaje;
-            document.getElementById("mensaje-error").style.display = "block";
+// Esperar a que el DOM esté completamente cargado
+document.addEventListener("DOMContentLoaded", function () {
+    // Función para mostrar una pantalla y ocultar las demás
+    function mostrarPantalla(idPantalla) {
+        const pantallas = document.querySelectorAll(".pantalla");
+        pantallas.forEach(p => p.style.display = "none");
+        const pantalla = document.getElementById(idPantalla);
+        if (pantalla) {
+            pantalla.style.display = "block";
         }
-    })
-    .catch(error => {
-        console.error("Error:", error);
-        document.getElementById("mensaje-error").innerText = "Hubo un error. Intenta de nuevo.";
-        document.getElementById("mensaje-error").style.display = "block";
-    });
-}
 
-// Función para mostrar la pantalla de documentos para el sindicato autenticado
-function mostrarDocumentos(sindicato) {
-    document.getElementById("nombre-sindicato").textContent = "Sindicato de " + sindicato;
+        if (idPantalla === "pantalla-archivosindical" || idPantalla === "menu-principal") {
+            // Limpiar cualquier valor anterior cuando se regresa a "Contratos y Estatutos"
+            const selectSindicato = document.getElementById("select-sindicato");
+            if (selectSindicato) selectSindicato.value = ""; // Asegurarse de que esté vacía
+            sindicatoSeleccionado = ""; // Limpiar la variable
+            const listaDocumentos = document.getElementById("lista-documentos-sindicato");
+            if (listaDocumentos) listaDocumentos.innerHTML = ""; // Limpiar documentos previos
+            const nombreSindicato = document.getElementById("nombre-sindicato");
+            if (nombreSindicato) nombreSindicato.textContent = ""; // Limpiar el nombre del sindicato
+            const mensajeError = document.getElementById("mensaje-error");
+            if (mensajeError) mensajeError.style.display = "none"; // Esconder mensaje de error
+        }
+    }
 
-    const listaSindicato = document.getElementById("lista-documentos-sindicato");
-    listaSindicato.innerHTML = ""; // Limpiar cualquier contenido previo
+    function mostrarClaveInput() {
+        const sindicatoSeleccionado = document.getElementById("select-sindicato").value;
+        const modalClave = document.getElementById("modal-clave");
 
-    const docsSindicato = documentosSindicato[sindicato] || [];
-    docsSindicato.forEach(doc => {
-        const li = document.createElement("li");
-        li.innerHTML = `<a href="${doc.url}" target="_blank">${doc.nombre}</a>`;
-        listaSindicato.appendChild(li);
-    });
+        if (sindicatoSeleccionado) {
+            document.getElementById("clave-input").value = ""; // Limpia el campo de la clave
+            document.getElementById("mensaje-error").style.display = "none"; // Oculta el mensaje de error
+            modalClave.classList.remove("oculto");
+        } else {
+            modalClave.classList.add("oculto");
+        }
+    }
 
-    const listaPublicos = document.getElementById("lista-documentos-publicos");
-    listaPublicos.innerHTML = "";
+    // Función para verificar la clave ingresada de manera simple (sin servidor)
+    function verificarClave() {
+        const claveIngresada = document.getElementById("clave-input") ? document.getElementById("clave-input").value : "";
+        const sindicatoSeleccionado = document.getElementById("select-sindicato") ? document.getElementById("select-sindicato").value : "";
 
-    documentosPublicos.forEach(doc => {
-        const li = document.createElement("li");
-        li.innerHTML = `<a href="${doc.url}" target="_blank">${doc.nombre}</a>`;
-        listaPublicos.appendChild(li);
-    });
+        // Compara la clave ingresada con la almacenada en el objeto clavesAcceso
+        if (claveIngresada === clavesAcceso[sindicatoSeleccionado]) {
+            // Si coincide, muestra los documentos
+            mostrarDocumentos(sindicatoSeleccionado);
+        } else {
+            // Si no, muestra mensaje de error
+            const mensajeError = document.getElementById("mensaje-error");
+            if (mensajeError) {
+                mensajeError.innerText = "Clave incorrecta. Inténtalo de nuevo.";
+                mensajeError.style.display = "block";
+            }
+        }
+    }
 
-    cerrarModalClave(); // Limpia y oculta el modal de clave
+    // Función para mostrar la pantalla de documentos para el sindicato autenticado
+    function mostrarDocumentos(sindicato) {
+        const nombreSindicato = document.getElementById("nombre-sindicato");
+        if (nombreSindicato) nombreSindicato.textContent = "Sindicato de " + sindicato;
 
-    mostrarPantalla("pantalla-documentos");
-}
+        const listaSindicato = document.getElementById("lista-documentos-sindicato");
+        if (listaSindicato) listaSindicato.innerHTML = ""; // Limpiar cualquier contenido previo
 
-// Función para cerrar el modal de clave
-function cerrarModalClave() {
-    document.getElementById("modal-clave").classList.add("oculto");
-    document.getElementById("clave-input").value = "";
-    document.getElementById("mensaje-error").style.display = "none";
-}
+        const docsSindicato = documentosSindicato[sindicato] || [];
+        docsSindicato.forEach(doc => {
+            const li = document.createElement("li");
+            li.innerHTML = `<a href="${doc.url}" target="_blank">${doc.nombre}</a>`;
+            listaSindicato.appendChild(li);
+        });
+
+        const listaPublicos = document.getElementById("lista-documentos-publicos");
+        if (listaPublicos) listaPublicos.innerHTML = "";
+
+        documentosPublicos.forEach(doc => {
+            const li = document.createElement("li");
+            li.innerHTML = `<a href="${doc.url}" target="_blank">${doc.nombre}</a>`;
+            listaPublicos.appendChild(li);
+        });
+
+        cerrarModalClave(); // Limpia y oculta el modal de clave
+
+        mostrarPantalla("pantalla-documentos");
+    }
+
+    // Función para cerrar el modal de clave
+    function cerrarModalClave() {
+        const modalClave = document.getElementById("modal-clave");
+        if (modalClave) modalClave.classList.add("oculto");
+        const claveInput = document.getElementById("clave-input");
+        if (claveInput) claveInput.value = "";
+        const mensajeError = document.getElementById("mensaje-error");
+        if (mensajeError) mensajeError.style.display = "none";
+    }
+});

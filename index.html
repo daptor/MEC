@@ -23,7 +23,7 @@
       <p class="left-align">Ingresa el código de acceso para continuar:</p>
       <!-- Formulario de login con campo de contraseña -->
       <form action="/verificar-codigo" method="POST" id="login-form">
-          <input type="text" id="username-input" placeholder="Usuario (opcional)" autocomplete="username"> <!-- Campo de nombre de usuario opcional -->
+          <!-- El campo de usuario ya no está presente ni visible -->
           <input type="password" id="codigoAcceso" name="codigoAcceso" maxlength="8" placeholder="8 dígitos o letras" autocomplete="off" required />
           <button type="submit" id="ingresarBtn">Ingresar</button>
       </form>
@@ -153,10 +153,9 @@
       <div id="modal-clave" class="modal oculto">
           <div class="modal-contenido">
               <h3>Ingrese la clave de acceso</h3>
-              <form id="clave-form" aria-labelledby="clave-label">
-                  <label id="clave-label" for="clave-input" class="sr-only">Clave:</label>
-                  <input type="password" id="clave-input" name="clave" required autocomplete="new-password" placeholder="Ingrese su clave" aria-describedby="clave-descripcion">
-                  <p id="clave-descripcion" class="sr-only">Este campo es para ingresar su clave de acceso.</p>
+              <form id="clave-form">
+                  <label for="clave-input">Clave:</label>
+                  <input type="password" id="clave-input" required autocomplete="new-password">
                   <button type="submit">Aceptar</button>
               </form>
               <button onclick="cerrarModalClave()">Cancelar</button> <!-- Botón para salir -->
@@ -166,16 +165,6 @@
 
       <!-- Botón Volver al menú -->
       <button onclick="mostrarPantalla('menu-principal')">Volver al Menú</button>
-  </div>
-
-  <!-- Pantalla de Documentos Sindical (tras autenticación) -->
-  <div id="pantalla-documentos" class="pantalla" style="display: none;">
-      <h1>Archivo de <span id="nombre-sindicato"></span></h1>
-      <h2>Documentos Sindicales</h2>
-      <ul id="lista-documentos-sindicato"></ul>
-      <h2>Documentos Públicos</h2>
-      <ul id="lista-documentos-publicos"></ul>
-      <button onclick="mostrarPantalla('menu-principal')">Ir al Menú</button>
   </div>
 
   <!-- Cargar PDF.js antes del script principal -->

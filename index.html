@@ -153,14 +153,13 @@
               <h3>Ingrese la clave de acceso</h3>
               <form id="clave-form">
                   <label for="clave-input">Clave:</label>
-                  <input type="password" id="clave-input" required>
+                  <input type="password" id="clave-input" required autocomplete="new-password">
                   <button type="submit">Aceptar</button>
               </form>
               <button onclick="cerrarModalClave()">Cancelar</button> <!-- Botón para salir -->
               <p id="mensaje-error" class="error-msg oculto"></p>
           </div>
       </div>
-
 
       <!-- Botón Volver al menú -->
       <button onclick="mostrarPantalla('menu-principal')">Volver al Menú</button>

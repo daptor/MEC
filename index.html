@@ -23,8 +23,12 @@
       <p class="left-align">Ingresa el código de acceso para continuar:</p>
       <!-- Formulario de login con campo de contraseña -->
       <form action="/verificar-codigo" method="POST" id="login-form">
+          <label for="username-input">Usuario:</label>
           <input type="text" id="username-input" placeholder="Usuario (opcional)" autocomplete="username"> <!-- Campo de nombre de usuario opcional -->
+
+          <label for="codigoAcceso">Clave:</label>
           <input type="password" id="codigoAcceso" name="codigoAcceso" maxlength="8" placeholder="8 dígitos o letras" autocomplete="off" required />
+
           <button type="submit" id="ingresarBtn">Ingresar</button>
       </form>
       <p id="mensajeError" class="error-msg" style="display: none;">Código incorrecto. Intenta nuevamente.</p>

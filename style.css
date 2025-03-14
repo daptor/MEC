@@ -17,7 +17,6 @@ body {
     text-align: center;
     padding: 0.2px 10px; /* Franja más delgada */
     font-size: 12px; /* Tamaño de fuente más pequeño */
-
     z-index: 1000; /* Asegura que esté encima de otros elementos */
     color: #fff; /* Asegura que el texto sea blanco */
 }
@@ -26,7 +25,6 @@ body {
 #hora, #fecha, #contador {
     margin-right: 10px;
 }
-
 
 /* Contenedor de las pantallas */
 #menu-principal, .pantalla, #login-container, #pantalla-recursos {
@@ -224,7 +222,7 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -233,9 +231,10 @@ body {
 .modal-contenido {
   background: #fff;
   padding: 20px;
-  border-radius: 5px;
+  border-radius: 15px; /* Ajustado para hacer más armonioso con el resto de la estética */
   width: 300px;
   text-align: center;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3); /* Sombra similar a las otras pantallas */
 }
 
 /* Clase para ocultar elementos */

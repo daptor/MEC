@@ -1513,67 +1513,67 @@ function salirAplicacion() {
     }
 }
 
-//++++++++++++++++++++++++++++++ Archivo Sindical +++++++++++++++++++++++++++++
-// Lista de claves de acceso por sindicato
-const clavesAcceso = {
-    Concepcion: "135scc",
-    Costanera: "257scc",
-    Curico: "351scc",
-    Iquique: "456sic",
-    PlazaNorte: "555spn",
-    PuertoMontt: "660spm",
-    Rancagua: "736srm",
-    Trebol: "845stm"
-};
-
-// Documentos específicos de cada sindicato (ruta y nombre de archivo)
-const documentosSindicato = {
-    Concepción: [
-        { nombre: "Contrato Colectivo Concepción", url: "sindicato1/contrato.pdf" },
-        { nombre: "Estatuto Sindicato Concepción", url: "sindicato1/estatuto.docx" }
-    ],
-    Costanera: [
-        { nombre: "Contrato Colectivo Costanera", url: "sindicato2/contrato.pdf" },
-        { nombre: "Estatuto Sindicato Costanera", url: "sindicato2/estatuto.pdf" }
-    ],
-    Curicó: [
-        { nombre: "Contrato Colectivo Curicó 2023", url: "Curicó/Contrato Colectivo STFC 2023.pdf" },
-        { nombre: "Estatuto Sindicato Curicó 2022", url: "Curicó/ESTATUTOS VIGENTE CURICO 2022.pdf" }
-    ],
-    Iquique: [
-        { nombre: "Contrato Colectivo Iquique", url: "sindicato4/contrato.pdf" },
-        { nombre: "Estatuto Sindicato Iquique", url: "sindicato4/estatuto.pdf" }
-    ],
-    PlazaNorte: [
-        { nombre: "Contrato Colectivo 2023 Plaza Norte", url: "Plaza Norte/Contrato Colectivo 2023 PLAZA NORTE.pdf" },
-        { nombre: "Estatuto Sindicato Plaza Norte", url: "sindicato5/estatuto.pdf" }
-    ],
-    PuertoMontt: [
-        { nombre: "Contrato Colectivo 2021 Puerto Montt", url: "Puerto Montt/Puerto Montt 2021.pdf" },
-        { nombre: "Estatuto Sindicato Puerto Montt", url: "sindicato6/estatuto.pdf" }
-    ],
-    Rancagua: [
-        { nombre: "Contrato Colectivo 2022 Rancagua", url: "Rancagua/Rancagua 2022.pdf" },
-        { nombre: "Estatuto Sindicato Rancagua", url: "sindicato7/estatuto.pdf" }
-    ],
-    Trebol: [
-        { nombre: "Contrato Colectivo Trebol 2023", url: "Trebol/Contrato Colectivo TREBOL 2023.pdf" },
-        { nombre: "Estatuto Sindicato Trebol", url: "sindicato8/estatuto.pdf" }
-    ]
-};
-
-// Documentos públicos, accesibles para todos los sindicatos autenticados
-const documentosPublicos = [
-    { nombre: "Estatutos Federación 2019", url: "Documento Público General/Estatutos Federación 2019.pdf" },
-    { nombre: "Proyecto Estatutos Federacion 2025", url: "Documento Público General/estatutos federacion 2025.pdf" },
-    { nombre: "Contactos Canal de Integridad", url: "Documento Público General/Contactos Canal de Integridad.pdf" }
-];
-
-// Variable para almacenar el sindicato seleccionado
-let sindicatoSeleccionado = "";
-
-// Esperar a que el DOM esté completamente cargado
+// **************** archivo sindical ********************
 document.addEventListener("DOMContentLoaded", function () {
+
+    // Lista de claves de acceso por sindicato
+    const clavesAcceso = {
+        Concepcion: "135scc",
+        Costanera: "257scc",
+        Curico: "351scc",
+        Iquique: "456sic",
+        PlazaNorte: "555spn",
+        PuertoMontt: "660spm",
+        Rancagua: "736srm",
+        Trebol: "845stm"
+    };
+
+    // Documentos específicos de cada sindicato (ruta y nombre de archivo)
+    const documentosSindicato = {
+        Concepcion: [
+            { nombre: "Contrato Colectivo Concepción", url: "sindicato1/contrato.pdf" },
+            { nombre: "Estatuto Sindicato Concepción", url: "sindicato1/estatuto.docx" }
+        ],
+        Costanera: [
+            { nombre: "Contrato Colectivo Costanera", url: "sindicato2/contrato.pdf" },
+            { nombre: "Estatuto Sindicato Costanera", url: "sindicato2/estatuto.pdf" }
+        ],
+        Curico: [
+            { nombre: "Contrato Colectivo Curicó 2023", url: "Curicó/Contrato Colectivo STFC 2023.pdf" },
+            { nombre: "Estatuto Sindicato Curicó 2022", url: "Curicó/ESTATUTOS VIGENTE CURICO 2022.pdf" }
+        ],
+        Iquique: [
+            { nombre: "Contrato Colectivo Iquique", url: "sindicato4/contrato.pdf" },
+            { nombre: "Estatuto Sindicato Iquique", url: "sindicato4/estatuto.pdf" }
+        ],
+        PlazaNorte: [
+            { nombre: "Contrato Colectivo 2023 Plaza Norte", url: "Plaza Norte/Contrato Colectivo 2023 PLAZA NORTE.pdf" },
+            { nombre: "Estatuto Sindicato Plaza Norte", url: "sindicato5/estatuto.pdf" }
+        ],
+        PuertoMontt: [
+            { nombre: "Contrato Colectivo 2021 Puerto Montt", url: "Puerto Montt/Puerto Montt 2021.pdf" },
+            { nombre: "Estatuto Sindicato Puerto Montt", url: "sindicato6/estatuto.pdf" }
+        ],
+        Rancagua: [
+            { nombre: "Contrato Colectivo 2022 Rancagua", url: "Rancagua/Rancagua 2022.pdf" },
+            { nombre: "Estatuto Sindicato Rancagua", url: "sindicato7/estatuto.pdf" }
+        ],
+        Trebol: [
+            { nombre: "Contrato Colectivo Trebol 2023", url: "Trebol/Contrato Colectivo TREBOL 2023.pdf" },
+            { nombre: "Estatuto Sindicato Trebol", url: "sindicato8/estatuto.pdf" }
+        ]
+    };
+
+    // Documentos públicos, accesibles para todos los sindicatos autenticados
+    const documentosPublicos = [
+        { nombre: "Estatutos Federación 2019", url: "Documento Público General/Estatutos Federación 2019.pdf" },
+        { nombre: "Proyecto Estatutos Federacion 2025", url: "Documento Público General/estatutos federacion 2025.pdf" },
+        { nombre: "Contactos Canal de Integridad", url: "Documento Público General/Contactos Canal de Integridad.pdf" }
+    ];
+
+    // Variable para almacenar el sindicato seleccionado
+    let sindicatoSeleccionado = "";
+
     // Función para mostrar una pantalla y ocultar las demás
     function mostrarPantalla(idPantalla) {
         const pantallas = document.querySelectorAll(".pantalla");
@@ -1584,40 +1584,55 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (idPantalla === "pantalla-archivosindical" || idPantalla === "menu-principal") {
-            // Limpiar cualquier valor anterior cuando se regresa a "Contratos y Estatutos"
+            // Limpiar la selección de sindicato al regresar al menú
             const selectSindicato = document.getElementById("select-sindicato");
-            if (selectSindicato) selectSindicato.value = ""; // Asegurarse de que esté vacía
-            sindicatoSeleccionado = ""; // Limpiar la variable
-            const listaDocumentos = document.getElementById("lista-documentos-sindicato");
-            if (listaDocumentos) listaDocumentos.innerHTML = ""; // Limpiar documentos previos
-            const nombreSindicato = document.getElementById("nombre-sindicato");
-            if (nombreSindicato) nombreSindicato.textContent = ""; // Limpiar el nombre del sindicato
+            if (selectSindicato) selectSindicato.value = "";  // Limpiar el select
+
+            // Limpiar cualquier mensaje de error
             const mensajeError = document.getElementById("mensaje-error");
-            if (mensajeError) mensajeError.style.display = "none"; // Esconder mensaje de error
+            if (mensajeError) mensajeError.style.display = "none";
+
+            // Limpiar los documentos previamente mostrados
+            const listaDocumentos = document.getElementById("lista-documentos-sindicato");
+            if (listaDocumentos) listaDocumentos.innerHTML = "";
+
+            const listaPublicos = document.getElementById("lista-documentos-publicos");
+            if (listaPublicos) listaPublicos.innerHTML = "";
+
+            // Limpiar el nombre del sindicato
+            const nombreSindicato = document.getElementById("nombre-sindicato");
+            if (nombreSindicato) nombreSindicato.textContent = "";
+
+            // Restablecer la variable de sindicato seleccionado
+            sindicatoSeleccionado = "";
         }
     }
 
+    // Función para mostrar el modal de clave
     function mostrarClaveInput() {
-        const sindicatoSeleccionado = document.getElementById("select-sindicato").value;
+        // Obtén el sindicato seleccionado
+        sindicatoSeleccionado = document.getElementById("select-sindicato").value;
         const modalClave = document.getElementById("modal-clave");
 
         if (sindicatoSeleccionado) {
+            // Si hay un sindicato seleccionado, muestra el modal de clave
             document.getElementById("clave-input").value = ""; // Limpia el campo de la clave
             document.getElementById("mensaje-error").style.display = "none"; // Oculta el mensaje de error
             modalClave.classList.remove("oculto");
         } else {
+            // Si no se seleccionó un sindicato, oculta el modal
             modalClave.classList.add("oculto");
         }
     }
 
     // Función para verificar la clave ingresada de manera simple (sin servidor)
     function verificarClave() {
-        const claveIngresada = document.getElementById("clave-input") ? document.getElementById("clave-input").value : "";
-        const sindicatoSeleccionado = document.getElementById("select-sindicato") ? document.getElementById("select-sindicato").value : "";
+        const claveIngresada = document.getElementById("clave-input").value;
+        const sindicatoSeleccionado = document.getElementById("select-sindicato").value;
 
         // Compara la clave ingresada con la almacenada en el objeto clavesAcceso
         if (claveIngresada === clavesAcceso[sindicatoSeleccionado]) {
-            // Si coincide, muestra los documentos
+            // Si coincide, muestra los documentos y luego limpia la selección
             mostrarDocumentos(sindicatoSeleccionado);
         } else {
             // Si no, muestra mensaje de error
@@ -1653,6 +1668,10 @@ document.addEventListener("DOMContentLoaded", function () {
             listaPublicos.appendChild(li);
         });
 
+        // Limpiar el campo de clave y el select
+        document.getElementById("clave-input").value = "";
+        document.getElementById("select-sindicato").value = "";
+
         cerrarModalClave(); // Limpia y oculta el modal de clave
 
         mostrarPantalla("pantalla-documentos");
@@ -1667,4 +1686,16 @@ document.addEventListener("DOMContentLoaded", function () {
         const mensajeError = document.getElementById("mensaje-error");
         if (mensajeError) mensajeError.style.display = "none";
     }
+
+    // Asignar las funciones al objeto global 'window'
+    window.mostrarClaveInput = mostrarClaveInput;
+    window.verificarClave = verificarClave;
+    window.cerrarModalClave = cerrarModalClave;
+
+    // Enlazar las funciones a los botones del DOM
+    document.getElementById("select-sindicato").addEventListener("change", mostrarClaveInput);
+    document.getElementById("ingresarBtn").addEventListener("click", verificarClave);
+    document.getElementById("resetContador").addEventListener("click", () => {
+        window.location.reload();
+    });
 });

@@ -134,9 +134,9 @@
       <!-- Lista desplegable para seleccionar sindicato -->
       <select id="select-sindicato" onchange="mostrarClaveInput()">
           <option value="" selected>Selecciona un Sindicato</option>
-          <option value="Concepción">Sindicato Concepción</option>
+          <option value="Concepcion">Sindicato Concepción</option>
           <option value="Costanera">Sindicato Costanera</option>
-          <option value="Curicó">Sindicato Curicó</option>
+          <option value="Curico">Sindicato Curicó</option>
           <option value="Iquique">Sindicato Iquique</option>
           <option value="PlazaNorte">Sindicato Plaza Norte</option>
           <option value="PuertoMontt">Sindicato Puerto Montt</option>
@@ -151,12 +151,21 @@
               <label for="clave-input">Clave:</label>
               <input type="password" id="clave-input" required autocomplete="new-password" placeholder="8 dígitos o letras">
               <button type="button" onclick="verificarClave()">Aceptar</button>
-              <button type="button" onclick="cerrarModalClave()">Cancelar</button> <!-- Botón para salir -->
+              <button type="button" onclick="cerrarModalClave()">Cancelar</button>
               <p id="mensaje-error" class="error-msg oculto"></p>
           </div>
       </div>
 
       <!-- Botón Volver al menú -->
+      <button onclick="mostrarPantalla('menu-principal')">Volver al Menú</button>
+  </div>
+
+  <!-- Pantalla de documentos (mostrar solo después de ingresar la clave correctamente) -->
+  <div id="pantalla-documentos" class="pantalla" style="display: none;">
+      <h2 id="nombre-sindicato"></h2>
+      <ul id="lista-documentos-sindicato"></ul>
+      <h3>Documentos Públicos</h3>
+      <ul id="lista-documentos-publicos"></ul>
       <button onclick="mostrarPantalla('menu-principal')">Volver al Menú</button>
   </div>
 

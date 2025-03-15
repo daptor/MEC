@@ -19,8 +19,8 @@
           <img src="logo.png" alt="Logotipo de MEC">
       </div>
       <h1>Bienvenido a MEC</h1>
-      <p class="left-align">Ingresa el código de acceso para continuar:</p>
-      <input type="text" id="codigoAcceso" maxlength="8" placeholder="8 dígitos o letras" autocomplete="off" />
+      <p class="left-align">Ingresa clave de acceso:</p>
+      <input type="password" id="codigoAcceso" maxlength="8" placeholder="8 dígitos o letras" autocomplete="off" />
       <button type="button" id="ingresarBtn">Ingresar</button>
       <p id="mensajeError" class="error-msg" style="display: none;">Código incorrecto. Intenta nuevamente.</p>
   </div>
@@ -34,8 +34,8 @@
       <button onclick="mostrarPantalla('pantalla-analisis')">Ir a Análisis de Liquidación</button>
       <button onclick="mostrarPantalla('pantalla-vacaciones')">Ir a Cálculo de Vacaciones</button>
       <button onclick="mostrarPantalla('screen-finiquito')">Ir a Cálculo de Finiquito</button>
-      <button onclick="mostrarPantalla('pantalla-recursos')">Recursos Útiles</button>
-      <button onclick="mostrarPantalla('pantalla-archivosindical')">Archivo Sindical y Federación</button> <!-- Nuevo botón -->
+      <button onclick="mostrarPantalla('pantalla-recursos')">Ir a Recursos Útiles</button>
+      <button onclick="mostrarPantalla('pantalla-archivosindical')">Ir a Archivo Sindical</button>
       <button onclick="salirAplicacion()">Salir de la Aplicación</button>
   </div>
 
@@ -128,8 +128,8 @@
 
   <!-- Nueva Pantalla archivos sindical -->
   <div id="pantalla-archivosindical" class="pantalla" style="display: none;">
-      <h1>Contratos y Estatutos</h1>
-      <p>Seleccione un sindicato para ver sus documentos:</p>
+      <h1>Archivo de Sindicatos Afiliados</h1>
+      <p>Documentos Públicos Federación</p>
 
       <!-- Lista desplegable para seleccionar sindicato -->
       <select id="select-sindicato" onchange="mostrarClaveInput()">

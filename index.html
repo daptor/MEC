@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MEC - Análisis</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Contenedor de información de visitas, fecha y hora -->
+  <div id="info-container">
+      <p><span id="hora"></span>    <span id="fecha"></span>         Visitas: <span id="contador">0</span></p>
+      <button id="resetContador" class="hidden-reset"></button>
+  </div>
+  <!-- Pantalla de Login -->
+  <div id="login-container">
+      <div class="logo-container">
+          <img src="logo.png" alt="Logotipo de MEC">
+      </div>
+      <h1>Bienvenido a MEC</h1>
+      <p class="left-align">Ingresa clave de acceso:</p>
+      <input type="password" id="codigoAcceso" maxlength="8" placeholder="8 dígitos o letras" autocomplete="off" />
+      <button type="button" id="ingresarBtn">Ingresar</button>
+      <p id="mensajeError" class="error-msg" style="display: none;">Código incorrecto. Intenta nuevamente.</p>
+  </div>
+  <!-- Menú Principal -->
+  <div id="menu-principal" class="pantalla" style="display: none;">
+      <div class="logo-container">
+          <img src="logo.png" alt="Logotipo de MEC">
+      </div>
+      <h1>Menú Principal</h1>
+      <button onclick="mostrarPantalla('pantalla-analisis')">Ir a Análisis de Liquidación</button>
+      <button onclick="mostrarPantalla('pantalla-vacaciones')">Ir a Cálculo de Vacaciones</button>
+      <button onclick="mostrarPantalla('screen-finiquito')">Ir a Cálculo de Finiquito</button>
+      <button onclick="mostrarPantalla('pantalla-recursos')">Ir a Recursos Útiles</button>
+      <button onclick="mostrarPantalla('pantalla-archivosindical')">Ir a Archivo Sindical</button>
+      <button onclick="salirAplicacion()">Salir de la Aplicación</button>
+  </div>
+  <!-- Pantalla de Análisis de Liquidación -->
+  <div id="pantalla-analisis" class="pantalla" style="display: none;">
+      <h1>Análisis de Liquidación</h1>
+      <p><strong><em>* A partir Mayo 2024, la jornada máxima es de 44 horas.*</em></strong></p>
+      <label for="jornada">Elige tu jornada laboral </label>
+      <select id="jornada" required>
+          <option value="">Selecciona la jornada</option>
+          <option value="45">Completa (45 horas)</option>
+          <option value="44" selected>Completa (44 horas)</option>
+          <option value="43">Completa (43 horas)</option>
+          <option value="42">Completa (42 horas)</option>
+          <option value="41">Completa (41 horas)</option>
+          <option value="40">Completa (40 horas)</option>
+          <option value="30">Parcial (30 hrs)</option>
+          <option value="25">Parcial (25 hrs)</option>
+          <option value="20">Parcial (20 hrs)</option>
+          <option value="18">Parcial (18 hrs)</option>
+      </select>
+      <p><label for="fileInput">Ingresa una liquidación de sueldo en formato PDF</label></p>
+      <input type="file" id="fileInput">
+      <button onclick="analizarArchivo()">Calcular</button>
+      <button onclick="mostrarPantalla('menu-principal')">Ir al Menu</button>
+      <div id="resultadoAnalisis"></div>
+      <div class="container gratificacion-container" id="gratificacionMec" style="display: none;">
+          <h3>Gratificación Mec</h3>
+          <div id="listaGratificables"></div>
+      </div>
+      <div class="container" id="resultadoGratificacion"></div>
+      <button id="refrescarBtnAnalisis">Refrescar</button>
+  </div>
+  <!-- Pantalla de Vacaciones -->
+  <div id="pantalla-vacaciones" class="pantalla" style="display: none;">
+      <h2>Cálculo de Vacaciones</h2>
+      <p>Sube los siguientes archivos:</p>
+      <ul>
+          <li>1 PDF con el pago de vacaciones</li>
+          <li>3 a 6 PDFs con al menos 27 días trabajados</li>
+      </ul>
+      <p class="alerta">No subir liquidaciones con ausencias por licencias médicas o permisos sin goce de sueldo.</p>
+      <input type="file" id="vacacionInput" multiple>
+      <button id="calcularVacacionesBtn">Calcular Vacaciones</button>
+      <button id="volverBtn" onclick="mostrarPantalla('menu-principal')">Ir al Menu</button>
+      <div id="resultadoVacaciones"></div>
+      <button id="refrescarBtnVacaciones">Refrescar</button>
+  </div>
+  <!-- Pantalla de Finiquito -->
+  <div id="screen-finiquito" class="pantalla" style="display: none;">
+      <h2>Cálculo de Finiquito</h2>
+      <label for="fechaInicioContrato">Fecha de Inicio de Contrato:</label>
+      <input type="date" id="fechaInicioContrato" required>
+      <label for="fechaDesvinculacion">Fecha de Desvinculación:</label>
+      <input type="date" id="fechaDesvinculacion" required>
+      <label for="diasTrabajadosUltimoMes">Ingrese días trabajados en el ultimo mes:</label>
+      <input type="number" id="diasTrabajadosUltimoMes" placeholder="Días trabajados en el último mes" />
+      <div>
+          <label for="diasVacacionesPendientes">Ingrese días de vacaciones pendientes:</label>
+          <input type="number" id="diasVacacionesPendientes" placeholder="Días pendientes">
+      </div>
+      <input type="file" id="fileFiniquito" multiple accept="application/pdf">
+      <button id="calcularFiniquito">Calcular</button>
+      <button class="backBtn" data-target="menu-principal">Ir al Menu</button>
+      <div id="resultadosFiniquito" class="result-container hidden"></div>
+      <div id="resultadosNoFiniquito" class="hidden"></div>
+      <button id="refrescarFiniquito">Refrescar</button>
+  </div>
+  <!-- Nueva Pantalla de Recursos -->
+  <div id="pantalla-recursos" class="pantalla" style="display: none;">
+      <h1>Recursos Útiles</h1>
+      <ul>
+          <li><a href="https://falaweb.falabella.com/" target="_blank">Falaweb Falabella (Descarga tu PDF)</a></li>
+          <hr>
+          <li><a href="https://www.facebook.com/fetrahfal/?locale=es_LA" target="_blank">Facebook Fetrahfal</a></li>
+          <li><a href="https://www.dt.gob.cl/portal/1626/w3-channel.html" target="_blank">Dirección del Trabajo</a></li>
+          <li><a href="https://www.dt.gob.cl/legislacion/1624/w3-article-95516.html" target="_blank">Descargar Código del Trabajo</a></li>
+          <li><a href="https://www.sii.cl/valores_y_fechas/utm/utm2024.htm" target="_blank">Servicio de Impuestos Internos</a></li>
+          <li><a href="https://calculadoraipc.ine.cl/" target="_blank">Calculadora de IPC</a></li>
+          <li><a href="https://www.pjud.cl/home" target="_blank">Poder Judicial</a></li>
+          <li><a href="https://vbench.virtuaresearch.com/IR/IAC/?ticker=SACI&exchange=SANTIAGO" target="_blank">Centro de análisis interactivo Falabella</a></li>
+          <hr>
+          <li><a href="https://arcadespot.com/game/mr-do/" target="_blank">Juego PC Mr Do!: Enter, flechas y X</a></li>
+      </ul>
+      <button onclick="mostrarPantalla('menu-principal')">Volver al Menú</button>
+  </div>
+  <!-- Nueva Pantalla archivos sindical -->
+  <div id="pantalla-archivosindical" class="pantalla" style="display: none;">
+      <h1>Archivo de Sindical</h1>
+      <p>Archivo Sindicatos Federados y Documentos Públicos.</p>
+      <!-- Lista desplegable para seleccionar sindicato -->
+      <select id="select-sindicato" onchange="mostrarClaveInput()">
+          <option value="" selected>Selecciona un Sindicato</option>
+          <option value="Concepcion">Sindicato Concepción</option>
+          <option value="Costanera">Sindicato Costanera</option>
+          <option value="Curico">Sindicato Curicó</option>
+          <option value="Iquique">Sindicato Iquique</option>
+          <option value="PlazaNorte">Sindicato Plaza Norte</option>
+          <option value="PuertoMontt">Sindicato Puerto Montt</option>
+          <option value="Rancagua">Sindicato Rancagua</option>
+          <option value="Trebol">Sindicato Trebol</option>
+      </select>
+      <!-- Modal para ingresar la clave -->
+      <div id="modal-clave" class="modal oculto">
+          <div class="modal-contenido">
+              <h3>Ingrese la clave de acceso</h3>
+              <label for="clave-input">Clave:</label>
+              <input type="password" id="clave-input" required autocomplete="new-password" placeholder="8 dígitos o letras">
+              <button type="button" onclick="verificarClave()">Aceptar</button>
+              <button type="button" onclick="cerrarModalClave()">Cancelar</button>
+              <p id="mensaje-error" class="error-msg oculto"></p>
+          </div>
+      </div>
+      <!-- Botón Volver al menú -->
+      <button onclick="mostrarPantalla('menu-principal')">Volver al Menú</button>
+  </div>
+  <!-- Pantalla de documentos (mostrar solo después de ingresar la clave correctamente) -->
+  <div id="pantalla-documentos" class="pantalla" style="display: none;">
+      <h2 id="nombre-sindicato"></h2>
+      <ul id="lista-documentos-sindicato"></ul>
+      <h3>Documentos Públicos</h3>
+      <ul id="lista-documentos-publicos"></ul>
+      <button onclick="mostrarPantalla('menu-principal')">Volver al Menú</button>
+  </div>
+  <!-- Cargar PDF.js antes del script principal -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1541,7 +1541,8 @@ document.addEventListener("DOMContentLoaded", function () {
         Curico: [
             { nombre: "Contrato Colectivo Curicó 2023", url: "Curicó/Contrato Colectivo STFC 2023.pdf" },
             { nombre: "Estatuto Sindicato Curicó 2022", url: "Curicó/ESTATUTOS VIGENTE CURICO 2022.pdf" },
-            { nombre: "INGRESO Y COSTO SINDICATO", url: "Curicó/INGRESO Y COSTO SINDICATO.xlsm" }
+            { nombre: "Ingreso y Costo Sindicato", url: "Curicó/INGRESO Y COSTO SINDICATO.xlsm" }
+            { nombre: "Listado STFC", url: "Curicó/Listado STFC.xlsm" }
         ],
         Iquique: [
             { nombre: "Contrato Colectivo Iquique", url: "sindicato4/contrato.pdf" },

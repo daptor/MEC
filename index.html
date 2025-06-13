@@ -1034,8 +1034,7 @@
   </table>
 </div>
 
-<!-- *** Pantalla Gasto Real Comisiones *** -->
-<div id="pantalla-rgasto-comisiones" class="pantalla" style="display: none; padding: 20px;">
+<div id="pantalla-rgasto-comisiones" class="pantalla" style="padding: 20px;">
   <h2>Gasto Real de Comisiones</h2>
 
   <!-- 1. Fecha de registro -->
@@ -1052,7 +1051,7 @@
     </select>
   </div>
 
-  <!-- 3. Selección de comisión -->
+  <!-- 3. Comisión -->
   <div class="form-group">
     <label for="comisionSelect">Comisión:</label>
     <select id="comisionSelect">
@@ -1060,18 +1059,18 @@
     </select>
   </div>
 
-  <!-- 4. Directores asignados -->
+  <!-- 4. Directores -->
   <div class="form-group">
-    <label>Directores asignados:</label>
+    <label>Directores de la comisión (máx. 3):</label>
     <div id="bloquesDirectores"></div>
   </div>
 
-  <!-- 5. Botón Guardar -->
+  <!-- 5. Guardar -->
   <div class="form-group">
     <button id="guardarGastoBtn" type="button">Guardar Gasto</button>
   </div>
 
-  <!-- 6. Historial de gastos reales -->
+  <!-- 6. Historial -->
   <h3>Registro Gastos Comisiones</h3>
   <table id="tablaGastosReales" border="1" style="width:100%; border-collapse: collapse;">
     <thead>
@@ -1080,7 +1079,7 @@
         <th>Mes</th>
         <th>Com.</th>
         <th>Dir.</th>
-        <th>Fecha prest.</th>
+        <th>Dia</th>
         <th>Hrs</th>
         <th>Monto</th>
         <th>Acción</th>
@@ -1089,13 +1088,13 @@
     <tbody></tbody>
     <tfoot>
       <tr>
-        <td colspan="5" style="text-align:right;">Total mensual:</td>
+        <td colspan="5" style="text-align:right;">Mes:</td>
         <td id="totalMes">0</td>
         <td id="totalMesMonto">0</td>
         <td></td>
       </tr>
       <tr>
-        <td colspan="5" style="text-align:right;">Total anual:</td>
+        <td colspan="5" style="text-align:right;">Año:</td>
         <td id="totalAnio">0</td>
         <td id="totalAnioMonto">0</td>
         <td></td>
@@ -1103,7 +1102,6 @@
     </tfoot>
   </table>
 
-  <!-- Botón Volver -->
   <button onclick="mostrarPantalla('pantalla-gastos')" type="button">↩ Gastos Federación</button>
 </div>
 

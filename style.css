@@ -1,0 +1,601 @@
+/* Reset y base */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 20px;
+  background: linear-gradient(135deg, #a8e063, #56ab2f);
+  color: #fff;
+  box-sizing: border-box;
+}
+
+/* Info fijo pie */
+#info-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: #56ab2f;
+  color: #fff;
+  text-align: center;
+  padding: 0.2px 10px;
+  font-size: 12px;
+  z-index: 1000;
+}
+
+#hora, #fecha, #contador {
+  margin-right: 10px;
+}
+
+/* Contenedores de pantallas y menús */
+#menu-principal,
+.pantalla,
+#login-container,
+#pantalla-recursos,
+#pantalla-menu-tesoreria {
+  background: rgba(255, 255, 255, 0.9);
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  max-width: 430px;
+  margin: auto;
+  text-align: left;
+  color: #333;
+}
+
+/* Títulos comunes */
+h1, h2, h3,
+#resultadoAnalisis h1, #resultadoAnalisis h2, #resultadoAnalisis h3,
+#resultadoGratificacion h1, #resultadoGratificacion h2, #resultadoGratificacion h3,
+#listaGratificables h1, #listaGratificables h2, #listaGratificables h3,
+#pantalla-menu-tesoreria h1, #pantalla-menu-tesoreria h2 {
+  text-align: center;
+  font-weight: 700;
+  font-size: 26px;
+  margin-bottom: 15px;
+  color: #1e4620;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Botones generales y menú Tesorería */
+button,
+#pantalla-menu-tesoreria button {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  font-size: 18px;
+  font-weight: bold;
+  color: #fff;
+  background: linear-gradient(135deg, #28a745, #218838);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: center;
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+  transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+button:hover,
+#pantalla-menu-tesoreria button:hover {
+  background: linear-gradient(135deg, #218838, #1e7e34);
+  transform: scale(1.05);
+  box-shadow: 4px 4px 8px rgba(0,0,0,0.3);
+}
+
+button:disabled,
+#pantalla-menu-tesoreria button:disabled {
+  background-color: #ccc;
+}
+
+/* Inputs, selects y textarea (general y menú Tesorería) */
+input, select, textarea,
+#pantalla-menu-tesoreria input,
+#pantalla-menu-tesoreria select,
+#pantalla-menu-tesoreria textarea {
+  width: 95%;
+  padding: 10px;
+  margin: 10px 0;
+  font-size: 16px;
+  border: 2px solid #28a745;
+  border-radius: 8px;
+  background: #fff;
+  color: #333;
+  text-align: left;
+  transition: border-color 0.2s ease, box-shadow 0.3s ease;
+}
+
+input:focus, select:focus, textarea:focus,
+#pantalla-menu-tesoreria input:focus,
+#pantalla-menu-tesoreria select:focus,
+#pantalla-menu-tesoreria textarea:focus {
+  border-color: #218838;
+  box-shadow: 0 0 8px rgba(33,136,56,0.8);
+  outline: none;
+}
+
+/* Mensajes de error */
+.error-msg {
+  color: #dc3545;
+  font-weight: bold;
+  display: none;
+}
+
+/* Resultados y contenedores similares */
+.result-container,
+#resultadoAnalisis, #resultadoGratificacion, #listaGratificables,
+.gratificacion-container,
+#resultadoVacaciones, #resultadosFiniquito, #resultadosNoFiniquito {
+  text-align: left;
+}
+
+/* Resultados: listas y párrafos alineados */
+#resultadoAnalisis ul, #resultadoAnalisis li,
+#resultadoGratificacion ul, #resultadoGratificacion li,
+#listaGratificables ul, #listaGratificables li,
+#resultadoAnalisis p, #resultadoGratificacion p, #listaGratificables p {
+  text-align: left;
+}
+
+/* Logo */
+.logo-container {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.logo-container img {
+  width: 50px;
+  height: auto;
+  display: block;
+  margin: auto;
+  transition: transform 0.3s ease-in-out;
+}
+
+.logo-container img:hover {
+  transform: scale(1);
+}
+
+/* Reset contador */
+#resetContador {
+  display: none;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 20px;
+  height: 20px;
+  background-color: rgba(255, 0, 0, 0.7);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+body.admin #resetContador {
+  display: inline-block;
+}
+
+/* Enlaces de recursos */
+#pantalla-recursos a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: bold;
+  font-size: 18px;
+  color: #28a745;
+  text-decoration: none;
+  transition: color 0.3s ease, transform 0.2s ease;
+}
+
+#pantalla-recursos a:hover {
+  color: #218838;
+  text-decoration: underline;
+  transform: scale(1.05);
+}
+
+#pantalla-recursos a img {
+  width: 20px;
+  height: auto;
+  transition: transform 0.2s ease-in-out;
+}
+
+#pantalla-recursos a:hover img {
+  transform: scale(1.1);
+}
+
+#listaGratificables {
+  padding-left: 20px;
+}
+
+/* Ocultar pantallas */
+.pantalla {
+  display: none;
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-contenido {
+  background: #fff;
+  padding: 20px;
+  border-radius: 5px;
+  width: 300px;
+  text-align: center;
+}
+
+/* Clase oculto */
+.oculto {
+  display: none;
+}
+
+/* Botón en contenedor centrado */
+.boton-container {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.boton-container button {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+/* Intro */
+.intro-container {
+  background-color: #f0fff0;
+  color: #1e4620;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  text-align: center;
+  font-size: 16px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+#btnEntendido {
+  margin-top: 10px;
+  padding: 10px;
+  font-size: 16px;
+  background: #28a745;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* Chat */
+#pantalla-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  max-height: 120vh;
+  overflow-y: auto;
+  background: rgba(255,255,255,0.85);
+  border-radius: 15px;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+}
+
+.mensaje {
+  background-color: #ffffcc;
+  padding: 8px 12px;
+  margin: 4px 0;
+  border-radius: 12px;
+  max-width: 95%;
+  word-wrap: break-word;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.mensaje.admin {
+  background-color: #d1e7dd;
+  text-align: left;
+}
+
+.mensaje.usuario {
+  background-color: #e2e3e5;
+  text-align: right;
+}
+
+.mensaje p {
+  font-size: 1.2rem;
+  margin: 0;
+}
+
+.mensaje p:last-child {
+  font-weight: bold;
+}
+
+/* Scroll de pantallas */
+#pantalla-chat::-webkit-scrollbar {
+  width: 8px;
+}
+
+#pantalla-chat::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+#pantalla-chat::-webkit-scrollbar-thumb {
+  background: #28a745;
+  border-radius: 4px;
+}
+
+.encabezado-resultado th {
+  background-color: #fff9c4; /* amarillo claro */
+  color: black;              /* letras negras */
+  font-weight: bold;
+}"
+
+.color-verde {
+  color: green;
+  font-weight: bold;
+}
+
+.color-amarillo {
+  color: goldenrod;
+  font-weight: bold;
+}
+
+.color-rojo {
+  color: red;
+  font-weight: bold;
+}
+
+/* Clase común para tablas con estilo igual */
+.tabla-estilo {
+  border-collapse: collapse;
+  width: 90%;
+  margin: 10px auto;
+  font-family: Arial, sans-serif;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.tabla-estilo th,
+.tabla-estilo td {
+  border: 1px solid #ddd;
+  padding: 2px 4px;
+  text-align: center;
+}
+
+.tabla-estilo th {
+  background-color: #fff8b3;  /* Amarillo claro */
+  color: #000;                /* Texto negro */
+  font-weight: bold;
+}
+
+.tabla-estilo td.tipo-reunion {
+  text-align: left;
+  width: 250px;
+  font-size: 0.85rem;
+  padding-left: 6px;
+}
+
+.tabla-estilo input[type="number"] {
+  border: none;
+  background: transparent;
+  text-align: center;
+  font-size: 0.85rem;
+  -moz-appearance: textfield;
+}
+
+.tabla-estilo input[type="number"]::-webkit-inner-spin-button,
+.tabla-estilo input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.tabla-estilo .valor-mes,
+.tabla-estilo .total-anual {
+  text-align: right;
+  font-weight: bold;
+  white-space: nowrap;
+  color: #000;
+}
+
+/* Estilos para lista de directores con checkbox alineados */
+#lista-directores div {
+  display: flex;
+  align-items: center;
+  gap: 8px;  /* espacio entre checkbox y texto */
+  margin-bottom: 6px;
+}
+
+#lista-directores input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
+#lista-directores label {
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Estilos para lista de socios con checkbox alineados */
+#lista-socios div {
+  display: flex;
+  align-items: center;
+  gap: 8px;     /* espacio entre checkbox y texto */
+  margin-bottom: 6px;
+}
+
+#lista-socios input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
+#lista-socios label {
+  cursor: pointer;
+  user-select: none;
+}
+
+/* estilo gasto gestion */
+#pantalla-rgasto-operacional {
+  background: rgba(255, 255, 255, 0.9);           /* Fondo blanco semitransparente */
+  padding: 20px;                                  /* Espacio interno alrededor del contenido */
+  border-radius: 15px;                            /* Bordes redondeados */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);     /* Sombra suave debajo para profundidad */
+  max-width: 430px;                               /* Ancho máximo del contenedor */
+  margin: 0 auto ;                                   /* Centrar horizontalmente */
+  text-align: left;                               /* Alineación del texto a la izquierda */
+  color: #333;                                    /* Color de texto gris oscuro */
+  font-family: Arial, sans-serif;                 /* Fuente tipográfica */
+}
+
+/* Título */
+#pantalla-rgasto-operacional h2 {
+  text-align: center;                             /* Centrar el título */
+  font-weight: 700;                               /* Texto negrita */
+  font-size: 22px;                                /* Tamaño de letra grande */
+  margin-bottom: 15px;                            /* Espacio debajo del título */
+  color: #1e4620;                                 /* Color verde oscuro */
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);  /* Sombra tenue al texto para relieve */
+}
+
+/* Inputs y selects */
+#pantalla-rgasto-operacional input[type="date"],
+#pantalla-rgasto-operacional select,
+#pantalla-rgasto-operacional input[type="number"] {
+  width: 95%;                                     /* Ocupan casi todo el ancho del contenedor */
+  padding: 8px;                                  /* Espacio interno para comodidad */
+  margin: 8px 0;                                 /* Margen vertical para separar elementos */
+  font-size: 16px;                                /* Tamaño de texto legible */
+  border: 2px solid #28a745;                      /* Borde verde definido */
+  border-radius: 8px;                             /* Bordes redondeados */
+  background: #fff;                               /* Fondo blanco */
+  color: #333;                                    /* Texto gris oscuro */
+  text-align: left;                               /* Texto alineado a la izquierda */
+  transition: border-color 0.2s ease, box-shadow 0.3s ease; /* Animación suave en foco */
+}
+
+#pantalla-rgasto-operacional input:focus,
+#pantalla-rgasto-operacional select:focus {
+  border-color: #218838;                          /* Borde verde más oscuro al enfocar */
+  box-shadow: 0 0 8px rgba(33,136,56,0.8);       /* Sombra verde alrededor al enfocar */
+  outline: none;                                  /* Quita el contorno por defecto */
+}
+
+/* Tabla de ítems */
+#pantalla-rgasto-operacional table {
+  width: 95%;                                    /* Tabla ocupa todo el ancho */
+  border-collapse: collapse;                      /* Elimina espacios entre bordes */
+  margin-top: 8px;                               /* Margen arriba para separación */
+  font-size: 0.95rem;                             /* Tamaño de fuente un poco más pequeño */
+  color: #333;                                    /* Texto gris oscuro */
+}
+
+#pantalla-rgasto-operacional th,
+#pantalla-rgasto-operacional td {
+  border: 1px solid #ddd;                         /* Bordes grises claros en celdas */
+  padding: 4px 8px;                               /* Espacio interno en celdas */
+  text-align: left;;                             /* Centrar texto en celdas */
+}
+
+#pantalla-rgasto-operacional th {
+  background-color: #fff8b3;                      /* Fondo amarillo claro para encabezados */
+  color: #000;                                    /* Texto negro en encabezados */
+  font-weight: bold;                              /* Negrita en encabezados */
+}
+
+/* Cambios en las celdas de los ítems: texto más pequeño y menor espacio vertical */
+#pantalla-rgasto-operacional td {
+  padding: 2px 4px; /* Reducción del espacio vertical en celdas */
+  font-size: 0.95rem; /* Tamaño de fuente más pequeño */
+}
+
+#pantalla-rgasto-operacional td input[type="number"] {
+  width: 40px;                                    /* Ancho más pequeño para los inputs numéricos */
+  border: none;                                   /* Sin borde para integrarse a la celda */
+  background: transparent;                        /* Fondo transparente */
+  text-align: center;                              /* Texto alineado a la derecha */
+  font-size: 0.9rem;                              /* Tamaño de fuente ligeramente menor */
+  -moz-appearance: textfield;                     /* Quita flechas predeterminadas en Firefox */
+}
+
+#pantalla-rgasto-operacional input[type="number"]::-webkit-inner-spin-button,
+#pantalla-rgasto-operacional input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;                       /* Quita flechas predeterminadas en Chrome/Safari */
+  margin: 0;                                      /* Sin margen */
+}
+
+/* Total */
+#pantalla-rgasto-operacional #total-gasto {
+  font-weight: bold;                              /* Texto en negrita para resaltar */
+  background-color: #e6f4e6;                      /* Fondo verde muy claro */
+  color: #1e4620;                                 /* Texto verde oscuro */
+}
+
+/* Botones */
+#pantalla-rgasto-operacional .botones {
+  margin-top: 20px;                               /* Espacio arriba de los botones */
+  display: flex;                                  /* Flexbox para ordenarlos */
+  flex-direction: column;                         /* En columna, uno debajo de otro */
+  gap: 10px;                                      /* Separación uniforme entre botones */
+}
+
+#pantalla-rgasto-operacional button {
+  display: block;                                 /* Ocupa todo el ancho disponible */
+  width: 100%;                                    /* Ancho completo */
+  padding: 12px;                                  /* Espacio interno amplio para clic fácil */
+  font-size: 18px;                                /* Texto grande y legible */
+  font-weight: bold;                              /* Texto en negrita */
+  color: #fff;                                    /* Texto blanco */
+  background: linear-gradient(135deg, #28a745, #218838); /* Degradado verde */
+  border: none;                                   /* Sin borde */
+  border-radius: 8px;                             /* Bordes redondeados */
+  cursor: pointer;                                /* Cursor de mano para indicar clickeable */
+  text-align: center;                             /* Texto centrado */
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.2);       /* Sombra suave para profundidad */
+  transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease; /* Animaciones al interactuar */
+}
+
+#pantalla-rgasto-operacional button:hover {
+  background: linear-gradient(135deg, #218838, #1e7e34); /* Degradado verde más oscuro al pasar mouse */
+  transform: scale(1.05);                         /* Aumenta un poco el tamaño */
+  box-shadow: 4px 4px 8px rgba(0,0,0,0.3);       /* Sombra más pronunciada */
+}
+
+.checkbox-group .checkbox-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.checkbox-group .checkbox-item input {
+  margin-right: 8px;
+}
+
+#contenedorSocios {
+  display: block;
+  margin-top: 8px;
+}
+
+.socio-item {
+  display: flex;
+  align-items: center; /* checkbox y texto en línea */
+  gap: 8px;
+  margin-bottom: 6px;  /* separación vertical entre socios */
+  cursor: pointer;
+  user-select: none;
+}
+
+.socio-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.socio-item label {
+  cursor: pointer;
+  user-select: none;
+  line-height: 1.2;
+  margin: 0;
+}

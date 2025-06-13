@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MEC</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Contenedor de información de visitas, fecha y hora -->
+  <div id="info-container">
+      <p><span id="hora"></span>    <span id="fecha"></span>         Visitas: <span id="contador">0</span></p>
+      <button id="resetContador" class="hidden-reset" onclick="resetContador()">Resetear Contador</button>
+  </div>
+  <!-- Pantalla de Login -->
+  <div id="login-container">
+      <div class="logo-container">
+          <img src="logo.png" alt="Logotipo de MEC">
+      </div>
+
+      <!-- Estructura de bienvenida -->
+      <div id="introBienvenida" class="intro-container" style="display: none;">
+          <p><strong>Esta aplicación te ayuda a revisar si tu sueldo y derechos laborales están bien calculados.</strong></p>
+          <p>Analiza tu liquidación, vacaciones, finiquito, horas extras, rec.dom y ext.dom en pocos minutos.</p>
+          <p>Tienes acceso a Utilidades, Chat Grupal o Privado</p>
+          <p>Sube tu archivo PDF. Todo es privado y anónimo.</p>
+          <button id="btnSolicitarClave">Solicita tu clave</button>
+          <hr>
+          <button id="btnEntendido">Entendido</button>
+      </div>
+
+      <!-- Modal con el correo de solicitud de clave -->
+      <div id="modalClave" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+        background-color:rgba(0,0,0,0.5); text-align:center; padding-top:100px;">
+        <div style="background:#fff; display:inline-block; padding:20px; border-radius:8px;">
+          <p>Envía tu solicitud a este correo:</p>
+          <strong>fetrahfal1999@gmail.com</strong>
+          <br><br>
+          <button onclick="document.getElementById('modalClave').style.display='none'">Cerrar</button>
+        </div>
+      </div>
+
+      <h1>Bienvenido a MEC</h1>
+      <p class="left-align">Ingresa clave de acceso:</p>
+      <input type="password" id="codigoAcceso" maxlength="8" placeholder="8 dígitos o letras" autocomplete="off" />
+      <button type="button" id="ingresarBtn">Ingresar</button>
+      <p id="mensajeError" class="error-msg" style="display: none;">Código incorrecto. Intenta nuevamente.</p>
+  </div>
+
+  <!-- Menú Principal -->
+  <div id="menu-principal" class="pantalla" style="display: none;">
+      <div class="logo-container">
+          <img src="logo.png" alt="Logotipo de MEC">
+      </div>
+      <h1>Menú Principal</h1>
+      <button onclick="mostrarPantalla('pantalla-analisis')">🔥 Análisis de Liquidación</button>
+      <button onclick="mostrarPantalla('pantalla-vacaciones')">🌊 Cálculo de Vacaciones</button>
+      <button onclick="mostrarPantalla('screen-finiquito')">👋 Cálculo de Finiquito</button>
+      <button onclick="mostrarPantalla('pantalla-horas')">⏳ Cálculo de Horas</button>
+      <button onclick="mostrarPantalla('pantalla-recursos')">✅ Recursos Útiles</button>
+      <button onclick="ingresarAlChat()">📢 Chat Grupal y Privado</button>
+      <button onclick="mostrarPantalla('pantalla-archivosindical')">📂 Archivo Sindical</button>
+      <button id="btn-ingresar">📈 Tesorería Federación</button>
+      <button onclick="salirAplicacion()">Salir de la Aplicación</button>
+  </div>
+
+  <!-- Pantalla de Acceso Tesorería -->
+  <div id="pantallaAccesoTesoreria" class="pantalla" style="display: none;">
+    <h2>Acceso a Tesorería</h2>
+    <label for="rutTesoreria">Ingrese su RUT:</label><br/>
+    <input type="text" id="rutTesoreria" placeholder="Ej: 12345678 sin puntos ni dígito verificador" /><br/><br/>
+    <label for="sindicatoTesoreria">Seleccione su sindicato:</label><br/>
+    <select id="sindicatoTesoreria">
+      <option value="">-- Seleccione --</option>
+      <!-- Se llenará dinámicamente desde Supabase -->
+    </select><br/><br/>
+    <div id="claveAdicionalContainer" style="display: none;">
+      <label for="claveAdicional">Clave adicional:</label><br/>
+      <input type="password" id="claveAdicional" placeholder="Ingrese su clave" /><br/><br/>
+    </div>
+      <button onclick="validarAccesoTesoreria()">Acceder</button>
+      <button onclick="mostrarPantalla('menu-principal')">↩ Menú</button>
+  </div>
+
+  <!-- Menú Tesorería -->
+<div id="pantalla-menu-tesoreria" class="menu" style="display: none;">
+      <h1>Menú Tesorería</h1>
+      <div id="menu-buttons">
+          <button onclick="mostrarPantalla('pantalla-agenda')">📅 Agenda Reuniones</button>
+          <button id="btnIngresos">📥 Ingresos</button>
+          <button id="btnGastos">📤 Gastos</button>
+          <button id="btnResultadoIngresos">📈 Resultado de Ingresos</button>
+          <button id="btnResultadoGastos">📉 Resultado de Gastos</button>
+          <button id="volverBtn">↩ Menú Principal</button>
+      </div>
+</div>
+
+  <!-- **********************Pantalla Ingresos************************* -->
+  <div id="pantalla-tesoreria" class="pantalla" style="display: none; padding: 20px;">
+    <h1>Ingresos Federación</h1>
+    <div id="menu-ingresos" style="margin-bottom: 20px;">
+      <button id="btn-plan-ingresos" onclick="mostrarPantalla('pantalla-plan-ingresos')">📋 Plan de Ingresos</button>
+      <button id="btnCuotaSindicato" onclick="mostrarPantalla('pantalla-cuota')">💰 Cuota Sindicato Federado</button>
+      <button id="btnPlenariasFederacion" onclick="mostrarPantalla('pantalla-plenarias')">🏛️ Plenarias Federación</button>
+      <button id="btn-aporte-director" onclick="mostrarPantalla('pantalla-aporte')">🧾Aporte Director</button>
+      <button class="boton-menu" onclick="mostrarFormularioOtrosIngresos()">🔍 Otros Ingresos</button>
+      <button id="volverTesoreriaBtn">↩ Menú Tesorería</button>
+    </div>
+  </div>
+
+  <!-- Pantalla para registrar ingresos por cuota sindicatos federados -->
+  <div id="pantalla-cuota" class="pantalla" style="display: none; padding: 20px;">
+    <h2>Cuota Sindicato Federado</h2>
+      <label for="teso-sindicato">Sindicato:</label><br />
+    <select id="teso-sindicato">
+      <option value="">Cargando sindicatos…</option>
+    </select><br /><br />
+      <label for="teso-anio">Año fiscal (abril a marzo):</label><br />
+    <input type="number" id="teso-anio" value="2025" min="2022" max="2100" /><br /><br />
+      <label for="teso-mes">Mes:</label><br />
+    <select id="teso-mes">
+      <!-- Opciones se cargarán dinámicamente en JS con cargarMeses() -->
+    </select><br /><br />
+      <label for="teso-cuota">Cuota a pagar:</label><br />
+    <input type="number" id="teso-cuota" min="0" step="0.01" /><br /><br />
+    <div class="botones-tesoreria">
+      <button id="teso-guardar">Aceptar ingreso</button>
+      <button id="teso-volver">↩ Tesorería</button>
+    </div>
+  </div>
+
+  <!-- Pantalla para registrar ingresos por asistencia a plenarias -->
+  <div id="pantalla-plenarias" class="pantalla" style="display:none; padding: 20px;">
+    <h2>Ingreso por Asistencia a Plenarias</h2>
+    <label for="plenaria-sindicato">Sindicato:</label><br />
+    <select id="plenaria-sindicato">
+      <option value="">Seleccione un sindicato</option>
+      <!-- Aquí se cargarán los sindicatos activos -->
+    </select><br /><br />
+
+    <label>Directores asistentes:</label>
+    <div style="display: flex; justify-content: space-around; max-width: 400px; margin-top: 10px;">
+      <div style="text-align: center;">
+        <label for="dir-presidente">Presidente</label><br>
+        <input type="checkbox" id="dir-presidente" />
+      </div>
+      <div style="text-align: center;">
+        <label for="dir-secretario">Secretario</label><br>
+        <input type="checkbox" id="dir-secretario" />
+      </div>
+      <div style="text-align: center;">
+        <label for="dir-tesorero">Tesorero</label><br>
+        <input type="checkbox" id="dir-tesorero" />
+      </div>
+    </div><br>
+
+    <label for="plenaria-anio">Año:</label><br />
+    <input type="number" id="plenaria-anio" min="2000" max="2100" placeholder="Ej: 2025" value="2025" /><br /><br />
+
+    <label for="plenaria-mes">Mes:</label><br />
+    <select id="plenaria-mes">
+      <option value="">-- Elige un mes --</option>
+      <!-- Aquí se cargarán los meses -->
+    </select><br /><br />
+
+    <p>Total ingreso: <span id="plenaria-total">0</span> CLP</p>
+
+    <div class="botones-tesoreria">
+      <button id="plenaria-guardar">Guardar Ingreso</button>
+      <button id="plenaria-volver" onclick="mostrarPantalla('pantalla-tesoreria')">↩ Tesorería</button>
+    </div>
+  </div>
+
+  <!-- Pantalla para registrar aporte director -->
+  <div id="pantalla-aporte" class="pantalla" style="display:none; padding: 20px;">
+    <h2>Aporte de Directores</h2>
+    <label for="aporte-sindicato">Sindicato:</label><br />
+    <select id="aporte-sindicato">
+      <option value="">Seleccione un sindicato</option>
+      <!-- Se cargará dinámicamente -->
+    </select><br /><br />
+    <div id="aporte-directores">
+      <!-- Aquí se mostrarán los directores: presidente, secretario, tesorero -->
+    </div><br />
+    <label for="aporte-anio">Año:</label><br />
+    <input type="number" id="aporte-anio" min="2000" max="2100" placeholder="Ej: 2025" /><br /><br />
+    <label for="aporte-mes">Mes:</label><br />
+    <select id="aporte-mes">
+      <option value="">-- Elige un mes --</option>
+      <!-- Se llenará dinámicamente -->
+    </select><br /><br />
+    <p>Total ingreso: <span id="aporte-total">0</span> CLP</p>
+    <div class="botones-tesoreria">
+      <button id="aporte-guardar">Registrar Aportes</button>
+      <button id="aporte-volver">↩ Tesorería</button>
+    </div>
+  </div>
+
+  <!-- Pantalla para registrar otros ingresos  -->
+  <div id="formulario-otros-ingresos" class="pantalla" style="display: none; margin-top: 20px;">
+    <h3>Registrar Otros Ingresos</h3>
+    <form id="otrosIngresosForm">
+      <label for="tipoIngreso">Tipo de Ingreso:</label>
+      <select id="tipoIngreso" name="tipoIngreso" onchange="toggleCampoDescripcionIngreso()" required>
+        <option value="" disabled selected>Selecciona un tipo</option>
+        <option value="demandas">Ingresos por Demandas</option>
+        <option value="otraTienda">Ingreso Socio otra Tienda</option>
+        <option value="error">Ingreso por Error</option>
+        <option value="otro">Otros</option>
+      </select><br><br>
+
+      <div id="campoDescripcionIngreso" style="display: none;">
+        <label for="descripcionIngreso">Describa el ingreso:</label>
+        <input type="text" id="descripcionIngreso" name="descripcionIngreso" placeholder="Descripción o motivo del error"><br><br>
+      </div>
+
+      <label for="anio">Año:</label>
+      <input type="number" id="anio" name="anio" min="2000" max="2100" required value="2025"><br><br>
+
+      <label for="mes">Mes:</label>
+      <select id="mes" name="mes" required>
+        <option value="" disabled selected>Selecciona un mes</option>
+        <option value="4">Abril</option>
+        <option value="5">Mayo</option>
+        <option value="6">Junio</option>
+        <option value="7">Julio</option>
+        <option value="8">Agosto</option>
+        <option value="9">Septiembre</option>
+        <option value="10">Octubre</option>
+        <option value="11">Noviembre</option>
+        <option value="12">Diciembre</option>
+        <option value="1">Enero</option>
+        <option value="2">Febrero</option>
+        <option value="3">Marzo</option>
+      </select><br><br>
+
+      <label for="montoIngreso">Monto:</label>
+      <input type="number" id="montoIngreso" name="montoIngreso" step="0.01" required><br><br>
+
+      <div class="botones-tesoreria">
+        <button type="submit">Registrar Ingreso</button>
+        <button type="button" onclick="mostrarPantalla('pantalla-tesoreria')">↩ Tesorería</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Pantalla Plan de Ingresos (contenido de plan_ingresos.html aquí) -->
+<div id="pantalla-plan-ingresos" class="pantalla" style="display: none; padding: 20px;">
+  <h2>📊 Plan de Ingresos Anual</h2>
+
+  <div class="bloque">
+    <h3>Año del Plan</h3>
+    <label>Año:
+      <input type="number" id="anioPlan" min="2000" max="2100" value="2025" />
+    </label>
+  </div>
+
+  <div class="bloque">
+    <h3>Cuota Sindicato Federado</h3>
+    <label>N° Socios:
+      <input type="number" id="socios" />
+    </label>
+    <label>Valor cuota mensual:
+      <input type="number" id="valorCuota" />
+    </label>
+    <p class="total" id="totalCuota"></p>
+  </div>
+
+  <div class="bloque">
+    <h3>Plenarias Federación</h3>
+    <label>N° Plenarias:
+      <input type="number" id="plenarias" />
+    </label>
+    <label>N° Directores:
+      <input type="number" id="directoresPlenaria" />
+    </label>
+    <label>Valor por director:
+      <input type="number" id="valorPlenaria" />
+    </label>
+    <p class="total" id="totalPlenarias"></p>
+  </div>
+
+  <div class="bloque">
+    <h3>Aporte Director</h3>
+    <label>N° Meses:
+      <input type="number" id="mesesAporte" />
+    </label>
+    <label>N° Directores:
+      <input type="number" id="directoresAporte" />
+    </label>
+    <label>Valor aporte mensual:
+      <input type="number" id="valorAporte" />
+    </label>
+    <p class="total" id="totalAporte"></p>
+  </div>
+
+  <div class="bloque">
+    <h3>Otros Ingresos</h3>
+    <label>Valor total:
+      <input type="number" id="otrosIngresos" value="0" min="0" step="0.01" />
+    </label>
+    <p class="total" id="totalOtros"></p>
+  </div>
+
+  <div class="bloque">
+    <h3>📌 Total Ingresos Proyectados</h3>
+    <p class="total" id="totalGeneral"></p>
+  </div>
+
+  <div class="boton-container">
+    <button id="guardarBtn" onclick="guardarPlanIngresos()">Guardar Plan de Ingresos</button>
+    <button onclick="mostrarPantalla('pantalla-tesoreria')">↩ Tesorería</button>
+  </div>
+</div>
+
+<!-- ***********Pantalla de Resultado de Ingresos**********-->
+<div id="pantalla-resultado-ingresos" class="pantalla" style="display: none; padding: 20px;">
+  <h2>Resultado de Ingresos</h2>
+  <div class="barra-controles">
+    <label for="resultado-anio">Año:</label>
+    <input type="number" id="resultado-anio" value="2025" min="2000" max="2100" />
+    <button id="btnCargarResultado">Actualizar Resultado</button>
+    <button id="btnVolverResultadoIngresos">↩ Menú Tesorería</button>
+  </div>
+  <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 100%; max-width: 500px;">
+  <thead class="encabezado-resultado">
+      <tr>
+        <th>Tipo</th>
+        <th>Plan Anual</th>
+        <th>Ingresos Reales</th>
+        <th>Logro %</th>
+      </tr>
+    </thead>
+    <tbody id="tabla-resultado-ingresos">
+      <!-- Filas generadas dinámicamente -->
+    </tbody>
+  </table>
+</div>
+
+<!-- *******************Pantalla Gastos Federación*********************** -->
+<div id="pantalla-gastos" class="pantalla" style="display: none; padding: 20px;">
+  <h1>Gastos Federación</h1>
+  <div id="menu-gastos" style="margin-bottom: 20px;">
+    <button id="btn-plan-gastos" onclick="mostrarPantalla('pantalla-plan-gastos')">📋 Plan de Gastos</button>
+    <button onclick="mostrarPantallaGastoReal('pantalla-gasto-real-directores')">🔥 Gasto Real Directores</button> <!--este es-->
+    <button onclick="mostrarPantalla('pantalla-rgasto-plenarias')">🏛️ Gasto Plenarias</button>
+    <button onclick="mostrarPantalla('pantalla-rgasto-operacional')">🔋 Gasto Operacional</button>
+    <button onclick="mostrarPantalla('pantalla-rgasto-comisiones')">✍ Gasto Comisiones</button>
+    <button onclick="mostrarPantalla('pantalla-otros-gastos')">📌 Otros Gastos</button>
+  </div>
+  <button onclick="mostrarPantalla('pantalla-menu-tesoreria')">↩ Menú Tesorería</button>
+</div>
+
+<!-- Pantalla Plan de Gastos -->
+<div id="pantalla-plan-gastos" class="pantalla" style="display: none; padding: 20px;">
+  <h2>📋 Plan de Gastos</h2>
+  <div style="margin-bottom: 20px;">
+    <button onclick="mostrarPantalla('pantalla-remuneracion-directores')">💰 Remuneración de Directores</button>
+    <button onclick="mostrarPantalla('pantalla-viatico-directores')">📄 Viáticos de Directores</button>
+    <button onclick="mostrarPantalla('pantalla-proyecto-plenarias')">🧠 Costo de Plenarias</button>
+    <button onclick="mostrarPantalla('pantalla-proyecto-gastos-gestion')">🔒 Gastos de Gestión</button>
+    <button onclick="mostrarPantalla('pantalla-proyecto-comisiones')">🧩 Costo Comisiones</button>
+    <button onclick="mostrarPantalla('pantalla-crear-comision')">➕ Crear Comisión</button>
+  </div>
+  <button onclick="mostrarPantalla('pantalla-gastos')">↩ Gastos Federación</button>
+</div>
+
+<!--************* Pantalla Remuneración Directores ************* -->
+<div id="pantalla-remuneracion-directores" class="pantalla" style="display: none; padding: 20px;">
+  <h2>Remuneración Directores</h2>
+
+  <table id="tabla-remuneraciones" class="tabla-estilo">
+    <thead>
+      <tr>
+        <th style="width: 160px;">Reunión</th>
+        <th style="width: 30px;">Cant.</th>
+        <th style="width: 30px;">Días</th>
+        <th style="width: 30px;">Pers.</th>
+        <th style="width: 80px;">Valor Día</th>
+        <th style="width: 100px;">Valor Mes</th>
+        <th style="width: 150px;">Total Anual</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr>
+        <td class="tipo-reunion">Plenarias ZOOM</td>
+        <td><input type="number" value="0" min="0" class="eventos" /></td>
+        <td><input type="number" value="0" min="0" class="dias" /></td>
+        <td><input type="number" value="0" min="0" class="participantes" /></td>
+        <td><input type="number" value="0" min="0" class="valor-dia" /></td>
+        <td class="valor-mes">$0</td>
+        <td class="total-anual">$0</td>
+      </tr>
+      <tr>
+        <td class="tipo-reunion">Directorio ZOOM (2H)</td>
+        <td><input type="number" value="0" min="0" class="eventos" /></td>
+        <td><input type="number" value="0" min="0" class="dias" /></td>
+        <td><input type="number" value="0" min="0" class="participantes" /></td>
+        <td><input type="number" value="0" min="0" class="valor-dia" /></td>
+        <td class="valor-mes">$0</td>
+        <td class="total-anual">$0</td>
+      </tr>
+      <tr>
+        <td class="tipo-reunion">Ejecutivo Presencial</td>
+        <td><input type="number" value="0" min="0" class="eventos" /></td>
+        <td><input type="number" value="0" min="0" class="dias" /></td>
+        <td><input type="number" value="0" min="0" class="participantes" /></td>
+        <td><input type="number" value="0" min="0" class="valor-dia" /></td>
+        <td class="valor-mes">$0</td>
+        <td class="total-anual">$0</td>
+      </tr>
+      <tr>
+        <td class="tipo-reunion">Reuniones ZOOM (2H)</td>
+        <td><input type="number" value="0" min="0" class="eventos" /></td>
+        <td><input type="number" value="0" min="0" class="dias" /></td>
+        <td><input type="number" value="0" min="0" class="participantes" /></td>
+        <td><input type="number" value="0" min="0" class="valor-dia" /></td>
+        <td class="valor-mes">$0</td>
+        <td class="total-anual">$0</td>
+      </tr>
+      <tr>
+        <td class="tipo-reunion">Reunion Especial</td>
+        <td><input type="number" value="0" min="0" class="eventos" /></td>
+        <td><input type="number" value="0" min="0" class="dias" /></td>
+        <td><input type="number" value="0" min="0" class="participantes" /></td>
+        <td><input type="number" value="0" min="0" class="valor-dia" /></td>
+        <td class="valor-mes">$0</td>
+        <td class="total-anual">$0</td>
+      </tr>
+      <tr>
+        <td class="tipo-reunion">Plen. Director S/SB</td>
+        <td><input type="number" value="0" min="0" class="eventos" /></td>
+        <td><input type="number" value="0" min="0" class="dias" /></td>
+        <td><input type="number" value="0" min="0" class="participantes" /></td>
+        <td><input type="number" value="0" min="0" class="valor-dia" /></td>
+        <td class="valor-mes">$0</td>
+        <td class="total-anual">$0</td>
+      </tr>
+      <tr>
+        <td class="tipo-reunion">Visitas Norte ZOOM</td>
+        <td><input type="number" value="0" min="0" class="eventos" /></td>
+        <td><input type="number" value="0" min="0" class="dias" /></td>
+        <td><input type="number" value="0" min="0" class="participantes" /></td>
+        <td><input type="number" value="0" min="0" class="valor-dia" /></td>
+        <td class="valor-mes">$0</td>
+        <td class="total-anual">$0</td>
+      </tr>
+      <tr>
+        <td class="tipo-reunion">Visitas SUR ZOOM</td>
+        <td><input type="number" value="0" min="0" class="eventos" /></td>
+        <td><input type="number" value="0" min="0" class="dias" /></td>
+        <td><input type="number" value="0" min="0" class="participantes" /></td>
+        <td><input type="number" value="0" min="0" class="valor-dia" /></td>
+        <td class="valor-mes">$0</td>
+        <td class="total-anual">$0</td>
+      </tr>
+    </tbody>
+  </table>
+  <div id="total-presupuesto-director" style="margin-top: 10px; font-weight: bold; display:none;">
+    Total Presupuesto Director-Reunión: $0
+  </div>
+  <br />
+  <div style="margin-top: 20px;">
+    <label for="input-periodo">Período:</label>
+    <input type="text" id="input-periodo" placeholder="Ej: 2025" />
+  </div>
+  <button onclick="guardarPresupuesto()">💾 Guardar Presupuesto</button>
+  <button onclick="cargarPresupuesto()">📂 Cargar Presupuesto Guardado</button>
+  <button onclick="mostrarPantalla('pantalla-plan-gastos')">↩ Plan de Gastos</button>
+</div>
+
+<!--************ Pantalla Viaticos Directores ****************-->
+<div id="pantalla-viatico-directores" class="pantalla" style="display: none; padding: 20px;">
+  <h2>Viaticos Directores</h2>
+
+  <table id="tabla-viaticos" class="tabla-estilo">
+    <thead>
+      <tr>
+        <th style="width: 160px;">Reunión</th>
+        <th style="width: 30px;">Cant.</th>
+        <th style="width: 30px;">Días</th>
+        <th style="width: 30px;">Pers.</th>
+        <th style="width: 80px;">Valor Día</th>
+        <th style="width: 100px;">Valor Mes</th>
+        <th style="width: 150px;">Total Anual</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr>
+        <td class="tipo-reunion">Ejecutivo Presencial</td>
+        <td><input type="number" value="0" min="0" class="eventos" /></td>
+        <td><input type="number" value="0" min="0" class="dias" /></td>
+        <td><input type="number" value="0" min="0" class="participantes" /></td>
+        <td><input type="number" value="0" min="0" class="valor-dia" /></td>
+        <td class="valor-mes">$0</td>
+        <td class="total-anual">$0</td>
+      </tr>
+      <tr>
+        <td class="tipo-reunion">Reunion Especial</td>
+        <td><input type="number" value="0" min="0" class="eventos" /></td>
+        <td><input type="number" value="0" min="0" class="dias" /></td>
+        <td><input type="number" value="0" min="0" class="participantes" /></td>
+        <td><input type="number" value="0" min="0" class="valor-dia" /></td>
+        <td class="valor-mes">$0</td>
+        <td class="total-anual">$0</td>
+      </tr>
+      <tr>
+        <td class="tipo-reunion">Plen. Director S/SB</td>
+        <td><input type="number" value="0" min="0" class="eventos" /></td>
+        <td><input type="number" value="0" min="0" class="dias" /></td>
+        <td><input type="number" value="0" min="0" class="participantes" /></td>
+        <td><input type="number" value="0" min="0" class="valor-dia" /></td>
+        <td class="valor-mes">$0</td>
+        <td class="total-anual">$0</td>
+      </tr>
+      <tr>
+        <td class="tipo-reunion">Visitas Norte ZOOM</td>
+        <td><input type="number" value="0" min="0" class="eventos" /></td>
+        <td><input type="number" value="0" min="0" class="dias" /></td>
+        <td><input type="number" value="0" min="0" class="participantes" /></td>
+        <td><input type="number" value="0" min="0" class="valor-dia" /></td>
+        <td class="valor-mes">$0</td>
+        <td class="total-anual">$0</td>
+      </tr>
+      <tr>
+        <td class="tipo-reunion">Visitas SUR ZOOM</td>
+        <td><input type="number" value="0" min="0" class="eventos" /></td>
+        <td><input type="number" value="0" min="0" class="dias" /></td>
+        <td><input type="number" value="0" min="0" class="participantes" /></td>
+        <td><input type="number" value="0" min="0" class="valor-dia" /></td>
+        <td class="valor-mes">$0</td>
+        <td class="total-anual">$0</td>
+      </tr>
+    </tbody>
+  </table>
+  <div id="total-presupuesto-viaticos" style="margin-top: 10px; font-weight: bold; display:none;">
+    Total Presupuesto Viaticos-Reunión: $0
+  </div>
+  <br />
+  <div style="margin-top: 20px;">
+    <label for="input-periodo">Período:</label>
+    <input type="text" id="input-periodo-viaticos" placeholder="Ej: 2025" />
+  </div>
+  <button onclick="guardarPresupuestoViaticos()">💾 Guardar Presupuesto</button>
+  <button onclick="cargarPresupuestoViaticos()">📂 Cargar Presupuesto Guardado</button>
+  <button onclick="mostrarPantalla('pantalla-plan-gastos')">↩ Plan de Gastos</button>
+</div>
+
+<!-- ************Pantalla proyecto  Plenarias *************-->
+<div id="pantalla-proyecto-plenarias" class="pantalla" style="display: none; padding: 20px;">
+  <h2>Costo Plenearias</h2>
+
+  <table id="tabla-Plenarias" class="tabla-estilo">
+    <thead>
+      <tr>
+        <th style="width: 160px;">Plenarias</th>
+        <th style="width: 100px;">Costo</th>
+        <th style="width: 30px;">Eventos</th>
+        <th style="width: 180px;">Total Anual</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr>
+        <td class="tipo-reunion">Plenarias</td>
+        <td><input type="number" value="0" min="0" class="Costo" /></td>
+        <td><input type="number" value="0" min="0" class="Eventos" /></td>
+        <td class="total-anual">$0</td>
+      </tr>
+      <tr>
+        <td class="tipo-reunion">Colación / Break</td>
+        <td><input type="number" value="0" min="0" class="Costo" /></td>
+        <td><input type="number" value="0" min="0" class="Eventos" /></td>
+        <td class="total-anual">$0</td>
+      </tr>
+      <tr>
+        <td class="tipo-reunion">Propina</td>
+        <td><input type="number" value="0" min="0" class="Costo" /></td>
+        <td><input type="number" value="0" min="0" class="Eventos" /></td>
+        <td class="total-anual">$0</td>
+      </tr>
+    </tbody>
+  </table>
+  <div id="total-presupuesto-Plenarias" style="margin-top: 10px; font-weight: bold; display:none;">
+    Total Presupuesto Plenarias: $0
+  </div>
+  <br />
+  <div style="margin-top: 20px;">
+    <label for="input-periodo">Período:</label>
+    <input type="text" id="input-periodo-Plenarias" placeholder="Ej: 2025" />
+  </div>
+  <button onclick="guardarPresupuestoPlenarias()">💾 Guardar Presupuesto</button>
+  <button onclick="cargarPresupuestoPlenarias ()">📂 Cargar Presupuesto Guardado</button>
+  <button onclick="mostrarPantalla('pantalla-plan-gastos')">↩ Plan de Gastos</button>
+</div>
+
+<!--************ Pantalla proyecto Gastos Gestión ************ -->
+<div id="pantalla-proyecto-gastos-gestion" class="pantalla" style="display: none; padding: 20px;">
+  <h2>Gastos de Gestión</h2>
+
+  <table id="tabla-GastosGestion" class="tabla-estilo">
+    <thead>
+      <tr>
+        <th style="width: 250px;">Concepto</th>
+        <th style="width: 60px;">Costo</th>
+        <th style="width: 60px;">Eventos</th>
+        <th style="width: 150px;">Total Anual</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr><td class="tipo-reunion">Celular Presidente</td><td><input type="number" value="0" min="0" class="Costo" /></td><td><input type="number" value="0" min="0" class="Cantidad" /></td><td class="total-anual">$0</td></tr>
+      <tr><td class="tipo-reunion">Material Oficina</td><td><input type="number" value="0" min="0" class="Costo" /></td><td><input type="number" value="0" min="0" class="Cantidad" /></td><td class="total-anual">$0</td></tr>
+      <tr><td class="tipo-reunion">Comisión Asesoría Negociación</td><td><input type="number" value="0" min="0" class="Costo" /></td><td><input type="number" value="0" min="0" class="Cantidad" /></td><td class="total-anual">$0</td></tr>
+      <tr><td class="tipo-reunion">Asesoría Abogados</td><td><input type="number" value="0" min="0" class="Costo" /></td><td><input type="number" value="0" min="0" class="Cantidad" /></td><td class="total-anual">$0</td></tr>
+      <tr><td class="tipo-reunion">Aniversario</td><td><input type="number" value="0" min="0" class="Costo" /></td><td><input type="number" value="0" min="0" class="Cantidad" /></td><td class="total-anual">$0</td></tr>
+      <tr><td class="tipo-reunion">Caja Chica</td><td><input type="number" value="0" min="0" class="Costo" /></td><td><input type="number" value="0" min="0" class="Cantidad" /></td><td class="total-anual">$0</td></tr>
+      <tr><td class="tipo-reunion">Página Web (Teams)</td><td><input type="number" value="0" min="0" class="Costo" /></td><td><input type="number" value="0" min="0" class="Cantidad" /></td><td class="total-anual">$0</td></tr>
+      <tr><td class="tipo-reunion">Representación</td><td><input type="number" value="0" min="0" class="Costo" /></td><td><input type="number" value="0" min="0" class="Cantidad" /></td><td class="total-anual">$0</td></tr>
+      <tr><td class="tipo-reunion">Uniformes</td><td><input type="number" value="0" min="0" class="Costo" /></td><td><input type="number" value="0" min="0" class="Cantidad" /></td><td class="total-anual">$0</td></tr>
+      <tr><td class="tipo-reunion">Almuerzo Ejecutivo (6)</td><td><input type="number" value="0" min="0" class="Costo" /></td><td><input type="number" value="0" min="0" class="Cantidad" /></td><td class="total-anual">$0</td></tr>
+      <tr><td class="tipo-reunion">Atención Invitados</td><td><input type="number" value="0" min="0" class="Costo" /></td><td><input type="number" value="0" min="0" class="Cantidad" /></td><td class="total-anual">$0</td></tr>
+      <tr><td class="tipo-reunion">Capacitación</td><td><input type="number" value="0" min="0" class="Costo" /></td><td><input type="number" value="0" min="0" class="Cantidad" /></td><td class="total-anual">$0</td></tr>
+      <tr><td class="tipo-reunion">Gastos Varios</td><td><input type="number" value="0" min="0" class="Costo" /></td><td><input type="number" value="0" min="0" class="Cantidad" /></td><td class="total-anual">$0</td></tr>
+      <tr><td class="tipo-reunion">Imprevistos</td><td><input type="number" value="0" min="0" class="Costo" /></td><td><input type="number" value="0" min="0" class="Cantidad" /></td><td class="total-anual">$0</td></tr>
+    </tbody>
+
+  </table>
+  <div id="total-presupuesto-gastos-gestion" style="margin-top: 10px; font-weight: bold; display:none;">
+    Total Presupuesto Gastos Gestión: $0
+  </div>
+
+  <br />
+  <div style="margin-top: 20px;">
+    <label for="input-periodo-gastos-gestion">Período:</label>
+    <input type="text" id="input-periodo-gastos-gestion" placeholder="Ej: 2025" />
+  </div>
+
+  <button onclick="guardarPresupuestoGastosGestion()">💾 Guardar Presupuesto</button>
+  <button onclick="cargarPresupuestoGastosGestion()">📂 Cargar Presupuesto Guardado</button>
+  <button onclick="mostrarPantalla('pantalla-plan-gastos')">↩ Plan de Gastos</button>
+</div>
+
+<!-- ************ Pantalla proyecto Comisiones ************ -->
+<div id="pantalla-proyecto-comisiones" class="pantalla" style="display: none; padding: 20px;">
+  <h2>Comisiones</h2>
+
+  <table id="tabla-Comisiones" class="tabla-estilo">
+    <thead>
+      <tr>
+        <th style="width: 300px;">Comisión</th>
+        <th style="width: 60px;">Personas</th>
+        <th style="width: 60px;">Horas</th>
+        <th style="width: 80px;">Valor Hora</th>
+        <th style="width: 120px;">Total Anual</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="tipo-reunion">Negociación Colectiva</td>
+        <td><input type="number" class="Personas" value="0" min="0" /></td>
+        <td><input type="number" class="Horas" value="0" min="0" /></td>
+        <td><input type="number" class="ValorHora" value="0" min="0" /></td>
+        <td class="total-anual">$0</td>
+      </tr>
+      <tr>
+        <td class="tipo-reunion">Disciplina</td>
+        <td><input type="number" class="Personas" value="0" min="0" /></td>
+        <td><input type="number" class="Horas" value="0" min="0" /></td>
+        <td><input type="number" class="ValorHora" value="0" min="0" /></td>
+        <td class="total-anual">$0</td>
+      </tr>
+      <tr>
+        <td class="tipo-reunion">Capacitación y Extensión</td>
+        <td><input type="number" class="Personas" value="0" min="0" /></td>
+        <td><input type="number" class="Horas" value="0" min="0" /></td>
+        <td><input type="number" class="ValorHora" value="0" min="0" /></td>
+        <td class="total-anual">$0</td>
+      </tr>
+      <tr>
+        <td class="tipo-reunion">Bienestar Social</td>
+        <td><input type="number" class="Personas" value="0" min="0" /></td>
+        <td><input type="number" class="Horas" value="0" min="0" /></td>
+        <td><input type="number" class="ValorHora" value="0" min="0" /></td>
+        <td class="total-anual">$0</td>
+      </tr>
+      <tr>
+        <td class="tipo-reunion">Conflicto, Comunicación y Difusión</td>
+        <td><input type="number" class="Personas" value="0" min="0" /></td>
+        <td><input type="number" class="Horas" value="0" min="0" /></td>
+        <td><input type="number" class="ValorHora" value="0" min="0" /></td>
+        <td class="total-anual">$0</td>
+      </tr>
+      <tr>
+        <td class="tipo-reunion">Deporte, Cultura y Recreación</td>
+        <td><input type="number" class="Personas" value="0" min="0" /></td>
+        <td><input type="number" class="Horas" value="0" min="0" /></td>
+        <td><input type="number" class="ValorHora" value="0" min="0" /></td>
+        <td class="total-anual">$0</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div id="total-presupuesto-comisiones" style="margin-top: 10px; font-weight: bold; display:none;">
+    Total Presupuesto Comisiones: $0
+  </div>
+
+  <br />
+  <div style="margin-top: 20px;">
+    <label for="input-periodo-comisiones">Período:</label>
+    <input type="text" id="input-periodo-comisiones" placeholder="Ej: 2025" />
+  </div>
+
+  <div style="margin-top: 15px;">
+    <button onclick="guardarPresupuestoComisiones()">💾 Guardar Presupuesto</button>
+    <button onclick="cargarPresupuestoComisiones()">📂 Cargar Presupuesto Guardado</button>
+    <button onclick="limpiarTablaComisiones()">🧹 Limpiar</button>
+    <button onclick="mostrarPantalla('pantalla-plan-gastos')">↩ Plan de Gastos</button>
+  </div>
+
+</div>
+
+<!-- /////////////// Pantalla Agenda Reuniones /////////////// -->
+<div id="pantalla-agenda" class="pantalla" style="display:none; padding:20px;">
+  <h1>Agenda Reuniones</h1>
+
+  <form id="form-agenda">
+    <label for="fecha-reunion">Fecha de la reunión:</label>
+    <input type="date" id="fecha-reunion" name="fecha-reunion" required>
+    <br><br>
+
+    <label for="tipo-reunion">Tipo de reunión:</label>
+    <select id="tipo-reunion" name="tipo-reunion" required>
+      <option value="">Seleccione...</option>
+      <option value="PLENARIAS ZOOM">PLENARIAS ZOOM (24 Dir)</option>
+      <option value="PLENARIAS DIRECTOR S/SB">PLENARIAS DIRECTOR S/SB (1 Dir)</option>
+      <option value="EJECUTIVO PRESENCIAL">EJECUTIVO PRESENCIAL (2 Dir)</option>
+      <option value="DIRECTORIO ZOOM (2H)">DIRECTORIO ZOOM (2hr-9 Dir))</option>
+      <option value="REUNION ESPECIAL">REUNION ESPECIAL (1 Dir)</option>
+      <option value="REUNION ZOOM (2H)">REUNION ZOOM (2hr-9 Dir)</option>
+      <option value="ZONA NORTE ZOOM">ZONA NORTE ZOOM (2hr-1 Dir)</option>
+      <option value="ZONA SUR ZOOM">ZONA SUR ZOOM (2hr-1 Dir)</option>
+    </select>
+    <br><br>
+
+    <fieldset>
+      <legend>Participantes (directores activos):</legend>
+      <div id="lista-directores">Cargando directores...</div>
+    </fieldset>
+    <br>
+
+    <button type="submit">Agregar Reunión</button>
+  </form>
+
+  <h2>Filtrar reuniones por fecha</h2>
+  <label for="selector-fechas">Seleccione fecha de reunión:</label>
+  <select id="selector-fechas">
+    <option value="">-- Seleccione fecha --</option>
+  </select>
+
+  <div id="resultado-reuniones" style="margin-top: 1em;">
+    <!-- Aquí aparecerán las reuniones filtradas -->
+  </div>
+
+  <br>
+  <button onclick="mostrarPantalla('pantalla-menu-tesoreria')">↩ Menu Tesoreria</button>
+</div>
+
+<!-- ****************** Gasto Real Directores ****************** -->
+<div id="pantalla-gasto-real-directores" class="pantalla" style="display:none">
+  <h2>Costo Real Directores</h2>
+
+  <!-- Selección de Reunión desde la Agenda -->
+  <label for="selector-reunion">Seleccione una reunión:</label>
+  <select id="selector-reunion">
+    <option value="">-- Seleccione una reunión --</option>
+    <!-- Se llena dinámicamente desde la agenda -->
+  </select>
+
+  <!-- Muestra tipo de reunión y fecha -->
+  <div id="info-reunion" class="info-reunion">
+    <p><strong>Fecha:</strong> <span id="info-fecha"></span></p>
+    <p><strong>Tipo de reunión:</strong> <span id="info-tipo"></span></p>
+  </div>
+
+  <!-- Solo visible para reuniones Zoom -->
+  <div id="bloque-horario" class="bloque-horario" style="display: none;">
+    <label for="hora-inicio">Hora inicio:</label>
+    <input type="time" id="hora-inicio" />
+
+    <label for="hora-fin">Hora fin:</label>
+    <input type="time" id="hora-fin" />
+  </div>
+
+  <!-- Formulario de gastos -->
+  <form id="form-gastos-directores">
+    <table class="tabla-gastos-directores">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Pago($)</th>
+          <th>Psjes.</th>
+          <th>Colac.</th>
+          <th>Metro</th>
+          <th>Móvil.</th>
+          <th>Hotel</th>
+          <th>Reemb.</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-directores-gasto">
+        <!-- Filas de directores se agregan dinámicamente aquí -->
+      </tbody>
+    </table>
+
+    <!-- Botones -->
+    <div class="acciones-formulario">
+      <button type="submit">Guardar Gastos</button>
+      <button type="button" onclick="mostrarPantalla('pantalla-gastos')">↩ Gasto Federación</button>
+    </div>
+  </form>
+
+  <!-- Nuevos botones -->
+  <div id="botones-accion">
+    <button onclick="recuperarGastos()">Recuperar Gastos</button>
+    <button onclick="limpiarFormularioGastos()">Limpiar</button>
+  </div>
+</div>
+
+<!-- **************** gasto_real_plenarias **************** -->
+<div id="pantalla-rgasto-plenarias" class="pantalla" style="display:none">
+  <h2>Registrar Gasto de Plenarias</h2>
+  <form id="form-plenarias">
+    <label>Fecha:</label>
+    <input type="date" id="fecha-plenaria"><br>
+    <label>Recinto:</label>
+    <input type="text" id="recinto-plenaria"><br>
+    <label>Costo Recinto:</label>
+    <input type="number" id="costo-plenaria"><br>
+    <label>Colación/Break:</label>
+    <input type="number" id="colacion-plenaria"><br>
+
+    <h3>Selecciona asistentes:</h3>
+    <div id="lista-socios"></div>
+
+    <button type="submit">Calcular Gasto</button>
+  </form>
+
+  <div id="resultado-plenaria" style="margin-top: 20px;"></div>
+
+  <!-- Botón para ver historial (colócalo dentro si quieres que se vea solo en esta pantalla) -->
+  <button onclick="mostrarPantalla('pantalla-historial-plenarias')">📜 Ver Historial</button>
+  <button type="button" id="btn-limpiar-plenaria">🧹 Limpiar</button>
+  <button onclick="mostrarPantalla('pantalla-gastos')" style="margin-top: 20px;">↩ Gasto Federación</button>
+</div>
+
+<!-- **************** historial de plenarias **************** -->
+<div id="pantalla-historial-plenarias" class="pantalla" style="display:none">
+  <h2>Historial de Plenarias</h2>
+
+  <label for="selector-fechas-plenarias">Selecciona una fecha:</label>
+  <select id="selector-fechas-plenarias">
+    <option value="">-- Elige una fecha --</option>
+  </select>
+
+  <div id="detalle-plenaria-seleccionada" style="margin-top: 20px;"></div>
+  <div id="lista-asistentes-plenaria" style="margin-top: 10px;"></div>
+
+  <button onclick="mostrarPantalla('pantalla-rgasto-plenarias')" style="margin-top: 20px;">↩ Volver</button>
+</div>
+
+<!-- ************************ GASTO REAL GESTIÓN (CON TABLA OCULTA) *************************** -->
+<div id="pantalla-rgasto-operacional" style="display:none;">
+  <h2>Gasto Operacional</h2>
+
+  <!-- 1) Fecha de registro + Mes comercial -->
+  <label for="fecha-gestion">Fecha de Registro:</label>
+  <input type="date" id="fecha-gestion" onchange="onFechaIngresada()" />
+
+  <label for="mes-comercial">Mes Comercial:</label>
+  <select id="mes-comercial" onchange="onMesSeleccionado()">
+    <option value="">Seleccione un mes</option>
+  </select>
+
+  <!-- 2) ARCHIVO: selector de meses guardados -->
+  <label for="selector-mes-guardado" style="margin-top:10px;">Archivo Mes Comercial:</label>
+  <select id="selector-mes-guardado">
+    <option value="">Seleccione un mes</option>
+  </select>
+
+  <!-- 3) MINI-PANTALLA “Registros guardados en este mes” (oculta por defecto) -->
+  <div id="tabla-registros-mes" style="margin-top: 15px; display: none;">
+    <h3>Registros guardados en este mes</h3>
+    <table border="1" style="width: 100%;">
+      <thead>
+        <tr>
+          <th>Fecha de Ingreso</th>
+          <th>Total</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-registros-mes"></tbody>
+    </table>
+  </div>
+
+  <!-- 4) TABLA DE ÍTEMS (oculta al inicio) -->
+  <div id="contenedor-tabla-items" style="display: none; margin-top: 10px;">
+    <table border="1" style="width: 100%;">
+      <thead>
+        <tr>
+          <th>Ítem</th>
+          <th>Monto</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-gasto-operacional"></tbody>
+      <tfoot>
+        <tr>
+          <td><strong>Total</strong></td>
+          <td>
+            <input type="text" id="total-gasto" readonly style="width: 100%; font-weight: bold;" />
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- 5) Botones Guardar / Limpiar / Volver -->
+  <div style="margin-top: 15px;">
+    <button onclick="guardarGastoGestion()">Guardar</button>
+    <button onclick="limpiarFormularioGestion()">Limpiar</button>
+    <button onclick="volverAlMenu()">↩ Volver</button>
+  </div>
+</div>
+
+<!-- Pantalla Gasto Real Comisiones -->
+<div id="pantalla-rgasto-comisiones" class="pantalla" style="display: none; padding: 20px;">
+  <h2>Gasto Real de Comisiones</h2>
+
+  <!-- 1. Fecha de registro (dd-mm-yyyy) -->
+  <div class="form-group">
+    <label for="fechaRegistro">Fecha de registro:</label>
+    <input type="text" id="fechaRegistro" placeholder="dd-mm-yyyy" />
+  </div>
+
+  <!-- 2. Mes comercial (abril–marzo) -->
+  <div class="form-group">
+    <label for="mesComercial">Mes comercial:</label>
+    <select id="mesComercial">
+      <option value="4">Abril</option>
+      <!-- …hasta Marzo… -->
+      <option value="3">Marzo</option>
+    </select>
+  </div>
+
+  <!-- 3. Selección de comisión -->
+  <div class="form-group">
+    <label for="comisionSelect">Comisión:</label>
+    <select id="comisionSelect">
+      <option value="">-- Elige comisión --</option>
+    </select>
+  </div>
+
+  <!-- 4. Asignación de directores (máx. 3) -->
+  <div class="form-group">
+    <label>Directores de la comisión (máx. 3):</label>
+    <div id="directoresContainer"></div>
+  </div>
+
+  <!-- 5. Bloques dinámicos de registro de horas -->
+  <div id="bloquesDirectores"></div>
+
+  <!-- Botón Guardar -->
+  <button id="guardarGastoBtn">Guardar Gasto</button>
+
+  <!-- Historial y totales -->
+  <h3>Historial de gastos reales</h3>
+  <table id="tablaGastosReales">
+    <thead>
+      <tr>
+        <th>Fecha reg.</th><th>Mes</th><th>Comisión</th>
+        <th>Director</th><th>Fecha prest.</th><th>Horas</th><th>Monto (₱)</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+    <tfoot>
+      <tr>
+        <td colspan="5">Total mensual:</td>
+        <td id="totalMes">0</td><td id="totalMesMonto">₱0</td>
+      </tr>
+      <tr>
+        <td colspan="5">Total anual:</td>
+        <td id="totalAnio">0</td><td id="totalAnioMonto">₱0</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <button onclick="mostrarPantalla('pantalla-gastos')">↩ Gastos Federación</button>
+</div>
+
+<!-- ******************** Gasto Real Comisiones *************** -->
+<!-- ** Pantalla Crear Comisión ** -->
+<div id="pantalla-crear-comision" class="pantalla" style="display:none; padding:20px;">
+  <h2>Crear Comisión</h2>
+  <form id="form-crear-comision">
+    <div class="form-group">
+      <label for="nombreComision">Nombre de la Comisión:</label><br>
+      <input type="text" id="nombreComision" required>
+    </div>
+    <div class="form-group">
+      <label>Selecciona hasta 3 socios:</label>
+      <!-- Contenedor para mostrar los socios alineados -->
+      <div id="contenedorSocios" style="margin-top:8px;"></div>
+      <p id="error-socios" style="color:red; display:none;">Debes seleccionar entre 1 y 3 directores.</p>
+    </div>
+    <button type="submit">Guardar Comisión</button>
+    <button type="button" onclick="mostrarPantalla('pantalla-plan-gastos')">↩ Volver</button>
+  </form>
+  <hr style="margin:8px 0;">
+  <h3>Comisiones creadas</h3>
+  <table id="tablaComisiones" style="width:100%; border-collapse: collapse;">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Director 1</th>
+        <th>Director 2</th>
+        <th>Director 3</th>
+        <th>Acción</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Aquí se inyectan las comisiones -->
+    </tbody>
+  </table>
+</div>
+
+<!-- *** Pantalla Gasto Real Comisiones *** -->
+<div id="pantalla-rgasto-comisiones" class="pantalla" style="display: none; padding: 20px;">
+  <h2>Gasto Real de Comisiones</h2>
+
+  <!-- 1. Fecha de registro: mismo input type="date" que Fecha prestación -->
+  <div class="form-group">
+    <label>Fecha de registro: <input type="date" id="fechaRegistro" /></label>
+  </div>
+
+  <!-- 2. Mes comercial -->
+  <div class="form-group">
+    <label for="mesComercial">Mes comercial:</label>
+    <select id="mesComercial">
+      <option value="">-- Elige mes --</option>
+    </select>
+  </div>
+
+  <!-- 3. Selección de comisión -->
+  <div class="form-group">
+    <label for="comisionSelect">Comisión:</label>
+    <select id="comisionSelect">
+      <option value="">-- Elige comisión --</option>
+    </select>
+  </div>
+
+  <!-- 4. Directores asignados -->
+  <div class="form-group">
+    <label>Directores asignados:</label>
+    <div id="bloquesDirectores"></div>
+  </div>
+
+  <!-- 5. Botón Guardar -->
+  <div class="form-group">
+    <button id="guardarGastoBtn" type="button">Guardar Gasto</button>
+  </div>
+
+  <!-- 6. Historial de gastos reales -->
+  <h3>Registro Gastos Comisiones</h3>
+  <table id="tablaGastosReales" border="1" style="width:100%; border-collapse: collapse;">
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Mes</th>
+        <th>Com.</th>
+        <th>Dir.</th>
+        <th>Fecha prest.</th>
+        <th>Hrs</th>
+        <th>Monto</th>
+        <th>Acción</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+    <tfoot>
+      <tr>
+        <td colspan="5" style="text-align:right;">Total mensual:</td>
+        <td id="totalMes">0</td>
+        <td id="totalMesMonto">0</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td colspan="5" style="text-align:right;">Total anual:</td>
+        <td id="totalAnio">0</td>
+        <td id="totalAnioMonto">0</td>
+        <td></td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <!-- Botón Volver -->
+  <button onclick="mostrarPantalla('pantalla-gastos')" type="button">↩ Gastos Federación</button>
+</div>
+
+
+  <!-- ++++++++++++++++++++++ las otras funciones originales +++++++++++++++++++++++-->
+
+  <!-- Pantalla de Análisis de Liquidación -->
+  <div id="pantalla-analisis" class="pantalla" style="display: none;">
+      <h1>Análisis de Liquidación</h1>
+      <p><strong><em>* A partir Mayo 2024, la jornada máxima es de 44 horas.*</em></strong></p>
+      <label for="jornada">Elige tu jornada laboral </label>
+      <select id="jornada" required>
+          <option value="">Selecciona la jornada</option>
+          <option value="45">Completa (45 horas)</option>
+          <option value="44" selected>Completa (44 horas)</option>
+          <option value="43">Completa (43 horas)</option>
+          <option value="42">Completa (42 horas)</option>
+          <option value="41">Completa (41 horas)</option>
+          <option value="40">Completa (40 horas)</option>
+          <option value="30">Parcial (30 hrs)</option>
+          <option value="25">Parcial (25 hrs)</option>
+          <option value="20">Parcial (20 hrs)</option>
+          <option value="18">Parcial (18 hrs)</option>
+      </select>
+      <p><label for="fileInput">Ingresa una liquidación de sueldo en formato PDF</label></p>
+      <input type="file" id="fileInput">
+      <button onclick="analizarArchivo()">Calcular</button>
+      <button onclick="mostrarPantalla('menu-principal')">↩ Menu</button>
+      <div id="resultadoAnalisis"></div>
+      <div class="container gratificacion-container" id="gratificacionMec" style="display: none;">
+          <h3>Gratificación Mec</h3>
+          <div id="listaGratificables"></div>
+      </div>
+      <div class="container" id="resultadoGratificacion"></div>
+      <button id="refrescarBtnAnalisis">Borrar</button>
+  </div>
+  <!-- Pantalla de Vacaciones -->
+  <div id="pantalla-vacaciones" class="pantalla" style="display: none;">
+      <h2>Cálculo de Vacaciones</h2>
+      <p>Sube los siguientes archivos:</p>
+      <ul>
+          <li>1 PDF con el pago de vacaciones</li>
+          <li>3 a 6 PDFs con al menos 27 días trabajados</li>
+      </ul>
+      <p class="alerta">No subir liquidaciones con ausencias por licencias médicas o permisos sin goce de sueldo.</p>
+      <input type="file" id="vacacionInput" multiple>
+      <button id="calcularVacacionesBtn">Calcular Vacaciones</button>
+      <button id="volverBtn" onclick="mostrarPantalla('menu-principal')">↩ Menu</button>
+      <div id="resultadoVacaciones"></div>
+      <button id="refrescarBtnVacaciones">Borrar</button>
+  </div>
+  <!-- Pantalla de Finiquito -->
+  <div id="screen-finiquito" class="pantalla" style="display: none;">
+      <h2>Cálculo de Finiquito</h2>
+      <label for="fechaInicioContrato">Fecha de Inicio de Contrato:</label>
+      <input type="date" id="fechaInicioContrato" required>
+      <label for="fechaDesvinculacion">Fecha de Desvinculación:</label>
+      <input type="date" id="fechaDesvinculacion" required>
+      <label for="diasTrabajadosUltimoMes">Ingrese días trabajados en el ultimo mes:</label>
+      <input type="number" id="diasTrabajadosUltimoMes" placeholder="Días trabajados en el último mes" />
+      <div>
+          <label for="diasVacacionesPendientes">Ingrese días de vacaciones pendientes:</label>
+          <input type="number" id="diasVacacionesPendientes" placeholder="Días pendientes">
+      </div>
+      <input type="file" id="fileFiniquito" multiple accept="application/pdf">
+      <button id="calcularFiniquito">Calcular</button>
+      <button class="backBtn" data-target="menu-principal">↩ Menu</button>
+      <div id="resultadosFiniquito" class="result-container hidden"></div>
+      <div id="resultadosNoFiniquito" class="hidden"></div>
+      <button id="refrescarFiniquito">Borrar</button>
+  </div>
+
+  <!-- Pantalla de Cálculo de Horas -->
+  <div id="pantalla-horas" class="pantalla">
+      <h1>Cálculo de Horas</h1>
+      <!-- Datos de entrada -->
+      <label for="horas-sueldoBase">Sueldo Base:</label>
+      <input type="number" id="horas-sueldoBase" placeholder="Ingrese su sueldo base">
+      <label for="horas-jornada">Jornada Laboral:</label>
+      <select id="horas-jornada">
+          <option value="">Selecciona la jornada</option>
+          <option value="45">45 horas</option>
+          <option value="44" selected>44 horas</option>
+          <option value="43">43 horas</option>
+          <option value="42">42 horas</option>
+          <option value="41">41 horas</option>
+          <option value="40">40 horas</option>
+          <option value="30">30 horas</option>
+          <option value="25">25 horas</option>
+          <option value="20">20 horas</option>
+          <option value="18">18 horas</option>
+      </select>
+
+      <label for="horas-horasExtras">Horas Extras Realizadas:</label>
+      <input type="number" id="horas-horasExtras" placeholder="Ingrese cantidad de horas extras">
+
+      <label for="horas-horasRecargoDomingo">Horas Recargo Domingo:</label>
+      <input type="number" id="horas-horasRecargoDomingo" placeholder="Ingrese cantidad de horas con recargo">
+
+      <label for="horas-horasExtrasDomingo">Horas Extras Domingo:</label>
+      <input type="number" id="horas-horasExtrasDomingo" placeholder="Ingrese cantidad de horas extras en domingo">
+
+      <!-- Botones de acción -->
+      <button onclick="calcularHoras()">Calcular</button>
+      <button onclick="mostrarPantalla('menu-principal')">↩ Menú</button>
+      <button onclick="refrescarHoras()">Borrar</button>
+      <!-- Resultados -->
+      <div id="horas-resultado">
+          <p>📌 Factor de Horas Extras Utilizado: <span id="horas-factor"></span></p>
+          <p>💰 Valor Hora Base: <span id="horas-valorHoraBase"></span></p>
+          <p>⏳ Valor Horas Extras: <span id="horas-valorHorasExtras"></span></p>
+          <p>🌞 Valor Recargo Domingo: <span id="horas-valorRecargoDomingo"></span></p>
+          <p>🔥 Valor Horas Extras Domingo: <span id="horas-valorHorasExtrasDomingo"></span></p>
+      </div>
+  </div>
+
+  <!-- Pantalla de Chat -->
+  <div id="pantalla-chat" class="pantalla" style="display: none;">
+      <h1>Chat MEC</h1>
+      <div id="mensaje-chat">
+          <!-- Los mensajes se mostrarán aquí -->
+      </div>
+      <textarea id="mensajeUsuario" rows="4" placeholder="Escribe aquí..." required></textarea>
+      <button id="enviarMensajeBtn">Enviar mensaje</button>
+      <p id="confirmacionEnvio" style="display:none; color: green;">✅ ¡Mensaje enviado!</p>
+      <button id="cambiarNickBtn">Cambiar mi Nick</button>
+      <!-- Botones de chat privado -->
+          <div id="botones-chat-privado">
+              <button onclick="iniciarChatPrivado()" id="btnChatPrivado">🗨️ Chat Privado</button>
+              <button onclick="mostrarPantallaAdminChat()" id="btnAdminChatPrivado" style="display:none;">👑 Chat Privado Admin</button>
+          </div>
+      <button onclick="mostrarPantalla('menu-principal')">↩ Menú</button>
+  </div>
+
+  <!-- Pantalla de Chat Privado (Usuario) -->
+  <div id="pantalla-chat-privado" class="pantalla" style="display:none;">
+      <h1>Chat con Admin</h1>
+      <div id="mensaje-chat-privado" class="chat-container"></div>
+      <textarea id="mensajeUsuarioPrivado" rows="3" placeholder="Escribe tu mensaje privado..."></textarea>
+      <button id="enviarMensajePrivadoBtn">Enviar Mensaje</button>
+      <p id="confirmacionEnvioPrivado" style="display:none; color: green;">✅ ¡Mensaje enviado!</p>
+      <button onclick="mostrarPantalla('pantalla-chat')">💬 Volver al Chat Grupal</button>
+      <button onclick="volverAlMenu()">↩ Menú</button>
+  </div>
+
+  <!-- Pantalla de Admin para gestionar chats privados -->
+  <div id="pantalla-admin-chat" class="pantalla" style="display:none;">
+      <h1>Chats Privados</h1>
+      <p id="contador-conversaciones" style="font-weight: bold; margin-bottom: 10px;"></p>
+      <div id="lista-conversaciones"></div>
+      <hr>
+      <div id="chat-admin-panel" style="display:none;">
+          <h2>Usuario: <span id="nombreUsuarioChat"></span></h2>
+          <div id="admin-chat-mensajes" class="chat-container" style="overflow-y:auto; max-height:400px;"></div>
+          <textarea id="mensajeAdminPrivado" rows="3" placeholder="Responder..."></textarea>
+          <button onclick="enviarMensajePrivadoAdmin()">Enviar Respuesta</button>
+          <button onclick="cerrarConversacion()">❌ Cerrar Conversación</button>
+          <hr>
+          <div class="botones-admin-chat">
+              <button onclick="mostrarListaConversaciones()">🗨 Volver a Lista de Chats</button>
+              <button onclick="mostrarPantalla('pantalla-chat')">💬 Volver al Chat Grupal</button>
+              <button onclick="mostrarPantalla('menu-principal')">↩ Menú</button>
+          </div>
+      </div>
+      <!-- Sección cuando no hay conversaciones activas -->
+      <div id="sin-conversaciones-activa" style="display:none;">
+          <p>Actualmente no hay conversaciones activas.</p>
+          <button onclick="mostrarPantalla('pantalla-chat')">💬 Volver al Chat Grupal</button>
+          <button onclick="mostrarPantalla('menu-principal')">↩ Menú</button>
+      </div>
+  </div>
+
+  <!-- Nueva Pantalla de Recursos -->
+  <div id="pantalla-recursos" class="pantalla" style="display: none;">
+      <h1>Recursos Útiles</h1>
+      <ul>
+<li><a href="https://access-key-corp.falabella.tech/auth/realms/esti/protocol/openid-connect/auth?client_id=mi-falabella&redirect_uri=https%3A%2F%2Fmi.falabella.com%2F%23%2Fauth%2F%3FskipRedirect%3Dtrue&state=57f0187e-40af-4fdf-8064-3d1dfff0ee1d&response_mode=fragment&response_type=code&scope=openid&nonce=d95e0f89-b50c-4bd1-8f90-a5dbb528d479&code_challenge=cC9EmYJOJfG1K9h8wCvmGpHUSkvIWcBiDncldUEeKFg&code_challenge_method=S256" target="_blank">Mi.Falabella.com</a></li>
+          <li><a href="https://falaweb.falabella.com/" target="_blank">Falaweb Falabella (Descarga tu PDF)</a></li>
+          <li><a href="https://portal.beneficios.falabella.com/" target="_blank">Beneficios Falabella (clave Falanet)</a></li>
+          <li><a href="https://portalf.cl/convenios-y-beneficios/" target="_blank">Portal: Convenios y Beneficios</a></li>
+          <li><a href="https://ca.clinicavirtual.com/meimportas" target="_blank">Meimportas (Seg. FAlabella)</a></li>
+          <li><a href="https://canaldeintegridad.ines.cl/falabella/" target="_blank">Canal de Integridad Falabella</a></li>
+          <li><a href="https://vbench.virtuaresearch.com/IR/IAC/?ticker=SACI&exchange=SANTIAGO" target="_blank">Centro de análisis interactivo Falabella</a></li>
+          <li><a href="https://www.facebook.com/fetrahfal/?locale=es_LA" target="_blank">Facebook Fetrahfal</a></li>
+          <hr>
+          <li>
+              <a href="Documento Público General/Datos/Cod Trab ene24.pdf" target="_blank"> 📄 Ver Código del Trabajo 2024
+              </a>
+          </li>
+          <li><a href="https://www.dt.gob.cl/legislacion/1624/w3-article-95516.html" target="_blank">Descargar Código del Trabajo</a></li>
+          <li><a href="https://www.dt.gob.cl/portal/1626/w3-channel.html" target="_blank">Dirección del Trabajo</a></li>
+          <li><a href="https://www.dt.gob.cl/portal/1626/w3-article-99712.html" target="_blank">DT-Organizacion Sindical Base</a></li>
+          <li><a href="https://tramites.dirtrab.cl/ventanillarrll/ingreso2.aspx" target="_blank">DT-Ventanilla Sindical</a></li>
+          <li><a href="https://www.dt.gob.cl/portal/1626/w3-propertyname-2556.html" target="_blank">DT-Ley de 40 horas</a></li>
+          <hr>
+          <li><a href="https://mi3.chileatiende.gob.cl/micha/inicio" target="_blank">Mi Chileatiende</a></li>
+          <li><a href="https://nuevo.fonasa.gob.cl/" target="_blank">FONASA</a></li>
+          <li><a href="https://milicenciamedica.cl/cotizante/" target="_blank">COMPIN</a></li>
+          <li><a href="https://www.sii.cl/valores_y_fechas/utm/utm2024.htm" target="_blank">Servicio de Impuestos Internos</a></li>
+          <li><a href="https://calculadoraipc.ine.cl/" target="_blank">Calculadora de IPC</a></li>
+          <li><a href="https://www.pjud.cl/home" target="_blank">Poder Judicial</a></li>
+          <hr>
+          <li><a href="https://arcadespot.com/game/mr-do/" target="_blank">Juego PC Mr Do!: Enter, flechas y X</a></li>
+          <li><a href="https://arcadespot.com/game/ghouls-n-ghosts/" target="_blank">Juego Ghost Goblin: Enter, flechas y X</a></li>
+      </ul>
+      <button onclick="mostrarPantalla('menu-principal')">↩ Menú</button>
+  </div>
+
+  <!-- Nueva Pantalla archivos sindical -->
+  <div id="pantalla-archivosindical" class="pantalla" style="display: none;">
+      <h1>Archivo Sindical</h1>
+      <p>Archivo Sindicatos, Documentos Federación y Datos.</p>
+      <!-- Lista desplegable para seleccionar sindicato -->
+      <select id="select-sindicato" onchange="mostrarClaveInput()">
+          <option value="" selected>Selecciona un Sindicato</option>
+          <option value="Concepcion">Sindicato Concepción</option>
+          <option value="Costanera">Sindicato Costanera</option>
+          <option value="Curico">Sindicato Curicó</option>
+          <option value="Iquique">Sindicato Iquique</option>
+          <option value="PlazaNorte">Sindicato Plaza Norte</option>
+          <option value="PuertoMontt">Sindicato Puerto Montt</option>
+          <option value="Rancagua">Sindicato Rancagua</option>
+          <option value="Trebol">Sindicato Trebol</option>
+      </select>
+      <!-- Modal para ingresar la clave -->
+      <div id="modal-clave" class="modal oculto">
+          <div class="modal-contenido">
+              <h3>Ingrese la clave de acceso</h3>
+              <label for="clave-input">Clave:</label>
+              <input type="password" id="clave-input" required autocomplete="new-password" placeholder="8 dígitos o letras">
+              <button type="button" onclick="verificarClave()">Aceptar</button>
+              <button type="button" onclick="cerrarModalClave()">Cancelar</button>
+              <p id="mensaje-error" class="error-msg oculto"></p>
+          </div>
+      </div>
+      <!-- Botón Volver al menú -->
+      <button onclick="mostrarPantalla('menu-principal')">↩ Menú</button>
+  </div>
+  <!-- Pantalla de documentos (mostrar solo después de ingresar la clave correctamente) -->
+  <div id="pantalla-documentos" class="pantalla" style="display: none;">
+      <h2 id="nombre-sindicato"></h2>
+      <ul id="lista-documentos-sindicato"></ul>
+      <h3>Documentos Federación</h3>
+      <ul id="lista-documentos-publicos"></ul>
+      <h3>Documentos Interesantes</h3>
+      <ul id="lista-documentos-varios"></ul>
+      <button onclick="mostrarPantalla('menu-principal')">↩ Menú</button>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <script type="module">import { v4 as uuidv4 } from 'https://cdn.skypack.dev/uuid';</script>
+  <script type="module" src="supabaseClient.js"></script>
+  <script type="module" src="tesoreriaApp.js"></script>
+  <script type="module" src="ingresos_plan.js" defer></script>
+  <script type="module" src="gastosFederacion.js" defer></script>
+  <script type="module" src="viaticoDirectores.js"></script>
+  <script type="module" src="costoPlenarias.js"></script>
+  <script type="module" src="gastosGestion.js"></script>
+  <script type="module" src="plan-gastos-comisiones.js"></script>
+  <script type="module" src="gasto_real.js"></script>
+  <script type="module" src="gasto_real_directores.js"></script>
+  <script type="module" src="gasto_real_plenarias.js"></script>
+  <script type="module" src="gasto_real_gestion.js"></script>
+  <script type="module" src="gasto_real_comisiones.js"></script>
+  <script type="module" src="crear_comision.js"></script>
+  <script src="menu_general.js"></script>
+  <script src="resultado_ingresos.js"></script>
+  <script src="global.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

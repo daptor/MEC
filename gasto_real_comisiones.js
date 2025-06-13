@@ -1,34 +1,29 @@
 import { supabase } from './supabaseClient.js';
 
-// Formatea fecha dd-mm-aaaa a ISO yyyy-mm-dd para trabajar con Supabase
+// === Utilidades de formato ===
 function formatToISO(fechaTexto) {
   if (!fechaTexto || fechaTexto.length !== 10) return null;
   const [d, m, a] = fechaTexto.split('-');
-  if (!d || !m || !a) return null;
   return `${a}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
 }
 
-// Formatea fecha ISO a dd-mm-aaaa para mostrar en tabla
 function formatDDMMYYYY(fechaISO) {
   if (!fechaISO) return '-';
   const [y, m, d] = fechaISO.split('-');
   return `${d}-${m}-${y}`;
 }
 
-// Determina año fiscal (sin cambios)
 function determineFiscalYear(fechaISO) {
   const [y, m] = fechaISO.split('-').map(Number);
   return m >= 4 ? `${y}-${y + 1}` : `${y - 1}-${y}`;
 }
 
-// Calcula horas entre hora entrada y salida
 function calcularHoras(entrada, salida) {
   const [h1, min1] = entrada.split(':').map(Number);
   const [h2, min2] = salida.split(':').map(Number);
   return Math.max(0, (h2 + min2 / 60) - (h1 + min1 / 60));
 }
 
-// Meses fiscal (abril–marzo)
 const MESES_FISCAL = [
   { num: 4, nombre: 'Abril' }, { num: 5, nombre: 'Mayo' },
   { num: 6, nombre: 'Junio' }, { num: 7, nombre: 'Julio' },
@@ -38,7 +33,8 @@ const MESES_FISCAL = [
   { num: 2, nombre: 'Febrero' }, { num: 3, nombre: 'Marzo' },
 ];
 
-// Poblar Mes Comercial con año basado en fecha registro (con texto mayúscula)
+// === Funciones principales ===
+
 function poblarMesComercial() {
   const fechaTexto = document.getElementById('fechaRegistro').value;
   if (!fechaTexto || fechaTexto.length !== 10) return;
@@ -51,47 +47,28 @@ function poblarMesComercial() {
   const finFiscal = inicioFiscal + 1;
 
   const sel = document.getElementById('mesComercial');
-  sel.innerHTML = '';
+  sel.innerHTML = '<option value="">-- Elige mes --</option>';
 
-  const optEmpty = document.createElement('option');
-  optEmpty.value = '';
-  optEmpty.textContent = '-- Elige mes --';
-  sel.appendChild(optEmpty);
-
-  // Abril (4) a Diciembre (12) del inicioFiscal
   for (let i = 4; i <= 12; i++) {
     const nombre = MESES_FISCAL.find(m => m.num === i).nombre.toUpperCase();
-    const opt = document.createElement('option');
-    opt.value = i;
-    opt.textContent = `${nombre} ${inicioFiscal}`;
+    const opt = new Option(`${nombre} ${inicioFiscal}`, i);
     sel.appendChild(opt);
   }
-  // Enero (1) a Marzo (3) del finFiscal
   for (let i = 1; i <= 3; i++) {
     const nombre = MESES_FISCAL.find(m => m.num === i).nombre.toUpperCase();
-    const opt = document.createElement('option');
-    opt.value = i;
-    opt.textContent = `${nombre} ${finFiscal}`;
+    const opt = new Option(`${nombre} ${finFiscal}`, i);
     sel.appendChild(opt);
   }
 }
 
-// Cargar Comisiones en el selector
 async function cargarComisiones() {
   const sel = document.getElementById('comisionSelect');
   sel.innerHTML = '<option value="">-- Elige comisión --</option>';
-  const { data, error } = await supabase
-    .from('comisiones').select('id,nombre').order('nombre');
+  const { data, error } = await supabase.from('comisiones').select('id,nombre').order('nombre');
   if (error) { console.error(error); return; }
-  data.forEach(c => {
-    const o = document.createElement('option');
-    o.value = c.id;
-    o.textContent = c.nombre;
-    sel.appendChild(o);
-  });
+  data.forEach(c => sel.appendChild(new Option(c.nombre, c.id)));
 }
 
-// Cargar Directores asignados para la comisión elegida
 async function cargarDirectoresAsignados() {
   const id = document.getElementById('comisionSelect').value;
   const cont = document.getElementById('bloquesDirectores');
@@ -118,37 +95,24 @@ async function cargarDirectoresAsignados() {
     d.dataset.id = s.id;
     d.innerHTML = `
       <h4>${s.nombre}</h4>
-      <label>Fecha prestación: <input type="text" id="fechaPrest_${s.id}" maxlength="10" placeholder="dd-mm-aaaa" autocomplete="off"/></label>
-      <label>Hora entrada:    <input type="time" id="horaIn_${s.id}"/></label>
-      <label>Hora salida:     <input type="time" id="horaOut_${s.id}"/></label>
+      <label>Fecha prestación: <input type="text" id="fechaPrest_${s.id}" maxlength="10" placeholder="dd-mm-aaaa"/></label>
+      <label>Hora entrada: <input type="time" id="horaIn_${s.id}"/></label>
+      <label>Hora salida: <input type="time" id="horaOut_${s.id}"/></label>
     `;
     cont.appendChild(d);
-
-    // Aplicar formato de fecha automático al campo fechaPrestacion también
-    const fpInput = d.querySelector(`#fechaPrest_${s.id}`);
-    aplicarFormatoFechaTexto(fpInput);
+    aplicarFormatoFechaTexto(d.querySelector(`#fechaPrest_${s.id}`));
   });
 }
 
-// Función para aplicar formato automático dd-mm-aaaa mientras escribe en input texto
 function aplicarFormatoFechaTexto(input) {
   input.addEventListener('input', e => {
-    let val = e.target.value;
-    // Eliminar caracteres no numéricos ni guiones
-    val = val.replace(/[^0-9]/g, '');
-    if (val.length > 8) val = val.slice(0, 8);
-
-    // Insertar guiones en posiciones 2 y 4
-    if (val.length > 4) {
-      val = val.slice(0, 2) + '-' + val.slice(2, 4) + '-' + val.slice(4);
-    } else if (val.length > 2) {
-      val = val.slice(0, 2) + '-' + val.slice(2);
-    }
+    let val = e.target.value.replace(/[^0-9]/g, '').slice(0, 8);
+    if (val.length > 4) val = `${val.slice(0, 2)}-${val.slice(2, 4)}-${val.slice(4)}`;
+    else if (val.length > 2) val = `${val.slice(0, 2)}-${val.slice(2)}`;
     e.target.value = val;
   });
 }
 
-// Guardar Gasto en Supabase
 async function guardarGasto() {
   const fechaTexto = document.getElementById('fechaRegistro').value;
   const fechaReg = formatToISO(fechaTexto);
@@ -170,7 +134,7 @@ async function guardarGasto() {
     const fpISO = formatToISO(fpTexto);
     const hi = document.getElementById(`horaIn_${sid}`).value;
     const ho = document.getElementById(`horaOut_${sid}`).value;
-    if (!fpISO || !hi || !ho) { alert('Completa todos los campos con fecha válida y horas'); return; }
+    if (!fpISO || !hi || !ho) { alert('Completa todos los campos'); return; }
 
     const hrs = calcularHoras(hi, ho);
     const mto = hrs * 2500;
@@ -194,58 +158,40 @@ async function guardarGasto() {
   cargarHistorial();
 }
 
-// Cargar Historial con mensaje "No hay datos" y ocultar tabla si está vacía
 async function cargarHistorial() {
   const mesValue = document.getElementById('mesComercial').value;
   const comId = document.getElementById('comisionSelect').value;
 
-  let q = supabase
-    .from('gasto_real_comisiones')
-    .select(
-      `id,
-      fecha_registro,
-      mes_comercial,
-      monto,
-      comision:comisiones(nombre),
-      socio:socios(nombre),
-      fecha_prestacion,
-      horas`
-    )
-    .order('fecha_registro', { ascending: false });
+  let q = supabase.from('gasto_real_comisiones').select(`
+    id, fecha_registro, mes_comercial, monto,
+    comision:comisiones(nombre), socio:socios(nombre),
+    fecha_prestacion, horas
+  `).order('fecha_registro', { ascending: false });
 
   if (mesValue) q = q.eq('mes_comercial', parseInt(mesValue));
   if (comId) q = q.eq('comision_id', comId);
 
   const { data, error } = await q;
-  const tabla = document.getElementById('tablaGastosReales');
-  const tbody = tabla.querySelector('tbody');
+  const tbody = document.querySelector('#tablaGastosReales tbody');
   const titulo = document.querySelector('#pantalla-rgasto-comisiones h3');
-
   tbody.innerHTML = '';
-  const msgPrev = document.getElementById('mensajeSinDatos');
-  if (msgPrev) msgPrev.remove();
+  document.getElementById('mensajeSinDatos')?.remove();
 
   if (error) {
     console.error(error);
-    tabla.style.display = 'none';
     return;
   }
   if (!data || data.length === 0) {
-    tabla.style.display = 'none';
     const mensaje = document.createElement('p');
     mensaje.id = 'mensajeSinDatos';
     mensaje.textContent = 'No hay datos';
     mensaje.style.fontStyle = 'italic';
     mensaje.style.marginTop = '0.5em';
     titulo.insertAdjacentElement('afterend', mensaje);
-    document.getElementById('totalMes').textContent = '0.00';
-    document.getElementById('totalMesMonto').textContent = '0';
-    document.getElementById('totalAnio').textContent = '0.00';
-    document.getElementById('totalAnioMonto').textContent = '0';
+    actualizarTotales(0, 0, 0, 0);
     return;
   }
 
-  tabla.style.display = 'table';
   let tMes = 0, tMesM = 0, tA = 0, tAM = 0;
 
   data.forEach(r => {
@@ -272,10 +218,7 @@ async function cargarHistorial() {
     }
   });
 
-  document.getElementById('totalMes').textContent = tMes.toFixed(2);
-  document.getElementById('totalMesMonto').textContent = tMesM.toFixed(0);
-  document.getElementById('totalAnio').textContent = tA.toFixed(2);
-  document.getElementById('totalAnioMonto').textContent = tAM.toFixed(0);
+  actualizarTotales(tMes, tMesM, tA, tAM);
 
   document.querySelectorAll('.borrar').forEach(btn => {
     btn.onclick = async () => {
@@ -286,15 +229,17 @@ async function cargarHistorial() {
   });
 }
 
-// Inicialización
+function actualizarTotales(tMes, tMesM, tA, tAM) {
+  document.getElementById('totalMes').textContent = tMes.toFixed(2);
+  document.getElementById('totalMesMonto').textContent = tMesM.toFixed(0);
+  document.getElementById('totalAnio').textContent = tA.toFixed(2);
+  document.getElementById('totalAnioMonto').textContent = tAM.toFixed(0);
+}
+
+// === Inicialización ===
 document.addEventListener('DOMContentLoaded', () => {
   const fr = document.getElementById('fechaRegistro');
-  fr.value = '';
   aplicarFormatoFechaTexto(fr);
-
-  poblarMesComercial();
-  cargarHistorial();
-
   fr.addEventListener('input', () => {
     poblarMesComercial();
     cargarHistorial();
@@ -309,4 +254,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('guardarGastoBtn').addEventListener('click', guardarGasto);
 
   cargarComisiones();
+  poblarMesComercial();
+  cargarHistorial();
 });

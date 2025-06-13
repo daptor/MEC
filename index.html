@@ -1034,43 +1034,42 @@
   </table>
 </div>
 
+<!-- ************* Pantalla Gasto Real Comisiones ************* -->
 <div id="pantalla-rgasto-comisiones" class="pantalla" style="padding: 20px;">
   <h2>Gasto Real de Comisiones</h2>
 
-  <!-- 1. Fecha de registro -->
   <div class="form-group">
     <label for="fechaRegistro">Fecha de registro:</label>
-    <input type="text" id="fechaRegistro" maxlength="10" placeholder="dd-mm-aaaa" autocomplete="off" />
+    <input type="date" id="fechaRegistro" />
   </div>
 
-  <!-- 2. Mes comercial -->
   <div class="form-group">
     <label for="mesComercial">Mes comercial:</label>
     <select id="mesComercial">
       <option value="">-- Elige mes --</option>
+      <!-- opciones generadas por JS -->
     </select>
   </div>
 
-  <!-- 3. Comisión -->
   <div class="form-group">
     <label for="comisionSelect">Comisión:</label>
     <select id="comisionSelect">
       <option value="">-- Elige comisión --</option>
+      <!-- opciones generadas por JS -->
     </select>
   </div>
 
-  <!-- 4. Directores -->
   <div class="form-group">
     <label>Directores de la comisión (máx. 3):</label>
-    <div id="bloquesDirectores"></div>
+    <div id="bloquesDirectores">
+      <!-- Aquí el JS insertará directores o mensaje "No tiene participantes asignados" -->
+    </div>
   </div>
 
-  <!-- 5. Guardar -->
   <div class="form-group">
     <button id="guardarGastoBtn" type="button">Guardar Gasto</button>
   </div>
 
-  <!-- 6. Historial -->
   <h3>Registro Gastos Comisiones</h3>
   <table id="tablaGastosReales" border="1" style="width:100%; border-collapse: collapse;">
     <thead>
@@ -1085,7 +1084,9 @@
         <th>Acción</th>
       </tr>
     </thead>
-    <tbody></tbody>
+    <tbody>
+      <!-- Filas insertadas aquí por JS -->
+    </tbody>
     <tfoot>
       <tr>
         <td colspan="5" style="text-align:right;">Mes:</td>
@@ -1104,6 +1105,7 @@
 
   <button onclick="mostrarPantalla('pantalla-gastos')" type="button">↩ Gastos Federación</button>
 </div>
+
 
   <!-- ++++++++++++++++++++++ las otras funciones originales +++++++++++++++++++++++-->
 

@@ -1,178 +1,334 @@
-// Cuando se muestra la pantalla de "Gasto Real de Comisiones"
-function cargarPantallaGastoReal() {
-    // Mostrar la pantalla de gasto real de comisiones
-    document.getElementById("pantalla-rgasto-comisiones").style.display = "block";
+import { supabase } from './supabaseClient.js';
 
-    // Llamada a Supabase para obtener los datos necesarios (Mes comercial y Comisión)
-    obtenerMesesComerciales();
-    obtenerComisiones();
-
-    // Obtener historial de gastos reales de la base de datos
-    obtenerHistorialGastosReales();
+// 1) Formatea fecha ISO "YYYY-MM-DD" a "DD-MM-YYYY" para mostrar en tabla
+function formatDDMMYYYY(fechaISO) {
+  if (!fechaISO) return '-';
+  const partes = fechaISO.split('-');
+  if (partes.length !== 3) return '-';
+  const [y, m, d] = partes;
+  return `${d}-${m}-${y}`;
 }
 
-// Función para cargar los meses comerciales
-async function obtenerMesesComerciales() {
-    try {
-        // Ejemplo de cómo obtener meses comerciales desde tu base de datos
-        const { data, error } = await supabase
-            .from('meses_comerciales')
-            .select('*');
+// 2) Determina año fiscal (abril-marzo) a partir de fecha ISO "YYYY-MM-DD"
+function determineFiscalYear(fechaISO) {
+  if (!fechaISO) return null;
+  const partes = fechaISO.split('-');
+  if (partes.length !== 3) return null;
+  const year = parseInt(partes[0], 10);
+  const month = parseInt(partes[1], 10);
+  if (isNaN(year) || isNaN(month)) return null;
+  return month >= 4 ? `${year}-${year + 1}` : `${year - 1}-${year}`;
+}
 
-        if (error) throw error;
+// 3) Calcula horas entre hora entrada y salida
+function calcularHoras(entrada, salida) {
+  const [h1, min1] = entrada.split(':').map(Number);
+  const [h2, min2] = salida.split(':').map(Number);
+  return Math.max(0, (h2 + min2 / 60) - (h1 + min1 / 60));
+}
 
-        const mesComercialSelect = document.getElementById('mesComercial');
-        mesComercialSelect.innerHTML = '<option value="">-- Elige mes --</option>'; // Limpiar las opciones
+// 4) Meses fiscal abril-marzo
+const MESES_FISCAL = [
+  { num: 4, nombre: 'Abril' }, { num: 5, nombre: 'Mayo' },
+  { num: 6, nombre: 'Junio' }, { num: 7, nombre: 'Julio' },
+  { num: 8, nombre: 'Agosto' }, { num: 9, nombre: 'Septiembre' },
+  { num: 10, nombre: 'Octubre' }, { num: 11, nombre: 'Noviembre' },
+  { num: 12, nombre: 'Diciembre' }, { num: 1, nombre: 'Enero' },
+  { num: 2, nombre: 'Febrero' }, { num: 3, nombre: 'Marzo' },
+];
 
-        // Rellenar el select con los meses comerciales
-        data.forEach(mes => {
-            const option = document.createElement('option');
-            option.value = mes.id; // Asumiendo que 'id' es el valor para seleccionar
-            option.textContent = mes.nombre; // Asumiendo que 'nombre' es el mes
-            mesComercialSelect.appendChild(option);
-        });
-    } catch (error) {
-        console.error("Error al cargar los meses comerciales: ", error);
+// 5) Poblar selector Mes Comercial según fechaRegistro (input type="date")
+function poblarMesComercial() {
+  const iso = document.getElementById('fechaRegistro').value; // "YYYY-MM-DD" o ""
+  if (!iso) {
+    // Si no hay fecha, limpiar select
+    const sel = document.getElementById('mesComercial');
+    sel.innerHTML = '<option value="">-- Elige mes --</option>';
+    return;
+  }
+  const partes = iso.split('-');
+  if (partes.length !== 3) return;
+  const year = parseInt(partes[0], 10);
+  const month = parseInt(partes[1], 10);
+  if (isNaN(year) || isNaN(month)) return;
+
+  const inicioFiscal = month >= 4 ? year : year - 1;
+  const finFiscal = inicioFiscal + 1;
+
+  const sel = document.getElementById('mesComercial');
+  sel.innerHTML = ''; // limpiar antes
+
+  const optEmpty = document.createElement('option');
+  optEmpty.value = '';
+  optEmpty.textContent = '-- Elige mes --';
+  sel.appendChild(optEmpty);
+
+  // Abril a Diciembre de inicioFiscal
+  for (let i = 4; i <= 12; i++) {
+    const nombre = MESES_FISCAL.find(m => m.num === i).nombre.toUpperCase();
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = `${nombre} ${inicioFiscal}`;
+    sel.appendChild(opt);
+  }
+  // Enero a Marzo de finFiscal
+  for (let i = 1; i <= 3; i++) {
+    const nombre = MESES_FISCAL.find(m => m.num === i).nombre.toUpperCase();
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = `${nombre} ${finFiscal}`;
+    sel.appendChild(opt);
+  }
+}
+
+// 6) Cargar comisiones en selector
+async function cargarComisiones() {
+  const sel = document.getElementById('comisionSelect');
+  sel.innerHTML = '<option value="">-- Elige comisión --</option>';
+  const { data, error } = await supabase
+    .from('comisiones')
+    .select('id,nombre')
+    .order('nombre');
+  if (error) {
+    console.error(error);
+    return;
+  }
+  data.forEach(c => {
+    const o = document.createElement('option');
+    o.value = c.id;
+    o.textContent = c.nombre;
+    sel.appendChild(o);
+  });
+}
+
+// 7) Cargar directores asignados: crea inputs type="date" para fecha prestación
+async function cargarDirectoresAsignados() {
+  const id = document.getElementById('comisionSelect').value;
+  const cont = document.getElementById('bloquesDirectores');
+  cont.innerHTML = '';
+  if (!id) return;
+
+  const { data: com, error } = await supabase
+    .from('comisiones')
+    .select('socio_1,socio_2,socio_3')
+    .eq('id', id)
+    .single();
+  if (error || !com) {
+    console.error(error);
+    return;
+  }
+
+  const sociosIds = [com.socio_1, com.socio_2, com.socio_3].filter(Boolean);
+  if (!sociosIds.length) {
+    cont.innerHTML = '<p><i>Sin directores asignados.</i></p>';
+    return;
+  }
+
+  const { data: socios, error: err2 } = await supabase
+    .from('socios')
+    .select('id,nombre')
+    .in('id', sociosIds);
+  if (err2) {
+    console.error(err2);
+    return;
+  }
+
+  socios.forEach(s => {
+    const d = document.createElement('div');
+    d.className = 'director-block';
+    d.dataset.id = s.id;
+    d.innerHTML = `
+      <h4>${s.nombre}</h4>
+      <label>Fecha prestación: <input type="date" id="fechaPrest_${s.id}" /></label>
+      <label>Hora entrada:    <input type="time" id="horaIn_${s.id}" /></label>
+      <label>Hora salida:     <input type="time" id="horaOut_${s.id}" /></label>
+    `;
+    cont.appendChild(d);
+  });
+}
+
+// 8) Guardar gasto: leer valores ISO de input type="date"
+async function guardarGasto() {
+  const fechaRegISO = document.getElementById('fechaRegistro').value; // "YYYY-MM-DD"
+  if (!fechaRegISO) {
+    alert('Selecciona Fecha de registro');
+    return;
+  }
+  const mes = document.getElementById('mesComercial').value;
+  const comId = document.getElementById('comisionSelect').value;
+  if (!mes || !comId) {
+    alert('Faltan datos obligatorios');
+    return;
+  }
+
+  const blocks = document.querySelectorAll('.director-block');
+  if (!blocks.length) {
+    alert('Selecciona una comisión con directores.');
+    return;
+  }
+
+  const regs = [];
+  for (let b of blocks) {
+    const sid = b.dataset.id;
+    const fpISO = document.getElementById(`fechaPrest_${sid}`).value; // "YYYY-MM-DD"
+    const hi = document.getElementById(`horaIn_${sid}`).value;
+    const ho = document.getElementById(`horaOut_${sid}`).value;
+    if (!fpISO) {
+      alert(`Selecciona Fecha prestación para socio ${sid}`);
+      return;
     }
-}
-
-// Función para cargar las comisiones
-async function obtenerComisiones() {
-    try {
-        // Llamada a la base de datos para obtener las comisiones
-        const { data, error } = await supabase
-            .from('comisiones')
-            .select('*');
-
-        if (error) throw error;
-
-        const comisionSelect = document.getElementById('comisionSelect');
-        comisionSelect.innerHTML = '<option value="">-- Elige comisión --</option>'; // Limpiar opciones
-
-        // Llenar las comisiones en el select
-        data.forEach(comision => {
-            const option = document.createElement('option');
-            option.value = comision.id; // Asumiendo que 'id' es el valor para seleccionar
-            option.textContent = comision.nombre; // Asumiendo que 'nombre' es el nombre de la comisión
-            comisionSelect.appendChild(option);
-        });
-    } catch (error) {
-        console.error("Error al cargar las comisiones: ", error);
+    if (!hi || !ho) {
+      alert('Completa todos los campos de hora.');
+      return;
     }
+    const hrs = calcularHoras(hi, ho);
+    const mto = hrs * 2500;
+    const afy = determineFiscalYear(fechaRegISO);
+    regs.push({
+      fecha_registro: fechaRegISO,
+      mes_comercial: parseInt(mes, 10),
+      comision_id: comId,
+      socio_id: sid,
+      fecha_prestacion: fpISO,
+      horas: hrs,
+      monto: mto,
+      ano_fiscal: afy
+    });
+  }
+
+  const { error } = await supabase.from('gasto_real_comisiones').insert(regs);
+  if (error) {
+    console.error(error);
+    alert('Error al guardar');
+    return;
+  }
+  alert('Guardado OK');
+  cargarHistorial();
 }
 
-// Función para cargar el historial de gastos reales
-async function obtenerHistorialGastosReales() {
-    try {
-        // Obtener los gastos reales desde la base de datos
-        const { data, error } = await supabase
-            .from('comisiones')
-            .select('*');
+// 9) Cargar historial: mostrar fechas formateadas
+async function cargarHistorial() {
+  const mesValue = document.getElementById('mesComercial').value;
+  const comId = document.getElementById('comisionSelect').value;
 
-        const historialContainer = document.getElementById("tablaGastosReales");
-        const historialTitulo = document.querySelector("h3");
+  let q = supabase
+    .from('gasto_real_comisiones')
+    .select(`
+      id,
+      fecha_registro,
+      mes_comercial,
+      monto,
+      comision:comisiones(nombre),
+      socio:socios(nombre),
+      fecha_prestacion,
+      horas
+    `)
+    .order('fecha_registro', { ascending: false });
 
-        if (error) throw error;
+  if (mesValue) q = q.eq('mes_comercial', parseInt(mesValue, 10));
+  if (comId) q = q.eq('comision_id', comId);
 
-        // Si no hay datos
-        if (data.length === 0) {
-            historialContainer.style.display = "none"; // Ocultar la tabla
-            historialTitulo.textContent = "Historial de gastos reales: No hay datos";
-        } else {
-            // Si hay datos, mostrar y rellenar la tabla
-            historialContainer.style.display = "block"; // Mostrar la tabla
-            historialTitulo.textContent = "Historial de gastos reales";
+  const { data, error } = await q;
+  const tabla = document.getElementById('tablaGastosReales');
+  const tbody = tabla.querySelector('tbody');
+  const titulo = document.querySelector('#pantalla-rgasto-comisiones h3');
 
-            // Limpiar cualquier fila existente
-            const tbody = document.querySelector("#tablaGastosReales tbody");
-            tbody.innerHTML = "";
+  tbody.innerHTML = '';
+  const msgPrev = document.getElementById('mensajeSinDatos');
+  if (msgPrev) msgPrev.remove();
 
-            let totalMensual = 0;
-            let totalAnual = 0;
+  if (error) {
+    console.error(error);
+    tabla.style.display = 'none';
+    return;
+  }
+  if (!data || data.length === 0) {
+    tabla.style.display = 'none';
+    const mensaje = document.createElement('p');
+    mensaje.id = 'mensajeSinDatos';
+    mensaje.textContent = 'No hay datos';
+    mensaje.style.fontStyle = 'italic';
+    mensaje.style.marginTop = '0.5em';
+    titulo.insertAdjacentElement('afterend', mensaje);
+    document.getElementById('totalMes').textContent = '0.00';
+    document.getElementById('totalMesMonto').textContent = '0';
+    document.getElementById('totalAnio').textContent = '0.00';
+    document.getElementById('totalAnioMonto').textContent = '0';
+    return;
+  }
 
-            data.forEach(gasto => {
-                const tr = document.createElement('tr');
+  tabla.style.display = 'table';
+  let tMes = 0, tMesM = 0, tA = 0, tAM = 0;
 
-                // Fecha de registro
-                const tdFecha = document.createElement('td');
-                tdFecha.textContent = formatDate(gasto.fecha_registro);
-                tr.appendChild(tdFecha);
+  data.forEach(r => {
+    const mf = MESES_FISCAL.find(x => x.num === r.mes_comercial);
+    const fechaRegForm = formatDDMMYYYY(r.fecha_registro);
+    const fechaPrestForm = formatDDMMYYYY(r.fecha_prestacion);
+    const añoFiscal = determineFiscalYear(r.fecha_registro).split('-');
+    const añoEtiqueta = (r.mes_comercial >= 4 ? añoFiscal[0] : añoFiscal[1]);
 
-                // Mes
-                const tdMes = document.createElement('td');
-                tdMes.textContent = gasto.mes;
-                tr.appendChild(tdMes);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${fechaRegForm}</td>
+      <td>${(mf?.nombre.toUpperCase() || '-')} ${añoEtiqueta}</td>
+      <td>${r.comision?.nombre || '-'}</td>
+      <td>${r.socio?.nombre || '-'}</td>
+      <td>${fechaPrestForm}</td>
+      <td>${r.horas?.toFixed(2) || '0.00'}</td>
+      <td>${r.monto?.toFixed(0) || '0'}</td>
+      <td><button data-id="${r.id}" class="borrar">Borrar</button></td>
+    `;
+    tbody.appendChild(tr);
 
-                // Comisión
-                const tdComision = document.createElement('td');
-                tdComision.textContent = gasto.comision;
-                tr.appendChild(tdComision);
-
-                // Director
-                const tdDirector = document.createElement('td');
-                tdDirector.textContent = gasto.director;
-                tr.appendChild(tdDirector);
-
-                // Fecha de prestación
-                const tdFechaPrestacion = document.createElement('td');
-                tdFechaPrestacion.textContent = formatDate(gasto.fecha_prestacion);
-                tr.appendChild(tdFechaPrestacion);
-
-                // Horas
-                const tdHoras = document.createElement('td');
-                tdHoras.textContent = gasto.horas;
-                tr.appendChild(tdHoras);
-
-                // Monto
-                const tdMonto = document.createElement('td');
-                tdMonto.textContent = `₱ ${gasto.monto}`;
-                tr.appendChild(tdMonto);
-
-                // Acción
-                const tdAccion = document.createElement('td');
-                tdAccion.innerHTML = '<button onclick="eliminarGasto(' + gasto.id + ')">Eliminar</button>';
-                tr.appendChild(tdAccion);
-
-                tbody.appendChild(tr);
-
-                totalMensual += parseFloat(gasto.monto); // Sumar al total mensual
-                totalAnual += parseFloat(gasto.monto); // Sumar al total anual
-            });
-
-            // Mostrar los totales
-            document.getElementById("totalMes").textContent = totalMensual.toFixed(2);
-            document.getElementById("totalMesMonto").textContent = `₱ ${totalMensual.toFixed(2)}`;
-            document.getElementById("totalAnio").textContent = totalAnual.toFixed(2);
-            document.getElementById("totalAnioMonto").textContent = `₱ ${totalAnual.toFixed(2)}`;
-        }
-    } catch (error) {
-        console.error("Error al cargar el historial de gastos: ", error);
+    tA += r.horas;
+    tAM += r.monto;
+    if (mesValue && String(r.mes_comercial) === mesValue) {
+      tMes += r.horas;
+      tMesM += r.monto;
     }
+  });
+
+  document.getElementById('totalMes').textContent = tMes.toFixed(2);
+  document.getElementById('totalMesMonto').textContent = tMesM.toFixed(0);
+  document.getElementById('totalAnio').textContent = tA.toFixed(2);
+  document.getElementById('totalAnioMonto').textContent = tAM.toFixed(0);
+
+  document.querySelectorAll('.borrar').forEach(btn => {
+    btn.onclick = async () => {
+      if (!confirm('¿Borrar este gasto?')) return;
+      await supabase.from('gasto_real_comisiones').delete().eq('id', btn.dataset.id);
+      cargarHistorial();
+    };
+  });
 }
 
-// Función para formatear la fecha
-function formatDate(fecha) {
-    const date = new Date(fecha);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
-}
+// 10) Inicialización
+document.addEventListener('DOMContentLoaded', () => {
+  const fr = document.getElementById('fechaRegistro');
+  fr.value = ''; // inicia vacío
 
-// Función para eliminar un gasto real
-async function eliminarGasto(id) {
-    try {
-        // Eliminar el gasto real desde la base de datos
-        const { data, error } = await supabase
-            .from('comisiones')
-            .delete()
-            .eq('id', id);
+  // Al cambiar fechaRegistro, poblar Mes Comercial
+  fr.addEventListener('change', () => {
+    poblarMesComercial();
+  });
 
-        if (error) throw error;
+  // Si ya hay fecha registro al cargar, poblar Mes Comercial
+  if (fr.value) {
+    poblarMesComercial();
+  }
 
-        // Recargar el historial de gastos reales después de eliminar
-        obtenerHistorialGastosReales();
-    } catch (error) {
-        console.error("Error al eliminar el gasto real: ", error);
-    }
-}
+  // Cargar historial al entrar
+  cargarHistorial();
+
+  // Listeners de mesComercial y comisión
+  document.getElementById('mesComercial').addEventListener('change', cargarHistorial);
+  document.getElementById('comisionSelect').addEventListener('change', () => {
+    cargarDirectoresAsignados();
+    cargarHistorial();
+  });
+  // Guardar
+  document.getElementById('guardarGastoBtn').addEventListener('click', guardarGasto);
+
+  // Cargar opciones de comisiones
+  cargarComisiones();
+});

@@ -1038,9 +1038,10 @@
 <div id="pantalla-rgasto-comisiones" class="pantalla" style="display: none; padding: 20px;">
   <h2>Gasto Real de Comisiones</h2>
 
-  <!-- 1. Fecha de registro: mismo input type="date" que Fecha prestación -->
+  <!-- 1. Fecha de registro (input texto con formato automático dd-mm-aaaa) -->
   <div class="form-group">
-    <label>Fecha de registro: <input type="date" id="fechaRegistro" /></label>
+    <label for="fechaRegistro">Fecha de registro:</label>
+    <input type="text" id="fechaRegistro" maxlength="10" placeholder="dd-mm-aaaa" autocomplete="off" />
   </div>
 
   <!-- 2. Mes comercial -->
@@ -1105,7 +1106,6 @@
   <!-- Botón Volver -->
   <button onclick="mostrarPantalla('pantalla-gastos')" type="button">↩ Gastos Federación</button>
 </div>
-
 
   <!-- ++++++++++++++++++++++ las otras funciones originales +++++++++++++++++++++++-->
 

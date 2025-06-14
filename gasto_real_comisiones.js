@@ -120,7 +120,7 @@ async function cargarDirectoresAsignados() {
 
   const sociosIds = [com.socio_1, com.socio_2, com.socio_3].filter(Boolean);
   if (!sociosIds.length) {
-    cont.innerHTML = '<p><i>Sin directores asignados.</i></p>';
+    cont.innerHTML = '<p><i>Debes ingresar Participantes.</i></p>';
     return;
   }
 

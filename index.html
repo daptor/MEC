@@ -1038,10 +1038,10 @@
 <div id="pantalla-rgasto-comisiones" class="pantalla" style="display: none; padding: 20px;">
   <h2>Gasto Real de Comisiones</h2>
 
-  <!-- 1. Fecha de registro (input fecha con formato automático dd-mm-aaaa) -->
+  <!-- 1. Fecha de registro (ANTES era input text; AHORA input date) -->
   <div class="form-group">
     <label for="fechaRegistro">Fecha de registro:</label>
-    <input type="date" id="fechaRegistro" autocomplete="off" />
+    <input type="date" id="fechaRegistro" autocomplete="off" />  <!-- ← CAMBIO AQUI -->
   </div>
 
   <!-- 2. Mes comercial -->
@@ -1063,7 +1063,7 @@
   <!-- 4. Directores asignados -->
   <div class="form-group">
     <label>Directores asignados:</label>
-    <div id="bloquesDirectores"></div>
+    <div id="bloquesDirectores"></div>  <!-- Aquí se mostrará mensaje si no hay socios -->
   </div>
 
   <!-- 5. Botón Guardar -->
@@ -1106,8 +1106,6 @@
   <!-- Botón Volver -->
   <button onclick="mostrarPantalla('pantalla-gastos')" type="button">↩ Gastos Federación</button>
 </div>
-
-
 
   <!-- ++++++++++++++++++++++ las otras funciones originales +++++++++++++++++++++++-->
 

@@ -32,24 +32,25 @@ const MESES_FISCAL = [
 
 // 5) Poblar selector Mes Comercial según fechaRegistro
 function poblarMesComercial() {
-  const iso = document.getElementById('fechaRegistro').value; // ahora type=date
+  const isoMask = document.getElementById('fechaRegistro').value; // formato dd-mm-aaaa
   const sel = document.getElementById('mesComercial');
   sel.innerHTML = '<option value="">-- Elige mes --</option>';
-  if (!iso) return;
+  if (!isoMask || isoMask.length !== 10) return;
 
-  const [year, month] = iso.split('-').map(Number);
-  const inicioFiscal = (month >= 4 ? year : year - 1);
+  // Convertir dd-mm-yyyy a ISO yyyy-mm-dd para parsear mes/año
+  const [d, m, y] = isoMask.split('-').map(Number);
+  const inicioFiscal = (m >= 4 ? y : y - 1);
   const finFiscal = inicioFiscal + 1;
 
   // Abril (4) a Diciembre (12) de inicioFiscal
-  for (let m = 4; m <= 12; m++) {
-    const nom = MESES_FISCAL.find(x => x.num === m).nombre;
-    sel.append(new Option(`${nom} ${inicioFiscal}`, m));
+  for (let num = 4; num <= 12; num++) {
+    const nom = MESES_FISCAL.find(x => x.num === num).nombre;
+    sel.append(new Option(`${nom} ${inicioFiscal}`, num));
   }
   // Enero (1) a Marzo (3) de finFiscal
-  for (let m = 1; m <= 3; m++) {
-    const nom = MESES_FISCAL.find(x => x.num === m).nombre;
-    sel.append(new Option(`${nom} ${finFiscal}`, m));
+  for (let num = 1; num <= 3; num++) {
+    const nom = MESES_FISCAL.find(x => x.num === num).nombre;
+    sel.append(new Option(`${nom} ${finFiscal}`, num));
   }
 }
 
@@ -57,7 +58,10 @@ function poblarMesComercial() {
 async function cargarComisiones() {
   const sel = document.getElementById('comisionSelect');
   sel.innerHTML = '<option value="">-- Elige comisión --</option>';
-  const { data, error } = await supabase.from('comisiones').select('id,nombre').order('nombre');
+  const { data, error } = await supabase
+    .from('comisiones')
+    .select('id,nombre')
+    .order('nombre');
   if (error) return console.error(error);
   data.forEach(c => sel.append(new Option(c.nombre, c.id)));
 }
@@ -69,17 +73,22 @@ async function cargarDirectoresAsignados() {
   cont.innerHTML = '';
   if (!id) return;
 
-  const { data: com } = await supabase.from('comisiones')
-    .select('socio_1,socio_2,socio_3').eq('id', id).single();
+  const { data: com } = await supabase
+    .from('comisiones')
+    .select('socio_1,socio_2,socio_3')
+    .eq('id', id)
+    .single();
 
   const sociosIds = [com.socio_1, com.socio_2, com.socio_3].filter(Boolean);
   if (!sociosIds.length) {
-    cont.innerHTML = '<p><i>Debes ingresar Participantes.</i></p>';  // ← CAMBIO DE MENSAJE
+    cont.innerHTML = '<p><i>Debes ingresar Participantes.</i></p>';
     return;
   }
 
-  const { data: socios } = await supabase.from('socios')
-    .select('id,nombre').in('id', sociosIds);
+  const { data: socios } = await supabase
+    .from('socios')
+    .select('id,nombre')
+    .in('id', sociosIds);
 
   socios.forEach(s => {
     const div = document.createElement('div');
@@ -97,8 +106,8 @@ async function cargarDirectoresAsignados() {
 
 // 8) Guardar gasto
 async function guardarGasto() {
-  const fechaRegISO = document.getElementById('fechaRegistro').value;
-  if (!fechaRegISO) return alert('Selecciona Fecha de registro');
+  const fechaMask = document.getElementById('fechaRegistro').value;
+  if (!fechaMask) return alert('Selecciona Fecha de registro');
   const mes = document.getElementById('mesComercial').value;
   const comId = document.getElementById('comisionSelect').value;
   if (!mes || !comId) return alert('Faltan datos obligatorios');
@@ -107,6 +116,10 @@ async function guardarGasto() {
   if (!blocks.length) return alert('Selecciona una comisión con directores.');
 
   const regs = [];
+  // Convertir mascara dd-mm-yyyy a ISO yyyy-mm-dd
+  const [d, m, y] = fechaMask.split('-');
+  const isoRegistro = `${y}-${m}-${d}`;
+
   for (let b of blocks) {
     const sid = b.dataset.id;
     const fp = document.getElementById(`fechaPrest_${sid}`).value;
@@ -117,18 +130,20 @@ async function guardarGasto() {
 
     const hrs = calcularHoras(hi, ho);
     regs.push({
-      fecha_registro: fechaRegISO,
+      fecha_registro: isoRegistro,
       mes_comercial: +mes,
       comision_id: comId,
       socio_id: sid,
       fecha_prestacion: fp,
       horas: hrs,
       monto: hrs * 2500,
-      ano_fiscal: determineFiscalYear(fechaRegISO)
+      ano_fiscal: determineFiscalYear(isoRegistro)
     });
   }
 
-  const { error } = await supabase.from('gasto_real_comisiones').insert(regs);
+  const { error } = await supabase
+    .from('gasto_real_comisiones')
+    .insert(regs);
   if (error) return alert('Error al guardar');
   alert('Guardado OK');
   cargarHistorial();
@@ -139,7 +154,8 @@ async function cargarHistorial() {
   const mesValue = +document.getElementById('mesComercial').value || null;
   const comId = document.getElementById('comisionSelect').value || null;
 
-  let q = supabase.from('gasto_real_comisiones')
+  let q = supabase
+    .from('gasto_real_comisiones')
     .select(`
       id,
       fecha_registro,
@@ -149,7 +165,8 @@ async function cargarHistorial() {
       comision:comisiones(nombre),
       socio:socios(nombre),
       fecha_prestacion
-    `).order('fecha_registro', { ascending: false });
+    `)
+    .order('fecha_registro', { ascending: false });
 
   if (mesValue) q = q.eq('mes_comercial', mesValue);
   if (comId) q = q.eq('comision_id', comId);
@@ -169,7 +186,8 @@ async function cargarHistorial() {
     p.textContent = 'No hay datos';
     p.style.fontStyle = 'italic';
     titulo.after(p);
-    ['totalMes','totalMesMonto','totalAnio','totalAnioMonto'].forEach(id => document.getElementById(id).textContent = '0');
+    ['totalMes','totalMesMonto','totalAnio','totalAnioMonto']
+      .forEach(id => document.getElementById(id).textContent = '0');
     return;
   }
 
@@ -220,6 +238,18 @@ async function cargarHistorial() {
 document.addEventListener('DOMContentLoaded', () => {
   const fr = document.getElementById('fechaRegistro');
   fr.value = '';
+  // Máscara automática de fecha dd-mm-aaaa
+  fr.addEventListener('input', function(e) {
+    let v = e.target.value.replace(/\D/g, '');
+    if (v.length <= 2) {
+      v = v;
+    } else if (v.length <= 4) {
+      v = v.slice(0,2) + '-' + v.slice(2);
+    } else {
+      v = v.slice(0,2) + '-' + v.slice(2,4) + '-' + v.slice(4,8);
+    }
+    e.target.value = v;
+  });
   fr.addEventListener('change', poblarMesComercial);
   if (fr.value) poblarMesComercial();
 

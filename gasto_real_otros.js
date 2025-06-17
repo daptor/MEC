@@ -50,7 +50,14 @@ async function cargarHistorialOtrosGastos() {
   }
 
   tbodyOtros.innerHTML = '';
+
   data.forEach(item => {
+    // Si item.id no existe o es null, no añadimos la fila para evitar errores
+    if (!item.id) {
+      console.warn('Registro sin id:', item);
+      return;
+    }
+
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${item.fecha_registro}</td>
@@ -69,17 +76,22 @@ async function eliminarGastoOtros(id) {
   const confirmar = confirm("¿Estás seguro que deseas eliminar este gasto?");
   if (!confirmar) return;
 
-  const { error } = await supabase
-    .from('gasto_real_otros')
-    .delete()
-    .eq('id', id);
+  try {
+    const { error } = await supabase
+      .from('gasto_real_otros')
+      .delete()
+      .eq('id', id);
 
-  if (error) {
-    console.error('Error eliminando gasto:', error);
-    alert('No se pudo eliminar el gasto');
-  } else {
-    alert('Gasto eliminado correctamente');
-    cargarHistorialOtrosGastos(); // Refresca la tabla
+    if (error) {
+      console.error('Error eliminando gasto:', error);
+      alert('No se pudo eliminar el gasto: ' + error.message);
+    } else {
+      alert('Gasto eliminado correctamente');
+      cargarHistorialOtrosGastos(); // Refresca la tabla tras eliminar
+    }
+  } catch (err) {
+    console.error('Error inesperado eliminando gasto:', err);
+    alert('Ocurrió un error inesperado al eliminar');
   }
 }
 
@@ -113,4 +125,4 @@ document.addEventListener('DOMContentLoaded', () => {
 // Hacer funciones accesibles globalmente si se usan desde HTML
 window.limpiarFormularioOtrosGastos = limpiarFormularioOtrosGastos;
 window.cargarHistorialOtrosGastos = cargarHistorialOtrosGastos;
-window.eliminarGastoOtros = eliminarGastoOtros; // 👈 importante para usar desde onclick
+window.eliminarGastoOtros = eliminarGastoOtros; // 👈 esto es clave para que onclick funcione!

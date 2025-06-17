@@ -89,3 +89,5 @@ function actualizarTotales(data) {
 document.addEventListener('DOMContentLoaded', () => {
   cargarHistorialOtrosGastos();
 });
+
+window.limpiarFormularioOtrosGastos = limpiarFormularioOtrosGastos;

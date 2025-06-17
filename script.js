@@ -1271,10 +1271,18 @@ function realizarCalculo(datos, pdfSeleccionado, seleccion) {
 
 // ***********Función para mostrar una pantalla y ocultar las demás**********
 function mostrarPantalla(id) {
-    // Se asume que todas las pantallas tienen la clase "pantalla"
-    const pantallas = document.querySelectorAll('.pantalla');
-    pantallas.forEach(p => p.style.display = 'none');
-    document.getElementById(id).style.display = 'block';
+  document.querySelectorAll('.pantalla').forEach(p => p.style.display = 'none');
+  const p = document.getElementById(id);
+  if (p) {
+    p.style.display = 'block';
+
+    // ✅ Si la pantalla es “Otros Gastos”, recarga el historial automáticamente
+    if (id === 'pantalla-otros-gastos' && typeof window.cargarHistorialOtrosGastos === 'function') {
+      window.cargarHistorialOtrosGastos();
+    }
+  } else {
+    console.warn(`La pantalla "${id}" no existe`);
+  }
 }
 
 // ****************** Funciones para la Pantalla de Cálculo de Horas ******************

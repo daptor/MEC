@@ -56,11 +56,31 @@ async function cargarHistorialOtrosGastos() {
       <td>${item.fecha_registro}</td>
       <td>${item.descripcion}</td>
       <td>${item.monto.toFixed(2)}</td>
+      <td><button onclick="eliminarGastoOtros('${item.id}')">🗑️</button></td>
     `;
     tbodyOtros.appendChild(tr);
   });
 
   actualizarTotales(data);
+}
+
+// Función para eliminar un gasto por ID
+async function eliminarGastoOtros(id) {
+  const confirmar = confirm("¿Estás seguro que deseas eliminar este gasto?");
+  if (!confirmar) return;
+
+  const { error } = await supabase
+    .from('gasto_real_otros')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error eliminando gasto:', error);
+    alert('No se pudo eliminar el gasto');
+  } else {
+    alert('Gasto eliminado correctamente');
+    cargarHistorialOtrosGastos(); // Refresca la tabla
+  }
 }
 
 // Calcula totales mensual y anual
@@ -90,4 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
   cargarHistorialOtrosGastos();
 });
 
+// Hacer funciones accesibles globalmente si se usan desde HTML
 window.limpiarFormularioOtrosGastos = limpiarFormularioOtrosGastos;
+window.cargarHistorialOtrosGastos = cargarHistorialOtrosGastos;
+window.eliminarGastoOtros = eliminarGastoOtros; // 👈 importante para usar desde onclick

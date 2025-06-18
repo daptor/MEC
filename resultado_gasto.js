@@ -1,20 +1,26 @@
+// resultado_gasto.js
+// En tu HTML: <script type="module" src="resultado_gasto.js"></script>
+// Asegúrate de que supabaseClient.js exporte correctamente `supabase`.
+
 import { supabase } from './supabaseClient.js';
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Listener para abrir la pantalla Resultado de Gastos
+  const btnAbrir = document.getElementById('btnResultadoGastos');
+  if (btnAbrir) {
+    btnAbrir.addEventListener('click', () => mostrarPantalla('pantalla-resultados-gastos'));
+  }
+
   // Listener para “Actualizar Resultado”
   const btnCargar = document.getElementById('btnCargarResultadoGastos');
   if (btnCargar) {
     btnCargar.addEventListener('click', cargarResultadoGastos);
   }
+
   // Listener para volver al menú Tesorería
   const btnVolver = document.getElementById('btnVolverResultadoGastos');
   if (btnVolver) {
     btnVolver.addEventListener('click', () => mostrarPantalla('pantalla-menu-tesoreria'));
-  }
-  // Listener para abrir esta pantalla (si prefieres registrarlo aquí en lugar de en otro script):
-  const btnAbrir = document.getElementById('btnResultadoGastos');
-  if (btnAbrir) {
-    btnAbrir.addEventListener('click', () => mostrarPantalla('pantalla-resultados-gastos'));
   }
 });
 
@@ -27,7 +33,7 @@ async function cargarResultadoGastos() {
     alert('Ingresa un año válido.');
     return;
   }
-  // Deshabilitar botón y mostrar carga
+  // Deshabilitar botón y mostrar estado de carga
   if (btn) {
     btn.disabled = true;
     btn.textContent = 'Cargando...';
@@ -41,24 +47,27 @@ async function cargarResultadoGastos() {
     // 1. Remuneración Directores
     let presupuestoRem = 0, gastoRealRem = 0;
     {
-      // Plan:
       const { data: planRows, error: errPlan } = await supabase
         .from('plan_gastos_remuneracion')
         .select('total_anual')
         .eq('periodo', String(anio));
       if (errPlan) throw errPlan;
       presupuestoRem = planRows.reduce((sum, r) => sum + (Number(r.total_anual) || 0), 0);
-      // Gasto real:
+
       const { data: realRows, error: errReal } = await supabase
         .from('gasto_real_directores')
-        .select('remuneracion, pasajes, colacion, metro, taxi_colectivo, hotel, reembolso, fecha')
+        .select('remuneracion, pasajes, gasto_colacion AS colacion, metro, taxi_colectivo, hotel, reembolso, fecha')
         .gte('fecha', inicio)
         .lte('fecha', fin);
+      // Nota: ajusta 'gasto_colacion AS colacion' sólo si quieres mapear nombre. Si la columna real es 'gasto_colacion',
+      // usa:
+      // .select('remuneracion, pasajes, gasto_colacion, metro, taxi_colectivo, hotel, reembolso, fecha')
       if (errReal) throw errReal;
       realRows.forEach(row => {
+        // Si usas campo real 'gasto_colacion', cámbialo aquí:
         gastoRealRem += Number(row.remuneracion || 0)
                      + Number(row.pasajes || 0)
-                     + Number(row.colacion || 0)
+                     + Number(row.gasto_colacion || 0)  // o row.colacion si usas alias
                      + Number(row.metro || 0)
                      + Number(row.taxi_colectivo || 0)
                      + Number(row.hotel || 0)
@@ -69,11 +78,10 @@ async function cargarResultadoGastos() {
       ? ((gastoRealRem / presupuestoRem) * 100).toFixed(1) + '%'
       : 'N/A';
 
-    // 2. Viáticos Directores (opcional; descomentar/ajustar si existe tabla)
+    // 2. Viáticos Directores (opcional; si existen tablas)
     let presupuestoVia = 0, gastoRealVia = 0;
-    /* Si tienes tabla plan_gastos_viaticos y gasto_real_viaticos:
+    /* Si tienes tabla plan_gastos_viaticos y gasto_real_viaticos, descomenta y ajusta nombres de columnas:
     {
-      // Plan:
       const { data: planViaRows, error: errPlanVia } = await supabase
         .from('plan_gastos_viaticos')
         .select('total_anual')
@@ -81,7 +89,6 @@ async function cargarResultadoGastos() {
       if (!errPlanVia && planViaRows) {
         presupuestoVia = planViaRows.reduce((sum, r) => sum + (Number(r.total_anual) || 0), 0);
       }
-      // Gasto real:
       const { data: realViaRows, error: errRealVia } = await supabase
         .from('gasto_real_viaticos')
         .select('transporte, hospedaje, alimentacion, otros, fecha_registro')
@@ -101,27 +108,26 @@ async function cargarResultadoGastos() {
       ? ((gastoRealVia / presupuestoVia) * 100).toFixed(1) + '%'
       : 'N/A';
 
-    // 3. Plenarias
+    // 3. Plenarias (ajustada para usar costo_total)
     let presupuestoPlen = 0, gastoRealPlen = 0;
     {
+      // Plan de Plenarias: se asume que en plan_gastos_plenarias hay filas para Recinto, Colación y Propina (15000 × eventos)
       const { data: planPlenRows, error: errPlanPlen } = await supabase
         .from('plan_gastos_plenarias')
         .select('total_anual')
         .eq('periodo', String(anio));
       if (errPlanPlen) throw errPlanPlen;
       presupuestoPlen = planPlenRows.reduce((sum, r) => sum + (Number(r.total_anual) || 0), 0);
+
+      // Gasto real Plenarias: sumamos costo_total por cada registro de plenaria en el año
       const { data: realPlenRows, error: errRealPlen } = await supabase
         .from('gasto_real_plenarias')
-        .select('costo_recinto, colacion, honorarios, transporte, otros, fecha')
+        .select('costo_total, fecha')
         .gte('fecha', inicio)
         .lte('fecha', fin);
       if (errRealPlen) throw errRealPlen;
       realPlenRows.forEach(row => {
-        gastoRealPlen += Number(row.costo_recinto || 0)
-                      + Number(row.colacion || 0)
-                      + Number(row.honorarios || 0)
-                      + Number(row.transporte || 0)
-                      + Number(row.otros || 0);
+        gastoRealPlen += Number(row.costo_total || 0);
       });
     }
     const pctPlen = presupuestoPlen > 0

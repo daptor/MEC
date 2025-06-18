@@ -1089,6 +1089,30 @@
   </table>
 </div>
 
+<!-- *********** Pantalla Resultado de Gastos *********** -->
+<div id="pantalla-resultados-gastos" class="pantalla" style="display: none; padding: 20px;">
+  <h2>Resultado de Gastos</h2>
+  <div class="barra-controles" style="margin-bottom: 10px;">
+    <label for="resultado-gastos-anio">Año:</label>
+    <input type="number" id="resultado-gastos-anio" value="2025" min="2000" max="2100" style="width: 80px; margin-left: 5px;"/>
+    <button id="btnCargarResultadoGastos" style="margin-left: 10px;">Actualizar Resultado</button>
+    <button id="btnVolverResultadoGastos" style="margin-left: 10px;">↩ Menú Tesorería</button>
+  </div>
+  <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 100%; max-width: 700px; margin-top: 10px;">
+    <thead class="encabezado-resultado">
+      <tr>
+        <th>Categoría</th>
+        <th>Presupuesto Anual</th>
+        <th>Gasto Real Anual</th>
+        <th>% Ejecución</th>
+      </tr>
+    </thead>
+    <tbody id="tabla-resultado-gastos">
+      <!-- Se inyectarán filas dinámicamente -->
+    </tbody>
+  </table>
+</div>
+
   <!-- ++++++++++++++++++++++ las otras funciones originales +++++++++++++++++++++++-->
   <!-- Pantalla de Análisis de Liquidación -->
   <div id="pantalla-analisis" class="pantalla" style="display: none;">
@@ -1343,6 +1367,7 @@
   <script type="module" src="gasto_real_otros.js"></script>
   <script type="module" src="crear_comision.js"></script>
   <script src="resultado_ingresos.js"></script>
+  <script type="module" src="resultado_gasto.js"></script>
   <script src="menu_general.js"></script>
   <script src="global.js"></script>
   <script src="script.js"></script>

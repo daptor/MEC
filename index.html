@@ -91,10 +91,11 @@
           <button id="btnGastos">📤 Gastos</button>
           <button id="btnResultadoIngresos">📈 Resultado de Ingresos</button>
           <button id="btnResultadoGastos">📉 Resultado de Gastos</button>
-          <!-- Aquí insertamos: -->
-          <label for="informe-anio-base">Año Informe:</label>
-          <input type="number" id="informe-anio-base" value="2025" />
-          <button id="btnGenerarInforme">📊 Generar Informe Excel</button>
+          <div id="contenedor-informe-excel">
+            <label for="informe-anio-base">Año Informe:</label>
+            <input type="number" id="informe-anio-base" value="2025" />
+            <button id="btnGenerarInforme">📊 Generar Informe Excel</button>
+          </div>
           <button id="volverBtn">↩ Menú Principal</button>
       </div>
 </div>
@@ -1375,5 +1376,6 @@
   <script src="menu_general.js"></script>
   <script src="global.js"></script>
   <script src="script.js"></script>
+  <script type="module" src="informeTesoreria.js"></script>
 </body>
 </html>

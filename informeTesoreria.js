@@ -1,5 +1,4 @@
 import { supabase } from './supabaseClient.js';
-import * as XLSX from 'xlsx';
 
 document.getElementById('btnGenerarInforme').addEventListener('click', generarInformeExcel);
 
@@ -30,7 +29,7 @@ async function generarInformeExcel() {
     ENERO: 1, FEBRERO: 2, MARZO: 3
   };
 
-  // --- INGRESOS: ingreso_plenarias ---
+  // INGRESOS
   const { data: ingPlen } = await supabase
     .from('ingreso_plenarias')
     .select('año, mes_nombre, cuota')
@@ -41,7 +40,7 @@ async function generarInformeExcel() {
     if (idx >= 0 && idx < 12) ingresos[idx] += Number(row.cuota || 0);
   }
 
-  // --- GASTOS DIRECTORES ---
+  // GASTOS DIRECTORES
   const { data: gastosDir } = await supabase
     .from('gasto_real_directores')
     .select('*')
@@ -54,7 +53,7 @@ async function generarInformeExcel() {
     gastos.Directores[idx] += total;
   }
 
-  // --- GASTOS PLENARIAS ---
+  // GASTOS PLENARIAS
   const { data: gastosPlen } = await supabase
     .from('gasto_real_plenarias')
     .select('fecha, costo_total')
@@ -65,7 +64,7 @@ async function generarInformeExcel() {
     gastos.Plenarias[idx] += Number(row.costo_total || 0);
   }
 
-  // --- GASTOS GESTIÓN ---
+  // GESTIÓN
   const { data: gastosGes } = await supabase
     .from('gasto_real_gestion')
     .select('fecha, total')
@@ -76,7 +75,7 @@ async function generarInformeExcel() {
     gastos.Gestion[idx] += Number(row.total || 0);
   }
 
-  // --- GASTOS COMISIONES ---
+  // COMISIONES
   const { data: gastosCom } = await supabase
     .from('gasto_real_comisiones')
     .select('fecha_registro, monto')
@@ -87,16 +86,16 @@ async function generarInformeExcel() {
     gastos.Comisiones[idx] += Number(row.monto || 0);
   }
 
-  // --- Construir hoja Excel ---
+  // CONSTRUIR EXCEL
   const resumen = [['Mes', ...meses], ['Ingresos', ...ingresos]];
   for (const [categoria, valores] of Object.entries(gastos)) {
     resumen.push([categoria, ...valores]);
   }
 
-  const ws = XLSX.utils.aoa_to_sheet(resumen);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Informe');
-  XLSX.writeFile(wb, `Informe_Tesoreria_${anioBase}_${anioBase + 1}.xlsx`);
+  const ws = window.XLSX.utils.aoa_to_sheet(resumen);
+  const wb = window.XLSX.utils.book_new();
+  window.XLSX.utils.book_append_sheet(wb, ws, 'Informe');
+  window.XLSX.writeFile(wb, `Informe_Tesoreria_${anioBase}_${anioBase + 1}.xlsx`);
 
   btn.disabled = false;
   btn.textContent = '📊 Generar Informe Excel';

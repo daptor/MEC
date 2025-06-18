@@ -1,7 +1,4 @@
 // resultado_gasto.js
-// En tu HTML: <script type="module" src="resultado_gasto.js"></script>
-// Asegúrate de que supabaseClient.js exporte correctamente `supabase`.
-
 import { supabase } from './supabaseClient.js';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -47,6 +44,7 @@ async function cargarResultadoGastos() {
     // 1. Remuneración Directores
     let presupuestoRem = 0, gastoRealRem = 0;
     {
+      // Plan Remuneración Directores
       const { data: planRows, error: errPlan } = await supabase
         .from('plan_gastos_remuneracion')
         .select('total_anual')
@@ -54,20 +52,19 @@ async function cargarResultadoGastos() {
       if (errPlan) throw errPlan;
       presupuestoRem = planRows.reduce((sum, r) => sum + (Number(r.total_anual) || 0), 0);
 
+      // Gasto Real Directores: consulta solo columnas existentes sin alias mal formados
+      // Asegúrate de usar nombres reales: ej. si la columna de colación se llama 'gasto_colacion'
       const { data: realRows, error: errReal } = await supabase
         .from('gasto_real_directores')
-        .select('remuneracion, pasajes, gasto_colacion AS colacion, metro, taxi_colectivo, hotel, reembolso, fecha')
+        // Lista los nombres reales de columna; quita cualquier alias AS. Ej:
+        .select('remuneracion, pasajes, gasto_colacion, metro, taxi_colectivo, hotel, reembolso, fecha')
         .gte('fecha', inicio)
         .lte('fecha', fin);
-      // Nota: ajusta 'gasto_colacion AS colacion' sólo si quieres mapear nombre. Si la columna real es 'gasto_colacion',
-      // usa:
-      // .select('remuneracion, pasajes, gasto_colacion, metro, taxi_colectivo, hotel, reembolso, fecha')
       if (errReal) throw errReal;
       realRows.forEach(row => {
-        // Si usas campo real 'gasto_colacion', cámbialo aquí:
         gastoRealRem += Number(row.remuneracion || 0)
                      + Number(row.pasajes || 0)
-                     + Number(row.gasto_colacion || 0)  // o row.colacion si usas alias
+                     + Number(row.gasto_colacion || 0)
                      + Number(row.metro || 0)
                      + Number(row.taxi_colectivo || 0)
                      + Number(row.hotel || 0)
@@ -108,10 +105,10 @@ async function cargarResultadoGastos() {
       ? ((gastoRealVia / presupuestoVia) * 100).toFixed(1) + '%'
       : 'N/A';
 
-    // 3. Plenarias (ajustada para usar costo_total)
+    // 3. Plenarias (usamos costo_total)
     let presupuestoPlen = 0, gastoRealPlen = 0;
     {
-      // Plan de Plenarias: se asume que en plan_gastos_plenarias hay filas para Recinto, Colación y Propina (15000 × eventos)
+      // Plan Plenarias: total_anual ya incluye Recinto, Colación y Propina fija 15000×eventos
       const { data: planPlenRows, error: errPlanPlen } = await supabase
         .from('plan_gastos_plenarias')
         .select('total_anual')
@@ -119,9 +116,10 @@ async function cargarResultadoGastos() {
       if (errPlanPlen) throw errPlanPlen;
       presupuestoPlen = planPlenRows.reduce((sum, r) => sum + (Number(r.total_anual) || 0), 0);
 
-      // Gasto real Plenarias: sumamos costo_total por cada registro de plenaria en el año
+      // Gasto Real Plenarias: sumamos costo_total de cada registro
       const { data: realPlenRows, error: errRealPlen } = await supabase
         .from('gasto_real_plenarias')
+        // Selecciona solo 'costo_total' y 'fecha'
         .select('costo_total, fecha')
         .gte('fecha', inicio)
         .lte('fecha', fin);

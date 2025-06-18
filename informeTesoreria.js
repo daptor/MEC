@@ -1,6 +1,13 @@
 import { supabase } from './supabaseClient.js';
 
-document.getElementById('btnGenerarInforme').addEventListener('click', generarInformeExcel);
+window.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('btnGenerarInforme');
+  if (btn) {
+    btn.addEventListener('click', generarInformeExcel);
+  } else {
+    console.warn('Botón #btnGenerarInforme no encontrado en el DOM');
+  }
+});
 
 async function generarInformeExcel() {
   const inputAnio = document.getElementById('informe-anio-base');

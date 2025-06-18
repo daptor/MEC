@@ -91,6 +91,10 @@
           <button id="btnGastos">📤 Gastos</button>
           <button id="btnResultadoIngresos">📈 Resultado de Ingresos</button>
           <button id="btnResultadoGastos">📉 Resultado de Gastos</button>
+          <!-- Aquí insertamos: -->
+          <label for="informe-anio-base" style="margin-left: 10px;">Año Informe:</label>
+          <input type="number" id="informe-anio-base" min="2020" max="2100" value="2025" style="width: 80px;" />
+          <button id="btnGenerarInforme" style="margin-left: 5px;">📊 Generar Informe Excel</button>
           <button id="volverBtn">↩ Menú Principal</button>
       </div>
 </div>
@@ -1348,6 +1352,7 @@
       <button onclick="mostrarPantalla('menu-principal')">↩ Menú</button>
   </div>
 
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/xlsx.mini.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
   <script type="module">import { v4 as uuidv4 } from 'https://cdn.skypack.dev/uuid';</script>

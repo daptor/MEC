@@ -40,57 +40,60 @@ async function generarInformeExcel() {
   };
 
   try {
-    // Ingresos desde ingreso_plenarias
+    // ✅ INGRESOS — ingreso_plenarias
     const { data: ingPlen } = await supabase
       .from('ingreso_plenarias')
       .select('año, mes_nombre, cuota');
+    const mapMesNombre = {
+      ABRIL: 4, MAYO: 5, JUNIO: 6, JULIO: 7, AGOSTO: 8,
+      SEPTIEMBRE: 9, OCTUBRE: 10, NOVIEMBRE: 11, DICIEMBRE: 12,
+      ENERO: 1, FEBRERO: 2, MARZO: 3
+    };
     for (const row of ingPlen || []) {
-      const idx = meses.findIndex(m =>
-        m.anio === row.año &&
-        m.nombre.toUpperCase() === row.mes_nombre.toUpperCase().slice(0, 3)
-      );
+      const num = mapMesNombre[row.mes_nombre?.toUpperCase()] || 0;
+      const idx = meses.findIndex(m => m.anio === row.año && m.numero === num);
       if (idx >= 0) ingresos[idx] += Number(row.cuota || 0);
     }
 
-    // Gastos Directores
+    // ✅ GASTOS — gasto_real_directores
     const { data: gastosDir } = await supabase
       .from('gasto_real_directores')
       .select('*');
     for (const row of gastosDir || []) {
       const d = new Date(row.fecha);
-      const idx = meses.findIndex(m => m.anio === d.getFullYear() && m.numero === (d.getMonth() + 1));
+      const idx = meses.findIndex(m => m.anio === d.getFullYear() && m.numero === d.getMonth() + 1);
       const total = ['remuneracion', 'pasajes', 'colacion', 'metro', 'taxi_colectivo', 'hotel', 'reembolso']
         .reduce((s, k) => s + (Number(row[k]) || 0), 0);
       if (idx >= 0) gastos.Directores[idx] += total;
     }
 
-    // Gastos Plenarias
+    // ✅ GASTOS — gasto_real_plenarias
     const { data: gastosPlen } = await supabase
       .from('gasto_real_plenarias')
       .select('fecha, costo_total');
     for (const row of gastosPlen || []) {
       const d = new Date(row.fecha);
-      const idx = meses.findIndex(m => m.anio === d.getFullYear() && m.numero === (d.getMonth() + 1));
+      const idx = meses.findIndex(m => m.anio === d.getFullYear() && m.numero === d.getMonth() + 1);
       if (idx >= 0) gastos.Plenarias[idx] += Number(row.costo_total || 0);
     }
 
-    // Gastos Gestión
+    // ✅ GASTOS — gasto_real_gestion
     const { data: gastosGes } = await supabase
       .from('gasto_real_gestion')
       .select('fecha, total');
     for (const row of gastosGes || []) {
       const d = new Date(row.fecha);
-      const idx = meses.findIndex(m => m.anio === d.getFullYear() && m.numero === (d.getMonth() + 1));
+      const idx = meses.findIndex(m => m.anio === d.getFullYear() && m.numero === d.getMonth() + 1);
       if (idx >= 0) gastos.Gestion[idx] += Number(row.total || 0);
     }
 
-    // Gastos Comisiones
+    // ✅ GASTOS — gasto_real_comisiones
     const { data: gastosCom } = await supabase
       .from('gasto_real_comisiones')
       .select('fecha_registro, monto');
     for (const row of gastosCom || []) {
       const d = new Date(row.fecha_registro);
-      const idx = meses.findIndex(m => m.anio === d.getFullYear() && m.numero === (d.getMonth() + 1));
+      const idx = meses.findIndex(m => m.anio === d.getFullYear() && m.numero === d.getMonth() + 1);
       if (idx >= 0) gastos.Comisiones[idx] += Number(row.monto || 0);
     }
 
@@ -101,7 +104,7 @@ async function generarInformeExcel() {
     return;
   }
 
-  // Crear Excel
+  // ✅ Crear Excel
   const header = ['Mes', ...meses.map(m => m.nombre)];
   const resumen = [
     header,

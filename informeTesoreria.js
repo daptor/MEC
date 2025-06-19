@@ -9,13 +9,14 @@ window.addEventListener('DOMContentLoaded', () => {
 
 async function generarInformeExcel() {
   const input = document.getElementById('informe-anio-base');
-  const anioBase = parseInt(input.value);
+  const anioBase = parseInt(input.value, 10);
   if (isNaN(anioBase)) return alert('Año inválido');
 
   const btn = document.getElementById('btnGenerarInforme');
   btn.disabled = true;
   btn.textContent = 'Generando...';
 
+  // Definimos el rango de meses del año comercial (Abr-Mar)
   const meses = [
     { nombre: 'Abr', numero: 4, anio: anioBase },
     { nombre: 'May', numero: 5, anio: anioBase },
@@ -31,95 +32,169 @@ async function generarInformeExcel() {
     { nombre: 'Mar', numero: 3, anio: anioBase + 1 }
   ];
 
-  const ingresos = Array(12).fill(0);
-  const gastos = {
-    Directores: Array(12).fill(0),
-    Plenarias: Array(12).fill(0),
-    Gestion: Array(12).fill(0),
-    Comisiones: Array(12).fill(0)
-  };
-
   try {
-    // ✅ INGRESOS — ingreso_plenarias
-    const { data: ingPlen } = await supabase
-      .from('ingreso_plenarias')
-      .select('año, mes_nombre, cuota');
-    const mapMesNombre = {
-      ABRIL: 4, MAYO: 5, JUNIO: 6, JULIO: 7, AGOSTO: 8,
-      SEPTIEMBRE: 9, OCTUBRE: 10, NOVIEMBRE: 11, DICIEMBRE: 12,
-      ENERO: 1, FEBRERO: 2, MARZO: 3
-    };
-    for (const row of ingPlen || []) {
-      const num = mapMesNombre[row.mes_nombre?.toUpperCase()] || 0;
-      const idx = meses.findIndex(m => m.anio === row.año && m.numero === num);
-      if (idx >= 0) ingresos[idx] += Number(row.cuota || 0);
-    }
+    // 1. Planes de Ingresos
+    const { data: planIngresos } = await supabase
+      .from('plan_ingresos')
+      .select('*')
+      .eq('anio', anioBase);
 
-    // ✅ GASTOS — gasto_real_directores
-    const { data: gastosDir } = await supabase
-      .from('gasto_real_directores')
-      .select('*');
-    for (const row of gastosDir || []) {
-      const d = new Date(row.fecha);
-      const idx = meses.findIndex(m => m.anio === d.getFullYear() && m.numero === d.getMonth() + 1);
-      const total = ['remuneracion', 'pasajes', 'colacion', 'metro', 'taxi_colectivo', 'hotel', 'reembolso']
-        .reduce((s, k) => s + (Number(row[k]) || 0), 0);
-      if (idx >= 0) gastos.Directores[idx] += total;
-    }
+    // 2. Planes de Gastos
+    const { data: planGastos } = await supabase
+      .from('plan_gastos')
+      .select('*')
+      .eq('anio', anioBase);
 
-    // ✅ GASTOS — gasto_real_plenarias
-    const { data: gastosPlen } = await supabase
-      .from('gasto_real_plenarias')
-      .select('fecha, costo_total');
-    for (const row of gastosPlen || []) {
-      const d = new Date(row.fecha);
-      const idx = meses.findIndex(m => m.anio === d.getFullYear() && m.numero === d.getMonth() + 1);
-      if (idx >= 0) gastos.Plenarias[idx] += Number(row.costo_total || 0);
-    }
+    // 3. Ingresos Reales (dividido por tipo)
+    const ingresosReales = await obtenerIngresosReales(meses);
 
-    // ✅ GASTOS — gasto_real_gestion
-    const { data: gastosGes } = await supabase
-      .from('gasto_real_gestion')
-      .select('fecha, total');
-    for (const row of gastosGes || []) {
-      const d = new Date(row.fecha);
-      const idx = meses.findIndex(m => m.anio === d.getFullYear() && m.numero === d.getMonth() + 1);
-      if (idx >= 0) gastos.Gestion[idx] += Number(row.total || 0);
-    }
+    // 4. Gastos Reales (dividido por categoría)
+    const gastosReales = await obtenerGastosReales(meses);
 
-    // ✅ GASTOS — gasto_real_comisiones
-    const { data: gastosCom } = await supabase
-      .from('gasto_real_comisiones')
-      .select('fecha_registro, monto');
-    for (const row of gastosCom || []) {
-      const d = new Date(row.fecha_registro);
-      const idx = meses.findIndex(m => m.anio === d.getFullYear() && m.numero === d.getMonth() + 1);
-      if (idx >= 0) gastos.Comisiones[idx] += Number(row.monto || 0);
-    }
+    // Crear libro de Excel
+    const wb = XLSX.utils.book_new();
 
-  } catch (err) {
-    alert('Error al obtener datos: ' + err.message);
+    // Hoja Plan Ingresos
+    const wsPlanIngresos = XLSX.utils.json_to_sheet(planIngresos || []);
+    XLSX.utils.book_append_sheet(wb, wsPlanIngresos, 'Plan Ingresos');
+
+    // Hoja Plan Gastos
+    const wsPlanGastos = XLSX.utils.json_to_sheet(planGastos || []);
+    XLSX.utils.book_append_sheet(wb, wsPlanGastos, 'Plan Gastos');
+
+    // Hoja Ingresos Reales
+    const wsIngresos = XLSX.utils.aoa_to_sheet(
+      generarTablaMensual('Ingresos', meses, ingresosReales)
+    );
+    XLSX.utils.book_append_sheet(wb, wsIngresos, 'Ingresos Reales');
+
+    // Hoja Gastos Reales
+    const wsGastos = XLSX.utils.aoa_to_sheet(
+      generarTablaMensual('Gastos', meses, gastosReales)
+    );
+    XLSX.utils.book_append_sheet(wb, wsGastos, 'Gastos Reales');
+
+    // Guardar archivo
+    const fileName = `Informe_Tesoreria_${anioBase}-${anioBase + 1}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+
+  } catch (error) {
+    console.error(error);
+    alert('Error al generar informe: ' + error.message);
+  } finally {
     btn.disabled = false;
     btn.textContent = '📊 Generar Informe Excel';
-    return;
   }
+}
 
-  // ✅ Crear Excel
+// Función para construir tablas mensuales
+function generarTablaMensual(titulo, meses, datosMensuales) {
   const header = ['Mes', ...meses.map(m => m.nombre)];
-  const resumen = [
-    header,
-    ['Ingresos', ...ingresos],
-    ['Directores', ...gastos.Directores],
-    ['Plenarias', ...gastos.Plenarias],
-    ['Gestion', ...gastos.Gestion],
-    ['Comisiones', ...gastos.Comisiones]
-  ];
+  const filas = Object.entries(datosMensuales).map(
+    ([categoria, valores]) => [categoria, ...valores]
+  );
+  return [header, ...filas];
+}
 
-  const ws = XLSX.utils.aoa_to_sheet(resumen);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Informe');
-  XLSX.writeFile(wb, `Informe_Tesoreria_${anioBase}_${anioBase + 1}.xlsx`);
+// Obtiene ingresos reales de Supabase y los organiza por tipo y mes
+async function obtenerIngresosReales(meses) {
+  const tipos = ['cuota', 'plenarias', 'aporte_director', 'otros'];
+  const result = tipos.reduce((acc, tipo) => ({ ...acc, [tipo]: Array(12).fill(0) }), {});
 
-  btn.disabled = false;
-  btn.textContent = '📊 Generar Informe Excel';
+  // Cuotas
+  const { data: cuotas } = await supabase
+    .from('ingreso_cuota')
+    .select('anio, mes, monto')
+    .gte('anio', meses[0].anio)
+    .lte('anio', meses[11].anio);
+  (cuotas || []).forEach(r =>
+    acumular(r.anio, r.mes, r.monto, meses, result.cuota)
+  );
+
+  // Plenarias
+  const { data: plenarias } = await supabase
+    .from('ingreso_plenarias')
+    .select('año, mes, cuota as monto');
+  (plenarias || []).forEach(r =>
+    acumular(r.año, r.mes, r.monto, meses, result.plenarias)
+  );
+
+  // Aporte Director
+  const { data: aportes } = await supabase
+    .from('ingreso_directores')
+    .select('fecha, monto');
+  (aportes || []).forEach(r => {
+    const d = new Date(r.fecha);
+    acumular(d.getFullYear(), d.getMonth() + 1, r.monto, meses, result.aporte_director);
+  });
+
+  // Otros Ingresos
+  const { data: otros } = await supabase
+    .from('otros_ingresos')
+    .select('anio, mes, monto');
+  (otros || []).forEach(r =>
+    acumular(r.anio, r.mes, r.monto, meses, result.otros)
+  );
+
+  return result;
+}
+
+// Obtiene gastos reales y los organiza por categoría y mes
+async function obtenerGastosReales(meses) {
+  const categorias = ['Directores', 'Plenarias', 'Gestion', 'Comisiones', 'Otros'];
+  const result = categorias.reduce((acc, cat) => ({ ...acc, [cat]: Array(12).fill(0) }), {});
+
+  // Gasto Directores
+  const { data: gd } = await supabase
+    .from('gasto_real_directores')
+    .select('fecha, remuneracion, pasajes, colacion, metro, taxi_colectivo, hotel, reembolso');
+  (gd || []).forEach(r => {
+    const total = ['remuneracion','pasajes','colacion','metro','taxi_colectivo','hotel','reembolso']
+      .reduce((s, k) => s + Number(r[k] || 0), 0);
+    const d = new Date(r.fecha);
+    acumular(d.getFullYear(), d.getMonth() + 1, total, meses, result.Directores);
+  });
+
+  // Gasto Plenarias
+  const { data: gp } = await supabase
+    .from('gasto_real_plenarias')
+    .select('fecha, costo_total');
+  (gp || []).forEach(r => {
+    const d = new Date(r.fecha);
+    acumular(d.getFullYear(), d.getMonth() + 1, r.costo_total, meses, result.Plenarias);
+  });
+
+  // Gastos Gestion
+  const { data: gg } = await supabase
+    .from('gasto_real_gestion')
+    .select('fecha, total');
+  (gg || []).forEach(r => {
+    const d = new Date(r.fecha);
+    acumular(d.getFullYear(), d.getMonth() + 1, r.total, meses, result.Gestion);
+  });
+
+  // Gastos Comisiones
+  const { data: gc } = await supabase
+    .from('gasto_real_comisiones')
+    .select('fecha_registro, monto');
+  (gc || []).forEach(r => {
+    const d = new Date(r.fecha_registro);
+    acumular(d.getFullYear(), d.getMonth() + 1, r.monto, meses, result.Comisiones);
+  });
+
+  // Otros Gastos
+  const { data: og } = await supabase
+    .from('otros_gastos')
+    .select('anio, mes, monto');
+  (og || []).forEach(r =>
+    acumular(r.anio, r.mes, r.monto, meses, result.Otros)
+  );
+
+  return result;
+}
+
+// Helper para acumular montos en arrays según mes y año
+function acumular(anio, mes, monto, meses, array) {
+  const idx = meses.findIndex(m => m.anio === anio && m.numero === mes);
+  if (idx >= 0) array[idx] += Number(monto) || 0;
 }

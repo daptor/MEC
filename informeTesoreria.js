@@ -3,8 +3,7 @@ import * as XLSX from 'https://cdn.sheetjs.com/xlsx-0.20.0/package/xlsx.mjs';
 
 window.addEventListener('DOMContentLoaded', () => {
   const btn = document.getElementById('btnGenerarInforme');
-  if (!btn) return console.warn('Botón no encontrado');
-  btn.addEventListener('click', generarInformeExcel);
+  btn?.addEventListener('click', generarInformeExcel);
 });
 
 async function generarInformeExcel() {
@@ -13,36 +12,37 @@ async function generarInformeExcel() {
   if (isNaN(anioBase)) return alert('Año inválido');
 
   const btn = document.getElementById('btnGenerarInforme');
-  btn.disabled = true;
-  btn.textContent = 'Generando...';
+  btn.disabled = true; btn.textContent = 'Generando...';
 
-  // meses del año comercial (Abril–Marzo)
+  // meses abril–marzo
   const meses = [
-    { nombre: 'Abr', numero: 4, anio: anioBase },
-    { nombre: 'May', numero: 5, anio: anioBase },
-    { nombre: 'Jun', numero: 6, anio: anioBase },
-    { nombre: 'Jul', numero: 7, anio: anioBase },
-    { nombre: 'Ago', numero: 8, anio: anioBase },
-    { nombre: 'Sep', numero: 9, anio: anioBase },
-    { nombre: 'Oct', numero: 10, anio: anioBase },
-    { nombre: 'Nov', numero: 11, anio: anioBase },
-    { nombre: 'Dic', numero: 12, anio: anioBase },
-    { nombre: 'Ene', numero: 1, anio: anioBase + 1 },
-    { nombre: 'Feb', numero: 2, anio: anioBase + 1 },
-    { nombre: 'Mar', numero: 3, anio: anioBase + 1 }
+    { nombre: 'Abr', num: 4, anio: anioBase },
+    { nombre: 'May', num: 5, anio: anioBase },
+    { nombre: 'Jun', num: 6, anio: anioBase },
+    { nombre: 'Jul', num: 7, anio: anioBase },
+    { nombre: 'Ago', num: 8, anio: anioBase },
+    { nombre: 'Sep', num: 9, anio: anioBase },
+    { nombre: 'Oct', num: 10, anio: anioBase },
+    { nombre: 'Nov', num: 11, anio: anioBase },
+    { nombre: 'Dic', num: 12, anio: anioBase },
+    { nombre: 'Ene', num: 1, anio: anioBase + 1 },
+    { nombre: 'Feb', num: 2, anio: anioBase + 1 },
+    { nombre: 'Mar', num: 3, anio: anioBase + 1 }
   ];
 
   try {
-    // PLANES DE INGRESOS
-    const { data: planIngresos } = await supabase
-      .from('plan_ingresos')
-      .select('*')
-      .eq('año', anioBase);
-
-    // PLANES DE GASTOS (varias tablas)
-    const [{ data: planComisiones }, { data: planGestion },
-           { data: planPlenarias }, { data: planRemuneracion },
-           { data: planViaticos }] = await Promise.all([
+    // ——————————————————————————————
+    // 1) PLANES DE INGRESOS Y GASTOS
+    // ——————————————————————————————
+    const [
+      { data: planIngresos },
+      { data: planGCom },
+      { data: planGGest },
+      { data: planGPlen },
+      { data: planGRem },
+      { data: planGVia }
+    ] = await Promise.all([
+      supabase.from('plan_ingresos').select('*').eq('año', anioBase),
       supabase.from('plan_gastos_comisiones').select('*').eq('periodo', `${anioBase}`),
       supabase.from('plan_gastos_gestion').select('*').eq('periodo', `${anioBase}`),
       supabase.from('plan_gastos_plenarias').select('*').eq('periodo', `${anioBase}`),
@@ -50,167 +50,154 @@ async function generarInformeExcel() {
       supabase.from('plan_gastos_viaticos').select('*').eq('periodo', `${anioBase}`)
     ]);
 
-    // INGRESOS REALES
-    const ingresosReales = await obtenerIngresosReales(meses);
+    // ——————————————————————————————
+    // 2) INGRESOS REALES (todas las tablas)
+    // ——————————————————————————————
+    const [
+      { data: ingresoPlen },
+      { data: ingresoMens },
+      { data: otrosIngr },
+      { data: aporteDir }
+    ] = await Promise.all([
+      supabase.from('ingreso_plenarias').select('*').gte('año', meses[0].anio).lte('año', meses[11].anio),
+      supabase.from('ingresos_mensuales').select('*').gte('año', meses[0].anio).lte('año', meses[11].anio),
+      supabase.from('otros_ingresos').select('*').eq('anio', anioBase),
+      supabase.from('aporte_director').select('*').gte('fecha', `${anioBase}-04-01`).lte('fecha', `${anioBase+1}-03-31`)
+    ]);
 
-    // GASTOS REALES
-    const gastosReales = await obtenerGastosReales(meses);
+    // ——————————————————————————————
+    // 3) GASTOS REALES (todas las tablas)
+    // ——————————————————————————————
+    const [
+      { data: gdirect },
+      { data: gplen },
+      { data: ggest },
+      { data: gcom },
+      { data: gotros }
+    ] = await Promise.all([
+      supabase.from('gasto_real_directores').select('*').gte('fecha', `${anioBase}-04-01`).lte('fecha', `${anioBase+1}-03-31`),
+      supabase.from('gasto_real_plenarias').select('*').gte('fecha', `${anioBase}-04-01`).lte('fecha', `${anioBase+1}-03-31`),
+      supabase.from('gasto_real_gestion').select('*').gte('fecha', `${anioBase}-04-01`).lte('fecha', `${anioBase+1}-03-31`),
+      supabase.from('gasto_real_comisiones').select('*').gte('fecha_registro', `${anioBase}-04-01`).lte('fecha_registro', `${anioBase+1}-03-31`),
+      supabase.from('gasto_real_otros').select('*').gte('fecha_registro', `${anioBase}-04-01`).lte('fecha_registro', `${anioBase+1}-03-31`)
+    ]);
 
-    // crear libro de Excel
+    // ——————————————————————————————
+    // 4) CREAR LIBRO & HOJAS
+    // ——————————————————————————————
     const wb = XLSX.utils.book_new();
 
-    // hoja Plan Ingresos
-    XLSX.utils.book_append_sheet(
-      wb,
-      XLSX.utils.json_to_sheet(planIngresos || []),
-      'Plan Ingresos'
-    );
+    // Hojas crudas de Planes
+    wb.SheetNames.push('Plan Ingresos');
+    wb.Sheets['Plan Ingresos'] = XLSX.utils.json_to_sheet(planIngresos || []);
+    wb.SheetNames.push('Plan Gastos Com.');
+    wb.Sheets['Plan Gastos Com.'] = XLSX.utils.json_to_sheet(planGCom || []);
+    wb.SheetNames.push('Plan Gastos Gest.');
+    wb.Sheets['Plan Gastos Gest.'] = XLSX.utils.json_to_sheet(planGGest || []);
+    wb.SheetNames.push('Plan Gastos Plen.');
+    wb.Sheets['Plan Gastos Plen.'] = XLSX.utils.json_to_sheet(planGPlen || []);
+    wb.SheetNames.push('Plan Gastos Rem.');
+    wb.Sheets['Plan Gastos Rem.'] = XLSX.utils.json_to_sheet(planGRem || []);
+    wb.SheetNames.push('Plan Gastos Via.');
+    wb.Sheets['Plan Gastos Via.'] = XLSX.utils.json_to_sheet(planGVia || []);
 
-    // hojas Plan Gastos por tipo
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(planComisiones || []), 'Plan Gastos Com.');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(planGestion    || []), 'Plan Gastos Gest.');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(planPlenarias  || []), 'Plan Gastos Plen.');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(planRemuneracion|| []), 'Plan Gastos Rem.');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(planViaticos   || []), 'Plan Gastos Via.');
+    // Hojas crudas de Ingresos Reales
+    wb.SheetNames.push('Raw Ingr Plenarias');
+    wb.Sheets['Raw Ingr Plenarias'] = XLSX.utils.json_to_sheet(ingresoPlen || []);
+    wb.SheetNames.push('Raw Ingr Mensuales');
+    wb.Sheets['Raw Ingr Mensuales'] = XLSX.utils.json_to_sheet(ingresoMens || []);
+    wb.SheetNames.push('Raw Otros Ingresos');
+    wb.Sheets['Raw Otros Ingresos'] = XLSX.utils.json_to_sheet(otrosIngr || []);
+    wb.SheetNames.push('Raw Aporte Director');
+    wb.Sheets['Raw Aporte Director'] = XLSX.utils.json_to_sheet(aporteDir || []);
 
-    // hoja Ingresos Reales
-    XLSX.utils.book_append_sheet(
-      wb,
-      XLSX.utils.aoa_to_sheet(generarTablaMensual('Ingresos', meses, ingresosReales)),
-      'Ingresos Reales'
-    );
+    // Hojas crudas de Gastos Reales
+    wb.SheetNames.push('Raw Gasto Directores');
+    wb.Sheets['Raw Gasto Directores'] = XLSX.utils.json_to_sheet(gdirect || []);
+    wb.SheetNames.push('Raw Gasto Plenarias');
+    wb.Sheets['Raw Gasto Plenarias'] = XLSX.utils.json_to_sheet(gplen || []);
+    wb.SheetNames.push('Raw Gasto Gestion');
+    wb.Sheets['Raw Gasto Gestion'] = XLSX.utils.json_to_sheet(ggest || []);
+    wb.SheetNames.push('Raw Gasto Comisiones');
+    wb.Sheets['Raw Gasto Comisiones'] = XLSX.utils.json_to_sheet(gcom || []);
+    wb.SheetNames.push('Raw Gasto Otros');
+    wb.Sheets['Raw Gasto Otros'] = XLSX.utils.json_to_sheet(gotros || []);
 
-    // hoja Gastos Reales
-    XLSX.utils.book_append_sheet(
-      wb,
-      XLSX.utils.aoa_to_sheet(generarTablaMensual('Gastos', meses, gastosReales)),
-      'Gastos Reales'
-    );
+    // Resumen mensual
+    const resumenIngresos = generarResumen(ingresoMens, ingresoPlen, otrosIngr, aporteDir, meses);
+    const resumenGastos   = generarResumenGastos(gdirect, gplen, ggest, gcom, gotros, meses);
 
-    // guardar
-    const fileName = `Informe_Tesoreria_${anioBase}-${anioBase + 1}.xlsx`;
-    XLSX.writeFile(wb, fileName);
+    wb.SheetNames.push('Resumen Ingresos');
+    wb.Sheets['Resumen Ingresos'] = XLSX.utils.aoa_to_sheet(resumenIngresos);
+    wb.SheetNames.push('Resumen Gastos');
+    wb.Sheets['Resumen Gastos'] = XLSX.utils.aoa_to_sheet(resumenGastos);
 
-  } catch (error) {
-    console.error(error);
-    alert('Error al generar informe: ' + error.message);
+    // Descargar
+    XLSX.writeFile(wb, `Informe_Tesoreria_${anioBase}-${anioBase+1}.xlsx`);
+
+  } catch (err) {
+    console.error(err);
+    alert('Error al generar informe: ' + err.message);
   } finally {
     btn.disabled = false;
     btn.textContent = '📊 Generar Informe Excel';
   }
 }
 
-// tablas mensuales
-function generarTablaMensual(_, meses, datos) {
-  const header = ['Mes', ...meses.map(m => m.nombre)];
+// Construye resumen mensual de ingresos
+function generarResumen(mensuales, plenarias, otros, aportes, meses) {
+  const cat = { cuota: Array(12).fill(0), plenarias: Array(12).fill(0), otros: Array(12).fill(0), aporte_director: Array(12).fill(0) };
+  // Cuotas
+  (mensuales||[]).forEach(r => acum(r.año, r.mes_nombre, r.cuota, meses, cat.cuota));
+  // Plenarias
+  (plenarias||[]).forEach(r => acum(r.año, r.mes_nombre, r.cuota, meses, cat.plenarias));
+  // Otros ingresos
+  (otros||[]).forEach(r => acum(r.anio, r.mes, r.monto, meses, cat.otros));
+  // Aporte directores
+  (aportes||[]).forEach(r => { const d=new Date(r.fecha); acum(d.getFullYear(), d.getMonth()+1, r.monto, meses, cat.aporte_director); });
+
+  const header = ['Mes', ...meses.map(m=>m.nombre)];
   return [
     header,
-    ...Object.entries(datos).map(([cat, vals]) => [cat, ...vals])
+    ['Cuotas', ...cat.cuota],
+    ['Plenarias', ...cat.plenarias],
+    ['Otros', ...cat.otros],
+    ['Aporte Director', ...cat.aporte_director]
   ];
 }
 
-// ingresos reales
-async function obtenerIngresosReales(meses) {
-  const tipos = ['cuota', 'plenarias', 'aporte_director', 'otros'];
-  const result = tipos.reduce((acc, t) => ({ ...acc, [t]: Array(12).fill(0) }), {});
+// Construye resumen mensual de gastos
+function generarResumenGastos(direct, plen, gest, com, otrs, meses) {
+  const cat = { Directores: Array(12).fill(0), Plenarias: Array(12).fill(0), Gestion: Array(12).fill(0), Comisiones: Array(12).fill(0), Otros: Array(12).fill(0) };
+  // Directores
+  (direct||[]).forEach(r => { const total = sumaProps(r, ['remuneracion','pasajes','colacion','metro','taxi_colectivo','hotel','reembolso']); const d=new Date(r.fecha); acum(d.getFullYear(), d.getMonth()+1, total, meses, cat.Directores); });
+  // Plenarias
+  (plen||[]).forEach(r => { const d=new Date(r.fecha); acum(d.getFullYear(), d.getMonth()+1, r.costo_total, meses, cat.Plenarias); });
+  // Gestion
+  (gest||[]).forEach(r => { const d=new Date(r.fecha); acum(d.getFullYear(), d.getMonth()+1, r.total, meses, cat.Gestion); });
+  // Comisiones
+  (com||[]).forEach(r => { const d=new Date(r.fecha_registro); acum(d.getFullYear(), d.getMonth()+1, r.monto, meses, cat.Comisiones); });
+  // Otros gastos
+  (otrs||[]).forEach(r => { const d=new Date(r.fecha_registro); acum(d.getFullYear(), d.getMonth()+1, r.monto, meses, cat.Otros); });
 
-  // ingreso_plenarias
-  const { data: plenarias } = await supabase
-    .from('ingreso_plenarias')
-    .select('año, mes_nombre')
-    .gte('año', meses[0].anio)
-    .lte('año', meses[11].anio);
-  (plenarias || []).forEach(r => {
-    const mesNum = meses.find(m => m.mes_nombre?.toLowerCase() === r.mes_nombre.toLowerCase())?.numero;
-    acumular(r.año, mesNum, r.cuota, meses, result.plenarias);
-  });
-
-  // ingresos_mensuales (cuotas)
-  const { data: cuotas } = await supabase
-    .from('ingresos_mensuales')
-    .select('año, mes_nombre, cuota')
-    .gte('año', meses[0].anio)
-    .lte('año', meses[11].anio);
-  (cuotas || []).forEach(r => {
-    const mesNum = meses.find(m => m.mes_nombre?.toLowerCase() === r.mes_nombre.toLowerCase())?.numero;
-    acumular(r.año, mesNum, r.cuota, meses, result.cuota);
-  });
-
-  // otros_ingresos
-  const { data: otros } = await supabase
-    .from('otros_ingresos')
-    .select('anio, mes, monto');
-  (otros || []).forEach(r => acumular(r.anio, parseInt(r.mes,10), r.monto, meses, result.otros));
-
-  // aporte_director
-  const { data: aportes } = await supabase
-    .from('aporte_director')
-    .select('fecha, monto');
-  (aportes || []).forEach(r => {
-    const d = new Date(r.fecha);
-    acumular(d.getFullYear(), d.getMonth()+1, r.monto, meses, result.aporte_director);
-  });
-
-  return result;
+  const header = ['Mes', ...meses.map(m=>m.nombre)];
+  return [
+    header,
+    ['Directores', ...cat.Directores],
+    ['Plenarias', ...cat.Plenarias],
+    ['Gestion', ...cat.Gestion],
+    ['Comisiones', ...cat.Comisiones],
+    ['Otros', ...cat.Otros]
+  ];
 }
 
-// gastos reales
-async function obtenerGastosReales(meses) {
-  const cats = ['Directores','Plenarias','Gestion','Comisiones','Otros'];
-  const result = cats.reduce((acc, c) => ({ ...acc, [c]: Array(12).fill(0) }), {});
-
-  // gasto_real_directores
-  const { data: gd } = await supabase
-    .from('gasto_real_directores')
-    .select('fecha, remuneracion,pasajes,colacion,metro,taxi_colectivo,hotel,reembolso');
-  (gd || []).forEach(r => {
-    const total = ['remuneracion','pasajes','colacion','metro','taxi_colectivo','hotel','reembolso']
-      .reduce((s,k)=>s+Number(r[k]||0),0);
-    const d=new Date(r.fecha);
-    acumular(d.getFullYear(),d.getMonth()+1,total,meses,result.Directores);
-  });
-
-  // gasto_real_plenarias
-  const { data: gp } = await supabase
-    .from('gasto_real_plenarias')
-    .select('fecha, costo_total');
-  (gp || []).forEach(r=>{
-    const d=new Date(r.fecha);
-    acumular(d.getFullYear(),d.getMonth()+1,r.costo_total,meses,result.Plenarias);
-  });
-
-  // gasto_real_gestion
-  const { data: gg } = await supabase
-    .from('gasto_real_gestion')
-    .select('fecha, total');
-  (gg || []).forEach(r=>{
-    const d=new Date(r.fecha);
-    acumular(d.getFullYear(),d.getMonth()+1,r.total,meses,result.Gestion);
-  });
-
-  // gasto_real_comisiones
-  const { data: gc } = await supabase
-    .from('gasto_real_comisiones')
-    .select('fecha_registro, monto');
-  (gc || []).forEach(r=>{
-    const d=new Date(r.fecha_registro);
-    acumular(d.getFullYear(),d.getMonth()+1,r.monto,meses,result.Comisiones);
-  });
-
-  // gasto_real_otros
-  const { data: go } = await supabase
-    .from('gasto_real_otros')
-    .select('fecha_registro, monto');
-  (go || []).forEach(r=>{
-    const d=new Date(r.fecha_registro);
-    acumular(d.getFullYear(),d.getMonth()+1,r.monto,meses,result.Otros);
-  });
-
-  return result;
+// auxiliares
+function acum(anio, mes, monto, meses, arr) {
+  const idx = typeof mes === 'string'
+    ? meses.findIndex(m=>m.mes_nombre?.toLowerCase()===mes.toLowerCase()) // si viene texto
+    : meses.findIndex(m=>m.anio===anio && m.num===mes);
+  if (idx>=0) arr[idx] += Number(monto)||0;
 }
-
-// helper de acumulación
-function acumular(anio, mes, monto, meses, arr) {
-  const idx = meses.findIndex(m => m.anio === anio && m.numero === mes);
-  if (idx >= 0) arr[idx] += Number(monto) || 0;
+function sumaProps(obj, keys) {
+  return keys.reduce((s,k)=>s + (Number(obj[k])||0), 0);
 }

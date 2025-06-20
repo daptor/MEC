@@ -3,7 +3,8 @@ import * as XLSX from 'https://cdn.sheetjs.com/xlsx-0.20.0/package/xlsx.mjs';
 
 window.addEventListener('DOMContentLoaded', () => {
   const btn = document.getElementById('btnGenerarInforme');
-  btn?.addEventListener('click', generarInformeExcel);
+  if (!btn) return console.warn('Botón no encontrado');
+  btn.addEventListener('click', generarInformeExcel);
 });
 
 async function generarInformeExcel() {
@@ -12,28 +13,27 @@ async function generarInformeExcel() {
   if (isNaN(anioBase)) return alert('Año inválido');
 
   const btn = document.getElementById('btnGenerarInforme');
-  btn.disabled = true; btn.textContent = 'Generando...';
+  btn.disabled = true;
+  btn.textContent = 'Generando...';
 
-  // meses abril–marzo
+  // Definir meses Abril–Marzo
   const meses = [
-    { nombre: 'Abr', num: 4, anio: anioBase },
-    { nombre: 'May', num: 5, anio: anioBase },
-    { nombre: 'Jun', num: 6, anio: anioBase },
-    { nombre: 'Jul', num: 7, anio: anioBase },
-    { nombre: 'Ago', num: 8, anio: anioBase },
-    { nombre: 'Sep', num: 9, anio: anioBase },
-    { nombre: 'Oct', num: 10, anio: anioBase },
-    { nombre: 'Nov', num: 11, anio: anioBase },
-    { nombre: 'Dic', num: 12, anio: anioBase },
-    { nombre: 'Ene', num: 1, anio: anioBase + 1 },
-    { nombre: 'Feb', num: 2, anio: anioBase + 1 },
-    { nombre: 'Mar', num: 3, anio: anioBase + 1 }
+    { nombre: 'ABR', num: 4, anio: anioBase },
+    { nombre: 'MAY', num: 5, anio: anioBase },
+    { nombre: 'JUN', num: 6, anio: anioBase },
+    { nombre: 'JUL', num: 7, anio: anioBase },
+    { nombre: 'AGO', num: 8, anio: anioBase },
+    { nombre: 'SEP', num: 9, anio: anioBase },
+    { nombre: 'OCT', num: 10, anio: anioBase },
+    { nombre: 'NOV', num: 11, anio: anioBase },
+    { nombre: 'DIC', num: 12, anio: anioBase },
+    { nombre: 'ENE', num: 1, anio: anioBase + 1 },
+    { nombre: 'FEB', num: 2, anio: anioBase + 1 },
+    { nombre: 'MAR', num: 3, anio: anioBase + 1 }
   ];
 
   try {
-    // ——————————————————————————————
-    // 1) PLANES DE INGRESOS Y GASTOS
-    // ——————————————————————————————
+    // 1) Planes de ingresos y gastos
     const [
       { data: planIngresos },
       { data: planGCom },
@@ -50,24 +50,29 @@ async function generarInformeExcel() {
       supabase.from('plan_gastos_viaticos').select('*').eq('periodo', `${anioBase}`)
     ]);
 
-    // ——————————————————————————————
-    // 2) INGRESOS REALES (todas las tablas)
-    // ——————————————————————————————
+    // 2) Ingresos reales
     const [
       { data: ingresoPlen },
       { data: ingresoMens },
       { data: otrosIngr },
       { data: aporteDir }
     ] = await Promise.all([
-      supabase.from('ingreso_plenarias').select('*').gte('año', meses[0].anio).lte('año', meses[11].anio),
-      supabase.from('ingresos_mensuales').select('*').gte('año', meses[0].anio).lte('año', meses[11].anio),
-      supabase.from('otros_ingresos').select('*').eq('anio', anioBase),
-      supabase.from('aporte_director').select('*').gte('fecha', `${anioBase}-04-01`).lte('fecha', `${anioBase+1}-03-31`)
+      supabase.from('ingreso_plenarias')
+        .select('año, mes_nombre, cuota, nombre_sindicato')
+        .gte('año', meses[0].anio).lte('año', meses[11].anio),
+      supabase.from('ingresos_mensuales')
+        .select('año, mes_nombre, cuota, nombre_sindicato')
+        .gte('año', meses[0].anio).lte('año', meses[11].anio),
+      supabase.from('otros_ingresos')
+        .select('anio, mes, monto, tipo_ingreso')
+        .eq('anio', anioBase),
+      supabase.from('aporte_director')
+        .select('fecha, monto')
+        .gte('fecha', `${anioBase}-04-01`)
+        .lte('fecha', `${anioBase+1}-03-31`)
     ]);
 
-    // ——————————————————————————————
-    // 3) GASTOS REALES (todas las tablas)
-    // ——————————————————————————————
+    // 3) Gastos reales
     const [
       { data: gdirect },
       { data: gplen },
@@ -75,64 +80,57 @@ async function generarInformeExcel() {
       { data: gcom },
       { data: gotros }
     ] = await Promise.all([
-      supabase.from('gasto_real_directores').select('*').gte('fecha', `${anioBase}-04-01`).lte('fecha', `${anioBase+1}-03-31`),
-      supabase.from('gasto_real_plenarias').select('*').gte('fecha', `${anioBase}-04-01`).lte('fecha', `${anioBase+1}-03-31`),
-      supabase.from('gasto_real_gestion').select('*').gte('fecha', `${anioBase}-04-01`).lte('fecha', `${anioBase+1}-03-31`),
-      supabase.from('gasto_real_comisiones').select('*').gte('fecha_registro', `${anioBase}-04-01`).lte('fecha_registro', `${anioBase+1}-03-31`),
-      supabase.from('gasto_real_otros').select('*').gte('fecha_registro', `${anioBase}-04-01`).lte('fecha_registro', `${anioBase+1}-03-31`)
+      supabase.from('gasto_real_directores')
+        .select('fecha, remuneracion, pasajes, colacion, metro, taxi_colectivo, hotel, reembolso'),
+      supabase.from('gasto_real_plenarias')
+        .select('fecha, costo_total'),
+      supabase.from('gasto_real_gestion')
+        .select('fecha, total'),
+      supabase.from('gasto_real_comisiones')
+        .select('fecha_registro, monto'),
+      supabase.from('gasto_real_otros')
+        .select('fecha_registro, monto, descripcion')
     ]);
 
-    // ——————————————————————————————
-    // 4) CREAR LIBRO & HOJAS
-    // ——————————————————————————————
+    // Crear workbook y hojas crudas
     const wb = XLSX.utils.book_new();
+    const hojas = [
+      ['Plan Ingresos', planIngresos],
+      ['Plan Gastos Com.', planGCom],
+      ['Plan Gastos Gest.', planGGest],
+      ['Plan Gastos Plen.', planGPlen],
+      ['Plan Gastos Rem.', planGRem],
+      ['Plan Gastos Via.', planGVia],
+      ['Raw Ingr Plen.', ingresoPlen],
+      ['Raw Ingr Mens.', ingresoMens],
+      ['Raw Otros Ingr', otrosIngr],
+      ['Raw Aportes Dir', aporteDir],
+      ['Raw Gasto Dir', gdirect],
+      ['Raw Gasto Plen', gplen],
+      ['Raw Gasto Gest', ggest],
+      ['Raw Gasto Com.', gcom],
+      ['Raw Gasto Otros', gotros]
+    ];
+    hojas.forEach(([name, data]) => {
+      wb.SheetNames.push(name);
+      wb.Sheets[name] = XLSX.utils.json_to_sheet(data || []);
+    });
 
-    // Hojas crudas de Planes
-    wb.SheetNames.push('Plan Ingresos');
-    wb.Sheets['Plan Ingresos'] = XLSX.utils.json_to_sheet(planIngresos || []);
-    wb.SheetNames.push('Plan Gastos Com.');
-    wb.Sheets['Plan Gastos Com.'] = XLSX.utils.json_to_sheet(planGCom || []);
-    wb.SheetNames.push('Plan Gastos Gest.');
-    wb.Sheets['Plan Gastos Gest.'] = XLSX.utils.json_to_sheet(planGGest || []);
-    wb.SheetNames.push('Plan Gastos Plen.');
-    wb.Sheets['Plan Gastos Plen.'] = XLSX.utils.json_to_sheet(planGPlen || []);
-    wb.SheetNames.push('Plan Gastos Rem.');
-    wb.Sheets['Plan Gastos Rem.'] = XLSX.utils.json_to_sheet(planGRem || []);
-    wb.SheetNames.push('Plan Gastos Via.');
-    wb.Sheets['Plan Gastos Via.'] = XLSX.utils.json_to_sheet(planGVia || []);
-
-    // Hojas crudas de Ingresos Reales
-    wb.SheetNames.push('Raw Ingr Plenarias');
-    wb.Sheets['Raw Ingr Plenarias'] = XLSX.utils.json_to_sheet(ingresoPlen || []);
-    wb.SheetNames.push('Raw Ingr Mensuales');
-    wb.Sheets['Raw Ingr Mensuales'] = XLSX.utils.json_to_sheet(ingresoMens || []);
-    wb.SheetNames.push('Raw Otros Ingresos');
-    wb.Sheets['Raw Otros Ingresos'] = XLSX.utils.json_to_sheet(otrosIngr || []);
-    wb.SheetNames.push('Raw Aporte Director');
-    wb.Sheets['Raw Aporte Director'] = XLSX.utils.json_to_sheet(aporteDir || []);
-
-    // Hojas crudas de Gastos Reales
-    wb.SheetNames.push('Raw Gasto Directores');
-    wb.Sheets['Raw Gasto Directores'] = XLSX.utils.json_to_sheet(gdirect || []);
-    wb.SheetNames.push('Raw Gasto Plenarias');
-    wb.Sheets['Raw Gasto Plenarias'] = XLSX.utils.json_to_sheet(gplen || []);
-    wb.SheetNames.push('Raw Gasto Gestion');
-    wb.Sheets['Raw Gasto Gestion'] = XLSX.utils.json_to_sheet(ggest || []);
-    wb.SheetNames.push('Raw Gasto Comisiones');
-    wb.Sheets['Raw Gasto Comisiones'] = XLSX.utils.json_to_sheet(gcom || []);
-    wb.SheetNames.push('Raw Gasto Otros');
-    wb.Sheets['Raw Gasto Otros'] = XLSX.utils.json_to_sheet(gotros || []);
-
-    // Resumen mensual
-    const resumenIngresos = generarResumen(ingresoMens, ingresoPlen, otrosIngr, aporteDir, meses);
-    const resumenGastos   = generarResumenGastos(gdirect, gplen, ggest, gcom, gotros, meses);
-
+    // Resumen Ingresos
+    const resumenIngr = buildResumenIngresos(
+      ingresoMens, ingresoPlen, otrosIngr, aporteDir, meses
+    );
     wb.SheetNames.push('Resumen Ingresos');
-    wb.Sheets['Resumen Ingresos'] = XLSX.utils.aoa_to_sheet(resumenIngresos);
-    wb.SheetNames.push('Resumen Gastos');
-    wb.Sheets['Resumen Gastos'] = XLSX.utils.aoa_to_sheet(resumenGastos);
+    wb.Sheets['Resumen Ingresos'] = XLSX.utils.aoa_to_sheet(resumenIngr);
 
-    // Descargar
+    // Resumen Gastos
+    const resumenGast = buildResumenGastos(
+      gdirect, gplen, ggest, gcom, gotros, meses
+    );
+    wb.SheetNames.push('Resumen Gastos');
+    wb.Sheets['Resumen Gastos'] = XLSX.utils.aoa_to_sheet(resumenGast);
+
+    // Descargar archivo
     XLSX.writeFile(wb, `Informe_Tesoreria_${anioBase}-${anioBase+1}.xlsx`);
 
   } catch (err) {
@@ -144,60 +142,137 @@ async function generarInformeExcel() {
   }
 }
 
-// Construye resumen mensual de ingresos
-function generarResumen(mensuales, plenarias, otros, aportes, meses) {
-  const cat = { cuota: Array(12).fill(0), plenarias: Array(12).fill(0), otros: Array(12).fill(0), aporte_director: Array(12).fill(0) };
-  // Cuotas
-  (mensuales||[]).forEach(r => acum(r.año, r.mes_nombre, r.cuota, meses, cat.cuota));
-  // Plenarias
-  (plenarias||[]).forEach(r => acum(r.año, r.mes_nombre, r.cuota, meses, cat.plenarias));
+// Genera la tabla de resumen de ingresos
+function buildResumenIngresos(mens, plen, otros, aportes, meses) {
+  const sindicatos = Array.from(new Set([
+    ...(mens || []).map(r => r.nombre_sindicato),
+    ...(plen || []).map(r => r.nombre_sindicato)
+  ]));
+
+  // Datos por sindicato
+  const dataSit = sindicatos.reduce((acc, s) => {
+    acc[s] = Array(12).fill(0);
+    return acc;
+  }, {});
+  (mens || []).forEach(r => acum(r.año, r.mes_nombre, r.cuota, meses, dataSit[r.nombre_sindicato]));
+  (plen || []).forEach(r => acum(r.año, r.mes_nombre, r.cuota, meses, dataSit[r.nombre_sindicato]));
+
+  // Ingreso Sindicatos
+  const sumaSind = Array(12).fill(0);
+  Object.values(dataSit).forEach(arr => arr.forEach((v,i)=> sumaSind[i]+=v));
+
+  // Aporte Directores
+  const dataAport = Array(12).fill(0);
+  (aportes || []).forEach(r => {
+    const d = new Date(r.fecha);
+    acum(d.getFullYear(), d.getMonth()+1, r.monto, meses, dataAport);
+  });
+
+  // Otros ingresos dinámicos
+  const tiposOtros = Array.from(new Set((otros || []).map(r => r.tipo_ingreso)));
+  const dataOtros = tiposOtros.reduce((acc, t) => {
+    acc[t] = Array(12).fill(0);
+    return acc;
+  }, {});
+  (otros || []).forEach(r => {
+    const m = parseInt(r.mes,10);
+    acum(r.anio, m, r.monto, meses, dataOtros[r.tipo_ingreso]);
+  });
+
+  // Armar filas
+  const header = ['Categoria', ...meses.map(m=>m.nombre), 'ANUAL'];
+  const filas = [];
+
+  // Sindicatos
+  sindicatos.forEach(s => {
+    const vals = dataSit[s];
+    filas.push([s, ...vals, vals.reduce((a,b)=>a+b,0)]);
+  });
+  filas.push(['INGRESO SINDICATOS', ...sumaSind, sumaSind.reduce((a,b)=>a+b,0)]);
+
   // Otros ingresos
-  (otros||[]).forEach(r => acum(r.anio, r.mes, r.monto, meses, cat.otros));
-  // Aporte directores
-  (aportes||[]).forEach(r => { const d=new Date(r.fecha); acum(d.getFullYear(), d.getMonth()+1, r.monto, meses, cat.aporte_director); });
+  tiposOtros.forEach(t => {
+    const vals = dataOtros[t];
+    filas.push([t, ...vals, vals.reduce((a,b)=>a+b,0)]);
+  });
 
-  const header = ['Mes', ...meses.map(m=>m.nombre)];
-  return [
-    header,
-    ['Cuotas', ...cat.cuota],
-    ['Plenarias', ...cat.plenarias],
-    ['Otros', ...cat.otros],
-    ['Aporte Director', ...cat.aporte_director]
-  ];
+  // Aporte Directores
+  filas.push(['APORTE DIRECTORES', ...dataAport, dataAport.reduce((a,b)=>a+b,0)]);
+
+  // Total Ingresos
+  const totalIngr = Array(12).fill(0);
+  filas.forEach(r => r.slice(1,13).forEach((v,i)=> totalIngr[i]+=Number(v)||0));
+  filas.push(['TOTAL INGRESOS', ...totalIngr, totalIngr.reduce((a,b)=>a+b,0)]);
+
+  return [header, ...filas];
 }
 
-// Construye resumen mensual de gastos
-function generarResumenGastos(direct, plen, gest, com, otrs, meses) {
-  const cat = { Directores: Array(12).fill(0), Plenarias: Array(12).fill(0), Gestion: Array(12).fill(0), Comisiones: Array(12).fill(0), Otros: Array(12).fill(0) };
-  // Directores
-  (direct||[]).forEach(r => { const total = sumaProps(r, ['remuneracion','pasajes','colacion','metro','taxi_colectivo','hotel','reembolso']); const d=new Date(r.fecha); acum(d.getFullYear(), d.getMonth()+1, total, meses, cat.Directores); });
-  // Plenarias
-  (plen||[]).forEach(r => { const d=new Date(r.fecha); acum(d.getFullYear(), d.getMonth()+1, r.costo_total, meses, cat.Plenarias); });
-  // Gestion
-  (gest||[]).forEach(r => { const d=new Date(r.fecha); acum(d.getFullYear(), d.getMonth()+1, r.total, meses, cat.Gestion); });
-  // Comisiones
-  (com||[]).forEach(r => { const d=new Date(r.fecha_registro); acum(d.getFullYear(), d.getMonth()+1, r.monto, meses, cat.Comisiones); });
+// Genera la tabla de resumen de gastos
+function buildResumenGastos(direct, plen, gest, com, otros, meses) {
+  const keysDir = ['remuneracion','pasajes','colacion','metro','taxi_colectivo','hotel','reembolso'];
+  const dataDirDet = keysDir.reduce((acc,k)=>{ acc[k]=Array(12).fill(0); return acc; }, {});
+  (direct || []).forEach(r => {
+    const d = new Date(r.fecha);
+    keysDir.forEach(k => acum(d.getFullYear(), d.getMonth()+1, r[k], meses, dataDirDet[k]));
+  });
+
+  // Totales director
+  const dataGDirTot = Array(12).fill(0);
+  keysDir.forEach(k => dataDirDet[k].forEach((v,i)=> dataGDirTot[i]+=v ));
+
+  // Plenarias, Gestión, Comisiones
+  const dataPlen = Array(12).fill(0);
+  (plen || []).forEach(r => { const d=new Date(r.fecha); acum(d.getFullYear(), d.getMonth()+1, r.costo_total, meses, dataPlen); });
+
+  const dataGest = Array(12).fill(0);
+  (gest || []).forEach(r => { const d=new Date(r.fecha); acum(d.getFullYear(), d.getMonth()+1, r.total, meses, dataGest); });
+
+  const dataCom = Array(12).fill(0);
+  (com || []).forEach(r => { const d=new Date(r.fecha_registro); acum(d.getFullYear(), d.getMonth()+1, r.monto, meses, dataCom); });
+
+  // Otros gastos dinámicos
+  const tiposOtros = Array.from(new Set((otros || []).map(r => r.descripcion)));
+  const dataOtros = tiposOtros.reduce((acc,t)=>{ acc[t]=Array(12).fill(0); return acc; }, {});
+  (otros || []).forEach(r => {
+    const d=new Date(r.fecha_registro);
+    acum(d.getFullYear(), d.getMonth()+1, r.monto, meses, dataOtros[r.descripcion]);
+  });
+
+  // Construir filas
+  const header = ['Categoria', ...meses.map(m=>m.nombre), 'ANUAL'];
+  const filas = [];
+
+  // Detalle director
+  keysDir.forEach(k => {
+    const vals = dataDirDet[k];
+    filas.push([k.toUpperCase(), ...vals, vals.reduce((a,b)=>a+b,0)]);
+  });
+  filas.push(['GASTO DIRECTOR', ...dataGDirTot, dataGDirTot.reduce((a,b)=>a+b,0)]);
+
+  // Plenarias, Gestión, Comisiones
+  [['GASTO PLENARIAS', dataPlen], ['GASTO GESTION', dataGest], ['GASTO COMISIONES', dataCom]]
+    .forEach(([label, arr]) => filas.push([label, ...arr, arr.reduce((a,b)=>a+b,0)]));
+
   // Otros gastos
-  (otrs||[]).forEach(r => { const d=new Date(r.fecha_registro); acum(d.getFullYear(), d.getMonth()+1, r.monto, meses, cat.Otros); });
+  tiposOtros.forEach(t => {
+    const vals = dataOtros[t];
+    filas.push([t.toUpperCase(), ...vals, vals.reduce((a,b)=>a+b,0)]);
+  });
 
-  const header = ['Mes', ...meses.map(m=>m.nombre)];
-  return [
-    header,
-    ['Directores', ...cat.Directores],
-    ['Plenarias', ...cat.Plenarias],
-    ['Gestion', ...cat.Gestion],
-    ['Comisiones', ...cat.Comisiones],
-    ['Otros', ...cat.Otros]
-  ];
+  // Total Gastos
+  const totalGast = Array(12).fill(0);
+  filas.forEach(r => r.slice(1,13).forEach((v,i)=> totalGast[i]+=Number(v)||0));
+  filas.push(['TOTAL GASTOS', ...totalGast, totalGast.reduce((a,b)=>a+b,0)]);
+
+  return [header, ...filas];
 }
 
-// auxiliares
+// Acumula un monto en el índice de mes correspondiente
 function acum(anio, mes, monto, meses, arr) {
-  const idx = typeof mes === 'string'
-    ? meses.findIndex(m=>m.mes_nombre?.toLowerCase()===mes.toLowerCase()) // si viene texto
-    : meses.findIndex(m=>m.anio===anio && m.num===mes);
-  if (idx>=0) arr[idx] += Number(monto)||0;
-}
-function sumaProps(obj, keys) {
-  return keys.reduce((s,k)=>s + (Number(obj[k])||0), 0);
+  const idx = meses.findIndex(mobj =>
+    typeof mes === 'string'
+      ? mobj.nombre.toLowerCase() === mes.toLowerCase()
+      : mobj.anio === anio && mobj.num === mes
+  );
+  if (idx >= 0) arr[idx] += Number(monto) || 0;
 }

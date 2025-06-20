@@ -16,7 +16,7 @@ async function generarInformeExcel() {
   btn.disabled = true;
   btn.textContent = 'Generando...';
 
-  // Definimos el rango de meses del año comercial (Abr-Mar)
+  // meses del año comercial (Abril–Marzo)
   const meses = [
     { nombre: 'Abr', numero: 4, anio: anioBase },
     { nombre: 'May', numero: 5, anio: anioBase },
@@ -33,48 +33,61 @@ async function generarInformeExcel() {
   ];
 
   try {
-    // 1. Planes de Ingresos
+    // PLANES DE INGRESOS
     const { data: planIngresos } = await supabase
       .from('plan_ingresos')
       .select('*')
-      .eq('anio', anioBase);
+      .eq('año', anioBase);
 
-    // 2. Planes de Gastos
-    const { data: planGastos } = await supabase
-      .from('plan_gastos')
-      .select('*')
-      .eq('anio', anioBase);
+    // PLANES DE GASTOS (varias tablas)
+    const [{ data: planComisiones }, { data: planGestion },
+           { data: planPlenarias }, { data: planRemuneracion },
+           { data: planViaticos }] = await Promise.all([
+      supabase.from('plan_gastos_comisiones').select('*').eq('periodo', `${anioBase}`),
+      supabase.from('plan_gastos_gestion').select('*').eq('periodo', `${anioBase}`),
+      supabase.from('plan_gastos_plenarias').select('*').eq('periodo', `${anioBase}`),
+      supabase.from('plan_gastos_remuneracion').select('*').eq('periodo', `${anioBase}`),
+      supabase.from('plan_gastos_viaticos').select('*').eq('periodo', `${anioBase}`)
+    ]);
 
-    // 3. Ingresos Reales (dividido por tipo)
+    // INGRESOS REALES
     const ingresosReales = await obtenerIngresosReales(meses);
 
-    // 4. Gastos Reales (dividido por categoría)
+    // GASTOS REALES
     const gastosReales = await obtenerGastosReales(meses);
 
-    // Crear libro de Excel
+    // crear libro de Excel
     const wb = XLSX.utils.book_new();
 
-    // Hoja Plan Ingresos
-    const wsPlanIngresos = XLSX.utils.json_to_sheet(planIngresos || []);
-    XLSX.utils.book_append_sheet(wb, wsPlanIngresos, 'Plan Ingresos');
-
-    // Hoja Plan Gastos
-    const wsPlanGastos = XLSX.utils.json_to_sheet(planGastos || []);
-    XLSX.utils.book_append_sheet(wb, wsPlanGastos, 'Plan Gastos');
-
-    // Hoja Ingresos Reales
-    const wsIngresos = XLSX.utils.aoa_to_sheet(
-      generarTablaMensual('Ingresos', meses, ingresosReales)
+    // hoja Plan Ingresos
+    XLSX.utils.book_append_sheet(
+      wb,
+      XLSX.utils.json_to_sheet(planIngresos || []),
+      'Plan Ingresos'
     );
-    XLSX.utils.book_append_sheet(wb, wsIngresos, 'Ingresos Reales');
 
-    // Hoja Gastos Reales
-    const wsGastos = XLSX.utils.aoa_to_sheet(
-      generarTablaMensual('Gastos', meses, gastosReales)
+    // hojas Plan Gastos por tipo
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(planComisiones || []), 'Plan Gastos Com.');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(planGestion    || []), 'Plan Gastos Gest.');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(planPlenarias  || []), 'Plan Gastos Plen.');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(planRemuneracion|| []), 'Plan Gastos Rem.');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(planViaticos   || []), 'Plan Gastos Via.');
+
+    // hoja Ingresos Reales
+    XLSX.utils.book_append_sheet(
+      wb,
+      XLSX.utils.aoa_to_sheet(generarTablaMensual('Ingresos', meses, ingresosReales)),
+      'Ingresos Reales'
     );
-    XLSX.utils.book_append_sheet(wb, wsGastos, 'Gastos Reales');
 
-    // Guardar archivo
+    // hoja Gastos Reales
+    XLSX.utils.book_append_sheet(
+      wb,
+      XLSX.utils.aoa_to_sheet(generarTablaMensual('Gastos', meses, gastosReales)),
+      'Gastos Reales'
+    );
+
+    // guardar
     const fileName = `Informe_Tesoreria_${anioBase}-${anioBase + 1}.xlsx`;
     XLSX.writeFile(wb, fileName);
 
@@ -87,114 +100,117 @@ async function generarInformeExcel() {
   }
 }
 
-// Función para construir tablas mensuales
-function generarTablaMensual(titulo, meses, datosMensuales) {
+// tablas mensuales
+function generarTablaMensual(_, meses, datos) {
   const header = ['Mes', ...meses.map(m => m.nombre)];
-  const filas = Object.entries(datosMensuales).map(
-    ([categoria, valores]) => [categoria, ...valores]
-  );
-  return [header, ...filas];
+  return [
+    header,
+    ...Object.entries(datos).map(([cat, vals]) => [cat, ...vals])
+  ];
 }
 
-// Obtiene ingresos reales de Supabase y los organiza por tipo y mes
+// ingresos reales
 async function obtenerIngresosReales(meses) {
   const tipos = ['cuota', 'plenarias', 'aporte_director', 'otros'];
-  const result = tipos.reduce((acc, tipo) => ({ ...acc, [tipo]: Array(12).fill(0) }), {});
+  const result = tipos.reduce((acc, t) => ({ ...acc, [t]: Array(12).fill(0) }), {});
 
-  // Cuotas
-  const { data: cuotas } = await supabase
-    .from('ingreso_cuota')
-    .select('anio, mes, monto')
-    .gte('anio', meses[0].anio)
-    .lte('anio', meses[11].anio);
-  (cuotas || []).forEach(r =>
-    acumular(r.anio, r.mes, r.monto, meses, result.cuota)
-  );
-
-  // Plenarias
+  // ingreso_plenarias
   const { data: plenarias } = await supabase
     .from('ingreso_plenarias')
-    .select('año, mes, cuota as monto');
-  (plenarias || []).forEach(r =>
-    acumular(r.año, r.mes, r.monto, meses, result.plenarias)
-  );
-
-  // Aporte Director
-  const { data: aportes } = await supabase
-    .from('ingreso_directores')
-    .select('fecha, monto');
-  (aportes || []).forEach(r => {
-    const d = new Date(r.fecha);
-    acumular(d.getFullYear(), d.getMonth() + 1, r.monto, meses, result.aporte_director);
+    .select('año, mes_nombre')
+    .gte('año', meses[0].anio)
+    .lte('año', meses[11].anio);
+  (plenarias || []).forEach(r => {
+    const mesNum = meses.find(m => m.mes_nombre?.toLowerCase() === r.mes_nombre.toLowerCase())?.numero;
+    acumular(r.año, mesNum, r.cuota, meses, result.plenarias);
   });
 
-  // Otros Ingresos
+  // ingresos_mensuales (cuotas)
+  const { data: cuotas } = await supabase
+    .from('ingresos_mensuales')
+    .select('año, mes_nombre, cuota')
+    .gte('año', meses[0].anio)
+    .lte('año', meses[11].anio);
+  (cuotas || []).forEach(r => {
+    const mesNum = meses.find(m => m.mes_nombre?.toLowerCase() === r.mes_nombre.toLowerCase())?.numero;
+    acumular(r.año, mesNum, r.cuota, meses, result.cuota);
+  });
+
+  // otros_ingresos
   const { data: otros } = await supabase
     .from('otros_ingresos')
     .select('anio, mes, monto');
-  (otros || []).forEach(r =>
-    acumular(r.anio, r.mes, r.monto, meses, result.otros)
-  );
+  (otros || []).forEach(r => acumular(r.anio, parseInt(r.mes,10), r.monto, meses, result.otros));
+
+  // aporte_director
+  const { data: aportes } = await supabase
+    .from('aporte_director')
+    .select('fecha, monto');
+  (aportes || []).forEach(r => {
+    const d = new Date(r.fecha);
+    acumular(d.getFullYear(), d.getMonth()+1, r.monto, meses, result.aporte_director);
+  });
 
   return result;
 }
 
-// Obtiene gastos reales y los organiza por categoría y mes
+// gastos reales
 async function obtenerGastosReales(meses) {
-  const categorias = ['Directores', 'Plenarias', 'Gestion', 'Comisiones', 'Otros'];
-  const result = categorias.reduce((acc, cat) => ({ ...acc, [cat]: Array(12).fill(0) }), {});
+  const cats = ['Directores','Plenarias','Gestion','Comisiones','Otros'];
+  const result = cats.reduce((acc, c) => ({ ...acc, [c]: Array(12).fill(0) }), {});
 
-  // Gasto Directores
+  // gasto_real_directores
   const { data: gd } = await supabase
     .from('gasto_real_directores')
-    .select('fecha, remuneracion, pasajes, colacion, metro, taxi_colectivo, hotel, reembolso');
+    .select('fecha, remuneracion,pasajes,colacion,metro,taxi_colectivo,hotel,reembolso');
   (gd || []).forEach(r => {
     const total = ['remuneracion','pasajes','colacion','metro','taxi_colectivo','hotel','reembolso']
-      .reduce((s, k) => s + Number(r[k] || 0), 0);
-    const d = new Date(r.fecha);
-    acumular(d.getFullYear(), d.getMonth() + 1, total, meses, result.Directores);
+      .reduce((s,k)=>s+Number(r[k]||0),0);
+    const d=new Date(r.fecha);
+    acumular(d.getFullYear(),d.getMonth()+1,total,meses,result.Directores);
   });
 
-  // Gasto Plenarias
+  // gasto_real_plenarias
   const { data: gp } = await supabase
     .from('gasto_real_plenarias')
     .select('fecha, costo_total');
-  (gp || []).forEach(r => {
-    const d = new Date(r.fecha);
-    acumular(d.getFullYear(), d.getMonth() + 1, r.costo_total, meses, result.Plenarias);
+  (gp || []).forEach(r=>{
+    const d=new Date(r.fecha);
+    acumular(d.getFullYear(),d.getMonth()+1,r.costo_total,meses,result.Plenarias);
   });
 
-  // Gastos Gestion
+  // gasto_real_gestion
   const { data: gg } = await supabase
     .from('gasto_real_gestion')
     .select('fecha, total');
-  (gg || []).forEach(r => {
-    const d = new Date(r.fecha);
-    acumular(d.getFullYear(), d.getMonth() + 1, r.total, meses, result.Gestion);
+  (gg || []).forEach(r=>{
+    const d=new Date(r.fecha);
+    acumular(d.getFullYear(),d.getMonth()+1,r.total,meses,result.Gestion);
   });
 
-  // Gastos Comisiones
+  // gasto_real_comisiones
   const { data: gc } = await supabase
     .from('gasto_real_comisiones')
     .select('fecha_registro, monto');
-  (gc || []).forEach(r => {
-    const d = new Date(r.fecha_registro);
-    acumular(d.getFullYear(), d.getMonth() + 1, r.monto, meses, result.Comisiones);
+  (gc || []).forEach(r=>{
+    const d=new Date(r.fecha_registro);
+    acumular(d.getFullYear(),d.getMonth()+1,r.monto,meses,result.Comisiones);
   });
 
-  // Otros Gastos
-  const { data: og } = await supabase
-    .from('otros_gastos')
-    .select('anio, mes, monto');
-  (og || []).forEach(r =>
-    acumular(r.anio, r.mes, r.monto, meses, result.Otros)
-  );
+  // gasto_real_otros
+  const { data: go } = await supabase
+    .from('gasto_real_otros')
+    .select('fecha_registro, monto');
+  (go || []).forEach(r=>{
+    const d=new Date(r.fecha_registro);
+    acumular(d.getFullYear(),d.getMonth()+1,r.monto,meses,result.Otros);
+  });
 
   return result;
 }
 
-// Helper para acumular montos en arrays según mes y año
-function acumular(anio, mes, monto, meses, array) {
+// helper de acumulación
+function acumular(anio, mes, monto, meses, arr) {
   const idx = meses.findIndex(m => m.anio === anio && m.numero === mes);
-  if (idx >= 0) array[idx] += Number(monto) || 0;
+  if (idx >= 0) arr[idx] += Number(monto) || 0;
 }

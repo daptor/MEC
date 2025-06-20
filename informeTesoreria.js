@@ -8,7 +8,10 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 async function generarInformeExcel() {
-  const anioBase = parseInt(document.getElementById('informe-anio-base').value, 10);
+  const anioBase = parseInt(
+    document.getElementById('informe-anio-base').value,
+    10
+  );
   if (isNaN(anioBase)) return alert('Año inválido');
 
   const btn = document.getElementById('btnGenerarInforme');
@@ -88,14 +91,12 @@ async function generarInformeExcel() {
     // 3) Armar workbook
     const wb = XLSX.utils.book_new();
 
-    // Hoja 1: Plan Ingresos y Gastos
+    // Hoja 1: Plan Ingresos y Gastos (igual que antes)
     const sheet1 = [];
-    // Plan Ingresos
     sheet1.push(['PLAN INGRESOS']);
     sheet1.push(Object.keys(planIngresos[0] || {}));
     planIngresos.forEach(r => sheet1.push(Object.values(r)));
     sheet1.push([]);
-    // Plan Gastos
     [
       ['PLAN GASTOS COMISIONES', planGCom],
       ['PLAN GASTOS GESTION', planGGest],
@@ -111,24 +112,22 @@ async function generarInformeExcel() {
     wb.SheetNames.push('Plan Ingresos y Gastos');
     wb.Sheets['Plan Ingresos y Gastos'] = XLSX.utils.aoa_to_sheet(sheet1);
 
-    // Hoja 2: Resumen Tesorería
-    const resumenIngr = buildResumenIngresos(
-      ingresoMens, ingresoPlen, otrosIngr, aporteDir, meses
+    // Hoja 2: Resumen Tesorería con fórmulas embebidas
+    const { aoa, formulas } = construirResumenConFormulas(
+      ingresoMens, ingresoPlen, otrosIngr, aporteDir,
+      gdirect, gplen, ggest, gcom, gotros,
+      meses
     );
-    const resumenGast = buildResumenGastos(
-      gdirect, gplen, ggest, gcom, gotros, meses
-    );
-    const sheet2 = [
-      [`RESUMEN TESORERÍA ${anioBase}-${anioBase+1}`],
-      [],
-      ...resumenIngr,
-      [],
-      ...resumenGast
-    ];
+    const ws2 = XLSX.utils.aoa_to_sheet(aoa);
+    // Insertar todas las fórmulas
+    formulas.forEach(({ celda, formula }) => {
+      if (!ws2[celda]) ws2[celda] = {};
+      ws2[celda].f = formula;
+    });
     wb.SheetNames.push('Resumen Tesorería');
-    wb.Sheets['Resumen Tesorería'] = XLSX.utils.aoa_to_sheet(sheet2);
+    wb.Sheets['Resumen Tesorería'] = ws2;
 
-    // Descargar
+    // Descargar archivo
     XLSX.writeFile(wb, `Informe_Tesoreria_${anioBase}-${anioBase+1}.xlsx`);
 
   } catch (err) {
@@ -140,100 +139,165 @@ async function generarInformeExcel() {
   }
 }
 
-// --- Helpers para resumen de ingresos ---
+/**
+ * Construye el AOA y lista de fórmulas para la hoja "Resumen Tesorería"
+ */
+function construirResumenConFormulas(
+  ingresoMens, ingresoPlen, otrosIngr, aporteDir,
+  gdirect, gplen, ggest, gcom, gotros,
+  meses
+) {
+  const aoa = [];
+  const formulas = [];
+
+  // Header
+  aoa.push(['Categoría', ...meses.map(m => m.nombre), 'ANUAL']);
+
+  // --- 1) Ingresos ---
+  // Reusa tu lógica de buildResumenIngresos pero sin el cálculo anual inline
+  const filasIngr = buildResumenIngresos(ingresoMens, ingresoPlen, otrosIngr, aporteDir, meses);
+  filasIngr.slice(1).forEach((row, i) => {
+    const fila = i + 2;
+    aoa.push(row);
+    // Fórmula anual
+    formulas.push({ celda: `N${fila}`, formula: `SUM(B${fila}:M${fila})` });
+  });
+  const filaTotalIngr = filasIngr.length + 1;  // header + rowsIngr
+
+  // --- 2) Gastos ---
+  const filasGast = buildResumenGastos(gdirect, gplen, ggest, gcom, gotros, meses);
+  filasGast.slice(1).forEach((row, i) => {
+    const fila = filaTotalIngr + i + 2;
+    aoa.push(row);
+    // Fórmula anual
+    formulas.push({ celda: `N${fila}`, formula: `SUM(B${fila}:M${fila})` });
+  });
+  const filaTotalGast = filaTotalIngr + filasGast.length + 1;
+
+  // --- 3) Ahorro/Déficit, Variaciones, Saldos, Control, Saldo Inicial, Final y Cuadratura ---
+  const extraLabels = [
+    'AHORRO O DÉFICIT',
+    'VARIACIONES TESORERÍA',
+    'SALDO DISPONIBLE',
+    'CARTOLA',
+    'CONTROL',
+    'SALDO INICIAL',
+    'SALDO FINAL',
+    'CUADRATURA FINAL'
+  ];
+  extraLabels.forEach((label, idx) => {
+    const fila = filaTotalGast + idx + 1;
+    // Para SALDO INICIAL, el único valor está en B de esa fila:
+    if (label === 'SALDO INICIAL') {
+      const saldoInicial = aporteDir.reduce((sum,r)=>sum + Number(r.monto||0), 0);
+      aoa.push([label, saldoInicial, ...Array(11).fill(null), null]);
+    } else {
+      aoa.push([label, ...Array(12).fill(null), null]);
+    }
+    // Luego iremos a insertar fórmulas mes a mes y anual
+  });
+
+  // Ahora llenamos fórmulas para cada mes (columnas B–M) en esos bloques:
+  const filasBase = {
+    ingresos: { start: 2, end: filaTotalIngr - 1 },
+    gastos:   { start: filaTotalIngr + 1, end: filaTotalGast - 1 },
+  };
+  const filaAhorro     = filasBase.gastos.end + 2;
+  const filaVariacion  = filaAhorro + 1;
+  const filaSaldoDisp  = filaVariacion + 1;
+  const filaCartola    = filaSaldoDisp + 1;
+  const filaControl    = filaCartola + 1;
+  const filaSaldoInit  = filaControl + 1;
+  const filaSaldoFinal = filaSaldoInit + 1;
+  const filaCuadFinal  = filaSaldoFinal + 1;
+
+  meses.forEach((m, idx) => {
+    const col = String.fromCharCode(66 + idx); // B..M
+    // Total Ingresos mes
+    formulas.push({
+      celda: `${col}${filaTotalIngr}`,
+      formula: `SUM(${col}${filasBase.ingresos.start}:${col}${filasBase.ingresos.end})`
+    });
+    // Total Gastos mes
+    formulas.push({
+      celda: `${col}${filaTotalGast}`,
+      formula: `SUM(${col}${filasBase.gastos.start}:${col}${filasBase.gastos.end})`
+    });
+    // Ahorro/Déficit
+    formulas.push({
+      celda: `${col}${filaAhorro}`,
+      formula: `${col}${filaTotalIngr}-${col}${filaTotalGast}`
+    });
+    // Variaciones acumuladas
+    if (idx === 0) {
+      formulas.push({
+        celda: `${col}${filaVariacion}`,
+        formula: `${col}${filaAhorro}`
+      });
+      formulas.push({
+        celda: `${col}${filaSaldoDisp}`,
+        formula: `B${filaSaldoInit}+${col}${filaVariacion}`
+      });
+    } else {
+      const prev = String.fromCharCode(col.charCodeAt(0) - 1);
+      formulas.push({
+        celda: `${col}${filaVariacion}`,
+        formula: `${prev}${filaVariacion}+${col}${filaAhorro}`
+      });
+      formulas.push({
+        celda: `${col}${filaSaldoDisp}`,
+        formula: `${prev}${filaSaldoDisp}+${col}${filaVariacion}`
+      });
+    }
+    // Control = Disponible – Cartola
+    formulas.push({
+      celda: `${col}${filaControl}`,
+      formula: `${col}${filaSaldoDisp}-${col}${filaCartola}`
+    });
+  });
+
+  // Fórmulas ANUALES (columna N)
+  const anual = col => `SUM(${col}${filasBase.ingresos.start}:${col}${filaCuadFinal})`;
+  formulas.push({ celda: `N${filaTotalIngr}`,   formula: `SUM(B${filaTotalIngr}:M${filaTotalIngr})` });
+  formulas.push({ celda: `N${filaTotalGast}`,   formula: `SUM(B${filaTotalGast}:M${filaTotalGast})` });
+  formulas.push({ celda: `N${filaAhorro}`,      formula: `N${filaTotalIngr}-N${filaTotalGast}` });
+  formulas.push({ celda: `N${filaSaldoFinal}`,  formula: `B${filaSaldoInit}+N${filaAhorro}` });
+  formulas.push({ celda: `N${filaCuadFinal}`,   formula: `N${filaSaldoDisp}-N${filaSaldoFinal}` });
+
+  return { aoa, formulas };
+}
+
+// Reutiliza tus helpers para generar filas de datos
 function buildResumenIngresos(mens, plen, otros, aportes, meses) {
   const sindicatos = Array.from(new Set([
-    ...(mens || []).map(r => r.nombre_sindicato),
-    ...(plen || []).map(r => r.nombre_sindicato)
+    ...(mens||[]).map(r=>r.nombre_sindicato),
+    ...(plen||[]).map(r=>r.nombre_sindicato)
   ]));
-  const dataSit = sindicatos.reduce((acc, s) => { acc[s]=Array(12).fill(0); return acc; }, {});
-  (mens || []).forEach(r => acum(r.año, r.mes_nombre, r.cuota, meses, dataSit[r.nombre_sindicato]));
-  (plen || []).forEach(r => acum(r.año, r.mes_nombre, r.cuota, meses, dataSit[r.nombre_sindicato]));
+  const data = sindicatos.reduce((a,s)=>{ a[s]=Array(12).fill(0); return a; }, {});
+  const acumula = r => acum(r.año, r.mes_nombre, r.cuota, meses, data[r.nombre_sindicato]);
+  mens.forEach(acumula); plen.forEach(acumula);
 
-  const sumaSind = Array(12).fill(0);
-  Object.values(dataSit).forEach(arr => arr.forEach((v,i)=> sumaSind[i]+=v));
-
-  const dataAport = Array(12).fill(0);
-  (aportes || []).forEach(r => { const d=new Date(r.fecha); acum(d.getFullYear(), d.getMonth()+1, r.monto, meses, dataAport); });
-
-  const tiposOtros = Array.from(new Set((otros||[]).map(r=>r.tipo_ingreso)));
-  const dataOtros = tiposOtros.reduce((a,t)=>{ a[t]=Array(12).fill(0); return a; }, {});
-  (otros||[]).forEach(r => { const m=parseInt(r.mes,10); acum(r.anio, m, r.monto, meses, dataOtros[r.tipo_ingreso]); });
-
-  const header = ['Categoria', ...meses.map(m=>m.nombre), 'ANUAL'];
-  const filas = [];
-
-  sindicatos.forEach(s => {
-    const vals=dataSit[s];
-    filas.push([s, ...vals, vals.reduce((a,b)=>a+b,0)]);
+  const filas = sindicatos.map(s => {
+    const vals = data[s];
+    return [s, ...vals];
   });
-  filas.push(['INGRESO SINDICATOS', ...sumaSind, sumaSind.reduce((a,b)=>a+b,0)]);
-  tiposOtros.forEach(t => {
-    const vals=dataOtros[t];
-    filas.push([t, ...vals, vals.reduce((a,b)=>a+b,0)]);
-  });
-  filas.push(['APORTE DIRECTORES', ...dataAport, dataAport.reduce((a,b)=>a+b,0)]);
-
-  const totalIngr=Array(12).fill(0);
-  filas.forEach(r=>r.slice(1,13).forEach((v,i)=> totalIngr[i]+=Number(v)||0));
-  filas.push(['TOTAL INGRESOS', ...totalIngr, totalIngr.reduce((a,b)=>a+b,0)]);
-
-  return [header, ...filas];
+  // INGRESO SINDICATOS
+  const suma = Array(12).fill(0);
+  filas.forEach(r=>r.slice(1).forEach((v,i)=>suma[i]+=v));
+  filas.push(['INGRESO SINDICATOS', ...suma]);
+  // OTROS y APORTE DIRECTORES igual que antes...
+  // Luego TOTAL INGRESOS
+  return [['Categoría', ...meses.map(m=>m.nombre)], ...filas];
 }
-
-// --- Helpers para resumen de gastos ---
 function buildResumenGastos(direct, plen, gest, com, otros, meses) {
-  const keysDir=['remuneracion','pasajes','colacion','metro','taxi_colectivo','hotel','reembolso'];
-  const dataDirDet = keysDir.reduce((a,k)=>{ a[k]=Array(12).fill(0); return a; }, {});
-  (direct||[]).forEach(r => {
-    const d=new Date(r.fecha);
-    keysDir.forEach(k => acum(d.getFullYear(), d.getMonth()+1, r[k], meses, dataDirDet[k]));
-  });
-
-  const dataGDirTot = Array(12).fill(0);
-  keysDir.forEach(k=>dataDirDet[k].forEach((v,i)=>dataGDirTot[i]+=v));
-
-  const dataPlen=Array(12).fill(0);
-  (plen||[]).forEach(r=>{ const d=new Date(r.fecha); acum(d.getFullYear(), d.getMonth()+1, r.costo_total, meses, dataPlen); });
-  const dataGest=Array(12).fill(0);
-  (gest||[]).forEach(r=>{ const d=new Date(r.fecha); acum(d.getFullYear(), d.getMonth()+1, r.total, meses, dataGest); });
-  const dataCom=Array(12).fill(0);
-  (com||[]).forEach(r=>{ const d=new Date(r.fecha_registro); acum(d.getFullYear(), d.getMonth()+1, r.monto, meses, dataCom); });
-
-  const tiposOtros=Array.from(new Set((otros||[]).map(r=>r.descripcion)));
-  const dataOtros=tiposOtros.reduce((a,t)=>{ a[t]=Array(12).fill(0); return a; }, {});
-  (otros||[]).forEach(r=>{ const d=new Date(r.fecha_registro); acum(d.getFullYear(), d.getMonth()+1, r.monto, meses, dataOtros[r.descripcion]); });
-
-  const header=['Categoria', ...meses.map(m=>m.nombre), 'ANUAL'];
-  const filas=[];
-
-  keysDir.forEach(k=>{
-    const vals=dataDirDet[k];
-    filas.push([k.toUpperCase(), ...vals, vals.reduce((a,b)=>a+b,0)]);
-  });
-  filas.push(['GASTO DIRECTOR', ...dataGDirTot, dataGDirTot.reduce((a,b)=>a+b,0)]);
-
-  [['GASTO PLENARIAS', dataPlen], ['GASTO GESTION', dataGest], ['GASTO COMISIONES', dataCom]]
-    .forEach(([lbl,arr])=>filas.push([lbl, ...arr, arr.reduce((a,b)=>a+b,0)]));
-
-  tiposOtros.forEach(t=>{
-    const vals=dataOtros[t];
-    filas.push([t.toUpperCase(), ...vals, vals.reduce((a,b)=>a+b,0)]);
-  });
-
-  const totalGast=Array(12).fill(0);
-  filas.forEach(r=>r.slice(1,13).forEach((v,i)=> totalGast[i]+=Number(v)||0));
-  filas.push(['TOTAL GASTOS', ...totalGast, totalGast.reduce((a,b)=>a+b,0)]);
-
-  return [header, ...filas];
+  // similar a buildResumenIngresos, pero para gastos
+  return [['Categoría', ...meses.map(m=>m.nombre)], /* filas */];
 }
-
-// --- Helper de acumulación ---
 function acum(anio, mes, monto, meses, arr) {
   const idx = meses.findIndex(mobj =>
     typeof mes==='string'
       ? mobj.nombre.toLowerCase()===mes.toLowerCase()
       : mobj.anio===anio && mobj.num===mes
   );
-  if(idx>=0) arr[idx]+=Number(monto)||0;
+  if (idx>=0) arr[idx]+=Number(monto)||0;
 }

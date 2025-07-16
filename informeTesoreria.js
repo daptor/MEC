@@ -17,9 +17,21 @@ async function generarInformeExcel() {
   btn.textContent = 'Generando...';
 
   try {
-    const meses = ['ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC', 'ENE', 'FEB', 'MAR'];
+    const meses = [
+      { nombre: 'ABR', mes: 4, anio: anioBase },
+      { nombre: 'MAY', mes: 5, anio: anioBase },
+      { nombre: 'JUN', mes: 6, anio: anioBase },
+      { nombre: 'JUL', mes: 7, anio: anioBase },
+      { nombre: 'AGO', mes: 8, anio: anioBase },
+      { nombre: 'SEP', mes: 9, anio: anioBase },
+      { nombre: 'OCT', mes: 10, anio: anioBase },
+      { nombre: 'NOV', mes: 11, anio: anioBase },
+      { nombre: 'DIC', mes: 12, anio: anioBase },
+      { nombre: 'ENE', mes: 1, anio: anioBase + 1 },
+      { nombre: 'FEB', mes: 2, anio: anioBase + 1 },
+      { nombre: 'MAR', mes: 3, anio: anioBase + 1 }
+    ];
 
-    // === DATOS REALES DESDE SUPABASE ===
     const [
       { data: ingresosMensuales },
       { data: ingresoPlenarias },
@@ -38,75 +50,128 @@ async function generarInformeExcel() {
       supabase.from('gasto_real_comisiones').select('*')
     ]);
 
-    const workbook = new ExcelJS.Workbook();
+    const wb = new ExcelJS.Workbook();
+    const moneda = '#,##0';
 
     // === HOJA 1: Plan Ingresos y Gastos ===
-    const hojaPlan = workbook.addWorksheet('Plan Ingresos y Gastos');
-    hojaPlan.getRow(1).values = ['PLAN INGRESOS'];
-    hojaPlan.mergeCells('A1:G1');
-    hojaPlan.getRow(2).values = ['tipo', 'eventos', 'participantes', 'valor', 'total_anual', 'Actual', '% Cumpl.'];
+    const ws = wb.addWorksheet('Plan Ingresos y Gastos');
+    ws.getCell('A1').value = 'PLAN INGRESOS';
+    ws.mergeCells('A1:G1');
+    ws.getRow(2).values = ['tipo', 'eventos', 'participantes', 'valor', 'total_anual', 'Actual', '% Cumpl.'];
+
+    const ingresos = [
+      {
+        tipo: 'cuota_sindicato',
+        eventos: 12,
+        participantes: 730,
+        valor: ingresosMensuales[0]?.cuota || 1000
+      },
+      {
+        tipo: 'plenarias',
+        eventos: ingresoPlenarias.length,
+        participantes: 25,
+        valor: ingresoPlenarias[0]?.cuota || 20000
+      },
+      {
+        tipo: 'aporte_director',
+        eventos: aporteDirectores.length,
+        participantes: 25,
+        valor: aporteDirectores[0]?.monto || 1000
+      },
+      {
+        tipo: 'otros',
+        eventos: 0,
+        participantes: 0,
+        valor: 0
+      }
+    ];
 
     let fila = 3;
+    ingresos.forEach((item) => {
+      ws.getCell(`A${fila}`).value = item.tipo;
+      ws.getCell(`B${fila}`).value = item.eventos;
+      ws.getCell(`C${fila}`).value = item.participantes;
+      ws.getCell(`D${fila}`).value = item.valor;
+      ws.getCell(`D${fila}`).numFmt = moneda;
+      ws.getCell(`E${fila}`).value = { formula: `B${fila}*C${fila}*D${fila}` };
+      ws.getCell(`E${fila}`).numFmt = moneda;
+      ws.getCell(`F${fila}`).value = null;
+      ws.getCell(`F${fila}`).numFmt = moneda;
+      ws.getCell(`G${fila}`).value = { formula: `IF(E${fila}=0,0,F${fila}/E${fila})` };
+      fila++;
+    });
 
-    hojaPlan.getRow(fila++).values = [
-      'cuota_sindicato', 12, 730, 1000,
-      { formula: 'B3*C3*D3' }, null, { formula: 'IF(E3=0,0,F3/E3)' }
-    ];
-    hojaPlan.getRow(fila++).values = [
-      'plenarias', ingresoPlenarias.length, 25, 20000,
-      { formula: 'B4*C4*D4' }, null, { formula: 'IF(E4=0,0,F4/E4)' }
-    ];
-    hojaPlan.getRow(fila++).values = [
-      'aporte_director', aporteDirectores.length, 25, 1000,
-      { formula: 'B5*C5*D5' }, null, { formula: 'IF(E5=0,0,F5/E5)' }
-    ];
-    hojaPlan.getRow(fila++).values = [
-      'otros', 0, 0, 0,
-      { formula: 'B6*C6*D6' }, null, { formula: 'IF(E6=0,0,F6/E6)' }
-    ];
-
-    hojaPlan.getRow(fila).values = [
-      'Total', '', '', '',
-      { formula: 'SUM(E3:E6)' },
-      { formula: 'SUM(F3:F6)' },
-      { formula: 'IF(E7=0,0,F7/E7)' }
-    ];
+    ws.getCell(`A${fila}`).value = 'Total';
+    ws.getCell(`E${fila}`).value = { formula: `SUM(E3:E${fila - 1})` };
+    ws.getCell(`F${fila}`).value = { formula: `SUM(F3:F${fila - 1})` };
+    ws.getCell(`G${fila}`).value = { formula: `IF(E${fila}=0,0,F${fila}/E${fila})` };
+    ws.getCell(`E${fila}`).numFmt = moneda;
+    ws.getCell(`F${fila}`).numFmt = moneda;
 
     fila += 2;
-    hojaPlan.getRow(fila++).values = ['PLAN GASTOS'];
-    hojaPlan.mergeCells(`A${fila - 1}:G${fila - 1}`);
-    hojaPlan.getRow(fila++).values = ['tipo', 'eventos', 'participantes', 'valor', 'total_anual', 'Actual', '% Cumpl.'];
+    ws.getCell(`A${fila}`).value = 'PLAN GASTOS';
+    ws.mergeCells(`A${fila}:G${fila}`);
+    fila++;
+    ws.getRow(fila).values = ['tipo', 'eventos', 'participantes', 'valor', 'total_anual', 'Actual', '% Cumpl.'];
+    fila++;
 
-    hojaPlan.getRow(fila++).values = [
-      'remuneracion_directores', gastoDirectores.length, 5, 50000,
-      { formula: `B10*C10*D10` }, null, { formula: `IF(E10=0,0,F10/E10)` }
-    ];
-    hojaPlan.getRow(fila++).values = [
-      'viaticos', 8, 5, 20000,
-      { formula: `B11*C11*D11` }, null, { formula: `IF(E11=0,0,F11/E11)` }
-    ];
-    hojaPlan.getRow(fila++).values = [
-      'plenarias', gastoPlenarias.length, 25, 15000,
-      { formula: `B12*C12*D12` }, null, { formula: `IF(E12=0,0,F12/E12)` }
-    ];
-    hojaPlan.getRow(fila++).values = [
-      'gestion', 1, 1, 300000,
-      { formula: `B13*C13*D13` }, null, { formula: `IF(E13=0,0,F13/E13)` }
-    ];
-    hojaPlan.getRow(fila++).values = [
-      'comisiones', gastoComisiones.length, 3, 10000,
-      { formula: `B14*C14*D14` }, null, { formula: `IF(E14=0,0,F14/E14)` }
-    ];
-    hojaPlan.getRow(fila).values = [
-      'Total', '', '', '',
-      { formula: 'SUM(E10:E14)' },
-      { formula: 'SUM(F10:F14)' },
-      { formula: 'IF(E15=0,0,F15/E15)' }
+    const gastos = [
+      {
+        tipo: 'remuneracion_directores',
+        eventos: gastoDirectores.length,
+        participantes: 5,
+        valor: 50000
+      },
+      {
+        tipo: 'viaticos',
+        eventos: 8,
+        participantes: 5,
+        valor: 20000
+      },
+      {
+        tipo: 'plenarias',
+        eventos: gastoPlenarias.length,
+        participantes: 25,
+        valor: 15000
+      },
+      {
+        tipo: 'gestion',
+        eventos: 1,
+        participantes: 1,
+        valor: 300000
+      },
+      {
+        tipo: 'comisiones',
+        eventos: gastoComisiones.length,
+        participantes: 3,
+        valor: 10000
+      }
     ];
 
-    // === HOJA 2: Resumen Tesorería mensual por sindicato ===
-    const hojaResumen = workbook.addWorksheet('Resumen Tesorería');
-    hojaResumen.addRow(['SINDICATO', ...meses, 'TOTAL']);
+    gastos.forEach((item) => {
+      ws.getCell(`A${fila}`).value = item.tipo;
+      ws.getCell(`B${fila}`).value = item.eventos;
+      ws.getCell(`C${fila}`).value = item.participantes;
+      ws.getCell(`D${fila}`).value = item.valor;
+      ws.getCell(`D${fila}`).numFmt = moneda;
+      ws.getCell(`E${fila}`).value = { formula: `B${fila}*C${fila}*D${fila}` };
+      ws.getCell(`E${fila}`).numFmt = moneda;
+      ws.getCell(`F${fila}`).value = null;
+      ws.getCell(`F${fila}`).numFmt = moneda;
+      ws.getCell(`G${fila}`).value = { formula: `IF(E${fila}=0,0,F${fila}/E${fila})` };
+      fila++;
+    });
+
+    ws.getCell(`A${fila}`).value = 'Total';
+    ws.getCell(`E${fila}`).value = { formula: `SUM(E${fila - gastos.length}:E${fila - 1})` };
+    ws.getCell(`F${fila}`).value = { formula: `SUM(F${fila - gastos.length}:F${fila - 1})` };
+    ws.getCell(`G${fila}`).value = { formula: `IF(E${fila}=0,0,F${fila}/E${fila})` };
+    ws.getCell(`E${fila}`).numFmt = moneda;
+    ws.getCell(`F${fila}`).numFmt = moneda;
+
+    // === HOJA 2: Resumen Sindicatos Mensual ===
+    const hojaResumen = wb.addWorksheet('Resumen Sindicatos');
+    hojaResumen.addRow(['SINDICATO', ...meses.map(m => m.nombre), 'TOTAL']);
 
     const sindicatosSet = new Set(ingresosMensuales.map(i => i.nombre_sindicato));
     const sindicatos = Array.from(sindicatosSet).sort();
@@ -114,8 +179,9 @@ async function generarInformeExcel() {
     sindicatos.forEach((sind) => {
       const fila = [sind];
       let total = 0;
-      for (let mes of meses) {
-        const item = ingresosMensuales.find(i => i.nombre_sindicato === sind && i.mes_nombre?.toUpperCase() === mes);
+      for (let i = 0; i < meses.length; i++) {
+        const { mes, anio } = meses[i];
+        const item = ingresosMensuales.find(x => x.nombre_sindicato === sind && x.mes === mes && x.año === anio);
         const monto = item?.cuota || 0;
         fila.push(monto);
         total += monto;
@@ -125,8 +191,8 @@ async function generarInformeExcel() {
     });
 
     // === DESCARGA ===
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], {
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     });
     const url = URL.createObjectURL(blob);
@@ -136,8 +202,8 @@ async function generarInformeExcel() {
     a.click();
     URL.revokeObjectURL(url);
 
-  } catch (err) {
-    alert('Error generando informe: ' + err.message);
+  } catch (error) {
+    alert('Error generando informe: ' + error.message);
   } finally {
     btn.disabled = false;
     btn.textContent = '📊 Generar Informe Excel';

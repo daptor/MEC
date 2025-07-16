@@ -1,5 +1,6 @@
+// ExcelJS debe cargarse desde el HTML (no usar import aquí)
+const ExcelJS = window.ExcelJS;
 import { supabase } from './supabaseClient.js';
-import ExcelJS from 'https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js';
 
 window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnGenerarInforme').addEventListener('click', generarInformeExcel);
@@ -72,7 +73,7 @@ async function generarInformeExcel() {
 
     fila += 2;
     hojaPlan.getRow(fila++).values = ['PLAN GASTOS'];
-    hojaPlan.mergeCells(`A${fila-1}:G${fila-1}`);
+    hojaPlan.mergeCells(`A${fila - 1}:G${fila - 1}`);
     hojaPlan.getRow(fila++).values = ['tipo', 'eventos', 'participantes', 'valor', 'total_anual', 'Actual', '% Cumpl.'];
 
     hojaPlan.getRow(fila++).values = [
@@ -102,27 +103,27 @@ async function generarInformeExcel() {
       { formula: 'IF(E15=0,0,F15/E15)' }
     ];
 
-    // === HOJA 2: RESUMEN TESORERÍA MENSUAL POR SINDICATO ===
+    // === HOJA 2: RESUMEN TESORERÍA ===
     const hojaResumen = workbook.addWorksheet('Resumen Tesorería');
-
     hojaResumen.addRow(['SINDICATO', ...meses, 'TOTAL']);
 
     const sindicatosSet = new Set(ingresosMensuales.map(i => i.nombre_sindicato));
     const sindicatos = Array.from(sindicatosSet).sort();
 
-    sindicatos.forEach((sind, idx) => {
-      const row = [sind];
+    sindicatos.forEach((sind) => {
+      const fila = [sind];
       let total = 0;
-      for (let i = 0; i < meses.length; i++) {
-        const monto = ingresosMensuales.find(x => x.nombre_sindicato === sind && x.mes_nombre?.toUpperCase() === meses[i])?.cuota || 0;
-        row.push(monto);
+      for (let mes of meses) {
+        const item = ingresosMensuales.find(i => i.nombre_sindicato === sind && i.mes_nombre?.toUpperCase() === mes);
+        const monto = item?.cuota || 0;
+        fila.push(monto);
         total += monto;
       }
-      row.push(total);
-      hojaResumen.addRow(row);
+      fila.push(total);
+      hojaResumen.addRow(fila);
     });
 
-    // === DESCARGA ===
+    // === DESCARGA DEL ARCHIVO ===
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'

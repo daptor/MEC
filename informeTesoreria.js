@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient.js';
-import * as ExcelJS from 'https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js';
+import ExcelJS from 'https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js';
 
 window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnGenerarInforme').addEventListener('click', generarInformeExcel);
@@ -17,228 +17,309 @@ async function generarInformeExcel() {
   btn.textContent = 'Generando...';
 
   try {
-    // --- Carga datos Supabase dinámicos ---
+    const meses = [
+      { nombre: 'ABR', mes: 4, anio: anioBase },
+      { nombre: 'MAY', mes: 5, anio: anioBase },
+      { nombre: 'JUN', mes: 6, anio: anioBase },
+      { nombre: 'JUL', mes: 7, anio: anioBase },
+      { nombre: 'AGO', mes: 8, anio: anioBase },
+      { nombre: 'SEP', mes: 9, anio: anioBase },
+      { nombre: 'OCT', mes: 10, anio: anioBase },
+      { nombre: 'NOV', mes: 11, anio: anioBase },
+      { nombre: 'DIC', mes: 12, anio: anioBase },
+      { nombre: 'ENE', mes: 1, anio: anioBase + 1 },
+      { nombre: 'FEB', mes: 2, anio: anioBase + 1 },
+      { nombre: 'MAR', mes: 3, anio: anioBase + 1 }
+    ];
 
-    // Ingresos mensuales (para cuota sindicato)
-    const { data: ingresosMensuales } = await supabase
-      .from('ingresos_mensuales')
-      .select('cuota,año')
-      .gte('año', anioBase)
-      .lte('año', anioBase + 1);
+    // 1) Cargar datos desde Supabase
+    const [
+      { data: ingresosMensuales },
+      { data: ingresoPlenarias },
+      { data: otrosIngresos },
+      { data: aporteDirectores },
+      { data: gastoDirectores },
+      { data: gastoPlenarias },
+      { data: gastoGestion },
+      { data: gastoComisiones },
+      { data: gastoOtros }
+    ] = await Promise.all([
+      supabase.from('ingresos_mensuales').select('*').gte('año', anioBase).lte('año', anioBase + 1),
+      supabase.from('ingreso_plenarias').select('*').gte('año', anioBase).lte('año', anioBase + 1),
+      supabase.from('otros_ingresos').select('*').gte('anio', anioBase).lte('anio', anioBase + 1),
+      supabase.from('aporte_director').select('*').gte('fecha', `${anioBase}-04-01`).lte('fecha', `${anioBase + 1}-03-31`),
+      supabase.from('gasto_real_directores').select('*'),
+      supabase.from('gasto_real_plenarias').select('*'),
+      supabase.from('gasto_real_gestion').select('*'),
+      supabase.from('gasto_real_comisiones').select('*'),
+      supabase.from('gasto_real_otros').select('*')
+    ]);
 
-    // Plenarias ingreso
-    const { data: ingresoPlenarias } = await supabase
-      .from('ingreso_plenarias')
-      .select('cuota,año')
-      .gte('año', anioBase)
-      .lte('año', anioBase + 1);
-
-    // Aporte directores (filtrado por fecha)
-    const { data: aporteDirectores } = await supabase
-      .from('aporte_director')
-      .select('monto,fecha')
-      .gte('fecha', `${anioBase}-04-01`)
-      .lte('fecha', `${anioBase + 1}-03-31`);
-
-    // Gastos
-    const { data: gastoDirectores } = await supabase.from('gasto_real_directores').select('monto,fecha');
-    const { data: gastoPlenarias } = await supabase.from('gasto_real_plenarias').select('monto,fecha');
-    const { data: gastoGestion } = await supabase.from('gasto_real_gestion').select('monto,fecha');
-    const { data: gastoComisiones } = await supabase.from('gasto_real_comisiones').select('monto,fecha');
-
-    // Datos dinámicos para Plan Ingresos y Gastos
-
-    // Ejemplo supuestos para participantes (puedes ajustar según tus datos reales)
-    const participantesCuotaSindicato = 730; // o calcula dinámico si tienes dato
-    const participantesPlenarias = 25;
-    const participantesDirectores = 25;
-    const participantesGastoDirectores = 5;
-    const participantesGastoPlenarias = 25;
-    const participantesGastoComisiones = 3;
-
-    // Valores unitarios promedio o únicos (promedio para dinámica)
-    const valorCuota = ingresosMensuales.length > 0 ? promedio(ingresosMensuales.map(i => i.cuota)) : 1000;
-    const valorPlenaria = ingresoPlenarias.length > 0 ? promedio(ingresoPlenarias.map(i => i.cuota)) : 20000;
-    const valorAporteDirector = aporteDirectores.length > 0 ? promedio(aporteDirectores.map(a => a.monto)) : 1000;
-    const valorGastoDirector = gastoDirectores.length > 0 ? promedio(gastoDirectores.map(g => g.monto)) : 50000;
-    const valorGastoPlenaria = gastoPlenarias.length > 0 ? promedio(gastoPlenarias.map(g => g.monto)) : 15000;
-    const valorGastoGestion = gastoGestion.length > 0 ? promedio(gastoGestion.map(g => g.monto)) : 300000;
-    const valorGastoComisiones = gastoComisiones.length > 0 ? promedio(gastoComisiones.map(g => g.monto)) : 10000;
-
-    function promedio(arr) {
-      if (!arr.length) return 0;
-      return arr.reduce((a, b) => a + b, 0) / arr.length;
+    // --- Funciones para acumular montos por mes ---
+    function acumularPorMes(arr, campoFecha, campoMonto) {
+      const res = Array(12).fill(0);
+      for (const item of arr) {
+        const fecha = new Date(item[campoFecha]);
+        const idx = meses.findIndex(m => m.anio === fecha.getFullYear() && m.mes === (fecha.getMonth() + 1));
+        if (idx !== -1) {
+          res[idx] += Number(item[campoMonto]) || 0;
+        }
+      }
+      return res;
     }
 
-    // --- Crear Workbook ---
+    // Acumular gastos directores por mes (sumando campos remuneracion, pasajes, colacion, etc.)
+    const rubrosDir = ['remuneracion', 'pasajes', 'colacion', 'metro', 'taxi_colectivo', 'hotel', 'reembolso'];
+    const gastosDirPorMes = Array(12).fill(0);
+    for (const gasto of gastoDirectores) {
+      const fecha = new Date(gasto.fecha);
+      const idx = meses.findIndex(m => m.anio === fecha.getFullYear() && m.mes === (fecha.getMonth() + 1));
+      if (idx !== -1) {
+        rubrosDir.forEach(rubro => {
+          gastosDirPorMes[idx] += Number(gasto[rubro]) || 0;
+        });
+      }
+    }
+
+    // Gastos plenarias, gestion, comisiones, otros gastos acumulados por mes
+    const gastosPlenariasPorMes = acumularPorMes(gastoPlenarias, 'fecha', 'costo_total');
+    const gastosGestionPorMes = acumularPorMes(gastoGestion, 'fecha', 'total');
+    const gastosComisionesPorMes = acumularPorMes(gastoComisiones, 'fecha_registro', 'monto');
+
+    // Acumular otros gastos por descripción y mes
+    const gastosOtrosPorDesc = {};
+    for (const go of gastoOtros) {
+      const fecha = new Date(go.fecha_registro);
+      const idx = meses.findIndex(m => m.anio === fecha.getFullYear() && m.mes === (fecha.getMonth() + 1));
+      if (idx !== -1) {
+        const desc = go.descripcion || 'SIN DESCRIPCIÓN';
+        if (!gastosOtrosPorDesc[desc]) gastosOtrosPorDesc[desc] = Array(12).fill(0);
+        gastosOtrosPorDesc[desc][idx] += Number(go.monto) || 0;
+      }
+    }
+
+    // Ingresos sindicales y plenarias por sindicato y mes
+    // Puedes adaptar para que esta info vaya en resumen o en Plan Ingresos y Gastos según lo necesites
+
+    // === Crear libro Excel ===
     const workbook = new ExcelJS.Workbook();
 
-    // --- Hoja Plan Ingresos y Gastos ---
-    const sheetPlan = workbook.addWorksheet('Plan Ingresos y Gastos');
+    // --- Hoja 1: Resumen Tesorería ---
+    const wsResumen = workbook.addWorksheet('Resumen Tesorería');
 
-    sheetPlan.getCell('A1').value = 'PLAN INGRESOS';
-    sheetPlan.mergeCells('A1:G1');
-    sheetPlan.getRow(2).values = ['tipo', 'eventos', 'participantes', 'valor', 'total_anual', 'Actual', '% Cumpl.'];
+    // Armar cabecera
+    const cabecera = ['Concepto', ...meses.map(m => m.nombre), 'ANUAL'];
+    wsResumen.addRow(cabecera);
 
-    let row = 3;
+    // Agregar ingresos (ejemplo simplificado)
+    // Aquí puedes replicar tu lógica original agregando filas para ingresos y gastos con fórmulas SUM en anual
 
-    // Cuota Sindicato
-    sheetPlan.getRow(row).values = [
+    // Para ejemplo, agrego una fila de gastos directores
+    wsResumen.addRow(['GASTOS DIRECTORES', ...gastosDirPorMes, { formula: `SUM(B2:M2)` }]);
+
+    // Otros gastos agregados:
+    let filaIndex = wsResumen.lastRow.number;
+
+    // Gastos Plenarias
+    wsResumen.addRow(['GASTOS PLENARIAS', ...gastosPlenariasPorMes, { formula: `SUM(B${filaIndex + 1}:M${filaIndex + 1})` }]);
+    filaIndex++;
+
+    // Gastos Gestión
+    wsResumen.addRow(['GASTOS GESTIÓN', ...gastosGestionPorMes, { formula: `SUM(B${filaIndex + 1}:M${filaIndex + 1})` }]);
+    filaIndex++;
+
+    // Gastos Comisiones
+    wsResumen.addRow(['GASTOS COMISIONES', ...gastosComisionesPorMes, { formula: `SUM(B${filaIndex + 1}:M${filaIndex + 1})` }]);
+    filaIndex++;
+
+    // Otros gastos dinámicos
+    for (const [desc, valores] of Object.entries(gastosOtrosPorDesc)) {
+      wsResumen.addRow([desc, ...valores, { formula: `SUM(B${filaIndex + 1}:M${filaIndex + 1})` }]);
+      filaIndex++;
+    }
+
+    // Total gastos (fórmula sumando filas anteriores)
+    const primeraFilaGastos = 2;
+    const ultimaFilaGastos = wsResumen.lastRow.number;
+    const letras = ['B','C','D','E','F','G','H','I','J','K','L','M'];
+    const totalGastosRow = wsResumen.addRow([
+      'TOTAL GASTOS',
+      ...letras.map(col => ({ formula: `SUM(${col}${primeraFilaGastos}:${col}${ultimaFilaGastos})` })),
+      { formula: `SUM(N${primeraFilaGastos}:N${ultimaFilaGastos})` }
+    ]);
+
+    // --- Hoja 2: Plan Ingresos y Gastos ---
+    const wsPlan = workbook.addWorksheet('Plan Ingresos y Gastos');
+
+    // Títulos
+    wsPlan.getCell('A1').value = 'PLAN INGRESOS';
+    wsPlan.mergeCells('A1:G1');
+    wsPlan.getCell('A1').font = { bold: true, size: 14 };
+
+    // Encabezados
+    const headers = ['tipo', 'eventos', 'participantes', 'valor', 'total_anual', 'Actual', '% Cumpl.'];
+    wsPlan.addRow(headers).font = { bold: true };
+
+    let currentRow = 3;
+
+    // Ejemplo dinámico: cuota sindicato (puedes ajustar con tus datos)
+    const totalEventosCuota = ingresosMensuales.length;
+    const participantesCuota = 730; // o lo que venga de datos
+    const valorCuota = ingresosMensuales[0]?.cuota || 1000;
+    wsPlan.addRow([
       'cuota_sindicato',
-      ingresosMensuales.length,
-      participantesCuotaSindicato,
+      totalEventosCuota,
+      participantesCuota,
       valorCuota,
-      { formula: `B${row}*C${row}*D${row}` },
+      { formula: `B${currentRow}*C${currentRow}*D${currentRow}` },
       null,
-      { formula: `IF(E${row}=0,0,F${row}/E${row})` }
-    ];
-    row++;
+      { formula: `IF(E${currentRow}=0,0,F${currentRow}/E${currentRow})` }
+    ]);
+    currentRow++;
 
-    // Plenarias
-    sheetPlan.getRow(row).values = [
+    // Ejemplo: plenarias
+    const eventosPlenarias = ingresoPlenarias.length;
+    const participantesPlenarias = 25;
+    const valorPlenarias = ingresoPlenarias[0]?.cuota || 20000;
+    wsPlan.addRow([
       'plenarias',
-      ingresoPlenarias.length,
+      eventosPlenarias,
       participantesPlenarias,
-      valorPlenaria,
-      { formula: `B${row}*C${row}*D${row}` },
+      valorPlenarias,
+      { formula: `B${currentRow}*C${currentRow}*D${currentRow}` },
       null,
-      { formula: `IF(E${row}=0,0,F${row}/E${row})` }
-    ];
-    row++;
+      { formula: `IF(E${currentRow}=0,0,F${currentRow}/E${currentRow})` }
+    ]);
+    currentRow++;
 
-    // Aporte Directores
-    sheetPlan.getRow(row).values = [
+    // Aporte directores
+    const eventosAporte = aporteDirectores.length;
+    const participantesAporte = 25;
+    const valorAporte = aporteDirectores[0]?.monto || 1000;
+    wsPlan.addRow([
       'aporte_director',
-      aporteDirectores.length,
-      participantesDirectores,
-      valorAporteDirector,
-      { formula: `B${row}*C${row}*D${row}` },
+      eventosAporte,
+      participantesAporte,
+      valorAporte,
+      { formula: `B${currentRow}*C${currentRow}*D${currentRow}` },
       null,
-      { formula: `IF(E${row}=0,0,F${row}/E${row})` }
-    ];
-    row++;
+      { formula: `IF(E${currentRow}=0,0,F${currentRow}/E${currentRow})` }
+    ]);
+    currentRow++;
 
-    // Otros ingresos (vacío dinámico)
-    sheetPlan.getRow(row).values = [
+    // Otros ingresos (puedes adaptar para sumar otrosIngresos si los tienes categorizados)
+    wsPlan.addRow([
       'otros',
       0,
       0,
       0,
-      { formula: `0` },
+      { formula: `B${currentRow}*C${currentRow}*D${currentRow}` },
       null,
-      { formula: `0` }
-    ];
-    row++;
+      { formula: `IF(E${currentRow}=0,0,F${currentRow}/E${currentRow})` }
+    ]);
+    currentRow++;
 
     // Total ingresos
-    sheetPlan.getCell(`A${row}`).value = 'Total';
-    sheetPlan.getCell(`E${row}`).value = { formula: `SUM(E3:E${row - 1})` };
-    sheetPlan.getCell(`F${row}`).value = { formula: `SUM(F3:F${row - 1})` };
-    sheetPlan.getCell(`G${row}`).value = { formula: `IF(E${row}=0,0,F${row}/E${row})` };
+    wsPlan.getCell(`A${currentRow}`).value = 'Total';
+    wsPlan.getCell(`E${currentRow}`).value = { formula: `SUM(E3:E${currentRow - 1})` };
+    wsPlan.getCell(`F${currentRow}`).value = { formula: `SUM(F3:F${currentRow - 1})` };
+    wsPlan.getCell(`G${currentRow}`).value = { formula: `IF(E${currentRow}=0,0,F${currentRow}/E${currentRow})` };
 
-    row += 2;
+    currentRow += 2;
 
-    // PLAN GASTOS
-    sheetPlan.getCell(`A${row}`).value = 'PLAN GASTOS';
-    sheetPlan.mergeCells(`A${row}:G${row}`);
-    row++;
-    sheetPlan.getRow(row).values = ['tipo', 'eventos', 'participantes', 'valor', 'total_anual', 'Actual', '% Cumpl.'];
-    row++;
+    // --- PLAN GASTOS ---
+    wsPlan.getCell(`A${currentRow}`).value = 'PLAN GASTOS';
+    wsPlan.mergeCells(`A${currentRow}:G${currentRow}`);
+    wsPlan.getCell(`A${currentRow}`).font = { bold: true, size: 14 };
+    currentRow++;
 
-    // Remuneracion directores
-    sheetPlan.getRow(row).values = [
+    wsPlan.addRow(headers);
+    currentRow++;
+
+    // Ejemplo gastos directores
+    const eventosGastoDir = gastoDirectores.length;
+    const participantesGastoDir = 5;
+    const valorGastoDir = 50000;
+    wsPlan.addRow([
       'remuneracion_directores',
-      gastoDirectores.length,
-      participantesGastoDirectores,
-      valorGastoDirector,
-      { formula: `B${row}*C${row}*D${row}` },
+      eventosGastoDir,
+      participantesGastoDir,
+      valorGastoDir,
+      { formula: `B${currentRow}*C${currentRow}*D${currentRow}` },
       null,
-      { formula: `IF(E${row}=0,0,F${row}/E${row})` }
-    ];
-    row++;
+      { formula: `IF(E${currentRow}=0,0,F${currentRow}/E${currentRow})` }
+    ]);
+    currentRow++;
 
-    // Viaticos (ejemplo estático, ajusta si tienes datos)
-    sheetPlan.getRow(row).values = [
+    // Viáticos (ejemplo fijo)
+    wsPlan.addRow([
       'viaticos',
       8,
-      participantesGastoDirectores,
+      5,
       20000,
-      { formula: `B${row}*C${row}*D${row}` },
+      { formula: `B${currentRow}*C${currentRow}*D${currentRow}` },
       null,
-      { formula: `IF(E${row}=0,0,F${row}/E${row})` }
-    ];
-    row++;
+      { formula: `IF(E${currentRow}=0,0,F${currentRow}/E${currentRow})` }
+    ]);
+    currentRow++;
 
-    // Plenarias gastos
-    sheetPlan.getRow(row).values = [
+    // Gastos plenarias
+    wsPlan.addRow([
       'plenarias',
       gastoPlenarias.length,
-      participantesGastoPlenarias,
-      valorGastoPlenaria,
-      { formula: `B${row}*C${row}*D${row}` },
+      25,
+      15000,
+      { formula: `B${currentRow}*C${currentRow}*D${currentRow}` },
       null,
-      { formula: `IF(E${row}=0,0,F${row}/E${row})` }
-    ];
-    row++;
+      { formula: `IF(E${currentRow}=0,0,F${currentRow}/E${currentRow})` }
+    ]);
+    currentRow++;
 
-    // Gestion
-    sheetPlan.getRow(row).values = [
+    // Gestión
+    wsPlan.addRow([
       'gestion',
-      gastoGestion.length,
       1,
-      valorGastoGestion,
-      { formula: `B${row}*C${row}*D${row}` },
+      1,
+      300000,
+      { formula: `B${currentRow}*C${currentRow}*D${currentRow}` },
       null,
-      { formula: `IF(E${row}=0,0,F${row}/E${row})` }
-    ];
-    row++;
+      { formula: `IF(E${currentRow}=0,0,F${currentRow}/E${currentRow})` }
+    ]);
+    currentRow++;
 
     // Comisiones
-    sheetPlan.getRow(row).values = [
+    wsPlan.addRow([
       'comisiones',
       gastoComisiones.length,
-      participantesGastoComisiones,
-      valorGastoComisiones,
-      { formula: `B${row}*C${row}*D${row}` },
+      3,
+      10000,
+      { formula: `B${currentRow}*C${currentRow}*D${currentRow}` },
       null,
-      { formula: `IF(E${row}=0,0,F${row}/E${row})` }
-    ];
-    row++;
+      { formula: `IF(E${currentRow}=0,0,F${currentRow}/E${currentRow})` }
+    ]);
+    currentRow++;
 
     // Total gastos
-    sheetPlan.getCell(`A${row}`).value = 'Total';
-    sheetPlan.getCell(`E${row}`).value = { formula: `SUM(E${row - 5}:E${row - 1})` };
-    sheetPlan.getCell(`F${row}`).value = { formula: `SUM(F${row - 5}:F${row - 1})` };
-    sheetPlan.getCell(`G${row}`).value = { formula: `IF(E${row}=0,0,F${row}/E${row})` };
+    wsPlan.getCell(`A${currentRow}`).value = 'Total';
+    wsPlan.getCell(`E${currentRow}`).value = { formula: `SUM(E${currentRow - 5}:E${currentRow - 1})` };
+    wsPlan.getCell(`F${currentRow}`).value = { formula: `SUM(F${currentRow - 5}:F${currentRow - 1})` };
+    wsPlan.getCell(`G${currentRow}`).value = { formula: `IF(E${currentRow}=0,0,F${currentRow}/E${currentRow})` };
 
-    // --- Hoja 2: Resumen Tesorería ---
-    const sheetResumen = workbook.addWorksheet('Resumen Tesorería');
+    // --- Estilos básicos para columnas ---
+    [wsPlan, wsResumen].forEach(ws => {
+      ws.columns.forEach(col => {
+        col.alignment = { vertical: 'middle', horizontal: 'center' };
+        col.width = 15;
+      });
+    });
 
-    // Encabezados resumen mensual
-    const meses = ['ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC', 'ENE', 'FEB', 'MAR'];
-    sheetResumen.getRow(1).values = ['Mes', 'Ingresos', 'Gastos'];
-
-    // Para simplificar, se reparte total anual / 12 en cada mes (ajustar si tienes datos mensuales reales)
-    for (let i = 0; i < meses.length; i++) {
-      const mes = meses[i];
-      const fila = i + 2;
-      sheetResumen.getCell(`A${fila}`).value = mes;
-      sheetResumen.getCell(`B${fila}`).value = { formula: `${sheetPlan.getCell(`E${row - 7}`).address}/12` };
-      sheetResumen.getCell(`C${fila}`).value = { formula: `${sheetPlan.getCell(`E${row}`).address}/12` };
-    }
-
-    const filaTotalResumen = meses.length + 2;
-    sheetResumen.getCell(`A${filaTotalResumen}`).value = 'Total';
-    sheetResumen.getCell(`B${filaTotalResumen}`).value = { formula: `SUM(B2:B${filaTotalResumen - 1})` };
-    sheetResumen.getCell(`C${filaTotalResumen}`).value = { formula: `SUM(C2:C${filaTotalResumen - 1})` };
-
-    // --- Descargar archivo ---
+    // Descargar archivo
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Informe_Tesoreria_${anioBase}.xlsx`;
+    a.download = `Informe_Tesoreria_${anioBase}-${anioBase + 1}.xlsx`;
     a.click();
     URL.revokeObjectURL(url);
 

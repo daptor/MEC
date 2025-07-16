@@ -2,197 +2,293 @@ import { supabase } from './supabaseClient.js';
 import * as XLSX from 'https://cdn.sheetjs.com/xlsx-0.20.0/package/xlsx.mjs';
 
 window.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('btnGenerarInforme')
-    .addEventListener('click', generarInformeExcel);
+  document.getElementById('btnGenerarInforme').addEventListener('click', generarInformeExcel);
 });
 
 async function generarInformeExcel() {
-  const anioBase = parseInt(
-    document.getElementById('informe-anio-base').value, 10
-  );
+  const anioBase = parseInt(document.getElementById('informe-anio-base').value, 10);
   if (isNaN(anioBase)) {
     alert('Año inválido');
     return;
   }
+
   const btn = document.getElementById('btnGenerarInforme');
   btn.disabled = true;
   btn.textContent = 'Generando...';
 
   try {
-    // 1) Defino meses y rango
     const meses = [
-      'ABR','MAY','JUN','JUL','AGO','SEP',
-      'OCT','NOV','DIC','ENE','FEB','MAR'
+      { nombre: 'ABR', mes: 4, anio: anioBase },
+      { nombre: 'MAY', mes: 5, anio: anioBase },
+      { nombre: 'JUN', mes: 6, anio: anioBase },
+      { nombre: 'JUL', mes: 7, anio: anioBase },
+      { nombre: 'AGO', mes: 8, anio: anioBase },
+      { nombre: 'SEP', mes: 9, anio: anioBase },
+      { nombre: 'OCT', mes: 10, anio: anioBase },
+      { nombre: 'NOV', mes: 11, anio: anioBase },
+      { nombre: 'DIC', mes: 12, anio: anioBase },
+      { nombre: 'ENE', mes: 1, anio: anioBase + 1 },
+      { nombre: 'FEB', mes: 2, anio: anioBase + 1 },
+      { nombre: 'MAR', mes: 3, anio: anioBase + 1 }
     ];
-    const from = `${anioBase}-04-01`;
-    const to   = `${anioBase+1}-03-31`;
 
-    // 2) Traigo todos los datos de Supabase
+    // 1) Cargar datos de Supabase (tablas y campos según tu esquema)
     const [
-      { data: ingMen },
-      { data: ingPlen },
-      { data: otrosIng },
-      { data: aporteDir },
-      { data: gDir },
-      { data: gPlen },
-      { data: gGest },
-      { data: gCom },
-      { data: gOtr }
+      { data: ingresosMensuales },
+      { data: ingresoPlenarias },
+      { data: otrosIngresos },
+      { data: aporteDirectores },
+      { data: gastoDirectores },
+      { data: gastoPlenarias },
+      { data: gastoGestion },
+      { data: gastoComisiones },
+      { data: gastoOtros }
     ] = await Promise.all([
-      supabase.from('ingresos_mensuales').select('*').gte('año', anioBase).lte('año', anioBase+1),
-      supabase.from('ingreso_plenarias').select('*').gte('año', anioBase).lte('año', anioBase+1),
-      supabase.from('otros_ingresos').select('*').gte('anio', anioBase).lte('anio', anioBase+1),
-      supabase.from('aporte_director').select('*').gte('fecha', from).lte('fecha', to),
-      supabase.from('gasto_real_directores').select('*').gte('fecha', from).lte('fecha', to),
-      supabase.from('gasto_real_plenarias').select('*').gte('fecha', from).lte('fecha', to),
-      supabase.from('gasto_real_gestion').select('*').gte('fecha', from).lte('fecha', to),
-      supabase.from('gasto_real_comisiones').select('*').gte('fecha_registro', from).lte('fecha_registro', to),
-      supabase.from('gasto_real_otros').select('*').gte('fecha_registro', from).lte('fecha_registro', to),
+      supabase.from('ingresos_mensuales').select('*').gte('año', anioBase).lte('año', anioBase + 1),
+      supabase.from('ingreso_plenarias').select('*').gte('año', anioBase).lte('año', anioBase + 1),
+      supabase.from('otros_ingresos').select('*').gte('anio', anioBase).lte('anio', anioBase + 1),
+      supabase.from('aporte_director').select('*').gte('fecha', ${anioBase}-04-01).lte('fecha', ${anioBase + 1}-03-31),
+      supabase.from('gasto_real_directores').select('*'),
+      supabase.from('gasto_real_plenarias').select('*'),
+      supabase.from('gasto_real_gestion').select('*'),
+      supabase.from('gasto_real_comisiones').select('*'),
+      supabase.from('gasto_real_otros').select('*')
     ]);
 
-    // 3) Helpers de acumulación
-    const idxMes = nm => meses.indexOf(nm.toUpperCase());
-    function acum(arr, key, mesF, montF) {
-      const o = {};
-      arr.forEach(it => {
-        const k = it[key], i = idxMes(it[mesF]);
-        if (i<0) return;
-        if (!o[k]) o[k] = Array(12).fill(0);
-        o[k][i] += Number(it[montF])||0;
-      });
-      return o;
-    }
-    function acumFecha(arr, dateF, montF) {
-      const A = Array(12).fill(0);
-      arr.forEach(it => {
-        const d = new Date(it[dateF]);
-        const i = (d.getMonth()+9)%12; // abril=0 → marzo=11
-        A[i] += Number(it[montF])||0;
-      });
-      return A;
-    }
-    function acumDesc(arr, descF, dateF, montF) {
-      const o = {};
-      arr.forEach(it => {
-        const desc = (it[descF]||'SIN DESCRIPCIÓN').toUpperCase();
-        const d = new Date(it[dateF]);
-        const i = (d.getMonth()+9)%12;
-        if (i<0) return;
-        if (!o[desc]) o[desc] = Array(12).fill(0);
-        o[desc][i] += Number(it[montF])||0;
-      });
-      return o;
+    // --- Helpers para acumular montos por sindicato, mes y año ---
+    function acumularMonto(arr, campoSindicato, campoMes, campoAnio, campoMonto) {
+      const res = {};
+      for (const item of arr) {
+        const sindicato = item[campoSindicato];
+        const mes = typeof item[campoMes] === 'string' ? item[campoMes].toUpperCase() : '';
+        const anio = item[campoAnio];
+        const monto = Number(item[campoMonto]) || 0;
+        if (!res[sindicato]) res[sindicato] = Array(12).fill(0);
+        const idx = meses.findIndex(m => m.nombre === mes && m.anio === anio);
+        if (idx !== -1) res[sindicato][idx] += monto;
+      }
+      return res;
     }
 
-    // 4) Acumulo todos los montos
-    const ingM  = acum(ingMen, 'nombre_sindicato','mes_nombre','cuota');
-    const ingP  = acum(ingPlen, 'nombre_sindicato','mes_nombre','cuota');
-    const sindicatos = Array.from(
-      new Set([...Object.keys(ingM),...Object.keys(ingP)])
-    ).sort();
-    const otros   = acum(otrosIng,'tipo_ingreso','mes','monto');
-    const aporte  = acumFecha(aporteDir,'fecha','monto');
-    const gDirA   = acumFecha(gDir,'fecha','monto');
-    const gPlA    = acumFecha(gPlen,'fecha','costo_total');
-    const gGeA    = acumFecha(gGest,'fecha','total');
-    const gCoA    = acumFecha(gCom,'fecha_registro','monto');
-    const gOtA    = acumDesc(gOtr,'descripcion','fecha_registro','monto');
+    // Acumular ingresos mensuales y plenarias por sindicato
+    const ingresosMensualesPorSind = acumularMonto(ingresosMensuales, 'nombre_sindicato', 'mes_nombre', 'año', 'cuota');
+    const ingresosPlenariasPorSind = acumularMonto(ingresoPlenarias, 'nombre_sindicato', 'mes_nombre', 'año', 'cuota');
 
-    // 5) Construyo libros y hojas
+    // Unión de sindicatos
+    const sindicatosSet = new Set([
+      ...Object.keys(ingresosMensualesPorSind),
+      ...Object.keys(ingresosPlenariasPorSind)
+    ]);
+    const sindicatos = Array.from(sindicatosSet).sort();
+
+    // Acumular otros ingresos por tipo y mes (mes num y año)
+    function acumularPorTipoMes(arr, campoTipo, campoMes, campoAnio, campoMonto) {
+      const res = {};
+      for (const item of arr) {
+        const tipo = item[campoTipo];
+        const mes = Number(item[campoMes]);
+        const anio = Number(item[campoAnio]);
+        const monto = Number(item[campoMonto]) || 0;
+        if (!res[tipo]) res[tipo] = Array(12).fill(0);
+        const idx = meses.findIndex(m => m.mes === mes && m.anio === anio);
+        if (idx !== -1) res[tipo][idx] += monto;
+      }
+      return res;
+    }
+    const otrosIngresosPorTipo = acumularPorTipoMes(otrosIngresos, 'tipo_ingreso', 'mes', 'anio', 'monto');
+
+    // Acumular aporte directores por mes (fecha)
+    const aporteDirectoresPorMes = Array(12).fill(0);
+    for (const item of aporteDirectores) {
+      const fecha = new Date(item.fecha);
+      const monto = Number(item.monto) || 0;
+      const idx = meses.findIndex(m => m.anio === fecha.getFullYear() && m.mes === (fecha.getMonth() + 1));
+      if (idx !== -1) aporteDirectoresPorMes[idx] += monto;
+    }
+
+    // --- Construir filas de Excel ---
+    const sheet = [];
+
+    // Cabecera ingresos
+    sheet.push(['INGRESOS ' + anioBase + '-' + (anioBase + 1), ...meses.map(m => m.nombre), 'ANUAL']);
+
+    // Ingresos por sindicatos (mensual + plenarias)
+    sindicatos.forEach((sindicato, i) => {
+      const fila = [sindicato];
+      meses.forEach(({ nombre, anio }, idx) => {
+        const val = (ingresosMensualesPorSind[sindicato]?.[idx] || 0) + (ingresosPlenariasPorSind[sindicato]?.[idx] || 0);
+        fila.push(val);
+      });
+      // fórmula anual
+      fila.push({ f: SUM(B${i + 2}:M${i + 2}) });
+      sheet.push(fila);
+    });
+
+    // Total Ingreso Sindicatos fila
+    const filaTotalSind = ['INGRESO SINDICATOS'];
+    for (let col = 2; col <= 13; col++) {
+      filaTotalSind.push({ f: SUM(${String.fromCharCode(64 + col)}2:${String.fromCharCode(64 + col)}${sindicatos.length + 1}) });
+    }
+    filaTotalSind.push({ f: SUM(N2:N${sindicatos.length + 1}) });
+    sheet.push(filaTotalSind);
+
+    // Otros ingresos por tipo
+    Object.entries(otrosIngresosPorTipo).forEach(([tipo, valores], idx) => {
+      const fila = [tipo];
+      valores.forEach(val => fila.push(val));
+      // fórmula anual
+      fila.push({ f: SUM(B${sindicatos.length + 3 + idx}:M${sindicatos.length + 3 + idx}) });
+      sheet.push(fila);
+    });
+
+    // Aporte Directores fila
+    {
+      const fila = ['APORTE DIRECTORES', ...aporteDirectoresPorMes];
+      fila.push({ f: SUM(B${sheet.length + 1}:M${sheet.length + 1}) });
+      sheet.push(fila);
+    }
+
+    // Total ingresos generales fila
+    {
+      const startFila = 2;
+      const endFila = sheet.length;
+      const fila = ['TOTAL INGRESOS'];
+      for (let col = 2; col <= 13; col++) {
+        fila.push({ f: SUM(${String.fromCharCode(64 + col)}${startFila}:${String.fromCharCode(64 + col)}${endFila}) });
+      }
+      fila.push({ f: SUM(N${startFila}:N${endFila}) });
+      sheet.push(fila);
+    }
+
+    sheet.push([]); // fila vacía entre ingresos y gastos
+
+    // --- Construir gastos ---
+
+    // Cabecera gastos
+    sheet.push(['GASTOS ' + anioBase + '-' + (anioBase + 1), ...meses.map(m => m.nombre), 'ANUAL']);
+
+    // Gastos director por rubros
+    const rubrosDir = ['remuneracion', 'pasajes', 'colacion', 'metro', 'taxi_colectivo', 'hotel', 'reembolso'];
+    const gastosDirPorRubro = {};
+    rubrosDir.forEach(rubro => gastosDirPorRubro[rubro] = Array(12).fill(0));
+
+    for (const gasto of gastoDirectores) {
+      const fecha = new Date(gasto.fecha);
+      const idx = meses.findIndex(m => m.anio === fecha.getFullYear() && m.mes === (fecha.getMonth() + 1));
+      if (idx === -1) continue;
+      rubrosDir.forEach(rubro => {
+        gastosDirPorRubro[rubro][idx] += Number(gasto[rubro]) || 0;
+      });
+    }
+
+    // Agregar filas gastos director
+    rubrosDir.forEach((rubro, i) => {
+      const fila = [rubro.toUpperCase()];
+      gastosDirPorRubro[rubro].forEach(val => fila.push(val));
+      fila.push({ f: SUM(B${sheet.length + 1}:M${sheet.length + 1}) });
+      sheet.push(fila);
+    });
+
+    // Total gasto director fila
+    {
+      const start = sheet.length - rubrosDir.length + 1;
+      const end = sheet.length;
+      const fila = ['GASTO DIRECTOR'];
+      for (let col = 2; col <= 13; col++) {
+        fila.push({ f: SUM(${String.fromCharCode(64 + col)}${start}:${String.fromCharCode(64 + col)}${end}) });
+      }
+      fila.push({ f: SUM(N${start}:N${end}) });
+      sheet.push(fila);
+    }
+
+    // Gastos plenarias
+    const gastosPlenariasPorMes = Array(12).fill(0);
+    gastoPlenarias.forEach(gp => {
+      const fecha = new Date(gp.fecha);
+      const idx = meses.findIndex(m => m.anio === fecha.getFullYear() && m.mes === (fecha.getMonth() + 1));
+      if (idx !== -1) gastosPlenariasPorMes[idx] += Number(gp.costo_total) || 0;
+    });
+    {
+      const fila = ['GASTO PLENARIAS', ...gastosPlenariasPorMes];
+      fila.push({ f: SUM(B${sheet.length + 1}:M${sheet.length + 1}) });
+      sheet.push(fila);
+    }
+
+    // Gastos gestion
+    const gastosGestionPorMes = Array(12).fill(0);
+    gastoGestion.forEach(gg => {
+      const fecha = new Date(gg.fecha);
+      const idx = meses.findIndex(m => m.anio === fecha.getFullYear() && m.mes === (fecha.getMonth() + 1));
+      if (idx !== -1) gastosGestionPorMes[idx] += Number(gg.total) || 0;
+    });
+    {
+      const fila = ['GASTO GESTION', ...gastosGestionPorMes];
+      fila.push({ f: SUM(B${sheet.length + 1}:M${sheet.length + 1}) });
+      sheet.push(fila);
+    }
+
+    // Gastos comisiones
+    const gastosComisionesPorMes = Array(12).fill(0);
+    gastoComisiones.forEach(gc => {
+      const fecha = new Date(gc.fecha_registro);
+      const idx = meses.findIndex(m => m.anio === fecha.getFullYear() && m.mes === (fecha.getMonth() + 1));
+      if (idx !== -1) gastosComisionesPorMes[idx] += Number(gc.monto) || 0;
+    });
+    {
+      const fila = ['GASTO COMISIONES', ...gastosComisionesPorMes];
+      fila.push({ f: SUM(B${sheet.length + 1}:M${sheet.length + 1}) });
+      sheet.push(fila);
+    }
+
+    // Otros gastos por descripción
+    const gastosOtrosPorDesc = {};
+    gastoOtros.forEach(go => {
+      const fecha = new Date(go.fecha_registro);
+      const desc = go.descripcion || 'SIN DESCRIPCIÓN';
+      const monto = Number(go.monto) || 0;
+      if (!gastosOtrosPorDesc[desc]) gastosOtrosPorDesc[desc] = Array(12).fill(0);
+      const idx = meses.findIndex(m => m.anio === fecha.getFullYear() && m.mes === (fecha.getMonth() + 1));
+      if (idx !== -1) gastosOtrosPorDesc[desc][idx] += monto;
+    });
+    Object.entries(gastosOtrosPorDesc).forEach(([desc, valores], i) => {
+      const fila = [desc.toUpperCase()];
+      valores.forEach(v => fila.push(v));
+      fila.push({ f: SUM(B${sheet.length + 1}:M${sheet.length + 1}) });
+      sheet.push(fila);
+    });
+
+    // Total gastos fila
+    {
+      const start = sheet.findIndex(r => r[0] === 'GASTO DIRECTOR') + 1;
+      const end = sheet.length;
+      const fila = ['TOTAL GASTOS'];
+      for (let col = 2; col <= 13; col++) {
+        fila.push({ f: SUM(${String.fromCharCode(64 + col)}${start}:${String.fromCharCode(64 + col)}${end}) });
+      }
+      fila.push({ f: SUM(N${start}:N${end}) });
+      sheet.push(fila);
+    }
+
+    // Ahorro o déficit fila (TOTAL INGRESOS - TOTAL GASTOS)
+    {
+      const fila = ['AHORRO O DÉFICIT'];
+      for (let col = 2; col <= 13; col++) {
+        fila.push({ f: B${sheet.length} - B${sheet.length - 1}.replace(/B/g, String.fromCharCode(64 + col)) });
+      }
+      fila.push({ f: N${sheet.length} - N${sheet.length - 1} });
+      sheet.push(fila);
+    }
+
+    // Construir libro y hoja
     const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(sheet);
+    XLSX.utils.book_append_sheet(wb, ws, 'Resumen Tesorería');
 
-    // — Resumen Tesorería —
-    const s1 = [];
-    s1.push([`INGRESOS ${anioBase}-${anioBase+1}`, ...meses, 'ANUAL']);
-    sindicatos.forEach((s,i) => {
-      const vals = meses.map((_,j)=>
-        (ingM[s]?.[j]||0)+(ingP[s]?.[j]||0)
-      );
-      s1.push([s, ...vals, { f:`SUM(B${i+2}:M${i+2})` }]);
-    });
-    s1.push([
-      'INGRESO SINDICATOS',
-      ...meses.map((_,j)=>({ f:`SUM(${String.fromCharCode(66+j)}2:${String.fromCharCode(66+j)}${1+sindicatos.length})` })),
-      {f:`SUM(N2:N${1+sindicatos.length})`}
-    ]);
-    let r = 2 + sindicatos.length + 1;
-    Object.entries(otros).forEach(([t,arr])=>{
-      s1.push([t, ...arr, {f:`SUM(B${r}:M${r})`}]);
-      r++;
-    });
-    s1.push(['APORTE DIRECTORES', ...aporte, {f:`SUM(B${r}:M${r})`}]); r++;
-    s1.push([
-      'TOTAL INGRESOS',
-      ...meses.map((_,j)=>({ f:`SUM(${String.fromCharCode(66+j)}2:${String.fromCharCode(66+j)}${r-1})` })),
-      {f:`SUM(N2:N${r-1})`}
-    ]);
-    r+=2;
-    s1.push([`GASTOS ${anioBase}-${anioBase+1}`, ...meses, 'ANUAL']);
-    ['remuneracion','pasajes','colacion','metro','taxi_colectivo','hotel','reembolso']
-      .forEach(_=>{
-        s1.push([_.toUpperCase(), ...gDirA, {f:`SUM(B${r}:M${r})`}]);
-        r++;
-      });
-    [['GASTO PLENARIAS',gPlA],['GASTO GESTION',gGeA],['GASTO COMISIONES',gCoA]]
-      .forEach(([t,a])=>{
-        s1.push([t, ...a, {f:`SUM(B${r}:M${r})`}]);
-        r++;
-      });
-    Object.entries(gOtA).forEach(([d,arr])=>{
-      s1.push([d, ...arr, {f:`SUM(B${r}:M${r})`}]);
-      r++;
-    });
-    s1.push([
-      'TOTAL GASTOS',
-      ...meses.map((_,j)=>({ f:`SUM(${String.fromCharCode(66+j)}${r-Object.keys(gOtA).length-4}:${String.fromCharCode(66+j)}${r-1})` })),
-      {f:`SUM(N${r-Object.keys(gOtA).length-4}:N${r-1})`}
-    ]);
-    r++;
-    s1.push([
-      'AHORRO O DÉFICIT',
-      ...meses.map((_,j)=>({ f:`${String.fromCharCode(66+j)}${r-1}-${String.fromCharCode(66+j)}${r-2}` })),
-      {f:`N${r-1}-N${r-2}`}
-    ]);
+    // Descargar archivo
+    XLSX.writeFile(wb, Informe_Tesoreria_${anioBase}-${anioBase + 1}.xlsx);
 
-    const ws1 = XLSX.utils.aoa_to_sheet(s1);
-    XLSX.utils.book_append_sheet(wb, ws1, 'Resumen Tesorería');
-
-    // — Plan Ingresos y Gastos —
-    const s2 = [];
-    s2.push(['PLAN INGRESOS','','','','','','']);
-    s2.push(['tipo','eventos','participantes','valor','total_anual','Actual','% Cumpl.']);
-    s2.push([
-      'cuota_sindicato', ingMen.length, 730,
-      ingMen[0]?.cuota||0, {f:'B3*C3*D3'}, '', {f:'IF(E3=0,0,F3/E3)'}
-    ]);
-    s2.push([
-      'plenarias', ingPlen.length, 25,
-      ingPlen[0]?.cuota||0, {f:'B4*C4*D4'}, '', {f:'IF(E4=0,0,F4/E4)'}
-    ]);
-    s2.push([
-      'aporte_director', aporteDir.length, 25,
-      aporteDir[0]?.monto||0, {f:'B5*C5*D5'}, '', {f:'IF(E5=0,0,F5/E5)'}
-    ]);
-    s2.push(['otros',0,0,0,{f:'B6*C6*D6'},'',{f:'IF(E6=0,0,F6/E6)'}]);
-    s2.push(['Total','','','',{f:'SUM(E3:E6)'},{f:'SUM(F3:F6)'},{f:'IF(E7=0,0,F7/E7)'}]);
-    s2.push([]);
-    s2.push(['PLAN GASTOS','','','','','','']);
-    s2.push(['tipo','eventos','participantes','valor','total_anual','Actual','% Cumpl.']);
-    s2.push(['remuneracion_directores', gDir.length,5,50000,{f:'B10*C10*D10'},'',{f:'IF(E10=0,0,F10/E10)'}]);
-    s2.push(['viaticos',8,5,20000,{f:'B11*C11*D11'},'',{f:'IF(E11=0,0,F11/E11)'}]);
-    s2.push(['plenarias', gPlen.length,25,15000,{f:'B12*C12*D12'},'',{f:'IF(E12=0,0,F12/E12)'}]);
-    s2.push(['gestion',1,1,300000,{f:'B13*C13*D13'},'',{f:'IF(E13=0,0,F13/E13)'}]);
-    s2.push(['comisiones', gCom.length,3,10000,{f:'B14*C14*D14'},'',{f:'IF(E14=0,0,F14/E14)'}]);
-    s2.push(['Total','','','',{f:'SUM(E10:E14)'},{f:'SUM(F10:F14)'},{f:'IF(E15=0,0,F15/E15)'}]);
-
-    const ws2 = XLSX.utils.aoa_to_sheet(s2);
-    XLSX.utils.book_append_sheet(wb, ws2, 'Plan Ingresos y Gastos');
-
-    // 6) Descarga
-    XLSX.writeFile(wb, `Informe_Tesoreria_${anioBase}-${anioBase+1}.xlsx`);
-
-  } catch (e) {
-    alert('Error generando informe: '+e.message);
+  } catch (error) {
+    alert('Error generando informe: ' + error.message);
   } finally {
     btn.disabled = false;
     btn.textContent = '📊 Generar Informe Excel';

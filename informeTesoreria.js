@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient.js';
-import ExcelJS from 'https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js';
+import * as ExcelJS from 'https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js';
 
 window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnGenerarInforme').addEventListener('click', generarInformeExcel);
@@ -49,7 +49,6 @@ async function generarInformeExcel() {
     // Datos dinámicos para Plan Ingresos y Gastos
 
     // Ejemplo supuestos para participantes (puedes ajustar según tus datos reales)
-    // Aquí se asume cantidad fija, o extrae lógica si tienes tabla de participantes
     const participantesCuotaSindicato = 730; // o calcula dinámico si tienes dato
     const participantesPlenarias = 25;
     const participantesDirectores = 25;
@@ -61,16 +60,14 @@ async function generarInformeExcel() {
     const valorCuota = ingresosMensuales.length > 0 ? promedio(ingresosMensuales.map(i => i.cuota)) : 1000;
     const valorPlenaria = ingresoPlenarias.length > 0 ? promedio(ingresoPlenarias.map(i => i.cuota)) : 20000;
     const valorAporteDirector = aporteDirectores.length > 0 ? promedio(aporteDirectores.map(a => a.monto)) : 1000;
-    // Para gastos valor fijo o promedio
     const valorGastoDirector = gastoDirectores.length > 0 ? promedio(gastoDirectores.map(g => g.monto)) : 50000;
     const valorGastoPlenaria = gastoPlenarias.length > 0 ? promedio(gastoPlenarias.map(g => g.monto)) : 15000;
     const valorGastoGestion = gastoGestion.length > 0 ? promedio(gastoGestion.map(g => g.monto)) : 300000;
     const valorGastoComisiones = gastoComisiones.length > 0 ? promedio(gastoComisiones.map(g => g.monto)) : 10000;
 
-    // Función auxiliar para promedio
     function promedio(arr) {
       if (!arr.length) return 0;
-      return arr.reduce((a,b) => a+b, 0) / arr.length;
+      return arr.reduce((a, b) => a + b, 0) / arr.length;
     }
 
     // --- Crear Workbook ---
@@ -221,32 +218,11 @@ async function generarInformeExcel() {
     const meses = ['ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC', 'ENE', 'FEB', 'MAR'];
     sheetResumen.getRow(1).values = ['Mes', 'Ingresos', 'Gastos'];
 
-    // Para cada mes, sumamos ingresos y gastos reales (por mes)
-    // NOTA: Ajusta según estructura y nombres reales en Supabase
-
+    // Para simplificar, se reparte total anual / 12 en cada mes (ajustar si tienes datos mensuales reales)
     for (let i = 0; i < meses.length; i++) {
       const mes = meses[i];
       const fila = i + 2;
-
-      // Suponiendo año base: mes ABR = 4, MAY=5 ... MAR=3 del año siguiente
-      let mesNum = (i + 4) <= 12 ? (i + 4) : (i + 4 - 12);
-      let anioMes = (i + 4) <= 12 ? anioBase : anioBase + 1;
-
-      // Sumar ingresos_mensuales para mes y año
-      // (filtra por mes y año)
-      const ingresosMes = ingresosMensuales
-        .filter(d => {
-          const fecha = new Date(d.año, mesNum - 1);
-          return (d.año === anioMes);
-        });
-
-      // Sumar gastos (combinar todas las tablas gastoX y filtrar por mes)
-      // Como no tenemos campos mes en gastos, simplificamos con suma total / 12 para ejemplo
-      // Mejorar aquí si tienes campo mes o fecha para filtro
-
       sheetResumen.getCell(`A${fila}`).value = mes;
-
-      // Fórmulas ejemplo para distribuir total anual / 12
       sheetResumen.getCell(`B${fila}`).value = { formula: `${sheetPlan.getCell(`E${row - 7}`).address}/12` };
       sheetResumen.getCell(`C${fila}`).value = { formula: `${sheetPlan.getCell(`E${row}`).address}/12` };
     }

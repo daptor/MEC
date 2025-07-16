@@ -17,7 +17,6 @@ async function generarInformeExcel() {
   btn.textContent = 'Generando...';
 
   try {
-    // Meses desde ABR anioBase hasta MAR anioBase+1
     const meses = [
       { nombre: 'ABR', mes: 4, anio: anioBase },
       { nombre: 'MAY', mes: 5, anio: anioBase },
@@ -34,7 +33,6 @@ async function generarInformeExcel() {
     ];
 
     // === Cargar datos desde Supabase ===
-    // Ajusta los nombres y filtros según tus tablas y campos
     const [
       { data: ingresosMensuales, error: errIM },
       { data: ingresosPlenarias, error: errIP },
@@ -57,14 +55,11 @@ async function generarInformeExcel() {
       supabase.from('gasto_real_otros').select('*')
     ]);
 
-    // Manejo de errores
     if (errIM || errIP || errOI || errAD || errGD || errGP || errGG || errGC || errGO) {
       throw new Error('Error al obtener datos desde Supabase.');
     }
 
-    // === Funciones auxiliares para acumular datos ===
-
-    // Acumula monto por sindicato, mes y año en arreglo 12 meses
+    // --- Auxiliares para acumular datos ---
     function acumularPorSindicato(arr, campoSindicato, campoMesNombre, campoAnio, campoMonto) {
       const res = {};
       for (const item of arr) {
@@ -79,7 +74,6 @@ async function generarInformeExcel() {
       return res;
     }
 
-    // Acumula monto por tipo, mes num y anio en arreglo 12 meses
     function acumularPorTipo(arr, campoTipo, campoMes, campoAnio, campoMonto) {
       const res = {};
       for (const item of arr) {
@@ -94,7 +88,6 @@ async function generarInformeExcel() {
       return res;
     }
 
-    // Acumula monto por mes a partir de fechas
     function acumularPorMesFecha(arr, campoFecha, campoMonto) {
       const res = Array(12).fill(0);
       for (const item of arr) {
@@ -106,7 +99,7 @@ async function generarInformeExcel() {
       return res;
     }
 
-    // === Acumular ingresos ===
+    // === Acumular datos ===
     const ingresosMensualesPorSind = acumularPorSindicato(ingresosMensuales, 'nombre_sindicato', 'mes_nombre', 'año', 'cuota');
     const ingresosPlenariasPorSind = acumularPorSindicato(ingresosPlenarias, 'nombre_sindicato', 'mes_nombre', 'año', 'cuota');
 
@@ -116,59 +109,157 @@ async function generarInformeExcel() {
 
     const aporteDirectoresPorMes = acumularPorMesFecha(aporteDirectores, 'fecha', 'monto');
 
-    // === Construir matriz de datos para SheetJS ===
+    // --- Crear hoja ---
     const sheet = [];
 
-    // --- INGRESOS ---
-    sheet.push(['INGRESOS ' + anioBase + '-' + (anioBase + 1), ...meses.map(m => m.nombre), 'ANUAL']);
+    // --- Estilos ---
+    const headerStyle = {
+      font: { bold: true, color: { rgb: "FFFFFF" } },
+      fill: { patternType: "solid", fgColor: { rgb: "0070C0" } },
+      alignment: { horizontal: "center", vertical: "center" },
+      border: {
+        top: { style: "thin", color: { rgb: "000000" } },
+        bottom: { style: "thin", color: { rgb: "000000" } },
+        left: { style: "thin", color: { rgb: "000000" } },
+        right: { style: "thin", color: { rgb: "000000" } }
+      }
+    };
+
+    const subtotalStyle = {
+      font: { bold: true, color: { rgb: "000000" } },
+      fill: { patternType: "solid", fgColor: { rgb: "D9E1F2" } },
+      alignment: { horizontal: "right", vertical: "center" },
+      border: {
+        top: { style: "thin", color: { rgb: "000000" } },
+        bottom: { style: "thin", color: { rgb: "000000" } },
+        left: { style: "thin", color: { rgb: "000000" } },
+        right: { style: "thin", color: { rgb: "000000" } }
+      }
+    };
+
+    const totalStyle = {
+      font: { bold: true, color: { rgb: "FFFFFF" } },
+      fill: { patternType: "solid", fgColor: { rgb: "002060" } },
+      alignment: { horizontal: "right", vertical: "center" },
+      border: {
+        top: { style: "medium", color: { rgb: "000000" } },
+        bottom: { style: "medium", color: { rgb: "000000" } },
+        left: { style: "medium", color: { rgb: "000000" } },
+        right: { style: "medium", color: { rgb: "000000" } }
+      }
+    };
+
+    const moneyStyle = {
+      numFmt: '"$"#,##0.00;[Red]\-"$"#,##0.00',
+      alignment: { horizontal: "right", vertical: "center" },
+      border: {
+        top: { style: "thin", color: { rgb: "000000" } },
+        bottom: { style: "thin", color: { rgb: "000000" } },
+        left: { style: "thin", color: { rgb: "000000" } },
+        right: { style: "thin", color: { rgb: "000000" } }
+      }
+    };
+
+    // === Función para convertir AOA con estilos a hoja XLSX ===
+    function aoaToSheetWithStyles(aoa, styleMap) {
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      for (let R = 0; R < aoa.length; ++R) {
+        for (let C = 0; C < aoa[R].length; ++C) {
+          const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+          const cell = ws[cellAddress];
+          if (!cell) continue;
+          // Aplicar estilo según map
+          if (styleMap[R] && styleMap[R][C]) {
+            cell.s = styleMap[R][C];
+          }
+          // Si es fórmula, mantener
+          if (typeof cell.v === 'number' && !cell.f) {
+            cell.t = 'n';
+          }
+        }
+      }
+      return ws;
+    }
+
+    // --- Construir matriz con valores y estilos paralelos ---
+    const data = [];
+    const styles = [];
+
+    // Encabezado INGRESOS
+    data.push(['INGRESOS ' + anioBase + '-' + (anioBase + 1), ...meses.map(m => m.nombre), 'ANUAL']);
+    styles.push([headerStyle, ...Array(meses.length + 1).fill(headerStyle)]);
 
     // Ingresos por sindicato
     sindicatos.forEach((sindicato, i) => {
       const fila = [sindicato];
+      const estiloFila = [subtotalStyle];
       meses.forEach((m, idx) => {
         const val = (ingresosMensualesPorSind[sindicato]?.[idx] || 0) + (ingresosPlenariasPorSind[sindicato]?.[idx] || 0);
         fila.push(val);
+        estiloFila.push(moneyStyle);
       });
-      fila.push({ f: `SUM(B${i + 2}:M${i + 2})` }); // anual
-      sheet.push(fila);
+      fila.push({ f: `SUM(B${i + 2}:M${i + 2})` });
+      estiloFila.push(moneyStyle);
+      data.push(fila);
+      styles.push(estiloFila);
     });
 
     // Total ingreso sindicatos
     const filaTotalSind = ['INGRESO SINDICATOS'];
+    const estiloTotalSind = [totalStyle];
     for (let col = 2; col <= 13; col++) {
       filaTotalSind.push({ f: `SUM(${String.fromCharCode(64 + col)}2:${String.fromCharCode(64 + col)}${sindicatos.length + 1})` });
+      estiloTotalSind.push(moneyStyle);
     }
     filaTotalSind.push({ f: `SUM(N2:N${sindicatos.length + 1})` });
-    sheet.push(filaTotalSind);
+    estiloTotalSind.push(moneyStyle);
+    data.push(filaTotalSind);
+    styles.push(estiloTotalSind);
 
     // Otros ingresos por tipo
-    const startOtros = sheet.length + 1;
+    const startOtros = data.length + 1;
     Object.entries(otrosIngresosPorTipo).forEach(([tipo, valores], idx) => {
       const fila = [tipo];
-      valores.forEach(v => fila.push(v));
+      const estiloFila = [subtotalStyle];
+      valores.forEach(v => {
+        fila.push(v);
+        estiloFila.push(moneyStyle);
+      });
       fila.push({ f: `SUM(B${startOtros + idx}:M${startOtros + idx})` });
-      sheet.push(fila);
+      estiloFila.push(moneyStyle);
+      data.push(fila);
+      styles.push(estiloFila);
     });
 
     // Aporte directores fila
     const filaAporte = ['APORTE DIRECTORES', ...aporteDirectoresPorMes];
-    filaAporte.push({ f: `SUM(B${sheet.length + 1}:M${sheet.length + 1})` });
-    sheet.push(filaAporte);
+    const estiloAporte = [subtotalStyle];
+    aporteDirectoresPorMes.forEach(() => estiloAporte.push(moneyStyle));
+    filaAporte.push({ f: `SUM(B${data.length + 1}:M${data.length + 1})` });
+    estiloAporte.push(moneyStyle);
+    data.push(filaAporte);
+    styles.push(estiloAporte);
 
     // Total ingresos generales
     const startIngreso = 2;
-    const endIngreso = sheet.length;
+    const endIngreso = data.length;
     const filaTotalIngreso = ['TOTAL INGRESOS'];
+    const estiloTotalIngreso = [totalStyle];
     for (let col = 2; col <= 13; col++) {
       filaTotalIngreso.push({ f: `SUM(${String.fromCharCode(64 + col)}${startIngreso}:${String.fromCharCode(64 + col)}${endIngreso})` });
+      estiloTotalIngreso.push(moneyStyle);
     }
     filaTotalIngreso.push({ f: `SUM(N${startIngreso}:N${endIngreso})` });
-    sheet.push(filaTotalIngreso);
+    estiloTotalIngreso.push(moneyStyle);
+    data.push(filaTotalIngreso);
+    styles.push(estiloTotalIngreso);
 
-    sheet.push([]); // fila vacía entre ingresos y gastos
+    data.push([]);
+    styles.push([]);
 
     // --- GASTOS ---
-    sheet.push(['GASTOS ' + anioBase + '-' + (anioBase + 1), ...meses.map(m => m.nombre), 'ANUAL']);
+    data.push(['GASTOS ' + anioBase + '-' + (anioBase + 1), ...meses.map(m => m.nombre), 'ANUAL']);
+    styles.push([headerStyle, ...Array(meses.length + 1).fill(headerStyle)]);
 
     // Gastos directores por rubro
     const rubrosDir = ['remuneracion', 'pasajes', 'colacion', 'metro', 'taxi_colectivo', 'hotel', 'reembolso'];
@@ -186,38 +277,60 @@ async function generarInformeExcel() {
 
     rubrosDir.forEach((rubro, i) => {
       const fila = [rubro.toUpperCase()];
-      gastosDirPorRubro[rubro].forEach(val => fila.push(val));
-      fila.push({ f: `SUM(B${sheet.length + 1}:M${sheet.length + 1})` });
-      sheet.push(fila);
+      const estiloFila = [subtotalStyle];
+      gastosDirPorRubro[rubro].forEach(val => {
+        fila.push(val);
+        estiloFila.push(moneyStyle);
+      });
+      fila.push({ f: `SUM(B${data.length + 1}:M${data.length + 1})` });
+      estiloFila.push(moneyStyle);
+      data.push(fila);
+      styles.push(estiloFila);
     });
 
     // Total gasto director
-    const startGD = sheet.length - rubrosDir.length + 1;
-    const endGD = sheet.length;
+    const startGD = data.length - rubrosDir.length + 1;
+    const endGD = data.length;
     const filaTotalGD = ['GASTO DIRECTOR'];
+    const estiloTotalGD = [totalStyle];
     for (let col = 2; col <= 13; col++) {
       filaTotalGD.push({ f: `SUM(${String.fromCharCode(64 + col)}${startGD}:${String.fromCharCode(64 + col)}${endGD})` });
+      estiloTotalGD.push(moneyStyle);
     }
     filaTotalGD.push({ f: `SUM(N${startGD}:N${endGD})` });
-    sheet.push(filaTotalGD);
+    estiloTotalGD.push(moneyStyle);
+    data.push(filaTotalGD);
+    styles.push(estiloTotalGD);
 
     // Gastos plenarias
     const gastosPlenariasPorMes = acumularPorMesFecha(gastoPlenarias, 'fecha', 'costo_total');
     const filaGP = ['GASTO PLENARIAS', ...gastosPlenariasPorMes];
-    filaGP.push({ f: `SUM(B${sheet.length + 1}:M${sheet.length + 1})` });
-    sheet.push(filaGP);
+    const estiloGP = [subtotalStyle];
+    gastosPlenariasPorMes.forEach(() => estiloGP.push(moneyStyle));
+    filaGP.push({ f: `SUM(B${data.length + 1}:M${data.length + 1})` });
+    estiloGP.push(moneyStyle);
+    data.push(filaGP);
+    styles.push(estiloGP);
 
     // Gastos gestion
     const gastosGestionPorMes = acumularPorMesFecha(gastoGestion, 'fecha', 'total');
     const filaGG = ['GASTO GESTION', ...gastosGestionPorMes];
-    filaGG.push({ f: `SUM(B${sheet.length + 1}:M${sheet.length + 1})` });
-    sheet.push(filaGG);
+    const estiloGG = [subtotalStyle];
+    gastosGestionPorMes.forEach(() => estiloGG.push(moneyStyle));
+    filaGG.push({ f: `SUM(B${data.length + 1}:M${data.length + 1})` });
+    estiloGG.push(moneyStyle);
+    data.push(filaGG);
+    styles.push(estiloGG);
 
     // Gastos comisiones
     const gastosComisionesPorMes = acumularPorMesFecha(gastoComisiones, 'fecha_registro', 'monto');
     const filaGC = ['GASTO COMISIONES', ...gastosComisionesPorMes];
-    filaGC.push({ f: `SUM(B${sheet.length + 1}:M${sheet.length + 1})` });
-    sheet.push(filaGC);
+    const estiloGC = [subtotalStyle];
+    gastosComisionesPorMes.forEach(() => estiloGC.push(moneyStyle));
+    filaGC.push({ f: `SUM(B${data.length + 1}:M${data.length + 1})` });
+    estiloGC.push(moneyStyle);
+    data.push(filaGC);
+    styles.push(estiloGC);
 
     // Otros gastos por descripción
     const gastosOtrosPorDesc = {};
@@ -231,39 +344,60 @@ async function generarInformeExcel() {
     }
     Object.entries(gastosOtrosPorDesc).forEach(([desc, valores]) => {
       const fila = [desc.toUpperCase()];
-      valores.forEach(v => fila.push(v));
-      fila.push({ f: `SUM(B${sheet.length + 1}:M${sheet.length + 1})` });
-      sheet.push(fila);
+      const estiloFila = [subtotalStyle];
+      valores.forEach(v => {
+        fila.push(v);
+        estiloFila.push(moneyStyle);
+      });
+      fila.push({ f: `SUM(B${data.length + 1}:M${data.length + 1})` });
+      estiloFila.push(moneyStyle);
+      data.push(fila);
+      styles.push(estiloFila);
     });
 
     // Total gastos
-    const startGastos = sheet.findIndex(r => r[0] === 'GASTO DIRECTOR') + 1;
-    const endGastos = sheet.length;
+    const startGastos = data.findIndex(r => r[0] === 'GASTO DIRECTOR') + 1;
+    const endGastos = data.length;
     const filaTotalGastos = ['TOTAL GASTOS'];
+    const estiloTotalGastos = [totalStyle];
     for (let col = 2; col <= 13; col++) {
       filaTotalGastos.push({ f: `SUM(${String.fromCharCode(64 + col)}${startGastos}:${String.fromCharCode(64 + col)}${endGastos})` });
+      estiloTotalGastos.push(moneyStyle);
     }
     filaTotalGastos.push({ f: `SUM(N${startGastos}:N${endGastos})` });
-    sheet.push(filaTotalGastos);
+    estiloTotalGastos.push(moneyStyle);
+    data.push(filaTotalGastos);
+    styles.push(estiloTotalGastos);
 
-    // Ahorro o déficit (TOTAL INGRESOS - TOTAL GASTOS)
+    // Ahorro o déficit
     const filaAhorro = ['AHORRO O DÉFICIT'];
+    const estiloAhorro = [totalStyle];
+    const filaTotalIngresoNum = data.length - 1; // total ingresos antes de gastos
+    const filaTotalGastosNum = data.length;
     for (let col = 2; col <= 13; col++) {
       const colLetra = String.fromCharCode(64 + col);
-      // La fila total ingresos está antes que total gastos
-      const filaTotalIngresoNum = sheet.length - 2; // asumiendo última fila total gastos +1 y ahorro al final
-      const filaTotalGastosNum = sheet.length - 1;
       filaAhorro.push({ f: `${colLetra}${filaTotalIngresoNum} - ${colLetra}${filaTotalGastosNum}` });
+      estiloAhorro.push(moneyStyle);
     }
-    filaAhorro.push({ f: `N${sheet.length - 1} - N${sheet.length}` });
-    sheet.push(filaAhorro);
+    filaAhorro.push({ f: `N${filaTotalIngresoNum} - N${filaTotalGastosNum}` });
+    estiloAhorro.push(moneyStyle);
+    data.push(filaAhorro);
+    styles.push(estiloAhorro);
 
-    // Crear libro y hoja
+    // Convertir a hoja con estilos
+    const ws = aoaToSheetWithStyles(data, styles);
+
+    // Anchos de columna (nombre sindicato / concepto + 12 meses + anual)
+    ws['!cols'] = [{ wch: 25 }, ...Array(12).fill({ wch: 12 }), { wch: 14 }];
+
+    // Fila alto para header
+    ws['!rows'] = [{ hpt: 24 }];
+
+    // Crear libro
     const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet(sheet);
     XLSX.utils.book_append_sheet(wb, ws, 'Resumen Tesorería');
 
-    // Descargar archivo
+    // Descargar
     XLSX.writeFile(wb, `Informe_Tesoreria_${anioBase}-${anioBase + 1}.xlsx`);
 
   } catch (error) {

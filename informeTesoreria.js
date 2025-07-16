@@ -1,6 +1,5 @@
-// ExcelJS debe cargarse desde el HTML (no usar import aquí)
-const ExcelJS = window.ExcelJS;
 import { supabase } from './supabaseClient.js';
+import ExcelJS from 'https://cdn.jsdelivr.net/npm/exceljs@4.3.0/+esm';
 
 window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnGenerarInforme').addEventListener('click', generarInformeExcel);
@@ -20,7 +19,7 @@ async function generarInformeExcel() {
   try {
     const meses = ['ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC', 'ENE', 'FEB', 'MAR'];
 
-    // === CARGAR DATOS DESDE SUPABASE ===
+    // === DATOS REALES DESDE SUPABASE ===
     const [
       { data: ingresosMensuales },
       { data: ingresoPlenarias },
@@ -41,11 +40,12 @@ async function generarInformeExcel() {
 
     const workbook = new ExcelJS.Workbook();
 
-    // === HOJA 1: PLAN INGRESOS Y GASTOS ===
+    // === HOJA 1: Plan Ingresos y Gastos ===
     const hojaPlan = workbook.addWorksheet('Plan Ingresos y Gastos');
     hojaPlan.getRow(1).values = ['PLAN INGRESOS'];
     hojaPlan.mergeCells('A1:G1');
     hojaPlan.getRow(2).values = ['tipo', 'eventos', 'participantes', 'valor', 'total_anual', 'Actual', '% Cumpl.'];
+
     let fila = 3;
 
     hojaPlan.getRow(fila++).values = [
@@ -54,16 +54,17 @@ async function generarInformeExcel() {
     ];
     hojaPlan.getRow(fila++).values = [
       'plenarias', ingresoPlenarias.length, 25, 20000,
-      { formula: `B4*C4*D4` }, null, { formula: `IF(E4=0,0,F4/E4)` }
+      { formula: 'B4*C4*D4' }, null, { formula: 'IF(E4=0,0,F4/E4)' }
     ];
     hojaPlan.getRow(fila++).values = [
       'aporte_director', aporteDirectores.length, 25, 1000,
-      { formula: `B5*C5*D5` }, null, { formula: `IF(E5=0,0,F5/E5)` }
+      { formula: 'B5*C5*D5' }, null, { formula: 'IF(E5=0,0,F5/E5)' }
     ];
     hojaPlan.getRow(fila++).values = [
       'otros', 0, 0, 0,
-      { formula: `B6*C6*D6` }, null, { formula: `IF(E6=0,0,F6/E6)` }
+      { formula: 'B6*C6*D6' }, null, { formula: 'IF(E6=0,0,F6/E6)' }
     ];
+
     hojaPlan.getRow(fila).values = [
       'Total', '', '', '',
       { formula: 'SUM(E3:E6)' },
@@ -103,7 +104,7 @@ async function generarInformeExcel() {
       { formula: 'IF(E15=0,0,F15/E15)' }
     ];
 
-    // === HOJA 2: RESUMEN TESORERÍA ===
+    // === HOJA 2: Resumen Tesorería mensual por sindicato ===
     const hojaResumen = workbook.addWorksheet('Resumen Tesorería');
     hojaResumen.addRow(['SINDICATO', ...meses, 'TOTAL']);
 
@@ -123,7 +124,7 @@ async function generarInformeExcel() {
       hojaResumen.addRow(fila);
     });
 
-    // === DESCARGA DEL ARCHIVO ===
+    // === DESCARGA ===
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'

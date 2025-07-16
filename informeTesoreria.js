@@ -1,252 +1,143 @@
 import { supabase } from './supabaseClient.js';
-import * as XLSX from 'https://cdn.sheetjs.com/xlsx-0.20.0/package/xlsx.mjs';
+import ExcelJS from 'https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js';
 
 window.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('btnGenerarInforme')?.addEventListener('click', generarInformeExcel);
+  document.getElementById('btnGenerarInforme').addEventListener('click', generarInformeExcel);
 });
 
 async function generarInformeExcel() {
-  const input = document.getElementById('informe-anio-base');
-  const anioBase = parseInt(input.value);
-  if (isNaN(anioBase)) return alert('Año inválido');
+  const anioBase = parseInt(document.getElementById('informe-anio-base').value, 10);
+  if (isNaN(anioBase)) {
+    alert('Año inválido');
+    return;
+  }
 
   const btn = document.getElementById('btnGenerarInforme');
   btn.disabled = true;
   btn.textContent = 'Generando...';
 
-  const meses = [
-    { nombre: 'ABR', num: 4, anio: anioBase },
-    { nombre: 'MAY', num: 5, anio: anioBase },
-    { nombre: 'JUN', num: 6, anio: anioBase },
-    { nombre: 'JUL', num: 7, anio: anioBase },
-    { nombre: 'AGO', num: 8, anio: anioBase },
-    { nombre: 'SEP', num: 9, anio: anioBase },
-    { nombre: 'OCT', num: 10, anio: anioBase },
-    { nombre: 'NOV', num: 11, anio: anioBase },
-    { nombre: 'DIC', num: 12, anio: anioBase },
-    { nombre: 'ENE', num: 1, anio: anioBase + 1 },
-    { nombre: 'FEB', num: 2, anio: anioBase + 1 },
-    { nombre: 'MAR', num: 3, anio: anioBase + 1 }
-  ];
-
   try {
-    // Carga todos los datos reales desde Supabase
+    const meses = ['ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC', 'ENE', 'FEB', 'MAR'];
+
+    // === CARGAR DATOS DESDE SUPABASE ===
     const [
-      { data: planIngresos },
-      { data: planGCom }, { data: planGGest }, { data: planGPlen },
-      { data: planGRem }, { data: planGVia },
-      { data: ingresoPlen }, { data: ingresoMens },
-      { data: otrosIngr }, { data: aporteDir },
-      { data: gdirect }, { data: gplen }, { data: ggest },
-      { data: gcom }, { data: gotros }
+      { data: ingresosMensuales },
+      { data: ingresoPlenarias },
+      { data: aporteDirectores },
+      { data: gastoDirectores },
+      { data: gastoPlenarias },
+      { data: gastoGestion },
+      { data: gastoComisiones }
     ] = await Promise.all([
-      supabase.from('plan_ingresos').select('*').eq('año', anioBase),
-      supabase.from('plan_gastos_comisiones').select('*').eq('periodo', `${anioBase}`),
-      supabase.from('plan_gastos_gestion').select('*').eq('periodo', `${anioBase}`),
-      supabase.from('plan_gastos_plenarias').select('*').eq('periodo', `${anioBase}`),
-      supabase.from('plan_gastos_remuneracion').select('*').eq('periodo', `${anioBase}`),
-      supabase.from('plan_gastos_viaticos').select('*').eq('periodo', `${anioBase}`),
-      supabase.from('ingreso_plenarias').select('año, mes_nombre, cuota, nombre_sindicato').gte('año', anioBase).lte('año', anioBase + 1),
-      supabase.from('ingresos_mensuales').select('año, mes_nombre, cuota, nombre_sindicato').gte('año', anioBase).lte('año', anioBase + 1),
-      supabase.from('otros_ingresos').select('anio, mes, monto, tipo_ingreso').eq('anio', anioBase),
-      supabase.from('aporte_director').select('fecha, monto').gte('fecha', `${anioBase}-04-01`).lte('fecha', `${anioBase + 1}-03-31`),
-      supabase.from('gasto_real_directores').select('fecha, remuneracion, pasajes, colacion, metro, taxi_colectivo, hotel, reembolso'),
-      supabase.from('gasto_real_plenarias').select('fecha, costo_total'),
-      supabase.from('gasto_real_gestion').select('fecha, total'),
-      supabase.from('gasto_real_comisiones').select('fecha_registro, monto'),
-      supabase.from('gasto_real_otros').select('fecha_registro, monto, descripcion')
+      supabase.from('ingresos_mensuales').select('*').gte('año', anioBase).lte('año', anioBase + 1),
+      supabase.from('ingreso_plenarias').select('*').gte('año', anioBase).lte('año', anioBase + 1),
+      supabase.from('aporte_director').select('*').gte('fecha', `${anioBase}-04-01`).lte('fecha', `${anioBase + 1}-03-31`),
+      supabase.from('gasto_real_directores').select('*'),
+      supabase.from('gasto_real_plenarias').select('*'),
+      supabase.from('gasto_real_gestion').select('*'),
+      supabase.from('gasto_real_comisiones').select('*')
     ]);
 
-    // Crear libro Excel
-    const wb = XLSX.utils.book_new();
+    const workbook = new ExcelJS.Workbook();
 
-    // Hoja 1: Plan Ingresos y Gastos
-    const hoja1 = [];
-    hoja1.push(['PLAN INGRESOS']);
-    hoja1.push(Object.keys(planIngresos[0] || {}));
-    planIngresos.forEach(r => hoja1.push(Object.values(r)));
-    hoja1.push([]);
+    // === HOJA 1: PLAN INGRESOS Y GASTOS ===
+    const hojaPlan = workbook.addWorksheet('Plan Ingresos y Gastos');
+    hojaPlan.getRow(1).values = ['PLAN INGRESOS'];
+    hojaPlan.mergeCells('A1:G1');
+    hojaPlan.getRow(2).values = ['tipo', 'eventos', 'participantes', 'valor', 'total_anual', 'Actual', '% Cumpl.'];
+    let fila = 3;
 
-    [
-      ['PLAN GASTOS COMISIONES', planGCom],
-      ['PLAN GESTIÓN', planGGest],
-      ['PLAN PLENARIAS', planGPlen],
-      ['PLAN REMUNERACIÓN', planGRem],
-      ['PLAN VIÁTICOS', planGVia]
-    ].forEach(([titulo, datos]) => {
-      hoja1.push([titulo]);
-      hoja1.push(Object.keys(datos[0] || {}));
-      datos.forEach(r => hoja1.push(Object.values(r)));
-      hoja1.push([]);
+    hojaPlan.getRow(fila++).values = [
+      'cuota_sindicato', 12, 730, 1000,
+      { formula: 'B3*C3*D3' }, null, { formula: 'IF(E3=0,0,F3/E3)' }
+    ];
+    hojaPlan.getRow(fila++).values = [
+      'plenarias', ingresoPlenarias.length, 25, 20000,
+      { formula: `B4*C4*D4` }, null, { formula: `IF(E4=0,0,F4/E4)` }
+    ];
+    hojaPlan.getRow(fila++).values = [
+      'aporte_director', aporteDirectores.length, 25, 1000,
+      { formula: `B5*C5*D5` }, null, { formula: `IF(E5=0,0,F5/E5)` }
+    ];
+    hojaPlan.getRow(fila++).values = [
+      'otros', 0, 0, 0,
+      { formula: `B6*C6*D6` }, null, { formula: `IF(E6=0,0,F6/E6)` }
+    ];
+    hojaPlan.getRow(fila).values = [
+      'Total', '', '', '',
+      { formula: 'SUM(E3:E6)' },
+      { formula: 'SUM(F3:F6)' },
+      { formula: 'IF(E7=0,0,F7/E7)' }
+    ];
+
+    fila += 2;
+    hojaPlan.getRow(fila++).values = ['PLAN GASTOS'];
+    hojaPlan.mergeCells(`A${fila-1}:G${fila-1}`);
+    hojaPlan.getRow(fila++).values = ['tipo', 'eventos', 'participantes', 'valor', 'total_anual', 'Actual', '% Cumpl.'];
+
+    hojaPlan.getRow(fila++).values = [
+      'remuneracion_directores', gastoDirectores.length, 5, 50000,
+      { formula: `B10*C10*D10` }, null, { formula: `IF(E10=0,0,F10/E10)` }
+    ];
+    hojaPlan.getRow(fila++).values = [
+      'viaticos', 8, 5, 20000,
+      { formula: `B11*C11*D11` }, null, { formula: `IF(E11=0,0,F11/E11)` }
+    ];
+    hojaPlan.getRow(fila++).values = [
+      'plenarias', gastoPlenarias.length, 25, 15000,
+      { formula: `B12*C12*D12` }, null, { formula: `IF(E12=0,0,F12/E12)` }
+    ];
+    hojaPlan.getRow(fila++).values = [
+      'gestion', 1, 1, 300000,
+      { formula: `B13*C13*D13` }, null, { formula: `IF(E13=0,0,F13/E13)` }
+    ];
+    hojaPlan.getRow(fila++).values = [
+      'comisiones', gastoComisiones.length, 3, 10000,
+      { formula: `B14*C14*D14` }, null, { formula: `IF(E14=0,0,F14/E14)` }
+    ];
+    hojaPlan.getRow(fila).values = [
+      'Total', '', '', '',
+      { formula: 'SUM(E10:E14)' },
+      { formula: 'SUM(F10:F14)' },
+      { formula: 'IF(E15=0,0,F15/E15)' }
+    ];
+
+    // === HOJA 2: RESUMEN TESORERÍA MENSUAL POR SINDICATO ===
+    const hojaResumen = workbook.addWorksheet('Resumen Tesorería');
+
+    hojaResumen.addRow(['SINDICATO', ...meses, 'TOTAL']);
+
+    const sindicatosSet = new Set(ingresosMensuales.map(i => i.nombre_sindicato));
+    const sindicatos = Array.from(sindicatosSet).sort();
+
+    sindicatos.forEach((sind, idx) => {
+      const row = [sind];
+      let total = 0;
+      for (let i = 0; i < meses.length; i++) {
+        const monto = ingresosMensuales.find(x => x.nombre_sindicato === sind && x.mes_nombre?.toUpperCase() === meses[i])?.cuota || 0;
+        row.push(monto);
+        total += monto;
+      }
+      row.push(total);
+      hojaResumen.addRow(row);
     });
 
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(hoja1), 'Plan Ingresos y Gastos');
-    // 🧮 Hoja 2: Resumen Tesorería (con fórmulas embebidas)
-    const { aoa, formulas } = construirResumenTesoreriaConFormulas({
-      ingresoMens, ingresoPlen, otrosIngr, aporteDir,
-      gdirect, gplen, ggest, gcom, gotros, meses
+    // === DESCARGA ===
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     });
-
-    const ws = XLSX.utils.aoa_to_sheet(aoa);
-    formulas.forEach(({ celda, formula }) => {
-      if (!ws[celda]) ws[celda] = {};
-      ws[celda].f = formula;
-    });
-
-    XLSX.utils.book_append_sheet(wb, ws, 'Resumen Tesorería');
-    XLSX.writeFile(wb, `Informe_Tesoreria_${anioBase}-${anioBase + 1}.xlsx`);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Informe_Tesoreria_${anioBase}.xlsx`;
+    a.click();
+    URL.revokeObjectURL(url);
 
   } catch (err) {
-    console.error(err);
-    alert('Error al generar informe: ' + err.message);
+    alert('Error generando informe: ' + err.message);
   } finally {
     btn.disabled = false;
     btn.textContent = '📊 Generar Informe Excel';
   }
-}
-
-// ✅ Helper: convierte fecha o nombre de mes a índice 0–11
-function mesIndex(año, mes, meses) {
-  if (typeof mes === 'string') {
-    const idx = meses.findIndex(m => m.nombre.toLowerCase() === mes.toLowerCase() && m.anio === año);
-    return idx >= 0 ? idx : -1;
-  } else {
-    const idx = meses.findIndex(m => m.anio === año && m.num === mes);
-    return idx >= 0 ? idx : -1;
-  }
-}
-
-// ✅ Helper principal para construir la hoja resumen
-function construirResumenTesoreriaConFormulas({ ingresoMens, ingresoPlen, otrosIngr, aporteDir, gdirect, gplen, ggest, gcom, gotros, meses }) {
-  const aoa = [];
-  const formulas = [];
-  const header = ['Categoría', ...meses.map(m => m.nombre), 'ANUAL'];
-  aoa.push(header);
-
-  const mapa = {};
-  const filas = [];
-
-  function agregarFila(nombre) {
-    const arr = Array(12).fill(0);
-    mapa[nombre] = arr;
-    filas.push([nombre, arr]);
-  }
-
-  // 👉 Ingresos mensuales
-  const todos = [...(ingresoMens || []), ...(ingresoPlen || [])];
-  todos.forEach(r => {
-    const key = r.nombre_sindicato || 'SIN NOMBRE';
-    if (!mapa[key]) agregarFila(key);
-    const idx = mesIndex(r.año, r.mes_nombre, meses);
-    if (idx >= 0) mapa[key][idx] += Number(r.cuota || 0);
-  });
-
-  // 👉 Otros ingresos
-  const tiposOtros = Array.from(new Set((otrosIngr || []).map(o => o.tipo_ingreso)));
-  tiposOtros.forEach(tipo => agregarFila(tipo));
-  otrosIngr.forEach(r => {
-    const idx = mesIndex(r.anio, parseInt(r.mes), meses);
-    if (idx >= 0) mapa[r.tipo_ingreso][idx] += Number(r.monto || 0);
-  });
-
-  // 👉 Aporte director
-  agregarFila('APORTE DIRECTORES');
-  (aporteDir || []).forEach(r => {
-    const d = new Date(r.fecha);
-    const idx = mesIndex(d.getFullYear(), d.getMonth() + 1, meses);
-    if (idx >= 0) mapa['APORTE DIRECTORES'][idx] += Number(r.monto || 0);
-  });
-
-  // 👉 Gastos
-  const gastos = {
-    REMUNERACION: 'remuneracion',
-    PASAJES: 'pasajes',
-    COLACION: 'colacion',
-    METRO: 'metro',
-    'TAXI / COLECTIVO': 'taxi_colectivo',
-    HOTEL: 'hotel',
-    REEMBOLSO: 'reembolso'
-  };
-  Object.entries(gastos).forEach(([label, campo]) => agregarFila(label));
-  (gdirect || []).forEach(r => {
-    const d = new Date(r.fecha);
-    const idx = mesIndex(d.getFullYear(), d.getMonth() + 1, meses);
-    Object.entries(gastos).forEach(([label, campo]) => {
-      if (idx >= 0) mapa[label][idx] += Number(r[campo] || 0);
-    });
-  });
-
-  agregarFila('GASTO PLENARIAS');
-  (gplen || []).forEach(r => {
-    const d = new Date(r.fecha);
-    const idx = mesIndex(d.getFullYear(), d.getMonth() + 1, meses);
-    if (idx >= 0) mapa['GASTO PLENARIAS'][idx] += Number(r.costo_total || 0);
-  });
-
-  agregarFila('GASTO GESTION');
-  (ggest || []).forEach(r => {
-    const d = new Date(r.fecha);
-    const idx = mesIndex(d.getFullYear(), d.getMonth() + 1, meses);
-    if (idx >= 0) mapa['GASTO GESTION'][idx] += Number(r.total || 0);
-  });
-
-  agregarFila('GASTO COMISIONES');
-  (gcom || []).forEach(r => {
-    const d = new Date(r.fecha_registro);
-    const idx = mesIndex(d.getFullYear(), d.getMonth() + 1, meses);
-    if (idx >= 0) mapa['GASTO COMISIONES'][idx] += Number(r.monto || 0);
-  });
-
-  const descOtros = Array.from(new Set((gotros || []).map(r => r.descripcion)));
-  descOtros.forEach(d => agregarFila(d));
-  (gotros || []).forEach(r => {
-    const d = new Date(r.fecha_registro);
-    const idx = mesIndex(d.getFullYear(), d.getMonth() + 1, meses);
-    if (idx >= 0) mapa[r.descripcion][idx] += Number(r.monto || 0);
-  });
-
-  // 👉 Escribir filas y fórmulas de “ANUAL”
-  let fila = 2;
-  filas.forEach(([label, arr]) => {
-    aoa.push([label, ...arr, null]);
-    formulas.push({ celda: `N${fila}`, formula: `SUM(B${fila}:M${fila})` });
-    fila++;
-  });
-
-  // 👉 TOTAL INGRESOS
-  const filaTotIng = fila++;
-  aoa.push(['TOTAL INGRESOS', ...Array(12).fill(null), null]);
-  for (let c = 0; c < 12; c++) {
-    const col = String.fromCharCode(66 + c);
-    formulas.push({ celda: `${col}${filaTotIng}`, formula: `SUM(${col}2:${col}${filaTotIng - 1})` });
-  }
-  formulas.push({ celda: `N${filaTotIng}`, formula: `SUM(B${filaTotIng}:M${filaTotIng})` });
-
-  // 👉 TOTAL GASTOS
-  const filaTotGast = fila++;
-  aoa.push(['TOTAL GASTOS', ...Array(12).fill(null), null]);
-  for (let c = 0; c < 12; c++) {
-    const col = String.fromCharCode(66 + c);
-    formulas.push({ celda: `${col}${filaTotGast}`, formula: `SUM(${col}${filaTotIng + 1}:${col}${filaTotGast - 1})` });
-  }
-  formulas.push({ celda: `N${filaTotGast}`, formula: `SUM(B${filaTotGast}:M${filaTotGast})` });
-
-  // 👉 AHORRO O DÉFICIT
-  const filaAhorro = fila++;
-  aoa.push(['AHORRO O DÉFICIT', ...Array(12).fill(null), null]);
-  for (let c = 0; c < 12; c++) {
-    const col = String.fromCharCode(66 + c);
-    formulas.push({ celda: `${col}${filaAhorro}`, formula: `${col}${filaTotIng}-${col}${filaTotGast}` });
-  }
-  formulas.push({ celda: `N${filaAhorro}`, formula: `SUM(B${filaAhorro}:M${filaAhorro})` });
-
-  // 👉 SALDO FINAL Y CUADRATURA
-  const filaSaldoFinal = fila + 7;
-  const filaCuadra = filaSaldoFinal + 1;
-  aoa[filaSaldoFinal - 1] = ['SALDO FINAL', ...Array(13).fill(null)];
-  aoa[filaCuadra - 1] = ['CUADRATURA FINAL', ...Array(13).fill(null)];
-  formulas.push({ celda: `B${filaSaldoFinal}`, formula: `SALDO_INICIAL+N${filaAhorro}` });
-  formulas.push({ celda: `B${filaCuadra}`, formula: `B${filaSaldoFinal}-B${filaSaldoFinal - 3}` });
-
-  return { aoa, formulas };
 }

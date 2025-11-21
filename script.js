@@ -1,7 +1,6 @@
 // Inicializa el cliente de Supabase con tus credenciales (reemplaza con tus valores reales)
 const supabase = window.supabase.createClient('https://mxqrzhpyfwuutardehyu.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14cXJ6aHB5Znd1dXRhcmRlaHl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM0NjE0NDUsImV4cCI6MjA1OTAzNzQ0NX0.JaXYgxWKcbI_b7z0-ihvEHuueU7SSSy-_LlJfiYS9xs');
 
-
 // *****************Función para actualizar el contador global en Supabase*******************
 async function actualizarContadorSupabase() {
     // Solo actualizamos si el usuario es "usuario" (no admin)
@@ -100,7 +99,6 @@ document.addEventListener("DOMContentLoaded", function () {
         await resetearContadorSupabase(); // Llama la función para resetear el contador
     });
 });
-
 
 // Función para obtener las claves desde la API en Vercel
 async function obtenerClaves() {
@@ -288,7 +286,8 @@ const ingresosMinimos = {
     2022: { "ENERO": 350000, "FEBRERO": 350000, "MARZO": 350000, "ABRIL": 350000, "MAYO": 380000, "JUNIO": 380000, "JULIO": 380000, "AGOSTO": 400000, "SEPTIEMBRE": 400000, "OCTUBRE": 400000, "NOVIEMBRE": 400000, "DICIEMBRE": 400000 },
     2023: { "ENERO": 410000, "FEBRERO": 410000, "MARZO": 410000, "ABRIL": 410000, "MAYO": 440000, "JUNIO": 440000, "JULIO": 440000, "AGOSTO": 440000, "SEPTIEMBRE": 460000, "OCTUBRE": 460000, "NOVIEMBRE": 460000, "DICIEMBRE": 460000 },
     2024: { "ENERO": 460000, "FEBRERO": 460000, "MARZO": 460000, "ABRIL": 460000, "MAYO": 460000, "JUNIO": 460000, "JULIO": 500000, "AGOSTO": 500000, "SEPTIEMBRE": 500000, "OCTUBRE": 500000, "NOVIEMBRE": 500000, "DICIEMBRE": 500000 },
-    2025: { "ENERO": 510636, "FEBRERO": 510636, "MARZO": 510636, "ABRIL": 510500, "MAYO": 510500, "JUNIO": 510500, "JULIO": 510500, "AGOSTO": 510500, "SEPTIEMBRE": 510500, "OCTUBRE": 510500, "NOVIEMBRE": 510500, "DICIEMBRE": 510500 }
+    2025: { "ENERO": 510636, "FEBRERO": 510636, "MARZO": 510636, "ABRIL": 510500, "MAYO": 529000, "JUNIO": 529000, "JULIO": 529000, "AGOSTO": 529000, "SEPTIEMBRE": 529000, "OCTUBRE": 529000, "NOVIEMBRE": 529000, "DICIEMBRE": 529000 },
+    2026: { "ENERO": 529000, "FEBRERO": 529000, "MARZO": 529000, "ABRIL": 529000, "MAYO": 529000, "JUNIO": 529000, "JULIO": 529000, "AGOSTO": 529000, "SEPTIEMBRE": 529000, "OCTUBRE": 529000, "NOVIEMBRE": 529000, "DICIEMBRE": 529000 }
 };
 
 // Lista de factores de hora extra
@@ -1273,10 +1272,18 @@ function realizarCalculo(datos, pdfSeleccionado, seleccion) {
 
 // ***********Función para mostrar una pantalla y ocultar las demás**********
 function mostrarPantalla(id) {
-    // Se asume que todas las pantallas tienen la clase "pantalla"
-    const pantallas = document.querySelectorAll('.pantalla');
-    pantallas.forEach(p => p.style.display = 'none');
-    document.getElementById(id).style.display = 'block';
+  document.querySelectorAll('.pantalla').forEach(p => p.style.display = 'none');
+  const p = document.getElementById(id);
+  if (p) {
+    p.style.display = 'block';
+
+    // ✅ Si la pantalla es “Otros Gastos”, recarga el historial automáticamente
+    if (id === 'pantalla-otros-gastos' && typeof window.cargarHistorialOtrosGastos === 'function') {
+      window.cargarHistorialOtrosGastos();
+    }
+  } else {
+    console.warn(`La pantalla "${id}" no existe`);
+  }
 }
 
 // ****************** Funciones para la Pantalla de Cálculo de Horas ******************

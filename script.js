@@ -1710,7 +1710,6 @@ document.addEventListener("DOMContentLoaded", function () {
         { nombre: "TESORERIA Federacion 2025-2026", url: "Documento Público General/TESORERIA Federacion 2025-2026.xlsm" },
         { nombre: "Calculo Reliquicadión", url: "Documento Público General/RELIQUIDACION 2024.xlsx" },
         { nombre: "QR MEC.doc", url: "Documento Público General/QR MEC.docx" },
-        { nombre: "QR MEC.pdf", url: "Documento Público General/QR MEC.pdf" },
         { nombre: "Cartola 4 abr 24", url: "Documento Público General/cartola 24-25/4 abr 24.pdf" },
         { nombre: "Cartola 5 may 24", url: "Documento Público General/cartola 24-25/5 may 24.pdf" },
         { nombre: "Cartola 6 jun 24", url: "Documento Público General/cartola 24-25/6 jun 24.pdf" },
@@ -1913,7 +1912,6 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 });
-
 
 
 //***************************** chat grupal ********************************

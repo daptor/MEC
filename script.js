@@ -782,22 +782,23 @@ const valoresConsolidados = [
 
     calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada, mes, año, valorTotalGratificacion);
 
-const datosCalculadosHTML = `
-    <ul>
-        ${[
-            { label: 'Sueldo Base', value: sueldoProporcional },
-            { label: 'Hrs. Extras', value: montoPagadoHorasExtras },
-            { label: 'Hrs. Extras Domingo', value: montoPagadoHorasExtrasDomingo },
-            { label: 'Hrs. Recargo Domingo', value: montoPagadoRecargoDomingo },
-            { label: 'Recargo 50% Festivo', value: montoPagadoRecargoFestivo },
-            { label: 'Suma Comisiones', value: totalComisiones },
-            { label: 'Semana Corrida', value: valorEsperadoSemanaCorrida > 0 ? valorEsperadoSemanaCorrida : 'No disponible' },
-            { label: 'Comisión Grupal', value: comisionPagadaEnNomina } // 👈 NUEVO
-        ]
-        .filter(item => item.value > 0)
-        .map(item => `<li><strong>${item.label}:</strong> ${mostrarValor(item.value)}</li>`).join('')}
-    </ul>
-`;
+    const datosCalculadosHTML = `
+        <ul>
+            ${
+                [
+                    { label: 'Sueldo Base', value: sueldoProporcional },
+                    { label: 'Hrs. Extras', value: montoPagadoHorasExtras },
+                    { label: 'Hrs. Extras Domingo', value: montoPagadoHorasExtrasDomingo },
+                    { label: 'Hrs. Recargo Domingo', value: montoPagadoRecargoDomingo },
+                    { label: 'Recargo 50% Festivo', value: montoPagadoRecargoFestivo },
+                    { label: 'Suma Comisiones', value: totalComisiones },
+                    { label: 'Semana Corrida', value: valorEsperadoSemanaCorrida > 0 ? valorEsperadoSemanaCorrida : 'No disponible' }
+                ]
+                .filter(item => item.value > 0)
+                .map(item => `<li><strong>${item.label}:</strong> ${mostrarValor(item.value)}</li>`).join('')
+            }
+        </ul>
+    `;
 
     const gratificablesHTML = `
         <ul>

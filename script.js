@@ -366,11 +366,6 @@ for (let i = 1; i <= pdf.numPages; i++) {
     texto.items.forEach(item => textoCompleto += item.str + ' ');
 }
 
-
-// Detectar premio en la nómina tempranamente para integrarlo en haberes si existe
-const regexPremioNomina_global = /(PREMIO\s*VENTA\s*TIENDA(?:\s*AUT\.?)?|PREMIO\s*VENTA\s*TIENDA|PREMIO\s*CUMPL\.?GRUPAL\s*VTAS|INCENTIVO\s*TIENDA|PREMIO\s*VENTA)[^\$]*\$\s*([\d\.,]+)/i;
-const matchPremioNomina_global = textoCompleto.match(regexPremioNomina_global);
-window.comisionPagadaEnNomina = matchPremioNomina_global ? procesarMonto(matchPremioNomina_global[2]) : 0;
 const regexFecha = /(\b(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\b) de (\d{4})/i;
 const matchFecha = textoCompleto.match(regexFecha);
 
@@ -625,6 +620,61 @@ if (matchFecha) {
             diasTotalesColacion += diasDiferenciaColacion;
         }
     }
+
+// =================== COMISIÓN GRUPAL ASESOR DE COMPRAS ===================
+
+// Detectar si el trabajador es Asesor de Compras
+let esAsesorCompras = false;
+const regexCargo = new RegExp(listaCargos.join("|"), "i");
+const cargoMatch = textoCompleto.match(regexCargo);
+if (cargoMatch && cargoMatch[0].toUpperCase() === "ASESOR DE COMPRAS") {
+    esAsesorCompras = true;
+}
+
+let horasAsesor = 0;
+
+// Extraemos las horas trabajadas del sueldo base (ya viene en el PDF)
+const regexHoras = /SUELDO\s*BASE.*?\((\d+)\)/i;
+const matchHoras = textoCompleto.match(regexHoras);
+if (matchHoras) {
+    horasAsesor = parseInt(matchHoras[1]);
+}
+
+// Inputs ingresados por usuario
+const ventaTotal = parseFloat(document.getElementById("ventaTotalTienda").value || 0);
+const horasTotalesAsesores = parseFloat(document.getElementById("horasTotalesAsesores").value || 0);
+
+let comisionGrupal = 0;
+let detalleComisionGrupalHTML = "";
+
+if (esAsesorCompras) {
+
+    if (ventaTotal > 0 && horasTotalesAsesores > 0 && horasAsesor > 0) {
+        const factorGrupal = 0.0026; // 0.26%
+
+        const valorHoraGrupal = (ventaTotal / horasTotalesAsesores) * factorGrupal;
+        comisionGrupal = valorHoraGrupal * horasAsesor;
+
+        detalleComisionGrupalHTML = `
+            <h2>▶  Comisión Grupal Asesor de Compras</h2>
+            <p><strong>Venta Total Tienda:</strong> ${formatCurrency(ventaTotal)}</p>
+            <p><strong>Horas Totales Asesores:</strong> ${horasTotalesAsesores}</p>
+            <p><strong>Horas Trabajadas Asesor:</strong> ${horasAsesor}</p>
+            <p><strong>Valor Hora Grupal:</strong> ${formatCurrency(valorHoraGrupal)}</p>
+            <p><strong>Comisión Grupal Asesor:</strong> ${formatCurrency(comisionGrupal)}</p>
+        `;
+    } else {
+        detalleComisionGrupalHTML = `
+            <h2>▶ Comisión Grupal Asesor de Compras</h2>
+            <p style="color:red;">⚠ Falta información: asegúrate de ingresar Venta Total y Horas Totales.</p>
+        `;
+    }
+}
+
+// Añadimos el bloque al resultado
+resultadoHTML += detalleComisionGrupalHTML;
+
+
 
 // ***************** calculo semana corrida **************
 
@@ -1027,170 +1077,7 @@ ${montoDiferenciaColacion !== 0 ? `<p><strong>Dif. Colación:</strong> ${montoDi
 <hr>
   `;
   mostrarGratificacionMec(gratificables);
-
-// ---------- INICIA: ANÁLISIS COMISIÓN GRUPAL (ASESOR DE COMPRAS) ----------
-
-// Detectar premio en la nómina
-const regexPremioNomina = /(PREMIO\s*VENTA\s*TIENDA(?:\s*AUT\.?)?|PREMIO\s*VENTA\s*TIENDA|PREMIO\s*CUMPL\.?GRUPAL\s*VTAS|INCENTIVO\s*TIENDA|PREMIO\s*VENTA)[^\$]*\$\s*([\d\.,]+)/i;
-const matchPremioNomina = textoCompleto.match(regexPremioNomina);
-const comisionPagadaEnNomina = matchPremioNomina ? procesarMonto(matchPremioNomina[2]) : 0;
-
-// Extraer horas del asesor desde la nómina
-let horasAsesor = 0;
-const regexHorasAsesorEnNomina = /Horas\s*Trabajadas\s*Asesor\s*[:\-]?\s*([\d\.,]+)/i;
-const mHorasAsesor1 = textoCompleto.match(regexHorasAsesorEnNomina);
-if (mHorasAsesor1) {
-    horasAsesor = parseFloat(
-        String(mHorasAsesor1[1]).replace(/\./g, '').replace(',', '.')
-    );
 }
-
-// Extraer datos del reporte “Premio Venta”
-async function extraerDatosReportePremio(archivo) {
-    if (!archivo) return null;
-    try {
-        const textoPremio = await extraerTextoDePDF(archivo);
-        const t = textoPremio.replace(/\s+/g, ' ');
-
-        // Extrae cada una de las ventas por separado
-        const rmVentaTienda = t.match(/Venta\s+Tienda\s*\$?\s*([\d\.,]+)/i);
-        const ventaTienda = rmVentaTienda
-            ? parseFloat(rmVentaTienda[1].replace(/\./g, '').replace(',', '.'))
-            : 0;
-
-        const rmVentaKiosco = t.match(/Venta\s+Kiosco\s+Tienda\s*\$?\s*([\d\.,]+)/i);
-        const ventaKiosco = rmVentaKiosco
-            ? parseFloat(rmVentaKiosco[1].replace(/\./g, '').replace(',', '.'))
-            : 0;
-
-        const rmVentaCambio = t.match(/Venta\s+Cambio\s+Devoluci[oó]n\s*\$?\s*([\d\.,]+)/i);
-        const ventaCambio = rmVentaCambio
-            ? parseFloat(rmVentaCambio[1].replace(/\./g, '').replace(',', '.'))
-            : 0;
-
-        // SUMA REAL CORRECTA
-        const ventaTiendaTotal = ventaTienda + ventaKiosco + ventaCambio;
-
-        const rmHorasDept = t.match(/Horas\s+Trabajadas\s+Departamento\s+Asistido\s*[:\-]?\s*([\d\.,]+)/i);
-        const horasDept = rmHorasDept
-            ? parseFloat(rmHorasDept[1].replace(/\./g, '').replace(',', '.'))
-            : 0;
-
-        const rmHorasAs = t.match(/Horas\s+Trabajadas\s+Asesor\s*[:\-]?\s*([\d\.,]+)/i);
-        const horasAs = rmHorasAs
-            ? parseFloat(rmHorasAs[1].replace(/\./g, '').replace(',', '.'))
-            : 0;
-
-        const rmPct = t.match(/Departamento\s+Asistido[:\s]*([\d\.,]+)%/i);
-        const pctDept = rmPct
-            ? parseFloat(String(rmPct[1]).replace(',', '.')) / 100
-            : 0.0026;
-
-        const rmMontoBruto =
-            t.match(/Monto\s+bruto\s+incentivo\s*\$?\s*([\d\.,]+)/i) ||
-            t.match(/Monto\s+Total\s+Incentivo\s*\$?\s*([\d\.,]+)/i);
-
-        const montoBrutoIncentivo = rmMontoBruto
-            ? parseFloat(rmMontoBruto[1].replace(/\./g, '').replace(',', '.'))
-            : null;
-
-        return {
-            ventaTienda,
-            ventaKiosco,
-            ventaCambio,
-            ventaTiendaTotal,
-            horasDept,
-            horasAs,
-            pctDept,
-            montoBrutoIncentivo,
-            textoPremio
-        };
-    } catch (e) {
-        console.error("Error leyendo archivo premio:", e);
-        return null;
-    }
-}
-
-// Si subió el archivo Premio de Venta ⇒ procesar
-let datosReporte = null;
-const inputPremioEl = document.getElementById("filePremio");
-if (inputPremioEl && inputPremioEl.files && inputPremioEl.files.length > 0) {
-    datosReporte = await extraerDatosReportePremio(inputPremioEl.files[0]);
-}
-
-// Variables
-let ventaTienda = datosReporte ? datosReporte.ventaTienda : 0;
-let ventaKiosco = datosReporte ? datosReporte.ventaKiosco : 0;
-let ventaCambio = datosReporte ? datosReporte.ventaCambio : 0;
-let ventaTiendaTotal = datosReporte ? datosReporte.ventaTiendaTotal : 0;
-
-let horasTotalesDept = datosReporte ? datosReporte.horasDept : 0;
-let horasAsesorReporte = datosReporte ? datosReporte.horasAs : 0;
-
-let porcentajeDept = datosReporte ? datosReporte.pctDept : 0.0026;
-let montoBrutoIncentivo = datosReporte ? datosReporte.montoBrutoIncentivo : null;
-
-// Usar horas del reporte si no estaban en la nómina
-if ((!horasAsesor || horasAsesor === 0) && horasAsesorReporte) {
-    horasAsesor = horasAsesorReporte;
-}
-
-// Calcular comisión esperada
-let comisionCalculada = 0;
-if (ventaTiendaTotal > 0 && horasTotalesDept > 0 && horasAsesor > 0) {
-    const valorHoraGrupal = (ventaTiendaTotal / horasTotalesDept) * porcentajeDept;
-    comisionCalculada = Math.round(valorHoraGrupal * horasAsesor);
-}
-
-// PRESENTACIÓN HTML
-let pagosTxt = [];
-pagosTxt.push(`<h2>Comisión Grupal — análisis</h2>`);
-pagosTxt.push(`<p><strong>Comisión detectada en la nómina:</strong> ${formatCurrency(comisionPagadaEnNomina)}</p>`);
-
-if (datosReporte) {
-    pagosTxt.push(`<p><strong>Venta Tienda:</strong> ${formatCurrency(ventaTienda)}</p>`);
-    pagosTxt.push(`<p><strong>Venta Kiosco:</strong> ${formatCurrency(ventaKiosco)}</p>`);
-    pagosTxt.push(`<p><strong>Venta Cambio/Devolución:</strong> ${formatCurrency(ventaCambio)}</p>`);
-    pagosTxt.push(`<p><strong>Venta Total Tienda (correcta):</strong> ${formatCurrency(ventaTiendaTotal)}</p>`);
-
-    pagosTxt.push(`<p><strong>Horas Totales Departamento:</strong> ${horasTotalesDept}</p>`);
-    pagosTxt.push(`<p><strong>Horas Asesor (reporte):</strong> ${horasAsesor}</p>`);
-    pagosTxt.push(`<p><strong>Porcentaje departamento:</strong> ${(porcentajeDept * 100).toFixed(4)}%</p>`);
-    pagosTxt.push(`<p><strong>Monto bruto incentivo (reporte):</strong> ${
-        montoBrutoIncentivo !== null ? formatCurrency(montoBrutoIncentivo) : "No en reporte"
-    }</p>`);
-} else {
-    pagosTxt.push(`<p style="color:orange">⚠ No se subió el informe "Premio de Venta".</p>`);
-}
-
-pagosTxt.push(`<p><strong>Comisión calculada (esperada):</strong> ${formatCurrency(comisionCalculada)}</p>`);
-
-// Comparaciones
-const diffNominaCalc = comisionPagadaEnNomina - comisionCalculada;
-if (Math.abs(diffNominaCalc) < 1 && comisionPagadaEnNomina > 0) {
-    pagosTxt.push(`<p style="color:green"><strong>✅ Pago correcto según cálculo.</strong></p>`);
-} else if (comisionPagadaEnNomina === 0 && comisionCalculada > 0) {
-    pagosTxt.push(`<p style="color:red"><strong>❌ No se pagó comisión en la nómina.</strong></p>`);
-} else {
-    pagosTxt.push(`<p style="color:red"><strong>❌ Diferencia detectada: ${formatCurrency(diffNominaCalc)}</strong></p>`);
-}
-
-// Comparación Reporte vs Cálculo
-if (montoBrutoIncentivo !== null) {
-    const diffReporteCalc = montoBrutoIncentivo - comisionCalculada;
-    if (Math.abs(diffReporteCalc) < 1) {
-        pagosTxt.push(`<p style="color:green"><strong>✅ Reporte y cálculo coinciden.</strong></p>`);
-    } else {
-        pagosTxt.push(`<p style="color:orange"><strong>⚠ Reporte vs cálculo dif.: ${formatCurrency(diffReporteCalc)}</strong></p>`);
-    }
-}
-
-pagosTxt.push(`<hr>`);
-
-document.getElementById("resultadoAnalisis").innerHTML += pagosTxt.join("");
-
-// ---------- FIN: ANÁLISIS COMISIÓN GRUPAL ----------
-
 
 // **************** Función de cálculo de vacaciones ****************
 document.addEventListener("DOMContentLoaded", function () {

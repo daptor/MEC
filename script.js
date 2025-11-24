@@ -719,191 +719,252 @@ if (detallesComisiones.length === 0) {
         return parseFloat(montoTexto.replace(/\./g, '').replace(',', '.'));
     }
 
-    //*************************** gratificacion ***************************
+//*************************** gratificacion ***************************
 
-        function identificarGratificables(texto) {
-            let gratificablesEncontrados = [];
-            let textoRestante = texto.replace(/\s+/g, ' ').trim();
+function identificarGratificables(texto) {
+    let gratificablesEncontrados = [];
+    let textoRestante = texto.replace(/\s+/g, ' ').trim();
 
-            textoRestante = textoRestante.replace(/[^\x20-\x7E]/g, ' ');
+    textoRestante = textoRestante.replace(/[^\x20-\x7E]/g, ' ');
 
-            listaGratificables.forEach(item => {
-                const regex = new RegExp(`${item.replace(/\s+/g, '\\s*')}\\s*(?:\\(\\d+\\))?\\s*\\$\\s*([\\d.,]+)`, 'i');
-                const match = textoRestante.match(regex);
+    listaGratificables.forEach(item => {
+        const regex = new RegExp(`${item.replace(/\s+/g, '\\s*')}\\s*(?:\\(\\d+\\))?\\s*\\$\\s*([\\d.,]+)`, 'i');
+        const match = textoRestante.match(regex);
 
-                if (match) {
-                    gratificablesEncontrados.push({
-                        item: item,
-                        monto: procesarMonto(match[1])
-                    });
-
-                    textoRestante = textoRestante.replace(new RegExp(match[0].replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i'), '').trim();
-                }
+        if (match) {
+            gratificablesEncontrados.push({
+                item: item,
+                monto: procesarMonto(match[1])
             });
 
-            return gratificablesEncontrados;
+            textoRestante = textoRestante.replace(new RegExp(match[0].replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i'), '').trim();
         }
+    });
 
-        function calcularTotalGratificacion(gratificables) {
-            return gratificables.reduce((total, item) => total + item.monto, 0);
+    return gratificablesEncontrados;
+}
+
+function calcularTotalGratificacion(gratificables) {
+    return gratificables.reduce((total, item) => total + item.monto, 0);
+}
+
+function mostrarGratificacionMec(gratificables) {
+    const gratificacionContainer = document.getElementById('gratificacionMec');
+
+    if (gratificacionContainer.style.display === 'block') {
+        return;
+    }
+
+    const listaGratificablesHTML = gratificables
+        .filter(gratificable => gratificable.monto > 0)
+        .map(gratificable => {
+            return `<li><strong>${gratificable.item}:</strong> ${mostrarValor(gratificable.monto)}</li>`;
+        }).join('');
+
+    const totalGratificacion = calcularTotalGratificacion(gratificables);
+    const valoresConsolidados = [
+        sueldoProporcional || 0,
+        montoPagadoHorasExtras || 0,
+        montoPagadoHorasExtrasDomingo || 0,
+        montoPagadoRecargoDomingo || 0,
+        montoPagadoRecargoFestivo || 0,
+        totalComisiones || 0,
+        valorEsperadoSemanaCorrida || 0
+    ];
+
+    const valorTotalGratificacion = valoresConsolidados.reduce((total, valor) => total + (parseFloat(valor) || 0), totalGratificacion);
+
+    calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada, mes, año, valorTotalGratificacion);
+
+    const datosCalculadosHTML = `
+        <ul>
+            ${
+                [
+                    { label: 'Sueldo Base', value: sueldoProporcional },
+                    { label: 'Hrs. Extras', value: montoPagadoHorasExtras },
+                    { label: 'Hrs. Extras Domingo', value: montoPagadoHorasExtrasDomingo },
+                    { label: 'Hrs. Recargo Domingo', value: montoPagadoRecargoDomingo },
+                    { label: 'Recargo 50% Festivo', value: montoPagadoRecargoFestivo },
+                    { label: 'Suma Comisiones', value: totalComisiones },
+                    { label: 'Semana Corrida', value: valorEsperadoSemanaCorrida > 0 ? valorEsperadoSemanaCorrida : 'No disponible' }
+                ]
+                .filter(item => item.value > 0)
+                .map(item => `<li><strong>${item.label}:</strong> ${mostrarValor(item.value)}</li>`).join('')
+            }
+        </ul>
+    `;
+
+    const gratificablesHTML = `
+        <ul>
+            ${listaGratificablesHTML}
+        </ul>
+    `;
+
+    const valorTotalHTML = `
+        <p><strong>SUMA TOTAL HABERES: ${mostrarValor(valorTotalGratificacion)}</strong></p>
+    `;
+
+    const gratificacionHTML = datosCalculadosHTML + gratificablesHTML + valorTotalHTML;
+    if (document.getElementById('listaGratificables').innerHTML !== gratificacionHTML) {
+        document.getElementById('listaGratificables').innerHTML = gratificacionHTML;
+    }
+
+    document.getElementById('gratificacionMec').style.display = 'block';
+}
+
+function mostrarValor(valor) {
+    return isNaN(valor) || valor === null ? '$0' : new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(valor);
+}
+
+const gratificables = identificarGratificables(textoCompleto);
+
+function obtenerJornadaMaxima(mes, año) {
+    const meses = {
+        ENERO: 1, FEBRERO: 2, MARZO: 3, ABRIL: 4, MAYO: 5, JUNIO: 6,
+        JULIO: 7, AGOSTO: 8, SEPTIEMBRE: 9, OCTUBRE: 10, NOVIEMBRE: 11, DICIEMBRE: 12
+    };
+    const mesIndex = meses[mes.toUpperCase()] || 0;
+
+    if (año > 2024 || (año === 2024 && mesIndex >= 5)) {
+        return 44;
+    }
+    return 45;
+}
+
+function calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada, mes, año, valorTotalGratificacion) {
+
+    // -------------------------------
+    // TABLA DE MESES
+    // -------------------------------
+    const meses = {
+        ENERO: 1, FEBRERO: 2, MARZO: 3, ABRIL: 4, MAYO: 5, JUNIO: 6,
+        JULIO: 7, AGOSTO: 8, SEPTIEMBRE: 9, OCTUBRE: 10, NOVIEMBRE: 11, DICIEMBRE: 12
+    };
+
+    const mesesOrden = [
+        "ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO",
+        "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE",
+        "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"
+    ];
+
+    const mesActual = mes.toUpperCase();
+
+
+    // -------------------------------
+    // CORRECCIÓN: OBTENER IMM SEGURO
+    // -------------------------------
+    let inm = ingresosMinimos[año]?.[mesActual] || 0;
+
+    if (!inm || inm < 300000) {
+        const idx = mesesOrden.indexOf(mesActual);
+        if (idx > 0) {
+            const mesAnterior = mesesOrden[idx - 1];
+            const inmAnterior = ingresosMinimos[año]?.[mesAnterior] || 0;
+
+            if (inmAnterior > 0) {
+                console.warn(
+                    `IMM de ${mesActual} no disponible o inválido (${inm}). ` +
+                    `Se usa IMM del mes anterior (${mesAnterior}): ${inmAnterior}`
+                );
+                inm = inmAnterior;
+            }
         }
+    }
 
-        function mostrarGratificacionMec(gratificables) {
-            const gratificacionContainer = document.getElementById('gratificacionMec');
-
-            if (gratificacionContainer.style.display === 'block') {
-                return;
-            }
-
-            const listaGratificablesHTML = gratificables
-                .filter(gratificable => gratificable.monto > 0) // Filtra los ítems con monto > 0
-                .map(gratificable => {
-                    return `<li><strong>${gratificable.item}:</strong> ${mostrarValor(gratificable.monto)}</li>`;
-                }).join('');
-
-            const totalGratificacion = calcularTotalGratificacion(gratificables);
-            const valoresConsolidados = [
-                sueldoProporcional || 0,
-                montoPagadoHorasExtras || 0,
-                montoPagadoHorasExtrasDomingo || 0,
-                montoPagadoRecargoDomingo || 0,
-                montoPagadoRecargoFestivo || 0,
-                totalComisiones || 0,
-                valorEsperadoSemanaCorrida || 0
-            ];
-
-            const valorTotalGratificacion = valoresConsolidados.reduce((total, valor) => total + (parseFloat(valor) || 0), totalGratificacion);
-
-            calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada, mes, año, valorTotalGratificacion);
-
-            const datosCalculadosHTML = `
-                <ul>
-                    ${[
-                        { label: 'Sueldo Base', value: sueldoProporcional },
-                        { label: 'Hrs. Extras', value: montoPagadoHorasExtras },
-                        { label: 'Hrs. Extras Domingo', value: montoPagadoHorasExtrasDomingo },
-                        { label: 'Hrs. Recargo Domingo', value: montoPagadoRecargoDomingo },
-                        { label: 'Recargo 50% Festivo', value: montoPagadoRecargoFestivo },
-                        { label: 'Suma Comisiones', value: totalComisiones },
-                        { label: 'Semana Corrida', value: valorEsperadoSemanaCorrida > 0 ? valorEsperadoSemanaCorrida : 'No disponible' }
-                    ]
-                    .filter(item => item.value > 0) // Filtra ítems con valor > 0
-                    .map(item => `<li><strong>${item.label}:</strong> ${mostrarValor(item.value)}</li>`).join('')}
-                </ul>
-            `;
-
-            const gratificablesHTML = `
-                <ul>
-                    ${listaGratificablesHTML}
-                </ul>
-            `;
-
-            const valorTotalHTML = `
-                <p><strong>SUMA TOTAL HABERES: ${mostrarValor(valorTotalGratificacion)}</strong></p>
-            `;
-
-            const gratificacionHTML = datosCalculadosHTML + gratificablesHTML + valorTotalHTML;
-            if (document.getElementById('listaGratificables').innerHTML !== gratificacionHTML) {
-                document.getElementById('listaGratificables').innerHTML = gratificacionHTML;
-            }
-
-            document.getElementById('gratificacionMec').style.display = 'block';
-        }
+    if (!inm) {
+        console.error("IMM no disponible para este mes ni el anterior.");
+        return;
+    }
 
 
-        function mostrarValor(valor) {
-            return isNaN(valor) || valor === null ? '$0' : new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(valor);
-        }
+    // -------------------------------
+    // VALIDAR MES
+    // -------------------------------
+    const mesIndex = meses[mesActual];
+    if (!mesIndex) {
+        console.error("Mes inválido.");
+        return;
+    }
 
-        const gratificables = identificarGratificables(textoCompleto);
 
-        function obtenerJornadaMaxima(mes, año) {
-            const meses = {
-                ENERO: 1, FEBRERO: 2, MARZO: 3, ABRIL: 4, MAYO: 5, JUNIO: 6,
-                JULIO: 7, AGOSTO: 8, SEPTIEMBRE: 9, OCTUBRE: 10, NOVIEMBRE: 11, DICIEMBRE: 12
-            };
-            const mesIndex = meses[mes.toUpperCase()] || 0;
+    // -------------------------------
+    // JORNADA MÁXIMA VIGENTE
+    // -------------------------------
+    let jornadaMaxima = 45;
+    if (año > 2024 || (año === 2024 && mesIndex >= 5)) {
+        jornadaMaxima = 44;
+    }
 
-            if (año > 2024 || (año === 2024 && mesIndex >= 5)) {
-                return 44;
-            }
-            return 45;
-        }
 
-        function calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada, mes, año, valorTotalGratificacion) {
-            const meses = {
-                ENERO: 1, FEBRERO: 2, MARZO: 3, ABRIL: 4, MAYO: 5, JUNIO: 6,
-                JULIO: 7, AGOSTO: 8, SEPTIEMBRE: 9, OCTUBRE: 10, NOVIEMBRE: 11, DICIEMBRE: 12
-            };
+    // -------------------------------
+    // 25% HABERES
+    // -------------------------------
+    const resultadoCalculado = valorTotalGratificacion * 0.25;
 
-            const inm = ingresosMinimos[año]?.[mes.toUpperCase()] || 0;
-            if (inm === 0) {
-                console.error("IMM no disponible para este mes y año.");
-                return;
-            }
 
-            const mesIndex = meses[mes.toUpperCase()];
-            if (!mesIndex) {
-                console.error("Mes inválido.");
-                return;
-            }
+    // -------------------------------
+    // TOPE MENSUAL
+    // -------------------------------
+    const topeGratificacion = (4.75 * inm) / 12;
 
-            // Determinación de la jornada máxima vigente
-            let jornadaMaxima = 45;
-            if (año > 2024 || (año === 2024 && mesIndex >= 5)) {
-                jornadaMaxima = 44;
-            }
 
-            // Cálculo base: 25% de la Suma Total Haberes
-            const resultadoCalculado = valorTotalGratificacion * 0.25;
+    // -------------------------------
+    // TOPE PROPORCIONAL
+    // -------------------------------
+    const topeProporcional = (topeGratificacion / jornadaMaxima) * jornadaSeleccionada;
 
-            // Cálculo del tope mensual
-            const topeGratificacion = (4.75 * inm) / 12;
-            // Cálculo del tope proporcional según la jornada seleccionada
-            const topeProporcional = (topeGratificacion / jornadaMaxima) * jornadaSeleccionada;
 
-            let valorAPagar;
-            // Para jornadas mayores a 30, se utiliza el tope mensual
-            if (jornadaSeleccionada > 30) {
-                valorAPagar = Math.round(Math.min(resultadoCalculado, topeGratificacion));
-            } else {
-                // Para jornadas menores o iguales a 30, se utiliza el tope proporcional
-                valorAPagar = Math.round(Math.min(resultadoCalculado, topeProporcional));
-            }
+    // -------------------------------
+    // MONTO A PAGAR
+    // -------------------------------
+    let valorAPagar;
 
-            const topeGratificacionRedondeado = Math.round(topeGratificacion);
-            const topeProporcionalRedondeado = Math.round(topeProporcional);
-            const regexGratificacionPDF = /GRATIFICACION\s*25%\s*C\.T\.\s*\$\s*([\d.,]+)/i;
-            const matchGratificacionPDF = textoCompleto.match(regexGratificacionPDF);
-            const gratificacionPDF = matchGratificacionPDF
-                ? parseFloat(matchGratificacionPDF[1].replace(/\./g, '').replace(',', '.'))
-                : 0;
+    if (jornadaSeleccionada > 30) {
+        valorAPagar = Math.round(Math.min(resultadoCalculado, topeGratificacion));
+    } else {
+        valorAPagar = Math.round(Math.min(resultadoCalculado, topeProporcional));
+    }
 
-            let comparacionHTML = "";
-            const diferencia = gratificacionPDF - valorAPagar;
-            if (Math.abs(diferencia) < 0.001) {
-                comparacionHTML = `<span style="color: green;">✅ Pago Correcto: ${formatCurrency(valorAPagar)}</span>`;
-            } else {
-                comparacionHTML = `<span style="color: red;">❌ Discrepancia de ${formatCurrency(diferencia)}</span>`;
-            }
 
-            const resultadoHTML = `
-                <h2>7. Cálculo de Gratificación</h2>
-                <p><strong>25% de la Suma Total Haberes:</strong> ${formatCurrency(resultadoCalculado)}</p>
-                <p>
-                    <em>
-                        <p><strong>IMM Vigente utilizado:</strong> ${formatCurrency(inm)}</p>
-                        <p><strong>Jornada Máxima Vigente:</strong> ${jornadaMaxima} horas</p>
-                        <p><strong>Tope Mensual (4.75 x IMM / 12):</strong> ${formatCurrency(topeGratificacionRedondeado)}</p>
-                        <p><strong>Tope Proporcional:</strong> ${formatCurrency(topeProporcionalRedondeado)}</p>
-                    </em>
-                </p>
-                <p><strong>Monto Calculado a Pagar:</strong> ${formatCurrency(valorAPagar)}</p>
-                <p><strong>Extraído del PDF:</strong> ${formatCurrency(gratificacionPDF)}</p>
-                <p><strong>Comparación:</strong> ${comparacionHTML}</p>
-            `;
-            document.getElementById('resultadoGratificacion').innerHTML = resultadoHTML;
-        }
+    // -------------------------------
+    // COMPARAR CON PDF
+    // -------------------------------
+    const regexGratificacionPDF = /GRATIFICACION\s*25%\s*C\.T\.\s*\$\s*([\d.,]+)/i;
+    const matchGratificacionPDF = textoCompleto.match(regexGratificacionPDF);
+
+    const gratificacionPDF = matchGratificacionPDF
+        ? parseFloat(matchGratificacionPDF[1].replace(/\./g, '').replace(',', '.'))
+        : 0;
+
+    const diferencia = gratificacionPDF - valorAPagar;
+
+    let comparacionHTML = "";
+    if (Math.abs(diferencia) < 0.001) {
+        comparacionHTML = `<span style="color: green;">✅ Pago Correcto: ${formatCurrency(valorAPagar)}</span>`;
+    } else {
+        comparacionHTML = `<span style="color: red;">❌ Discrepancia de ${formatCurrency(diferencia)}</span>`;
+    }
+
+
+    // -------------------------------
+    // MOSTRAR RESULTADO
+    // -------------------------------
+    const resultadoHTML = `
+        <h2>7. Cálculo de Gratificación</h2>
+        <p><strong>25% de la Suma Total Haberes:</strong> ${formatCurrency(resultadoCalculado)}</p>
+        <p><em>
+            <p><strong>IMM utilizado:</strong> ${formatCurrency(inm)}</p>
+            <p><strong>Jornada Máxima Vigente:</strong> ${jornadaMaxima} horas</p>
+            <p><strong>Tope Mensual (4.75 x IMM / 12):</strong> ${formatCurrency(Math.round(topeGratificacion))}</p>
+            <p><strong>Tope Proporcional:</strong> ${formatCurrency(Math.round(topeProporcional))}</p>
+        </em></p>
+        <p><strong>Monto Calculado a Pagar:</strong> ${formatCurrency(valorAPagar)}</p>
+        <p><strong>Extraído del PDF:</strong> ${formatCurrency(gratificacionPDF)}</p>
+        <p><strong>Comparación:</strong> ${comparacionHTML}</p>
+    `;
+
+    document.getElementById('resultadoGratificacion').innerHTML = resultadoHTML;
+}
 
     // ===== Mostrar resultados en HTML =====
     document.getElementById('resultadoAnalisis').innerHTML = `

@@ -621,61 +621,6 @@ if (matchFecha) {
         }
     }
 
-// =================== COMISIÓN GRUPAL ASESOR DE COMPRAS ===================
-
-// Detectar si el trabajador es Asesor de Compras
-let esAsesorCompras = false;
-const regexCargo = new RegExp(listaCargos.join("|"), "i");
-const cargoMatch = textoCompleto.match(regexCargo);
-if (cargoMatch && cargoMatch[0].toUpperCase() === "ASESOR DE COMPRAS") {
-    esAsesorCompras = true;
-}
-
-let horasAsesor = 0;
-
-// Extraemos las horas trabajadas del sueldo base (ya viene en el PDF)
-const regexHoras = /SUELDO\s*BASE.*?\((\d+)\)/i;
-const matchHoras = textoCompleto.match(regexHoras);
-if (matchHoras) {
-    horasAsesor = parseInt(matchHoras[1]);
-}
-
-// Inputs ingresados por usuario
-const ventaTotal = parseFloat(document.getElementById("ventaTotalTienda").value || 0);
-const horasTotalesAsesores = parseFloat(document.getElementById("horasTotalesAsesores").value || 0);
-
-let comisionGrupal = 0;
-let detalleComisionGrupalHTML = "";
-
-if (esAsesorCompras) {
-
-    if (ventaTotal > 0 && horasTotalesAsesores > 0 && horasAsesor > 0) {
-        const factorGrupal = 0.0026; // 0.26%
-
-        const valorHoraGrupal = (ventaTotal / horasTotalesAsesores) * factorGrupal;
-        comisionGrupal = valorHoraGrupal * horasAsesor;
-
-        detalleComisionGrupalHTML = `
-            <h2>▶  Comisión Grupal Asesor de Compras</h2>
-            <p><strong>Venta Total Tienda:</strong> ${formatCurrency(ventaTotal)}</p>
-            <p><strong>Horas Totales Asesores:</strong> ${horasTotalesAsesores}</p>
-            <p><strong>Horas Trabajadas Asesor:</strong> ${horasAsesor}</p>
-            <p><strong>Valor Hora Grupal:</strong> ${formatCurrency(valorHoraGrupal)}</p>
-            <p><strong>Comisión Grupal Asesor:</strong> ${formatCurrency(comisionGrupal)}</p>
-        `;
-    } else {
-        detalleComisionGrupalHTML = `
-            <h2>▶ Comisión Grupal Asesor de Compras</h2>
-            <p style="color:red;">⚠ Falta información: asegúrate de ingresar Venta Total y Horas Totales.</p>
-        `;
-    }
-}
-
-// Añadimos el bloque al resultado
-resultadoHTML += detalleComisionGrupalHTML;
-
-
-
 // ***************** calculo semana corrida **************
 
 let totalComisiones = 0;
@@ -1020,6 +965,7 @@ function calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada
 
     document.getElementById('resultadoGratificacion').innerHTML = resultadoHTML;
 }
+
 
     // ===== Mostrar resultados en HTML =====
     document.getElementById('resultadoAnalisis').innerHTML = `

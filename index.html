@@ -84,6 +84,11 @@
       </select>
       <p><label for="fileInput">Ingresa una liquidación de sueldo en formato PDF</label></p>
       <input type="file" id="fileInput">
+      <p>
+        <label for="filePremio">(Opcional) Subir Informe "Premio de Venta" (Reporte Resumen):</label>
+        <input type="file" id="filePremio" accept="application/pdf">
+      </p>
+
       <button onclick="analizarArchivo()">Calcular</button>
       <button onclick="mostrarPantalla('menu-principal')">↩ Menu</button>
       <div id="resultadoAnalisis"></div>
@@ -94,6 +99,7 @@
       <div class="container" id="resultadoGratificacion"></div>
       <button id="refrescarBtnAnalisis">Borrar</button>
   </div>
+  
   <!-- Pantalla de Vacaciones -->
   <div id="pantalla-vacaciones" class="pantalla" style="display: none;">
       <h2>Cálculo de Vacaciones</h2>

@@ -767,16 +767,15 @@ function mostrarGratificacionMec(gratificables) {
         }).join('');
 
     const totalGratificacion = calcularTotalGratificacion(gratificables);
-const valoresConsolidados = [
-    sueldoProporcional || 0,
-    montoPagadoHorasExtras || 0,
-    montoPagadoHorasExtrasDomingo || 0,
-    montoPagadoRecargoDomingo || 0,
-    montoPagadoRecargoFestivo || 0,
-    totalComisiones || 0,
-    valorEsperadoSemanaCorrida || 0,
-    comisionPagadaEnNomina || 0   // 👈 NUEVO HABER
-];
+    const valoresConsolidados = [
+        sueldoProporcional || 0,
+        montoPagadoHorasExtras || 0,
+        montoPagadoHorasExtrasDomingo || 0,
+        montoPagadoRecargoDomingo || 0,
+        montoPagadoRecargoFestivo || 0,
+        totalComisiones || 0,
+        valorEsperadoSemanaCorrida || 0
+    ];
 
     const valorTotalGratificacion = valoresConsolidados.reduce((total, valor) => total + (parseFloat(valor) || 0), totalGratificacion);
 

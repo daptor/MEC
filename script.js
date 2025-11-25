@@ -347,6 +347,9 @@ async function analizarArchivo() {
     const regexColacion = /COLACION\s*\((\d+)\)\s*\$\s*([\d.,]+)/i;
     const regexDiferenciaMovilizacion = /DIFERENCIA\s*MOVILIZACION\s*\$\s*([\d.,]+)/i;
     const regexDiferenciaColacion = /DIFERENCIA\s*COLACION\s*\$\s*([\d.,]+)/i;
+    const regexCaja = /CAJA\s*\((\d+)\)\s*\$\s*([\d.]+)/i;
+    const regexDiferenciaCaja = /DIF\.?\s*CAJA.*?\$\s*([\d.]+)/i;
+
 
     if (!archivo || !jornadaSeleccionada) {
       alert('Por favor, selecciona una jornada y un archivo PDF.');

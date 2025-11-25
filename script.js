@@ -426,20 +426,16 @@ if (matchFecha) {
         }
     }
 
-// -------------------------------
-// JORNADA MÁXIMA VIGENTE (CORREGIDA)
-// -------------------------------
 let jornadaMaxima = 45;
 
-// Desde MAYO 2024 → 44 horas
 if (año > 2024 || (año === 2024 && mesIndex >= 5)) {
     jornadaMaxima = 44;
 }
 
-// Desde MAYO 2026 → 42 horas
 if (año > 2026 || (año === 2026 && mesIndex >= 5)) {
     jornadaMaxima = 42;
 }
+
 
     const inm = ingresosMinimos[año] && ingresosMinimos[año][mes.toUpperCase()] ? ingresosMinimos[año][mes.toUpperCase()] : 0;
 
@@ -927,23 +923,27 @@ function calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada
     const topeGratificacion = (4.75 * inm) / 12;
 
 
-// -------------------------------
-// TOPE PROPORCIONAL (Regla correcta)
-// -------------------------------
-let topeProporcional;
+    // -------------------------------
+    // TOPE PROPORCIONAL
+    // -------------------------------
+    let topeProporcional;
+    if (jornadaSeleccionada <= 30) {
+        topeProporcional = (topeGratificacion / jornadaMaxima) * jornadaSeleccionada;
+    } else {
+        topeProporcional = topeGratificacion; // Jornada > 30 → NO proporcional
+    }
 
-if (jornadaSeleccionada <= 30) {
-    // Jornada parcial → proporcional
-    topeProporcional = (topeGratificacion / jornadaMaxima) * jornadaSeleccionada;
-} else {
-    // Jornada sobre 30 horas → NO proporcional
-    topeProporcional = topeGratificacion;
-}
+    // -------------------------------
+    // MONTO A PAGAR
+    // -------------------------------
+    let valorAPagar;
 
-// -------------------------------
-// MONTO A PAGAR (VERSIÓN FINAL CORRECTA)
-// -------------------------------
-let valorAPagar = Math.round(Math.min(resultadoCalculado, topeProporcional));
+    if (jornadaSeleccionada > 30) {
+        valorAPagar = Math.round(Math.min(resultadoCalculado, topeGratificacion));
+    } else {
+        valorAPagar = Math.round(Math.min(resultadoCalculado, topeProporcional));
+    }
+
 
     // -------------------------------
     // COMPARAR CON PDF

@@ -426,10 +426,20 @@ if (matchFecha) {
         }
     }
 
-    let jornadaMaxima = 45;
-    if (año > 2024 || (año === 2024 && mes === "MAYO")) {
-        jornadaMaxima = 44;
-    }
+// -------------------------------
+// JORNADA MÁXIMA VIGENTE (CORREGIDA)
+// -------------------------------
+let jornadaMaxima = 45;
+
+// Desde MAYO 2024 → 44 horas
+if (año > 2024 || (año === 2024 && mesIndex >= 5)) {
+    jornadaMaxima = 44;
+}
+
+// Desde MAYO 2026 → 42 horas
+if (año > 2026 || (año === 2026 && mesIndex >= 5)) {
+    jornadaMaxima = 42;
+}
 
     const inm = ingresosMinimos[año] && ingresosMinimos[año][mes.toUpperCase()] ? ingresosMinimos[año][mes.toUpperCase()] : 0;
 
@@ -930,17 +940,10 @@ if (jornadaSeleccionada <= 30) {
     topeProporcional = topeGratificacion;
 }
 
-    // -------------------------------
-    // MONTO A PAGAR
-    // -------------------------------
-    let valorAPagar;
-
-    if (jornadaSeleccionada > 30) {
-        valorAPagar = Math.round(Math.min(resultadoCalculado, topeGratificacion));
-    } else {
-        valorAPagar = Math.round(Math.min(resultadoCalculado, topeProporcional));
-    }
-
+// -------------------------------
+// MONTO A PAGAR (VERSIÓN FINAL CORRECTA)
+// -------------------------------
+let valorAPagar = Math.round(Math.min(resultadoCalculado, topeProporcional));
 
     // -------------------------------
     // COMPARAR CON PDF

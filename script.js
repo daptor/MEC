@@ -791,8 +791,9 @@ function mostrarGratificacionMec(gratificables) {
                     { label: 'Hrs. Recargo Domingo', value: montoPagadoRecargoDomingo },
                     { label: 'Recargo 50% Festivo', value: montoPagadoRecargoFestivo },
                     { label: 'Suma Comisiones', value: totalComisiones },
-                    { label: 'Semana Corrida', value: valorEsperadoSemanaCorrida > 0 ? valorEsperadoSemanaCorrida : 'No disponible' }
-                ]
+                    { label: 'Semana Corrida', value: valorEsperadoSemanaCorrida > 0 ? valorEsperadoSemanaCorrida : 'No disponible' },
+                    { label: 'Comisión Grupal', value: (typeof comisionPagadaEnNomina !== 'undefined' ? comisionPagadaEnNomina : (window.comisionPagadaEnNomina || 0)) }
+]
                 .filter(item => item.value > 0)
                 .map(item => `<li><strong>${item.label}:</strong> ${mostrarValor(item.value)}</li>`).join('')
             }

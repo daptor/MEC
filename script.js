@@ -426,10 +426,10 @@ if (matchFecha) {
         }
     }
 
-let jornadaMaxima = 45;
-if (año > 2024 || (año === 2024 && mesIndex >= 5)) {
-    jornadaMaxima = 44;
-}
+    let jornadaMaxima = 45;
+    if (año > 2024 || (año === 2024 && mes === "MAYO")) {
+        jornadaMaxima = 44;
+    }
 
     const inm = ingresosMinimos[año] && ingresosMinimos[año][mes.toUpperCase()] ? ingresosMinimos[año][mes.toUpperCase()] : 0;
 
@@ -920,12 +920,8 @@ function calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada
     // -------------------------------
     // TOPE PROPORCIONAL
     // -------------------------------
-    let topeProporcional;
-    if (jornadaSeleccionada <= 30) {
-        topeProporcional = (topeGratificacion / jornadaMaxima) * jornadaSeleccionada;
-    } else {
-        topeProporcional = topeGratificacion; // Jornada > 30 → NO proporcional
-    }
+    const topeProporcional = (topeGratificacion / jornadaMaxima) * jornadaSeleccionada;
+
 
     // -------------------------------
     // MONTO A PAGAR

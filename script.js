@@ -221,6 +221,10 @@ document.addEventListener('DOMContentLoaded', () => {
           if (jornadaSelect) {
               jornadaSelect.value = ''; // Limpiar la selección de jornada
           }
+
+          // Resetear el campo de informe de ventas de asesor
+            const filePremio = document.getElementById('filePremio');
+            if (filePremio) filePremio.value = "";
       });
   }
 

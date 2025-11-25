@@ -774,8 +774,9 @@ function mostrarGratificacionMec(gratificables) {
         montoPagadoRecargoDomingo || 0,
         montoPagadoRecargoFestivo || 0,
         totalComisiones || 0,
-        valorEsperadoSemanaCorrida || 0
-    ];
+        valorEsperadoSemanaCorrida || 0,
+        comisionPagadaEnNomina || window.comisionPagadaEnNomina || 0
+];
 
     const valorTotalGratificacion = valoresConsolidados.reduce((total, valor) => total + (parseFloat(valor) || 0), totalGratificacion);
 

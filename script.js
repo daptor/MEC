@@ -1043,27 +1043,54 @@ ${montoDiferenciaColacion !== 0 ? `<p><strong>Dif. Colación:</strong> ${montoDi
   }
 
   // Función para extraer datos del reporte "Premio Venta" (archivo separado)
-  async function extraerDatosReportePremio(archivo) {
-      if (!archivo) return null;
-      try {
-          const textoPremio = await extraerTextoDePDF(archivo);
-          const t = textoPremio.replace(/\s+/g, ' ');
-          const rmVenta = t.match(/Venta\s+Tienda(?:\s+Total)?\s*\$?\s*([\d\.,]+)/i);
-          const ventaTiendaTotal = rmVenta ? parseFloat(rmVenta[1].replace(/\./g, '').replace(',', '.')) : 0;
-          const rmHorasDept = t.match(/Horas\s+Trabajadas\s+Departamento\s+Asistido\s*[:\-]?\s*([\d\.,]+)/i);
-          const horasDept = rmHorasDept ? parseFloat(rmHorasDept[1].replace(/\./g, '').replace(',', '.')) : 0;
-          const rmHorasAs = t.match(/Horas\s+Trabajadas\s+Asesor\s*[:\-]?\s*([\d\.,]+)/i);
-          const horasAs = rmHorasAs ? parseFloat(rmHorasAs[1].replace(/\./g, '').replace(',', '.')) : 0;
-          const rmPct = t.match(/Departamento\s+Asistido[:\s]*([\d\.,]+)%/i);
-          const pctDept = rmPct ? parseFloat(String(rmPct[1]).replace(',', '.')) / 100 : 0.0026;
-          const rmMontoBruto = t.match(/Monto\s+bruto\s+incentivo\s*\$?\s*([\d\.,]+)/i) || t.match(/Monto\s+Total\s+Incentivo\s*\$?\s*([\d\.,]+)/i);
-          const montoBrutoIncentivo = rmMontoBruto ? parseFloat(rmMontoBruto[1].replace(/\./g, '').replace(',', '.')) : null;
-          return { ventaTiendaTotal, horasDept, horasAs, pctDept, montoBrutoIncentivo, textoPremio };
-      } catch (e) {
-          console.error('Error leyendo archivo premio:', e);
-          return null;
-      }
-  }
+ async function extraerDatosReportePremio(archivo) {
+    if (!archivo) return null;
+    try {
+        const textoPremio = await extraerTextoDePDF(archivo);
+        const t = textoPremio.replace(/\s+/g, ' ');
+
+        // ✔ Corrección: extraer los 3 ítems
+        const rmVentaTienda = t.match(/Venta\s+Tienda\s*\$?\s*([\d\.,]+)/i);
+        const rmVentaKiosco = t.match(/Venta\s+Kiosco\s+Tienda\s*\$?\s*([\d\.,]+)/i);
+        const rmVentaCambioDev = t.match(/Venta\s+Cambio\s+Devoluci[oó]n\s*\$?\s*([\d\.,]+)/i);
+
+        const ventaTienda = rmVentaTienda ? procesarMonto(rmVentaTienda[1]) : 0;
+        const ventaKiosco = rmVentaKiosco ? procesarMonto(rmVentaKiosco[1]) : 0;
+        const ventaCambioDev = rmVentaCambioDev ? procesarMonto(rmVentaCambioDev[1]) : 0;
+
+        // ✔ Calculado correctamente
+        const ventaTiendaTotal = ventaTienda + ventaKiosco + ventaCambioDev;
+
+        // resto igual…
+        const rmHorasDept = t.match(/Horas\s+Trabajadas\s+Departamento\s+Asistido\s*[:\-]?\s*([\d\.,]+)/i);
+        const horasDept = rmHorasDept ? procesarMonto(rmHorasDept[1]) : 0;
+
+        const rmHorasAs = t.match(/Horas\s+Trabajadas\s+Asesor\s*[:\-]?\s*([\d\.,]+)/i);
+        const horasAs = rmHorasAs ? procesarMonto(rmHorasAs[1]) : 0;
+
+        const rmPct = t.match(/Departamento\s+Asistido[:\s]*([\d\.,]+)%/i);
+        const pctDept = rmPct ? parseFloat(String(rmPct[1]).replace(',', '.')) / 100 : 0.0026;
+
+        const rmMontoBruto = t.match(/Monto\s+bruto\s+incentivo\s*\$?\s*([\d\.,]+)/i)
+                            || t.match(/Monto\s+Total\s+Incentivo\s*\$?\s*([\d\.,]+)/i);
+
+        const montoBrutoIncentivo = rmMontoBruto ? procesarMonto(rmMontoBruto[1]) : null;
+
+        return {
+            ventaTiendaTotal,
+            horasDept,
+            horasAs,
+            pctDept,
+            montoBrutoIncentivo,
+            textoPremio
+        };
+
+    } catch (e) {
+        console.error('Error leyendo archivo premio:', e);
+        return null;
+    }
+}
+
 
   // Si el usuario subió el informe "Premio de Venta" en el input #filePremio, lo procesamos
   let datosReporte = null;

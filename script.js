@@ -1040,14 +1040,14 @@ ${resultadoRecargoDomingo.indexOf("No se realizaron") !== -1 ? '' :
 }
 <hr>
 <h2>3. Asignación:</h2>
-<p><strong>Movilización:</strong> Días: ${diasMovilizacion}, Monto: ${montoMovilizacion !== "No encontrado" ? formatCurrency(montoMovilizacion) : 'No encontrado'}.</p>
-${montoDiferenciaMovilizacion !== 0 ? `<p><strong>Dif. Movilización:</strong> ${montoDiferenciaMovilizacion !== "No encontrado" ? formatCurrency(montoDiferenciaMovilizacion) : 'No encontrado'}.</p>` : ''}
+<p><strong>Movilización:</strong> Días: ${diasMovilizacion}, Monto: ${montoMovilizacion !== "Dato no encontrado" ? formatCurrency(montoMovilizacion) : 'Dato no encontrado'}.</p>
+${montoDiferenciaMovilizacion !== 0 ? `<p><strong>Dif. Movilización:</strong> ${formatCurrency(montoDiferenciaMovilizacion)}.</p>` : ''}
 <p><strong>Días Totales:</strong> ${diasTotalesMovilizacion.toFixed(2)}</p>
-<p><strong>Colación:</strong> Días: ${diasColacion}, Monto: ${montoColacion !== "No encontrado" ? formatCurrency(montoColacion) : 'No encontrado'}.</p>
-${montoDiferenciaColacion !== 0 ? `<p><strong>Dif. Colación:</strong> ${montoDiferenciaColacion !== "No encontrado" ? formatCurrency(montoDiferenciaColacion) : 'No encontrado'}.</p>` : ''}
+<p><strong>Colación:</strong> Días: ${diasColacion}, Monto: ${montoColacion !== "Dato no encontrado" ? formatCurrency(montoColacion) : 'Dato no encontrado'}.</p>
+${montoDiferenciaColacion !== 0 ? `<p><strong>Dif. Colación:</strong> ${formatCurrency(montoDiferenciaColacion)}.</p>` : ''}
 <p><strong>Días Totales:</strong> ${diasTotalesColacion.toFixed(2)}</p>
-<p><strong>Caja:</strong> Días: ${diasCaja}, Monto: ${montoCaja !== "No encontrado" ? formatCurrency(montoCaja) : 'No encontrado'}.</p>
-${montoDiferenciaCaja !== 0 ? `<p><strong>Dif. Caja:</strong> ${montoDiferenciaCaja !== "No encontrado" ? formatCurrency(montoDiferenciaCaja) : 'No encontrado'}.</p>` : ''}
+<p><strong>Caja:</strong> Días: ${diasCaja}, Monto: ${montoCaja !== "Dato no encontrado" ? formatCurrency(montoCaja) : 'Dato no encontrado'}.</p>
+${montoDiferenciaCaja !== 0 ? `<p><strong>Dif. Caja:</strong> ${formatCurrency(montoDiferenciaCaja)}.</p>` : ''}
 <p><strong>Días Totales:</strong> ${diasTotalesCaja.toFixed(2)}</p>
 <hr>
         <h2>4. Comisiones</h2>

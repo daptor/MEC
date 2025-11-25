@@ -873,6 +873,9 @@ function obtenerJornadaMaxima(mes, año) {
 
 function calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada, mes, año, valorTotalGratificacion) {
 
+    // Asegurar que jornada sea número
+    jornadaSeleccionada = Number(jornadaSeleccionada) || 0;
+
     // -------------------------------
     // TABLA DE MESES
     // -------------------------------
@@ -882,16 +885,14 @@ function calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada
     };
 
     const mesesOrden = [
-        "ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO",
-        "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE",
+        "ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE",
         "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"
     ];
 
     const mesActual = mes.toUpperCase();
 
-
     // -------------------------------
-    // CORRECCIÓN: OBTENER IMM SEGURO
+    // OBTENER IMM SEGURO
     // -------------------------------
     let inm = ingresosMinimos[año]?.[mesActual] || 0;
 
@@ -902,10 +903,6 @@ function calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada
             const inmAnterior = ingresosMinimos[año]?.[mesAnterior] || 0;
 
             if (inmAnterior > 0) {
-                console.warn(
-                    `IMM de ${mesActual} no disponible o inválido (${inm}). ` +
-                    `Se usa IMM del mes anterior (${mesAnterior}): ${inmAnterior}`
-                );
                 inm = inmAnterior;
             }
         }
@@ -916,7 +913,6 @@ function calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada
         return;
     }
 
-
     // -------------------------------
     // VALIDAR MES
     // -------------------------------
@@ -926,33 +922,43 @@ function calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada
         return;
     }
 
-
     // -------------------------------
     // JORNADA MÁXIMA VIGENTE
     // -------------------------------
     let jornadaMaxima = 45;
+
+    // Reducción a 44 horas (mayo 2024)
     if (año > 2024 || (año === 2024 && mesIndex >= 5)) {
         jornadaMaxima = 44;
     }
 
+    // Nueva reducción a 42 horas (abril 2026)
+    if (año > 2026 || (año === 2026 && mesIndex >= 4)) {
+        jornadaMaxima = 42;
+    }
 
     // -------------------------------
     // 25% HABERES
     // -------------------------------
     const resultadoCalculado = valorTotalGratificacion * 0.25;
 
-
     // -------------------------------
     // TOPE MENSUAL
     // -------------------------------
     const topeGratificacion = (4.75 * inm) / 12;
 
-
     // -------------------------------
-    // TOPE PROPORCIONAL
+    // TOPE PROPORCIONAL — CORREGIDO
     // -------------------------------
-    const topeProporcional = (topeGratificacion / jornadaMaxima) * jornadaSeleccionada;
+    let topeProporcional;
+    let notaProporcional = "";
 
+    if (jornadaSeleccionada > 30) {
+        topeProporcional = topeGratificacion;
+        notaProporcional = " (no aplica proporcionalidad — jornada > 30)";
+    } else {
+        topeProporcional = (topeGratificacion / jornadaMaxima) * jornadaSeleccionada;
+    }
 
     // -------------------------------
     // MONTO A PAGAR
@@ -964,7 +970,6 @@ function calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada
     } else {
         valorAPagar = Math.round(Math.min(resultadoCalculado, topeProporcional));
     }
-
 
     // -------------------------------
     // COMPARAR CON PDF
@@ -985,7 +990,6 @@ function calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada
         comparacionHTML = `<span style="color: red;">❌ Discrepancia de ${formatCurrency(diferencia)}</span>`;
     }
 
-
     // -------------------------------
     // MOSTRAR RESULTADO
     // -------------------------------
@@ -996,7 +1000,7 @@ function calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada
             <p><strong>IMM utilizado:</strong> ${formatCurrency(inm)}</p>
             <p><strong>Jornada Máxima Vigente:</strong> ${jornadaMaxima} horas</p>
             <p><strong>Tope Mensual (4.75 x IMM / 12):</strong> ${formatCurrency(Math.round(topeGratificacion))}</p>
-            <p><strong>Tope Proporcional:</strong> ${formatCurrency(Math.round(topeProporcional))}</p>
+            <p><strong>Tope Proporcional:</strong> ${formatCurrency(Math.round(topeProporcional))}${notaProporcional}</p>
         </em></p>
         <p><strong>Monto Calculado a Pagar:</strong> ${formatCurrency(valorAPagar)}</p>
         <p><strong>Extraído del PDF:</strong> ${formatCurrency(gratificacionPDF)}</p>

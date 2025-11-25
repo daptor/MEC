@@ -285,13 +285,13 @@ document.addEventListener('DOMContentLoaded', () => {
 // ==================== VARIABLES GLOBALES ====================
 // Ingresos mínimos para cada año y mes
 const ingresosMinimos = {
-    2020: { "ENERO": 301000, "FEBRERO": 301000, "MARZO": 301000, "ABRIL": 301000, "MAYO": 301000, "JUNIO": 301000, "JULIO": 320500, "AGOSTO": 320500, "SEPTIEMBRE": 320500, "OCTUBRE": 320500, "NOVIEMBRE": 326500, "DICIEMBRE": 326500 },
+    2020: { "ENERO": 301000, "FEBRERO": 301000, "MARZO": 301000, "ABRIL": 301000, "MAYO": 301000, "JUNIO": 301000, "JULIO": 320500, "AGOSTO": 320500, "SEPTIEMBRE": 326500, "OCTUBRE": 326500, "NOVIEMBRE": 326500, "DICIEMBRE": 326500 },
     2021: { "ENERO": 326500, "FEBRERO": 326500, "MARZO": 326500, "ABRIL": 326500, "MAYO": 337000, "JUNIO": 337000, "JULIO": 337000, "AGOSTO": 337000, "SEPTIEMBRE": 337000, "OCTUBRE": 337000, "NOVIEMBRE": 337000, "DICIEMBRE": 350000 },
     2022: { "ENERO": 350000, "FEBRERO": 350000, "MARZO": 350000, "ABRIL": 350000, "MAYO": 380000, "JUNIO": 380000, "JULIO": 380000, "AGOSTO": 400000, "SEPTIEMBRE": 400000, "OCTUBRE": 400000, "NOVIEMBRE": 400000, "DICIEMBRE": 400000 },
     2023: { "ENERO": 410000, "FEBRERO": 410000, "MARZO": 410000, "ABRIL": 410000, "MAYO": 440000, "JUNIO": 440000, "JULIO": 440000, "AGOSTO": 440000, "SEPTIEMBRE": 460000, "OCTUBRE": 460000, "NOVIEMBRE": 460000, "DICIEMBRE": 460000 },
     2024: { "ENERO": 460000, "FEBRERO": 460000, "MARZO": 460000, "ABRIL": 460000, "MAYO": 460000, "JUNIO": 460000, "JULIO": 500000, "AGOSTO": 500000, "SEPTIEMBRE": 500000, "OCTUBRE": 500000, "NOVIEMBRE": 500000, "DICIEMBRE": 500000 },
-    2025: { "ENERO": 510636, "FEBRERO": 510636, "MARZO": 510636, "ABRIL": 510500, "MAYO": 529000, "JUNIO": 529000, "JULIO": 529000, "AGOSTO": 529000, "SEPTIEMBRE": 529000, "OCTUBRE": 529000, "NOVIEMBRE": 529000, "DICIEMBRE": 529000 },
-    2026: { "ENERO": 529000, "FEBRERO": 529000, "MARZO": 529000, "ABRIL": 529000, "MAYO": 529000, "JUNIO": 529000, "JULIO": 529000, "AGOSTO": 529000, "SEPTIEMBRE": 529000, "OCTUBRE": 529000, "NOVIEMBRE": 529000, "DICIEMBRE": 529000 }
+    2025: { "ENERO": 510636, "FEBRERO": 510636, "MARZO": 510636, "ABRIL": 510500, "MAYO": 510500, "JUNIO": 510500, "JULIO": 529000, "AGOSTO": 529000, "SEPTIEMBRE": 529000, "OCTUBRE": 529000, "NOVIEMBRE": 529000, "DICIEMBRE": 529000 },
+    2026: { "ENERO": 539000, "FEBRERO": 539000, "MARZO": 539000, "ABRIL": 539000, "MAYO": 539000, "JUNIO": 539000, "JULIO": 539000, "AGOSTO": 539000, "SEPTIEMBRE": 539000, "OCTUBRE": 539000, "NOVIEMBRE": 539000, "DICIEMBRE": 539000 }
 };
 
 // Lista de factores de hora extra
@@ -580,6 +580,8 @@ if (matchFecha) {
             : `<span style="color: red;">❌ Discrepancia detectada: $${diferenciaRecargoFestivo.toFixed(2)}</span>`;
     }
 
+    // *********** calculo diferencia de movilizacion ***********
+    
     const matchMovilizacion = textoCompleto.match(regexMovilizacion);
     let diasMovilizacion = 21;
     let montoMovilizacion = "Dato no encontrado";
@@ -606,6 +608,8 @@ if (matchFecha) {
         }
     }
 
+    // *********** calculo diferencia de colacion ***********
+
     const matchColacion = textoCompleto.match(regexColacion);
     let diasColacion = 21;
     let montoColacion = "Dato no encontrado";
@@ -627,6 +631,31 @@ if (matchFecha) {
               if (valorDiaColacion > 0) {
             diasDiferenciaColacion = montoDiferenciaColacion / valorDiaColacion;
             diasTotalesColacion += diasDiferenciaColacion;
+        }
+    }
+    // *********** calculo diferencia de caja ***********
+
+        const matchCaja = textoCompleto.match(regexCaja);
+    let diasCaja = 21;
+    let montoCaja = "Dato no encontrado";
+    let valorDiaCaja = 0;
+    if (matchCaja) {
+        diasCaja = parseInt(matchCaja[1]);
+        montoCaja = parseFloat(matchCaja[2].replace('.', '').replace(',', '.'));
+        if (diasCaja > 0) {
+            valorDiaCaja = montoCaja / diasCaja;
+        }
+    }
+
+    const matchDiferenciaCaja = textoCompleto.match(regexDiferenciaCaja);
+    let montoDiferenciaCaja = 0;
+    let diasDiferenciaCaja = 0;
+    let diasTotalesCaja = diasCaja;
+    if (matchDiferenciaCaja) {
+        montoDiferenciaCaja = parseFloat(matchDiferenciaCaja[1].replace('.', '').replace(',', '.'));
+              if (valorDiaCaja > 0) {
+            diasDiferenciaCaja = montoDiferenciaCaja / valorDiaCaja;
+            diasTotalesCaja += diasDiferenciaCaja;
         }
     }
 

@@ -1112,10 +1112,23 @@ if ((!horasAsesor || horasAsesor === 0) && horasAsesorReporte) {
 }
 
 // Cálculo de la comisión correcta
+// ---------------- Cálculo comisión grupal --------------
 let comisionCalculada = 0;
 if (ventaTiendaTotal > 0 && horasTotalesDept > 0 && horasAsesor > 0) {
     const valorHoraGrupal = (ventaTiendaTotal / horasTotalesDept) * porcentajeDept;
     comisionCalculada = Math.round(valorHoraGrupal * horasAsesor);
+}
+
+// ⭐ INTEGRACIÓN MODO MANUAL
+if (window.calculoManualMEC) {
+
+    comisionCalculada = Math.round(window.calculoManualMEC.comisionCalculada);
+
+    // Reemplazar valores del PDF por los manuales
+    ventaTiendaTotal   = window.calculoManualMEC.ventaTienda;
+    horasTotalesDept   = window.calculoManualMEC.horasDepto;
+    horasAsesor        = window.calculoManualMEC.horasAsesor;
+    porcentajeDept     = window.calculoManualMEC.porcentaje;
 }
 
 let pagosTxt = [];
@@ -1843,6 +1856,102 @@ function salirAplicacion() {
         alert("Cerrando la aplicación...");
         window.location.href = "https://www.google.cl"; // Redirige a Google, o puedes poner la URL que prefieras
     }
+}
+
+/**********************************************
+ *  MODO MANUAL DE COMISIÓN GRUPAL (Opción 1)
+ **********************************************/
+
+// Botón para mostrar/ocultar el ingreso manual
+const btnIngresoManual = document.getElementById("btnIngresoManual");
+const formularioManual = document.getElementById("formularioManual");
+const filePremio = document.getElementById("filePremio");
+
+// Mostrar u ocultar el formulario manual
+if (btnIngresoManual) {
+    btnIngresoManual.addEventListener("click", () => {
+        if (formularioManual.style.display === "none") {
+            formularioManual.style.display = "block";
+            filePremio.style.display = "none";   // Oculta la subida de PDF del premio
+            btnIngresoManual.style.background = "#FF9800";
+            btnIngresoManual.textContent = "Usar archivo PDF nuevamente";
+        } else {
+            formularioManual.style.display = "none";
+            filePremio.style.display = "block";
+            btnIngresoManual.style.background = "#4CAF50";
+            btnIngresoManual.textContent = "Ingresar datos manuales";
+        }
+    });
+}
+
+/**********************************************
+ *  CÁLCULO MANUAL DE COMISIÓN GRUPAL
+ **********************************************/
+
+// Función principal del cálculo manual
+function calcularComisionManual() {
+
+    const horasAsesor = parseFloat(document.getElementById("manualHorasAsesor").value);
+    const horasDepto = parseFloat(document.getElementById("manualHorasDepto").value);
+    const ventaTienda = parseFloat(document.getElementById("manualVentaTienda").value);
+    const porcentaje = parseFloat(document.getElementById("manualPorcentaje").value);
+
+    if (isNaN(horasAsesor) || isNaN(horasDepto) || isNaN(ventaTienda) || isNaN(porcentaje)) {
+        alert("⚠ Debes ingresar TODOS los datos manuales.");
+        return null;
+    }
+
+    if (horasAsesor <= 0 || horasDepto <= 0 || ventaTienda <= 0 || porcentaje <= 0) {
+        alert("⚠ Ningún dato puede ser 0 o negativo.");
+        return null;
+    }
+
+    // Fórmula oficial
+    const valorHora = (ventaTienda / horasDepto) * porcentaje;
+    const comisionCalculada = valorHora * horasAsesor;
+
+    return {
+        valorHora,
+        comisionCalculada,
+        horasAsesor,
+        horasDepto,
+        ventaTienda,
+        porcentaje
+    };
+}
+
+/**********************************************
+ *  BOTÓN CALCULAR MANUAL
+ **********************************************/
+
+const btnCalcularManual = document.getElementById("btnCalcularManual");
+
+if (btnCalcularManual) {
+    btnCalcularManual.addEventListener("click", () => {
+
+        const datos = calcularComisionManual();
+        if (!datos) return;
+
+        // Mostrar resultado en pantalla (al mismo contenedor que usas hoy)
+        const contenedor = document.getElementById("resultadoAnalisis");
+
+        contenedor.innerHTML = `
+            <h3>Resultado Comisión Manual</h3>
+            <p><strong>Valor por hora:</strong> $${datos.valorHora.toFixed(2)}</p>
+            <p><strong>Comisión Calculada:</strong> $${datos.comisionCalculada.toFixed(2)}</p>
+            <p><strong>Horas Asesor:</strong> ${datos.horasAsesor}</p>
+            <p><strong>Horas Depto:</strong> ${datos.horasDepto}</p>
+            <p><strong>Venta Tienda:</strong> $${datos.ventaTienda}</p>
+            <p><strong>Porcentaje:</strong> ${datos.porcentaje}</p>
+            <hr>
+            <p style="color: #0288D1;"><strong>Comparación con la liquidación aparecerá cuando termines el análisis completo.</strong></p>
+        `;
+
+        // Guardamos el cálculo manual para integrarlo con analizarArchivo()
+        window.calculoManualMEC = datos;
+
+        alert("✔ Datos manuales listos. Ahora presiona CALCULAR para integrarlos con tu liquidación.");
+    });
 }
 
 // **************** archivo sindical ********************

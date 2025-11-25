@@ -88,6 +88,32 @@
         <label for="filePremio">(Opcional) Subir Informe "Premio de Venta" (Reporte Resumen):</label>
         <input type="file" id="filePremio" accept="application/pdf">
       </p>
+      
+      <!-- Botón para activar ingreso manual -->
+<button id="btnIngresoManual" style="margin-top:10px; background:#4CAF50; color:white;">
+    Ingresar datos manuales
+</button>
+
+<!-- Formulario Manual (inicialmente oculto) -->
+<div id="formularioManual" style="display:none; margin-top:20px; border:1px solid #ccc; padding:15px; border-radius:8px;">
+    <h3>Ingreso Manual de Datos</h3>
+
+    <label for="manualHorasAsesor">Horas trabajadas por el asesor:</label>
+    <input type="number" id="manualHorasAsesor" placeholder="Ej: 160">
+
+    <label for="manualHorasDepto">Horas totales del departamento:</label>
+    <input type="number" id="manualHorasDepto" placeholder="Ej: 450">
+
+    <label for="manualVentaTienda">Venta tienda total:</label>
+    <input type="number" id="manualVentaTienda" placeholder="Ej: 145000000">
+
+    <label for="manualPorcentaje">Porcentaje tienda (decimal):</label>
+    <input type="number" step="0.001" id="manualPorcentaje" placeholder="Ej: 0.26">
+
+    <button id="btnCalcularManual" style="margin-top:15px; background:#1976D2; color:white;">
+        Calcular Comisión Manual
+    </button>
+</div>
 
       <button onclick="analizarArchivo()">Calcular</button>
       <button onclick="mostrarPantalla('menu-principal')">↩ Menu</button>

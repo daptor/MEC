@@ -581,7 +581,7 @@ if (matchFecha) {
     }
 
     // *********** calculo diferencia de movilizacion ***********
-    
+
     const matchMovilizacion = textoCompleto.match(regexMovilizacion);
     let diasMovilizacion = 21;
     let montoMovilizacion = "Dato no encontrado";
@@ -1043,6 +1043,9 @@ ${montoDiferenciaMovilizacion !== 0 ? `<p><strong>Dif. Movilización:</strong> $
 <p><strong>Colación:</strong> Días: ${diasColacion}, Monto: ${montoColacion !== "No encontrado" ? formatCurrency(montoColacion) : 'No encontrado'}.</p>
 ${montoDiferenciaColacion !== 0 ? `<p><strong>Dif. Colación:</strong> ${montoDiferenciaColacion !== "No encontrado" ? formatCurrency(montoDiferenciaColacion) : 'No encontrado'}.</p>` : ''}
 <p><strong>Días Totales:</strong> ${diasTotalesColacion.toFixed(2)}</p>
+<p><strong>Caja:</strong> Días: ${diasCaja}, Monto: ${montoCaja !== "No encontrado" ? formatCurrency(montoCaja) : 'No encontrado'}.</p>
+${montoDiferenciaCaja !== 0 ? `<p><strong>Dif. Caja:</strong> ${montoDiferenciaCaja !== "No encontrado" ? formatCurrency(montoDiferenciaCaja) : 'No encontrado'}.</p>` : ''}
+<p><strong>Días Totales:</strong> ${diasTotalesCaja.toFixed(2)}</p>
 <hr>
         <h2>4. Comisiones</h2>
         <p>${detalleComisionesHTML}</p>

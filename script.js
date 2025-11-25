@@ -427,15 +427,9 @@ if (matchFecha) {
     }
 
 let jornadaMaxima = 45;
-
 if (año > 2024 || (año === 2024 && mesIndex >= 5)) {
     jornadaMaxima = 44;
 }
-
-if (año > 2026 || (año === 2026 && mesIndex >= 5)) {
-    jornadaMaxima = 42;
-}
-
 
     const inm = ingresosMinimos[año] && ingresosMinimos[año][mes.toUpperCase()] ? ingresosMinimos[año][mes.toUpperCase()] : 0;
 

@@ -917,11 +917,18 @@ function calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada
     const topeGratificacion = (4.75 * inm) / 12;
 
 
-    // -------------------------------
-    // TOPE PROPORCIONAL
-    // -------------------------------
-    const topeProporcional = (topeGratificacion / jornadaMaxima) * jornadaSeleccionada;
+// -------------------------------
+// TOPE PROPORCIONAL (Regla correcta)
+// -------------------------------
+let topeProporcional;
 
+if (jornadaSeleccionada <= 30) {
+    // Jornada parcial → proporcional
+    topeProporcional = (topeGratificacion / jornadaMaxima) * jornadaSeleccionada;
+} else {
+    // Jornada sobre 30 horas → NO proporcional
+    topeProporcional = topeGratificacion;
+}
 
     // -------------------------------
     // MONTO A PAGAR

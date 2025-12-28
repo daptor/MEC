@@ -8,7 +8,7 @@ async function actualizarContadorSupabaseClient() {
     // Solo actualizamos si el usuario es "usuario" (no admin)
     if (localStorage.getItem("rol") === "usuario") {
         // Obtiene el valor actual del contador
-        const { data, error } = await supabaseclient
+        const { data, error } = await supabaseClient
             .from('contador')
             .select('visitas')
             .eq('id', 1)
@@ -21,7 +21,7 @@ async function actualizarContadorSupabaseClient() {
             const nuevoValor = data.visitas + 1;
 
             // Actualiza el valor del contador en la base de datos
-            const { updateData, updateError } = await supabaseclient
+            const { updateData, updateError } = await supabaseClient
                 .from('contador')
                 .update({ visitas: nuevoValor })
                 .eq('id', 1);
@@ -37,7 +37,7 @@ async function actualizarContadorSupabaseClient() {
 
 // Función para mostrar el contador global en la interfaz
 async function mostrarContadorSupabaseClient() {
-    const { data, error } = await supabaseclient
+    const { data, error } = await supabaseClient
         .from('contador')
         .select('visitas')
         .eq('id', 1)
@@ -53,7 +53,7 @@ async function mostrarContadorSupabaseClient() {
 async function resetearContadorSupabaseClient() {
     // Solo permite resetear si el rol es admin
     if (localStorage.getItem("rol") === "admin") {
-        const { data, error } = await supabaseclient
+        const { data, error } = await supabaseClient
             .from('contador')
             .update({ visitas: 0 })
             .eq('id', 1);
@@ -2306,7 +2306,7 @@ async function ingresarAlChat() {
 }
 
 async function checkNickAvailability(nick) {
-    const { data, error } = await supabaseclient
+    const { data, error } = await supabaseClient
         .from('usuarios')
         .select('user_id')  // Verificamos si el user_id (nick) ya existe en la tabla
         .eq('nick', nick);  // Buscamos directamente el nick
@@ -2331,7 +2331,7 @@ async function checkNickAvailability(nick) {
     }
 
     // Guardar el usuario en la tabla 'usuarios' (upsert)
-    await supabaseclient
+    await supabaseClient
         .from('usuarios')
         .upsert([{
             user_id: localStorage.getItem("user_id"),
@@ -2343,7 +2343,7 @@ async function checkNickAvailability(nick) {
 }
 
 async function obtenerNickPorId(userId) {
-    const { data, error } = await supabaseclient
+    const { data, error } = await supabaseClient
         .from('usuarios')
         .select('nick')
         .eq('user_id', userId)  // Ajustamos el filtro a 'user_id'
@@ -2368,7 +2368,7 @@ async function cargarMensajes() {
         return;
     }
 
-    const { data: mensajes, error } = await supabaseclient
+    const { data: mensajes, error } = await supabaseClient
         .from('mensajes')
         .select('id, mensaje, respuesta, fecha_envio, rol, user_id, nick')  // Seleccionamos también el 'nick'
         .or('rol.eq.admin,rol.eq.usuario')  // Permite mostrar tanto mensajes de 'admin' como de 'usuario'
@@ -2436,11 +2436,11 @@ async function cargarMensajes() {
     });
 
     // Aquí añadimos la suscripción para que solo suene cuando llegue un mensaje nuevo
-    const channel = supabaseclient.channel('mensajes_channel')
+    const channel = supabaseClient.channel('mensajes_channel')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mensajes' }, payload => {
             if (payload.new.user_id !== user_id) {  // Verificamos que el mensaje no sea el enviado por el usuario actual
                 cargarMensajes();  // Recargar los mensajes cuando se inserte uno nuevo
-                const audio = new Audio('https://mxqrzhpyfwuutardehyu.supabaseclient.co/storage/v1/object/public/audios/campanilla.mp3');
+                const audio = new Audio('https://mxqrzhpyfwuutardehyu.supabaseClient.co/storage/v1/object/public/audios/campanilla.mp3');
                 audio.play();  // Reproducir el sonido cuando se recibe un mensaje nuevo
             }
         })
@@ -2465,7 +2465,7 @@ document.getElementById('enviarMensajeBtn').addEventListener('click', async func
     }
 
     // Insertamos el mensaje en SupabaseClient
-    const { data, error } = await supabaseclient
+    const { data, error } = await supabaseClient
         .from('mensajes')
         .insert([{
             user_id: user_id,  // Usamos el user_id como texto
@@ -2502,7 +2502,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 // Obtener Nick desde la tabla usuarios por user_id
 async function obtenerNickPorId(userId) {
-    const { data, error } = await supabaseclient
+    const { data, error } = await supabaseClient
         .from('usuarios')
         .select('nick')
         .eq('user_id', userId)  // Ajustamos el filtro a 'user_id'
@@ -2531,7 +2531,7 @@ document.getElementById("cambiarNickBtn").addEventListener("click", async functi
 
 // Verificación de disponibilidad del Nick
 async function checkNickAvailability(nick) {
-    const { data, error } = await supabaseclient
+    const { data, error } = await supabaseClient
         .from('usuarios')
         .select('user_id')
         .eq('nick', nick);  // Buscamos si existe el Nick en la base de datos
@@ -2556,7 +2556,7 @@ async function checkNickAvailability(nick) {
     }
 
     // Actualizamos el Nick en la base de datos
-    await supabaseclient
+    await supabaseClient
         .from('usuarios')
         .upsert([{
             user_id: localStorage.getItem("user_id"),
@@ -2581,7 +2581,7 @@ function formatHora(fecha) {
 
 // Función para reproducir sonido de campanilla
 function reproducirSonido() {
-    const audio = new Audio('https://mxqrzhpyfwuutardehyu.supabaseclient.co/storage/v1/object/public/audios/campanilla.mp3');
+    const audio = new Audio('https://mxqrzhpyfwuutardehyu.supabaseClient.co/storage/v1/object/public/audios/campanilla.mp3');
     audio.play();
 }
 
@@ -2610,7 +2610,7 @@ async function iniciarChatPrivado() {
 // Obtener o crear conversación privada
 async function obtenerOcrearConversacionPrivada(usuarioId) {
     // Primero intentamos encontrar una conversación activa
-    let { data, error } = await supabaseclient
+    let { data, error } = await supabaseClient
         .from('conversaciones_privadas')
         .select('id, estado')
         .eq('usuario_id', usuarioId)
@@ -2619,7 +2619,7 @@ async function obtenerOcrearConversacionPrivada(usuarioId) {
     if (data) {
         if (data.estado === 'cerrada') {
             // Si la conversación está cerrada, la reactivamos
-            const { error: errorUpdate } = await supabaseclient
+            const { error: errorUpdate } = await supabaseClient
                 .from('conversaciones_privadas')
                 .update({ estado: 'activa' })  // Reactivamos la conversación
                 .eq('id', data.id);
@@ -2636,7 +2636,7 @@ async function obtenerOcrearConversacionPrivada(usuarioId) {
     }
 
     // Si no existe ninguna conversación activa o cerrada, creamos una nueva
-    const { data: nueva, error: errInsert } = await supabaseclient
+    const { data: nueva, error: errInsert } = await supabaseClient
         .from('conversaciones_privadas')
         .insert([{ usuario_id: usuarioId, admin_id: 'Admin' }])
         .select()
@@ -2651,9 +2651,9 @@ async function obtenerOcrearConversacionPrivada(usuarioId) {
 
 // Suscribir a cambios en chat privado
 async function suscribirChatPrivado(idConversacion) {
-    if (canalPrivadoActivo) await supabaseclient.removeChannel(canalPrivadoActivo);
+    if (canalPrivadoActivo) await supabaseClient.removeChannel(canalPrivadoActivo);
 
-    canalPrivadoActivo = supabaseclient.channel('chat_privado_' + idConversacion)
+    canalPrivadoActivo = supabaseClient.channel('chat_privado_' + idConversacion)
         .on('postgres_changes', {
             event: 'INSERT',
             schema: 'public',
@@ -2670,7 +2670,7 @@ async function suscribirChatPrivado(idConversacion) {
 async function cargarMensajesPrivados(idConversacion) {
     const miUserId = localStorage.getItem("user_id");
 
-    const { data, error } = await supabaseclient
+    const { data, error } = await supabaseClient
         .from('mensajes_privados')
         .select('*')
         .eq('conversation_privada_id', idConversacion)
@@ -2702,7 +2702,7 @@ async function enviarMensajePrivado(idConversacion) {
     const mensaje = document.getElementById('mensajeUsuarioPrivado').value.trim();
     if (!mensaje) return;
 
-    const { error } = await supabaseclient
+    const { error } = await supabaseClient
         .from('mensajes_privados')
         .insert([{
             conversation_privada_id: idConversacion,
@@ -2722,7 +2722,7 @@ async function enviarMensajePrivado(idConversacion) {
 async function mostrarPantallaAdminChat() {
     mostrarPantalla('pantalla-admin-chat');
 
-    const { data, error } = await supabaseclient
+    const { data, error } = await supabaseClient
         .from('conversaciones_privadas')
         .select('*')
         .eq('estado', 'activa');
@@ -2761,9 +2761,9 @@ async function abrirChatComoAdmin(idConversacion, nickUsuario, userIdUsuario) {
 
     cargarMensajesAdmin(idConversacion, userIdUsuario);
 
-    if (canalAdminActivo) await supabaseclient.removeChannel(canalAdminActivo);
+    if (canalAdminActivo) await supabaseClient.removeChannel(canalAdminActivo);
 
-    canalAdminActivo = supabaseclient.channel('admin_chat_' + idConversacion)
+    canalAdminActivo = supabaseClient.channel('admin_chat_' + idConversacion)
         .on('postgres_changes', {
             event: 'INSERT',
             schema: 'public',
@@ -2778,7 +2778,7 @@ async function abrirChatComoAdmin(idConversacion, nickUsuario, userIdUsuario) {
 
 // Cargar mensajes para admin
 async function cargarMensajesAdmin(idConversacion, userIdUsuario) {
-    const { data, error } = await supabaseclient
+    const { data, error } = await supabaseClient
         .from('mensajes_privados')
         .select('*')
         .eq('conversation_privada_id', idConversacion)
@@ -2810,7 +2810,7 @@ async function enviarMensajePrivadoAdmin() {
     const mensaje = document.getElementById('mensajeAdminPrivado').value.trim();
     if (!mensaje) return;
 
-    const { error } = await supabaseclient
+    const { error } = await supabaseClient
         .from('mensajes_privados')
         .insert([{
             conversation_privada_id: idConversacionAdminActual,
@@ -2839,7 +2839,7 @@ async function cerrarConversacion() {
     if (!idConversacionAdminActual) return;
 
     // Cerramos la conversación en la base de datos (sin alterar el Nick del usuario)
-    const { error } = await supabaseclient
+    const { error } = await supabaseClient
         .from('conversaciones_privadas')
         .update({ estado: 'cerrada' })  // Solo marcamos como cerrada
         .eq('id', idConversacionAdminActual);

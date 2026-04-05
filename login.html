@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MEC · Acceso</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+*{box-sizing:border-box;font-family:Arial}
+body{
+  margin:0;
+  background:#0f172a;
+  color:white;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:100vh;
+}
+
+.container{
+  width:100%;
+  max-width:380px;
+  background:#111827;
+  padding:35px;
+  border-radius:14px;
+  box-shadow:0 0 25px rgba(0,0,0,.4);
+}
+
+h1{
+  text-align:center;
+  margin-bottom:25px;
+}
+
+input{
+  width:100%;
+  padding:12px;
+  margin-bottom:12px;
+  border:none;
+  border-radius:8px;
+}
+
+button{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:8px;
+  background:#22c55e;
+  color:white;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+button:hover{background:#16a34a}
+
+.links{
+  text-align:center;
+  margin-top:15px;
+  font-size:14px;
+}
+
+.links a{
+  color:#38bdf8;
+  cursor:pointer;
+  display:block;
+  margin-top:8px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h1>MEC</h1>
+
+  <input type="email" id="email" placeholder="Correo">
+  <input type="password" id="password" placeholder="Contraseña">
+
+  <button onclick="login()">Ingresar</button>
+
+  <div class="links">
+    <a onclick="register()">Crear cuenta</a>
+    <a onclick="recover()">Recuperar contraseña</a>
+  </div>
+</div>
+
+<script>
+// ⚠️ PEGA TUS DATOS DE SUPABASE AQUÍ
+const supabaseUrl = "https://TU-PROYECTO.supabase.co";
+const supabaseKey = "TU-ANON-KEY";
+
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+async function login(){
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email,password
+  });
+
+  if(error) return alert(error.message);
+
+  window.location.href = "/";
+}
+
+async function register(){
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  const { error } = await supabase.auth.signUp({
+    email,password
+  });
+
+  if(error) return alert(error.message);
+
+  alert("Revisa tu correo para confirmar la cuenta");
+}
+
+async function recover(){
+  const email = document.getElementById("email").value;
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email,{
+    redirectTo: "https://mec1.vercel.app"
+  });
+
+  if(error) return alert(error.message);
+
+  alert("Correo de recuperación enviado");
+}
+</script>
+
+</body>
+</html>

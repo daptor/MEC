@@ -2,132 +2,136 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<title>MEC Login</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MEC · Acceso</title>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-*{box-sizing:border-box;font-family:Arial}
 body{
-  margin:0;
-  background:#0f172a;
-  color:white;
+  font-family: Arial, Helvetica, sans-serif;
+  background:#f4f6f8;
   display:flex;
-  align-items:center;
   justify-content:center;
+  align-items:center;
   height:100vh;
 }
 
-.container{
-  width:100%;
-  max-width:380px;
-  background:#111827;
-  padding:35px;
-  border-radius:14px;
-  box-shadow:0 0 25px rgba(0,0,0,.4);
+.card{
+  background:white;
+  padding:30px;
+  border-radius:10px;
+  box-shadow:0 0 20px rgba(0,0,0,.1);
+  width:320px;
 }
 
 h1{
   text-align:center;
-  margin-bottom:25px;
+  margin-bottom:20px;
 }
 
 input{
   width:100%;
-  padding:12px;
-  margin-bottom:12px;
-  border:none;
-  border-radius:8px;
+  padding:10px;
+  margin:8px 0;
+  border-radius:6px;
+  border:1px solid #ccc;
 }
 
 button{
   width:100%;
-  padding:12px;
+  padding:10px;
+  margin-top:10px;
   border:none;
-  border-radius:8px;
-  background:#22c55e;
+  border-radius:6px;
+  background:#2563eb;
   color:white;
   font-weight:bold;
   cursor:pointer;
 }
 
-button:hover{background:#16a34a}
-
-.links{
-  text-align:center;
-  margin-top:15px;
-  font-size:14px;
+button:hover{
+  background:#1d4ed8;
 }
 
-.links a{
-  color:#38bdf8;
-  cursor:pointer;
-  display:block;
-  margin-top:8px;
+.msg{
+  margin-top:10px;
+  text-align:center;
+  font-size:14px;
 }
 </style>
 </head>
 
 <body>
 
-<div class="container">
+<div class="card">
   <h1>MEC</h1>
 
-  <input type="email" id="email" placeholder="Correo">
-  <input type="password" id="password" placeholder="Contraseña">
+  <input id="email" type="email" placeholder="Correo">
+  <input id="password" type="password" placeholder="Contraseña">
 
+  <button onclick="crearCuenta()">Crear cuenta</button>
   <button onclick="login()">Ingresar</button>
+  <button onclick="resetPass()">Recuperar contraseña</button>
 
-  <div class="links">
-    <a onclick="register()">Crear cuenta</a>
-    <a onclick="recover()">Recuperar contraseña</a>
-  </div>
+  <div class="msg" id="msg"></div>
 </div>
 
+<!-- SOLO UNA VEZ SUPABASE -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
-// ⚠️ PEGA TUS DATOS DE SUPABASE AQUÍ
 const supabaseUrl = "https://mxqrzhpyfwuutardehyu.supabase.co";
 const supabaseKey = "sb_publishable_ltaNA7nnVozoSCOcZIjg";
-
 const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-async function login(){
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-
-  const { error } = await supabase.auth.signInWithPassword({
-    email,password
-  });
-
-  if(error) return alert(error.message);
-
-  window.location.href = "/";
+function mensaje(texto,color="black"){
+  const m=document.getElementById("msg");
+  m.style.color=color;
+  m.innerText=texto;
 }
 
-async function register(){
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+async function crearCuenta(){
+  const email=document.getElementById("email").value;
+  const password=document.getElementById("password").value;
 
   const { error } = await supabase.auth.signUp({
-    email,password
+    email: email,
+    password: password
   });
 
-  if(error) return alert(error.message);
-
-  alert("Revisa tu correo para confirmar la cuenta");
+  if(error){
+    mensaje(error.message,"red");
+  }else{
+    mensaje("Revisa tu correo para confirmar la cuenta 📧","green");
+  }
 }
 
-async function recover(){
-  const email = document.getElementById("email").value;
+async function login(){
+  const email=document.getElementById("email").value;
+  const password=document.getElementById("password").value;
 
-  const { error } = await supabase.auth.resetPasswordForEmail(email,{
-    redirectTo: "https://mec1.vercel.app"
+  const { error } = await supabase.auth.signInWithPassword({
+    email: email,
+    password: password
   });
 
-  if(error) return alert(error.message);
+  if(error){
+    mensaje(error.message,"red");
+  }else{
+    mensaje("Ingreso correcto ✅","green");
+    window.location.href="index.html";
+  }
+}
 
-  alert("Correo de recuperación enviado");
+async function resetPass(){
+  const email=document.getElementById("email").value;
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email);
+
+  if(error){
+    mensaje(error.message,"red");
+  }else{
+    mensaje("Correo de recuperación enviado 📧","green");
+  }
 }
 </script>
 

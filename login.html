@@ -14,7 +14,6 @@ body{
   align-items:center;
   height:100vh;
 }
-
 .card{
   background:white;
   padding:30px;
@@ -22,12 +21,7 @@ body{
   box-shadow:0 0 20px rgba(0,0,0,.1);
   width:320px;
 }
-
-h1{
-  text-align:center;
-  margin-bottom:20px;
-}
-
+h1{ text-align:center; }
 input{
   width:100%;
   padding:10px;
@@ -35,7 +29,6 @@ input{
   border-radius:6px;
   border:1px solid #ccc;
 }
-
 button{
   width:100%;
   padding:10px;
@@ -47,15 +40,9 @@ button{
   font-weight:bold;
   cursor:pointer;
 }
-
-button:hover{
-  background:#1d4ed8;
-}
-
 .msg{
   margin-top:10px;
   text-align:center;
-  font-size:14px;
 }
 </style>
 </head>
@@ -72,17 +59,13 @@ button:hover{
   <button onclick="login()">Ingresar</button>
   <button onclick="resetPass()">Recuperar contraseña</button>
 
-  <div class="msg" id="msg"></div>
+  <div id="msg" class="msg"></div>
 </div>
 
-<!-- SOLO UNA VEZ SUPABASE -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- ⚠️ IMPORTANTE: usamos TU cliente existente -->
+<script src="supabaseClient.js"></script>
 
 <script>
-const supabaseUrl = "https://mxqrzhpyfwuutardehyu.supabase.co";
-const supabaseKey = "sb_publishable_ltaNA7nnVozoSCOcZIjg";
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-
 function mensaje(texto,color="black"){
   const m=document.getElementById("msg");
   m.style.color=color;
@@ -93,7 +76,7 @@ async function crearCuenta(){
   const email=document.getElementById("email").value;
   const password=document.getElementById("password").value;
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: email,
     password: password
   });
@@ -101,7 +84,7 @@ async function crearCuenta(){
   if(error){
     mensaje(error.message,"red");
   }else{
-    mensaje("Revisa tu correo para confirmar la cuenta 📧","green");
+    mensaje("Cuenta creada. Revisa tu correo 📧","green");
   }
 }
 
@@ -109,7 +92,7 @@ async function login(){
   const email=document.getElementById("email").value;
   const password=document.getElementById("password").value;
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email: email,
     password: password
   });
@@ -125,7 +108,7 @@ async function login(){
 async function resetPass(){
   const email=document.getElementById("email").value;
 
-  const { error } = await supabase.auth.resetPasswordForEmail(email);
+  const { data, error } = await supabase.auth.resetPasswordForEmail(email);
 
   if(error){
     mensaje(error.message,"red");

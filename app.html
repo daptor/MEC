@@ -20,6 +20,7 @@ if (!user) {
 
 <div id="userBar">
   <span id="userEmail"></span>
+  <span id="userPlan"></span>
   <button id="logoutBtn">Cerrar sesión</button>
 </div>
 
@@ -356,12 +357,16 @@ if (!user) {
 <script src="script.js"></script>
 
 <script type="module">
-import { getUser, logout } from './session.js';
+import { getUser, getProfile, logout } from './session.js';
 
 const user = await getUser();
+const profile = await getProfile();
 
 document.getElementById("userEmail").innerText =
-  "Sesión iniciada como: " + user.email;
+  "👤 " + user.email;
+
+document.getElementById("userPlan").innerText =
+  " | Plan: " + profile.plan;
 
 document.getElementById("logoutBtn").addEventListener("click", logout);
 </script>

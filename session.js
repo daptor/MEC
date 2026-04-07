@@ -8,6 +8,22 @@ export async function getUser() {
   return user;
 }
 
+export async function getProfile() {
+  const user = await getUser();
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single();
+
+  if (error) {
+    console.error("Error cargando perfil:", error);
+  }
+
+  return data;
+}
+
 export async function logout() {
   await supabase.auth.signOut();
   window.location.href = "/login.html";

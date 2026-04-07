@@ -1,11 +1,10 @@
-const supabase = window.supabase.createClient(
-  "https://mxqrzhpyfwuutardehyu.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14cXJ6aHB5Znd1dXRhcmRlaHl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM0NjE0NDUsImV4cCI6MjA1OTAzNzQ0NX0.JaXYgxWKcbI_b7z0-ihvEHuueU7SSSy-_LlJfiYS9xs"
-);
+// authGuard.js  (USA el cliente ya creado en supabaseClient.js)
 
 document.addEventListener("DOMContentLoaded", async () => {
+
   const { data: { session } } = await supabase.auth.getSession();
 
+  // Si no hay sesión → enviar a login
   if (!session) {
     window.location.href = "/login.html";
     return;
@@ -13,12 +12,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const user = session.user;
 
+  // Obtener plan desde profiles
   const { data: profile } = await supabase
     .from("profiles")
     .select("plan")
     .eq("id", user.id)
     .single();
 
+  // Barra superior usuario
   const barra = document.createElement("div");
   barra.style.position = "fixed";
   barra.style.top = "0";
@@ -41,4 +42,5 @@ document.addEventListener("DOMContentLoaded", async () => {
     await supabase.auth.signOut();
     window.location.href = "/login.html";
   };
+
 });

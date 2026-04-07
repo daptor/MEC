@@ -8,16 +8,6 @@
 </head>
 <body>
 
-    <script type="module">
-import { getUser } from './session.js';
-
-const user = await getUser();
-
-if (!user) {
-  window.location.href = "/login.html";
-}
-</script>
-
 <div id="userBar">
   <span id="userEmail"></span>
   <span id="userPlan"></span>

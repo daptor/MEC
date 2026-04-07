@@ -7,6 +7,22 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+    <script type="module">
+import { getUser } from './session.js';
+
+const user = await getUser();
+
+if (!user) {
+  window.location.href = "/login.html";
+}
+</script>
+
+<div id="userBar">
+  <span id="userEmail"></span>
+  <button id="logoutBtn">Cerrar sesión</button>
+</div>
+
   <!-- Contenedor de información de visitas, fecha y hora -->
   <div id="info-container">
       <p><span id="hora"></span>    <span id="fecha"></span>         Visitas: <span id="contador">0</span></p>
@@ -339,20 +355,16 @@
   <script src="global.js"></script>
 <script src="script.js"></script>
 
-<!-- 🔐 PROTECCIÓN DE ACCESO  todo esto es nuevo excluyendo body -->
-<script>
-document.addEventListener("DOMContentLoaded", async () => {
-  if (!window.supabase) {
-    console.error("Supabase no está cargado");
-    return;
-  }
+<script type="module">
+import { getUser, logout } from './session.js';
 
-  const { data: { session } } = await supabase.auth.getSession();
+const user = await getUser();
 
-  if (!session) {
-    window.location.href = "/login.html";
-  }
-});
+document.getElementById("userEmail").innerText =
+  "Sesión iniciada como: " + user.email;
+
+document.getElementById("logoutBtn").addEventListener("click", logout);
 </script>
+
 </body>
 </html>

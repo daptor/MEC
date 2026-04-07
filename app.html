@@ -346,30 +346,20 @@ if (!user) {
       <button onclick="mostrarPantalla('menu-principal')">↩ Menú</button>
   </div>
 
-    <!-- (Opcional) Favicon vacío para evitar error 404 -->
-  <link rel="icon" href="data:,">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-  <script type="module">import { v4 as uuidv4 } from 'https://cdn.skypack.dev/uuid';</script>
-  <script src="global.js"></script>
-  <script src="script.js"></script>
-  <script src="global.js"></script>
-<script src="script.js"></script>
+<!-- Favicon -->
+<link rel="icon" href="data:,">
 
+<!-- Librerías -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <script type="module">
-import { getUser, getProfile, logout } from './session.js';
-
-const user = await getUser();
-const profile = await getProfile();
-
-document.getElementById("userEmail").innerText =
-  "👤 " + user.email;
-
-document.getElementById("userPlan").innerText =
-  " | Plan: " + profile.plan;
-
-document.getElementById("logoutBtn").addEventListener("click", logout);
+  import { v4 as uuidv4 } from 'https://cdn.skypack.dev/uuid';
 </script>
+
+<!-- Scripts de la app -->
+<script src="global.js"></script>
+<script src="authGuard.js"></script> <!-- 🔐 protección de sesión -->
+<script src="script.js"></script>
 
 </body>
 </html>

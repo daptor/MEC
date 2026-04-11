@@ -2606,31 +2606,65 @@ async function iniciarChatPrivado() {
 
 // Obtener o crear conversación privada
 async function obtenerOcrearConversacionPrivada(usuarioId) {
-    // Primero intentamos encontrar una conversación activa
+
+    // 🔐 Obtener usuario autenticado real
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+        console.error("No hay usuario autenticado");
+        return null;
+    }
+
+    // Primero intentamos encontrar una conversación existente (activa o cerrada)
     let { data, error } = await supabase
         .from('conversaciones_privadas')
         .select('id, estado')
-        .eq('usuario_id', usuarioId)
-        .single();
+        .eq('usuario_id', user.id)
+        .maybeSingle(); // 🔥 cambio importante
+
+    if (error) {
+        console.error("Error buscando conversación:", error);
+        return null;
+    }
 
     if (data) {
         if (data.estado === 'cerrada') {
-            // Si la conversación está cerrada, la reactivamos
+            // Reactivar conversación
             const { error: errorUpdate } = await supabase
                 .from('conversaciones_privadas')
-                .update({ estado: 'activa' })  // Reactivamos la conversación
+                .update({ estado: 'activa' })
                 .eq('id', data.id);
 
             if (errorUpdate) {
                 console.error('Error al reactivar la conversación:', errorUpdate);
                 return null;
             }
-            console.log('Conversación reactivada.');
+
+            console.log('Conversación reactivada');
             return data.id;
+
         } else if (data.estado === 'activa') {
-            return data.id;  // Ya existe una conversación activa
+            return data.id;
         }
     }
+
+    // 🔥 Crear nueva conversación
+    const { data: nueva, error: errInsert } = await supabase
+        .from('conversaciones_privadas')
+        .insert([{
+            usuario_id: user.id,
+            admin_id: user.id // 🔥 importante: usuario real, no "Admin"
+        }])
+        .select()
+        .single();
+
+    if (errInsert) {
+        console.error("Error creando conversación:", errInsert);
+        return null;
+    }
+
+    return nueva.id;
+}
 
     // Si no existe ninguna conversación activa o cerrada, creamos una nueva
     const { data: nueva, error: errInsert } = await supabase
@@ -2699,20 +2733,30 @@ async function enviarMensajePrivado(idConversacion) {
     const mensaje = document.getElementById('mensajeUsuarioPrivado').value.trim();
     if (!mensaje) return;
 
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+        alert("Sesión no válida");
+        return;
+    }
+
     const { error } = await supabase
         .from('mensajes_privados')
         .insert([{
             conversation_privada_id: idConversacion,
             mensaje,
-            user_id: localStorage.getItem("user_id"),
+            user_id: user.id, // 🔥 ESTO ARREGLA TODO
             rol: localStorage.getItem("rol")
         }]);
 
+    if (error) {
+        console.error("Error enviando mensaje:", error);
+        alert("No se pudo enviar el mensaje");
+        return;
+    }
+
     document.getElementById('mensajeUsuarioPrivado').value = '';
     cargarMensajesPrivados(idConversacion);
-
-    // Hacer scroll hacia abajo después de enviar el mensaje
-    scrollToBottom('mensaje-chat-privado');
 }
 
 // Mostrar pantalla Admin Chat

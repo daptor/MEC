@@ -2581,7 +2581,13 @@ function reproducirSonido() {
 
 // Iniciar Chat Privado Usuario
 async function iniciarChatPrivado() {
+
+    const { data: { user } } = await supabase.auth.getUser();
+    console.log("AUTH UID:", user?.id);
+
     const usuarioId = localStorage.getItem("user_id");
+    console.log("LOCALSTORAGE UID:", usuarioId);
+
     if (!usuarioId) {
         alert("No encontrado user_id en LocalStorage");
         return;

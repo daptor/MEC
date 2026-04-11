@@ -2581,11 +2581,14 @@ function reproducirSonido() {
 
 // Iniciar Chat Privado Usuario
 async function iniciarChatPrivado() {
-    const usuarioId = localStorage.getItem("user_id");
-    if (!usuarioId) {
-        alert("No encontrado user_id en LocalStorage");
+    const { data: { user }, error } = await supabase.auth.getUser();
+
+    if (error || !user) {
+        alert("No hay sesión activa. Debes iniciar sesión.");
         return;
     }
+
+    const usuarioId = user.id;
 
     const idConversacion = await obtenerOcrearConversacionPrivada(usuarioId);
     if (!idConversacion) {
@@ -2804,14 +2807,16 @@ async function enviarMensajePrivadoAdmin() {
     const mensaje = document.getElementById('mensajeAdminPrivado').value.trim();
     if (!mensaje) return;
 
-    const { error } = await supabase
-        .from('mensajes_privados')
-        .insert([{
-            conversation_privada_id: idConversacionAdminActual,
-            mensaje,
-            user_id: 'Admin',
-            rol: 'admin'
-        }]);
+const user = await supabase.auth.getUser();
+
+const { error } = await supabase
+    .from('mensajes_privados')
+    .insert([{
+        conversation_privada_id: idConversacionAdminActual,
+        mensaje,
+        user_id: user.data.user.id, // ✅ CORRECTO
+        rol: 'admin'
+    }]);
 
 
     document.getElementById('mensajeAdminPrivado').value = '';

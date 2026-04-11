@@ -2869,3 +2869,24 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 });
+// 🚀 INICIO AUTOMÁTICO SOLO PARA APP PROTEGIDA
+document.addEventListener("DOMContentLoaded", async () => {
+
+    // Detectar si estamos en app-protegida.html
+    if (window.location.pathname.includes("app-protegida.html")) {
+
+        // Simular usuario normal
+        localStorage.setItem("rol", "usuario");
+
+        // Mostrar menú directamente
+        const menu = document.getElementById("menu-principal");
+        if (menu) menu.style.display = "block";
+
+        // Ejecutar lógica que antes estaba en login
+        try {
+            await actualizarContadorsupabase();
+        } catch (e) {
+            console.log("contador no ejecutado:", e);
+        }
+    }
+});

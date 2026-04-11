@@ -2214,15 +2214,21 @@ document.addEventListener("DOMContentLoaded", function () {
         if (mensajeError) mensajeError.style.display = "none";
     }
 
-    // Asignar las funciones al objeto global 'window'
-    window.mostrarClaveInput = mostrarClaveInput;
-    window.verificarClave = verificarClave;
-    window.cerrarModalClave = cerrarModalClave;
+// Asignar las funciones al objeto global 'window'
+window.mostrarClaveInput = mostrarClaveInput;
+window.verificarClave = verificarClave;
+window.cerrarModalClave = cerrarModalClave;
 
-    // Enlazar las funciones a los botones del DOM
-    document.getElementById("select-sindicato").addEventListener("change", mostrarClaveInput);
-    document.getElementById("ingresarBtn").addEventListener("click", verificarClave);
-});
+// Enlazar las funciones solo si existen los elementos
+const selectSindicato = document.getElementById("select-sindicato");
+if (selectSindicato) {
+    selectSindicato.addEventListener("change", mostrarClaveInput);
+}
+
+const btnIngresar = document.getElementById("ingresarBtn");
+if (btnIngresar) {
+    btnIngresar.addEventListener("click", verificarClave);
+}
 
 // ******bienvenida*********
 document.addEventListener("DOMContentLoaded", function () {

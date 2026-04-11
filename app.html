@@ -356,11 +356,18 @@
 <!-- Favicon -->
 <link rel="icon" href="data:,">
 
-<!-- Librerías -->
+<!-- Librería Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="global.js"></script>
-<script src="authGuard.js"></script> <!-- 🔐 protección de sesión -->
-<script src="script.js"></script>
+
+<!-- Cliente Supabase (crea la variable global supabase) -->
+<script src="../supabaseClient.js"></script>
+
+<!-- Protección de sesión (usa supabase) -->
+<script src="../authGuard.js"></script>
+
+<!-- Scripts de la app -->
+<script src="../global.js"></script>
+<script src="../script.js"></script>
 
 </body>
 </html>

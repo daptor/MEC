@@ -8,29 +8,8 @@
 </head>
 <body>
 
-<!-- 🔐 Barra sesión usuario -->
-<div id="barra-usuario" style="
-  width:100%;
-  background:#111;
-  color:white;
-  padding:8px 15px;
-  box-sizing:border-box;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  font-size:14px;
-">
-  <span>👤 <span id="userEmail">Cargando usuario...</span></span>
-  <button id="btnLogout" style="
-      background:#e53935;
-      color:white;
-      border:none;
-      padding:6px 12px;
-      border-radius:6px;
-      cursor:pointer;
-  ">Cerrar sesión</button>
-</div>
 
+    
   <!-- Contenedor de información de visitas, fecha y hora -->
   <div id="info-container">
       <p><span id="hora"></span>    <span id="fecha"></span>         Visitas: <span id="contador">0</span></p>
@@ -359,15 +338,9 @@
 <!-- Librería Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<!-- Cliente Supabase (crea la variable global supabase) -->
-<script src="../supabaseClient.js"></script>
-
-<!-- Protección de sesión (usa supabase) -->
-<script src="../authGuard.js"></script>
-
-<!-- Scripts de la app -->
-<script src="../global.js"></script>
-<script src="../script.js"></script>
+<script src="supabaseClient.js"></script>
+<script src="global.js"></script>
+<script src="script.js"></script>
 
 </body>
 </html>

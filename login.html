@@ -66,6 +66,16 @@ button{
 <script src="supabaseClient.js"></script>
 
 <script>
+document.addEventListener("DOMContentLoaded", async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if(session){
+    window.location.href = "app.html";
+  }
+});
+</script>
+
+<script>
 function mensaje(texto,color="black"){
   const m=document.getElementById("msg");
   m.style.color=color;
@@ -101,7 +111,7 @@ async function login(){
     mensaje(error.message,"red");
   }else{
     mensaje("Ingreso correcto ✅","green");
-    window.location.href="index.html";
+    window.location.href="app.html";
   }
 }
 

@@ -2608,7 +2608,7 @@ async function obtenerOcrearConversacionPrivada(usuarioId) {
         .from('conversaciones_privadas')
         .select('id, estado')
         .eq('usuario_id', usuarioId)
-        .single();
+        .maybesingle();
 
     if (data) {
         if (data.estado === 'cerrada') {

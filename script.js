@@ -2847,3 +2847,25 @@ async function cerrarConversacion() {
     document.getElementById("chat-admin-panel").style.display = "none";
     await mostrarPantallaAdminChat();  // Regresamos a la pantalla principal de conversaciones
 }
+
+// <---- boton salir de secion----->
+document.addEventListener("DOMContentLoaded", async () => {
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return;
+
+  const user = session.user;
+
+  const emailEl = document.getElementById("userEmail");
+  if (emailEl) emailEl.textContent = user.email;
+
+  const logoutBtn = document.getElementById("btnLogout");
+
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", async () => {
+      await supabase.auth.signOut();
+      window.location.href = "/login.html";
+    });
+  }
+
+});

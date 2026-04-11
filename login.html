@@ -70,7 +70,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const { data: { session } } = await supabase.auth.getSession();
 
   if(session){
-    window.location.href = "app.html";
+    window.location.href = "app-protegida.html";
   }
 });
 </script>
@@ -110,8 +110,10 @@ async function login(){
   if(error){
     mensaje(error.message,"red");
   }else{
-    mensaje("Ingreso correcto ✅","green");
-    window.location.href="app.html";
+    mensaje("Ingreso correcto","green");
+
+    // 🔥 AQUÍ ESTÁ LA CLAVE
+  window.location.replace("app-protegida.html");
   }
 }
 

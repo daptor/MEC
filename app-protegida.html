@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MEC</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+
+    
+  <!-- Contenedor de información de visitas, fecha y hora -->
+  <div id="info-container">
+      <p><span id="hora"></span>    <span id="fecha"></span>         Visitas: <span id="contador">0</span></p>
+      <button id="resetContador" class="hidden-reset" onclick="resetContador()">Resetear Contador</button>
+  </div>
+
+<div style="position:absolute; top:10px; right:10px; text-align:right;">
+  <div>👤 <span id="userEmail"></span></div>
+  <button id="btnLogout">Cerrar sesión</button>
+</div>
+
+  <!-- Menú Principal -->
+  <div id="menu-principal" class="pantalla" style="display: none;">
+      <div class="logo-container">
+          <img src="logo1.png" alt="Logotipo de MEC">
+      </div>
+      <h1>Menú Principal</h1>
+      <button onclick="mostrarPantalla('pantalla-analisis')">🔥 Análisis de Liquidación</button>
+      <button onclick="mostrarPantalla('pantalla-vacaciones')">🌊 Cálculo de Vacaciones</button>
+      <button onclick="mostrarPantalla('screen-finiquito')">👋 Cálculo de Finiquito</button>
+      <button onclick="mostrarPantalla('pantalla-horas')">⏳ Cálculo de Horas</button>
+      <button onclick="mostrarPantalla('pantalla-recursos')">✅ Recursos Útiles</button>
+      <button onclick="ingresarAlChat()">📢 Chat Grupal y Privado</button>
+      <button onclick="mostrarPantalla('pantalla-archivosindical')">📂 Archivo Sindical</button>
+      <button onclick="salirAplicacion()">Salir de la Aplicación</button>
+  </div>
+
+  <!-- ++++++++++++++++++++++ las otras funciones originales +++++++++++++++++++++++-->
+  <!-- Pantalla de Análisis de Liquidación -->
+  <div id="pantalla-analisis" class="pantalla" style="display: none;">
+      <h1>Análisis de Liquidación</h1>
+      <p><strong><em>* A partir Mayo 2024, la jornada máxima es de 44 horas.*</em></strong></p>
+      <label for="jornada">Elige tu jornada laboral </label>
+      <select id="jornada" required>
+          <option value="">Selecciona la jornada</option>
+          <option value="45">Completa (45 horas)</option>
+          <option value="44" selected>Completa (44 horas)</option>
+          <option value="43">Completa (43 horas)</option>
+          <option value="42">Completa (42 horas)</option>
+          <option value="41">Completa (41 horas)</option>
+          <option value="40">Completa (40 horas)</option>
+          <option value="30">Parcial (30 hrs)</option>
+          <option value="25">Parcial (25 hrs)</option>
+          <option value="20">Parcial (20 hrs)</option>
+          <option value="18">Parcial (18 hrs)</option>
+      </select>
+      <p><label for="fileInput">Ingresa una liquidación de sueldo en formato PDF</label></p>
+      <input type="file" id="fileInput">
+      <p>
+        <label for="filePremio">(Opcional) Subir Informe "Premio de Venta" (Reporte Resumen):</label>
+        <input type="file" id="filePremio" accept="application/pdf">
+      </p>
+      
+      <!-- Botón para activar ingreso manual -->
+<button id="btnIngresoManual" style="margin-top:10px; background:#4CAF50; color:white;">
+    Ingreso manual Reporte de Ventas
+</button>
+
+<!-- Formulario Manual (inicialmente oculto) -->
+<div id="formularioManual" style="display:none; margin-top:20px; border:1px solid #ccc; padding:15px; border-radius:8px;">
+    <h3>Ingreso Manual de Datos</h3>
+
+    <label for="manualHorasAsesor">Horas trabajadas por el asesor:</label>
+    <input type="number" id="manualHorasAsesor" placeholder="Ej: 160">
+
+    <label for="manualHorasDepto">Horas totales del departamento:</label>
+    <input type="number" id="manualHorasDepto" placeholder="Ej: 450">
+
+    <label for="manualVentaTienda">Venta tienda total:</label>
+    <input type="number" id="manualVentaTienda" placeholder="Ej: 145000000">
+
+    <label for="manualPorcentaje">Porcentaje tienda (decimal):</label>
+    <input type="number" step="0.001" id="manualPorcentaje" placeholder="Ej: 0.26">
+
+    <button id="btnCalcularManual" style="margin-top:15px; background:#1976D2; color:white;">
+        Calcular Comisión Manual
+    </button>
+</div>
+
+      <button onclick="analizarArchivo()">Calcular</button>
+      <button onclick="mostrarPantalla('menu-principal')">↩ Menu</button>
+      <div id="resultadoAnalisis"></div>
+      <div class="container gratificacion-container" id="gratificacionMec" style="display: none;">
+          <h3>Gratificación Mec</h3>
+          <div id="listaGratificables"></div>
+      </div>
+      <div class="container" id="resultadoGratificacion"></div>
+      <button id="refrescarBtnAnalisis">Borrar</button>
+  </div>
+  
+  <!-- Pantalla de Vacaciones -->
+  <div id="pantalla-vacaciones" class="pantalla" style="display: none;">
+      <h2>Cálculo de Vacaciones</h2>
+      <p>Sube los siguientes archivos:</p>
+      <ul>
+          <li>1 PDF con el pago de vacaciones</li>
+          <li>3 a 6 PDFs con al menos 27 días trabajados</li>
+      </ul>
+      <p class="alerta">No subir liquidaciones con ausencias por licencias médicas o permisos sin goce de sueldo.</p>
+      <input type="file" id="vacacionInput" multiple>
+      <button id="calcularVacacionesBtn">Calcular Vacaciones</button>
+      <button id="volverBtn" onclick="mostrarPantalla('menu-principal')">↩ Menu</button>
+      <div id="resultadoVacaciones"></div>
+      <button id="refrescarBtnVacaciones">Borrar</button>
+  </div>
+  <!-- Pantalla de Finiquito -->
+  <div id="screen-finiquito" class="pantalla" style="display: none;">
+      <h2>Cálculo de Finiquito</h2>
+      <label for="fechaInicioContrato">Fecha de Inicio de Contrato:</label>
+      <input type="date" id="fechaInicioContrato" required>
+      <label for="fechaDesvinculacion">Fecha de Desvinculación:</label>
+      <input type="date" id="fechaDesvinculacion" required>
+      <label for="diasTrabajadosUltimoMes">Ingrese días trabajados en el ultimo mes:</label>
+      <input type="number" id="diasTrabajadosUltimoMes" placeholder="Días trabajados en el último mes" />
+      <div>
+          <label for="diasVacacionesPendientes">Ingrese días de vacaciones pendientes:</label>
+          <input type="number" id="diasVacacionesPendientes" placeholder="Días pendientes">
+      </div>
+      <input type="file" id="fileFiniquito" multiple accept="application/pdf">
+      <button id="calcularFiniquito">Calcular</button>
+      <button class="backBtn" data-target="menu-principal">↩ Menu</button>
+      <div id="resultadosFiniquito" class="result-container hidden"></div>
+      <div id="resultadosNoFiniquito" class="hidden"></div>
+      <button id="refrescarFiniquito">Borrar</button>
+  </div>
+
+  <!-- Pantalla de Cálculo de Horas -->
+  <div id="pantalla-horas" class="pantalla">
+      <h1>Cálculo de Horas</h1>
+      <!-- Datos de entrada -->
+      <label for="horas-sueldoBase">Sueldo Base:</label>
+      <input type="number" id="horas-sueldoBase" placeholder="Ingrese su sueldo base">
+      <label for="horas-jornada">Jornada Laboral:</label>
+      <select id="horas-jornada">
+          <option value="">Selecciona la jornada</option>
+          <option value="45">45 horas</option>
+          <option value="44" selected>44 horas</option>
+          <option value="43">43 horas</option>
+          <option value="42">42 horas</option>
+          <option value="41">41 horas</option>
+          <option value="40">40 horas</option>
+          <option value="30">30 horas</option>
+          <option value="25">25 horas</option>
+          <option value="20">20 horas</option>
+          <option value="18">18 horas</option>
+      </select>
+      <label for="horas-horasExtras">Horas Extras Realizadas:</label>
+      <input type="number" id="horas-horasExtras" placeholder="Ingrese cantidad de horas extras">
+      <label for="horas-horasRecargoDomingo">Horas Recargo Domingo:</label>
+      <input type="number" id="horas-horasRecargoDomingo" placeholder="Ingrese cantidad de horas con recargo">
+      <label for="horas-horasExtrasDomingo">Horas Extras Domingo:</label>
+      <input type="number" id="horas-horasExtrasDomingo" placeholder="Ingrese cantidad de horas extras en domingo">
+
+      <!-- Botones de acción -->
+      <button onclick="calcularHoras()">Calcular</button>
+      <button onclick="mostrarPantalla('menu-principal')">↩ Menú</button>
+      <button onclick="refrescarHoras()">Borrar</button>
+      <!-- Resultados -->
+      <div id="horas-resultado">
+          <p>📌 Factor de Horas Extras Utilizado: <span id="horas-factor"></span></p>
+          <p>💰 Valor Hora Base: <span id="horas-valorHoraBase"></span></p>
+          <p>⏳ Valor Horas Extras: <span id="horas-valorHorasExtras"></span></p>
+          <p>🌞 Valor Recargo Domingo: <span id="horas-valorRecargoDomingo"></span></p>
+          <p>🔥 Valor Horas Extras Domingo: <span id="horas-valorHorasExtrasDomingo"></span></p>
+      </div>
+  </div>
+
+  <!-- Pantalla de Chat -->
+  <div id="pantalla-chat" class="pantalla" style="display: none;">
+      <h1>Chat MEC</h1>
+      <div id="mensaje-chat">
+          <!-- Los mensajes se mostrarán aquí -->
+      </div>
+      <textarea id="mensajeUsuario" rows="4" placeholder="Escribe aquí..." required></textarea>
+      <button id="enviarMensajeBtn">Enviar mensaje</button>
+      <p id="confirmacionEnvio" style="display:none; color: green;">✅ ¡Mensaje enviado!</p>
+      <button id="cambiarNickBtn">Cambiar mi Nick</button>
+      <!-- Botones de chat privado -->
+          <div id="botones-chat-privado">
+              <button onclick="iniciarChatPrivado()" id="btnChatPrivado">🗨️ Chat Privado</button>
+              <button onclick="mostrarPantallaAdminChat()" id="btnAdminChatPrivado" style="display:none;">👑 Chat Privado Admin</button>
+          </div>
+      <button onclick="mostrarPantalla('menu-principal')">↩ Menú</button>
+  </div>
+
+  <!-- Pantalla de Chat Privado (Usuario) -->
+  <div id="pantalla-chat-privado" class="pantalla" style="display:none;">
+      <h1>Chat con Admin</h1>
+      <div id="mensaje-chat-privado" class="chat-container"></div>
+      <textarea id="mensajeUsuarioPrivado" rows="3" placeholder="Escribe tu mensaje privado..."></textarea>
+      <button id="enviarMensajePrivadoBtn">Enviar Mensaje</button>
+      <p id="confirmacionEnvioPrivado" style="display:none; color: green;">✅ ¡Mensaje enviado!</p>
+      <button onclick="mostrarPantalla('pantalla-chat')">💬 Volver al Chat Grupal</button>
+      <button onclick="volverAlMenu()">↩ Menú</button>
+  </div>
+
+  <!-- Pantalla de Admin para gestionar chats privados -->
+  <div id="pantalla-admin-chat" class="pantalla" style="display:none;">
+      <h1>Chats Privados</h1>
+      <p id="contador-conversaciones" style="font-weight: bold; margin-bottom: 10px;"></p>
+      <div id="lista-conversaciones"></div>
+      <hr>
+      <div id="chat-admin-panel" style="display:none;">
+          <h2>Usuario: <span id="nombreUsuarioChat"></span></h2>
+          <div id="admin-chat-mensajes" class="chat-container" style="overflow-y:auto; max-height:400px;"></div>
+          <textarea id="mensajeAdminPrivado" rows="3" placeholder="Responder..."></textarea>
+          <button onclick="enviarMensajePrivadoAdmin()">Enviar Respuesta</button>
+          <button onclick="cerrarConversacion()">❌ Cerrar Conversación</button>
+          <hr>
+          <div class="botones-admin-chat">
+              <button onclick="mostrarListaConversaciones()">🗨 Volver a Lista de Chats</button>
+              <button onclick="mostrarPantalla('pantalla-chat')">💬 Volver al Chat Grupal</button>
+              <button onclick="mostrarPantalla('menu-principal')">↩ Menú</button>
+          </div>
+      </div>
+      <!-- Sección cuando no hay conversaciones activas -->
+      <div id="sin-conversaciones-activa" style="display:none;">
+          <p>Actualmente no hay conversaciones activas.</p>
+          <button onclick="mostrarPantalla('pantalla-chat')">💬 Volver al Chat Grupal</button>
+          <button onclick="mostrarPantalla('menu-principal')">↩ Menú</button>
+      </div>
+  </div>
+
+  <!-- Nueva Pantalla de Recursos -->
+  <div id="pantalla-recursos" class="pantalla" style="display: none;">
+      <h1>Recursos Útiles</h1>
+      <ul>
+      <li><a href="https://access-key-corp.falabella.tech/auth/realms/esti/protocol/openid-connect/auth?client_id=mi-falabella&redirect_uri=https%3A%2F%2Fmi.falabella.com%2F%23%2Fauth%2F%3FskipRedirect%3Dtrue&state=57f0187e-40af-4fdf-8064-3d1dfff0ee1d&response_mode=fragment&response_type=code&scope=openid&nonce=d95e0f89-b50c-4bd1-8f90-a5dbb528d479&code_challenge=cC9EmYJOJfG1K9h8wCvmGpHUSkvIWcBiDncldUEeKFg&code_challenge_method=S256" target="_blank">Mi.Falabella.com</a></li>
+      <li><a href="https://falaweb.falabella.com/" target="_blank">Falaweb Falabella (Descarga tu PDF)</a></li>
+      <li><a href="https://portal.beneficios.falabella.com/" target="_blank">Beneficios Falabella (clave Falanet)</a></li>
+      <li><a href="https://portalf.cl/convenios-y-beneficios/" target="_blank">Portal: Convenios y Beneficios</a></li>
+      <li><a href="https://ca.clinicavirtual.com/meimportas" target="_blank">Meimportas (Seg. FAlabella)</a></li>
+      <li><a href="https://canaldeintegridad.ines.cl/falabella/" target="_blank">Canal de Integridad Falabella</a></li>
+      <li><a href="https://vbench.virtuaresearch.com/IR/IAC/?ticker=SACI&exchange=SANTIAGO" target="_blank">Centro de análisis interactivo Falabella</a></li>
+      <li><a href="https://www.facebook.com/fetrahfal/?locale=es_LA" target="_blank">Facebook Fetrahfal</a></li>
+      <hr><li><a href="Documento Público General/Datos/Cod Trab ene24.pdf" target="_blank"> 📄 Ver Código del Trabajo 2024</a></li>
+      <li><a href="https://www.dt.gob.cl/legislacion/1624/w3-article-95516.html" target="_blank">Descargar Código del Trabajo</a></li>
+      <li><a href="https://www.dt.gob.cl/portal/1626/w3-channel.html" target="_blank">Dirección del Trabajo</a></li>
+      <li><a href="https://www.dt.gob.cl/portal/1626/w3-article-99712.html" target="_blank">DT-Organizacion Sindical Base</a></li>
+          <li><a href="https://tramites.dirtrab.cl/ventanillarrll/ingreso2.aspx" target="_blank">DT-Ventanilla Sindical</a></li>
+      <li><a href="https://www.dt.gob.cl/portal/1626/w3-propertyname-2556.html" target="_blank">DT-Ley de 40 horas</a></li><hr>
+      <li><a href="https://mi3.chileatiende.gob.cl/micha/inicio" target="_blank">Mi Chileatiende</a></li>
+      <li><a href="https://nuevo.fonasa.gob.cl/" target="_blank">FONASA</a></li>
+      <li><a href="https://milicenciamedica.cl/cotizante/" target="_blank">COMPIN</a></li>
+      <li><a href="https://www.sii.cl/valores_y_fechas/utm/utm2024.htm" target="_blank">Servicio de Impuestos Internos</a></li>
+      <li><a href="https://calculadoraipc.ine.cl/" target="_blank">Calculadora de IPC</a></li>
+      <li><a href="https://www.pjud.cl/home" target="_blank">Poder Judicial</a></li><hr>
+      <li><a href="https://www.retrogames.cz/play_273-SNES.php" target="_blank">Juego Mr Do!</a></li><hr>
+      </ul>
+      <button onclick="mostrarPantalla('menu-principal')">↩ Menú</button>
+  </div>
+
+  <!-- Nueva Pantalla archivos sindical -->
+  <div id="pantalla-archivosindical" class="pantalla" style="display: none;">
+      <h1>Archivo Sindical</h1>
+      <p>Archivo Sindicatos, Documentos Federación y Datos.</p>
+      <!-- Lista desplegable para seleccionar sindicato -->
+      <select id="select-sindicato" onchange="mostrarClaveInput()">
+          <option value="" selected>Selecciona un Sindicato</option>
+          <option value="Concepcion">Sindicato Concepción</option>
+          <option value="Costanera">Sindicato Costanera</option>
+          <option value="Curico">Sindicato Curicó</option>
+          <option value="Iquique">Sindicato Iquique</option>
+          <option value="PlazaNorte">Sindicato Plaza Norte</option>
+          <option value="PuertoMontt">Sindicato Puerto Montt</option>
+          <option value="Rancagua">Sindicato Rancagua</option>
+          <option value="Trebol">Sindicato Trebol</option>
+      </select>
+      <!-- Modal para ingresar la clave -->
+      <div id="modal-clave" class="modal oculto">
+          <div class="modal-contenido">
+              <h3>Ingrese la clave de acceso</h3>
+              <label for="clave-input">Clave:</label>
+              <input type="password" id="clave-input" required autocomplete="new-password" placeholder="8 dígitos o letras">
+              <button type="button" onclick="verificarClave()">Aceptar</button>
+              <button type="button" onclick="cerrarModalClave()">Cancelar</button>
+              <p id="mensaje-error" class="error-msg oculto"></p>
+          </div>
+      </div>
+      <!-- Botón Volver al menú -->
+      <button onclick="mostrarPantalla('menu-principal')">↩ Menú</button>
+  </div>
+  <!-- Pantalla de documentos (mostrar solo después de ingresar la clave correctamente) -->
+  <div id="pantalla-documentos" class="pantalla" style="display: none;">
+      <h2 id="nombre-sindicato"></h2>
+      <ul id="lista-documentos-sindicato"></ul>
+      <h3>Documentos Federación</h3>
+      <ul id="lista-documentos-publicos"></ul>
+      <h3>Documentos Interesantes</h3>
+      <ul id="lista-documentos-varios"></ul>
+      <button onclick="mostrarPantalla('menu-principal')">↩ Menú</button>
+  </div>
+
+<!-- Favicon -->
+<link rel="icon" href="data:,">
+
+<!-- Librería Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script src="supabaseClient.js"></script>
+<script src="script.js"></script>
+<script src="global.js"></script>
+<script src="authGuard.js"></script>
+
+</body>
+</html>

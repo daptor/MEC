@@ -1,12 +1,6 @@
 // authGuard.js
 // 🔐 Protección de sesión + barra usuario + botón logout
 
-// Crear cliente Supabase (solo una vez)
-const supabase = window.supabase.createClient(
-  "https://mxqrzhpyfwuutardehyu.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14cXJ6aHB5Znd1dXRhcmRlaHl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM0NjE0NDUsImV4cCI6MjA1OTAzNzQ0NX0.JaXYgxWKcbI_b7z0-ihvEHuueU7SSSy-_LlJfiYS9xs"
-);
-
 document.addEventListener("DOMContentLoaded", async () => {
   const { data: { session } } = await supabase.auth.getSession();
 

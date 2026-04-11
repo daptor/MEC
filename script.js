@@ -100,30 +100,34 @@ async function obtenerClaves() {
 }
 
 // Verificación del código de acceso
-document.getElementById("ingresarBtn").addEventListener("click", async function () {
-    const codigoIngresado = document.getElementById("codigoAcceso").value;
-    const claves = await obtenerClaves(); // Obtener claves desde Vercel
+const btnIngresar = document.getElementById("ingresarBtn");
 
-    if (codigoIngresado === claves.ADMIN_KEY) {
-        // Si es administrador, guarda el rol en localStorage
-        localStorage.setItem("rol", "admin");
-        document.getElementById("login-container").style.display = "none";
-        document.getElementById("menu-principal").style.display = "block";
-        document.body.classList.add('admin');  // Agregar clase 'admin' al body para mostrar el botón de reset
-    } else if (codigoIngresado === claves.CODIGO_ACCESO) {
-        // Si es usuario normal
-        localStorage.setItem("rol", "usuario");
-        document.getElementById("login-container").style.display = "none";
-        document.getElementById("menu-principal").style.display = "block";
+if (btnIngresar) {
+    btnIngresar.addEventListener("click", async function () {
+        const codigoIngresado = document.getElementById("codigoAcceso").value;
+        const claves = await obtenerClaves(); // Obtener claves desde Vercel
 
-        // Llamar a la función para actualizar el contador de visitas en supabase
-        await actualizarContadorsupabase(); // Llama a la función para actualizar el contador en supabase
-    } else {
-        const mensajeError = document.getElementById("mensajeError");
-        mensajeError.style.display = "block";
-        mensajeError.textContent = "Código incorrecto. Intenta nuevamente."; // Asegura que el mensaje sea visible
-    }
-});
+        if (codigoIngresado === claves.ADMIN_KEY) {
+            // Si es administrador, guarda el rol en localStorage
+            localStorage.setItem("rol", "admin");
+            document.getElementById("login-container").style.display = "none";
+            document.getElementById("menu-principal").style.display = "block";
+            document.body.classList.add('admin');  // Agregar clase 'admin'
+        } else if (codigoIngresado === claves.CODIGO_ACCESO) {
+            // Si es usuario normal
+            localStorage.setItem("rol", "usuario");
+            document.getElementById("login-container").style.display = "none";
+            document.getElementById("menu-principal").style.display = "block";
+
+            // Actualizar contador
+            await actualizarContadorsupabase();
+        } else {
+            const mensajeError = document.getElementById("mensajeError");
+            mensajeError.style.display = "block";
+            mensajeError.textContent = "Código incorrecto. Intenta nuevamente.";
+        }
+    });
+}
 
 // Función para mostrar una pantalla específica
 function mostrarPantalla(idPantalla) {
@@ -2868,25 +2872,4 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-});
-// 🚀 INICIO AUTOMÁTICO SOLO PARA APP PROTEGIDA
-document.addEventListener("DOMContentLoaded", async () => {
-
-    // Detectar si estamos en app-protegida.html
-    if (window.location.pathname.includes("app-protegida.html")) {
-
-        // Simular usuario normal
-        localStorage.setItem("rol", "usuario");
-
-        // Mostrar menú directamente
-        const menu = document.getElementById("menu-principal");
-        if (menu) menu.style.display = "block";
-
-        // Ejecutar lógica que antes estaba en login
-        try {
-            await actualizarContadorsupabase();
-        } catch (e) {
-            console.log("contador no ejecutado:", e);
-        }
-    }
 });

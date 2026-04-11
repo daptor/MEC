@@ -7,9 +7,7 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-
-    
+ 
   <!-- Contenedor de información de visitas, fecha y hora -->
   <div id="info-container">
       <p><span id="hora"></span>    <span id="fecha"></span>         Visitas: <span id="contador">0</span></p>
@@ -22,7 +20,7 @@
 </div>
 
   <!-- Menú Principal -->
-  <div id="menu-principal" class="pantalla" style="display: none;">
+  <div id="menu-principal" class="pantalla" style="display: block;">
       <div class="logo-container">
           <img src="logo1.png" alt="Logotipo de MEC">
       </div>
@@ -313,6 +311,16 @@
 <script src="script.js"></script>
 <script src="global.js"></script>
 <script src="authGuard.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    // Mostrar menú directamente
+    const menu = document.getElementById("menu-principal");
+    if (menu) {
+        menu.style.display = "block";
+    }
+});
+</script>
 
 </body>
 </html>

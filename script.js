@@ -2208,10 +2208,8 @@ document.addEventListener("DOMContentLoaded", function () {
 function cerrarModalClave() {
     const modalClave = document.getElementById("modal-clave");
     if (modalClave) modalClave.classList.add("oculto");
-
     const claveInput = document.getElementById("clave-input");
     if (claveInput) claveInput.value = "";
-
     const mensajeError = document.getElementById("mensaje-error");
     if (mensajeError) mensajeError.style.display = "none";
 }
@@ -2221,16 +2219,10 @@ window.mostrarClaveInput = mostrarClaveInput;
 window.verificarClave = verificarClave;
 window.cerrarModalClave = cerrarModalClave;
 
-// Enlazar las funciones a los botones del DOM (CORREGIDO SIN ROMPER)
-const elSelectSindicato = document.getElementById("select-sindicato");
-if (elSelectSindicato !== null) {
-    elSelectSindicato.addEventListener("change", mostrarClaveInput);
-}
-
-const elIngresarBtn = document.getElementById("ingresarBtn");
-if (elIngresarBtn !== null) {
-    elIngresarBtn.addEventListener("click", verificarClave);
-}
+// Enlazar las funciones a los botones del DOM
+document.getElementById("select-sindicato")?.addEventListener("change", mostrarClaveInput);
+document.getElementById("ingresarBtn")?.addEventListener("click", verificarClave);
+});
 
 // ******bienvenida*********
 document.addEventListener("DOMContentLoaded", function () {

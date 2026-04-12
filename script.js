@@ -2300,7 +2300,9 @@ async function ingresarAlChat() {
         await cargarMensajes();
     }
 
+    // 🔥 IMPORTANTE: suscribirse SIEMPRE al entrar
     suscribirseChatGrupal();
+
     mostrarPantalla("pantalla-chat");
 }
 
@@ -2366,16 +2368,12 @@ async function checkNickAvailability(nick) {
         localStorage.setItem("nick", nick);
     }
 
-    const user_id = localStorage.getItem("user_id");
-    const rol = localStorage.getItem("rol") || "usuario";
-    const finalNick = localStorage.getItem("nick");
-
     await supabase
         .from('usuarios')
         .upsert([{
-            user_id,
-            nick: finalNick,
-            rol
+            user_id: localStorage.getItem("user_id"),
+            nick: localStorage.getItem("nick"),
+            rol: localStorage.getItem("rol") || 'usuario'
         }], { onConflict: 'user_id' });
 
     await cargarMensajes();
@@ -2401,8 +2399,6 @@ async function cargarMensajes() {
         .order('fecha_envio', { ascending: true });
 
     const contenedor = document.getElementById('mensaje-chat');
-    if (!contenedor) return;
-
     contenedor.innerHTML = '';
 
     if (error) {
@@ -2473,8 +2469,8 @@ if (btnEnviar) {
                 mensaje,
                 estado: 'pendiente',
                 fecha_envio: new Date(),
-                rol: rol || "usuario",
-                nick: nick || "anon"
+                rol,
+                nick
             }]);
 
         if (error) {

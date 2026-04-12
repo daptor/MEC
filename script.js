@@ -2479,13 +2479,14 @@ document.getElementById('enviarMensajeBtn').addEventListener('click', async func
 });
 
 // *************************** chat privado  ****************************
+// *************************** chat privado ****************************
 
 // Variables de control
 let canalPrivadoActivo = null;
 let canalAdminActivo = null;
 let idConversacionAdminActual = null;
 
-// Mostrar botones correctos en el chat grupal
+// Mostrar botones correctos
 document.addEventListener("DOMContentLoaded", function() {
     const rol = localStorage.getItem("rol");
     if (rol === "admin") {
@@ -2494,163 +2495,152 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 
-// Obtener Nick desde la tabla usuarios por user_id
+// Obtener Nick
 async function obtenerNickPorId(userId) {
-    const { data, error } = await supabase
+    const { data } = await supabase
         .from('usuarios')
         .select('nick')
-        .eq('user_id', userId)  // Ajustamos el filtro a 'user_id'
+        .eq('user_id', userId)
         .single();
 
-    if (error || !data) {
-        console.warn('Nick no encontrado para:', userId);
-        return userId; // Si no se encuentra, devolver el user_id
-    }
-
-    return data.nick;
+    return data?.nick || userId;
 }
 
 // Cambiar Nick
 document.getElementById("cambiarNickBtn").addEventListener("click", async function () {
     let nuevoNick = prompt("Introduce tu nuevo Nick:");
-    if (nuevoNick && nuevoNick.trim() !== "") {
-        await checkNickAvailability(nuevoNick.trim());  // Verifica si el nuevo nick está disponible
-        localStorage.setItem("nick", nuevoNick.trim());  // Guarda el nuevo Nick en localStorage
-        alert(`Tu Nick ha sido cambiado a: ${nuevoNick.trim()}`);
-        cargarMensajesPrivados();  // Recarga los mensajes para reflejar el cambio
-    } else {
+    if (!nuevoNick || nuevoNick.trim() === "") {
         alert("El Nick no puede estar vacío.");
-    }
-});
-
-// Verificación de disponibilidad del Nick
-async function checkNickAvailability(nick) {
-    const { data, error } = await supabase
-        .from('usuarios')
-        .select('user_id')
-        .eq('nick', nick);  // Buscamos si existe el Nick en la base de datos
-
-    if (error) {
-        console.error("Error al verificar el Nick:", error);
-        return false;
-    }
-
-    if (data.length > 0) {
-        // Si el Nick existe, asignamos un número
-        let count = 1;
-        let newNick = nick + `(${count})`;
-        while (data.some(user => user.nick === newNick)) {
-            count++;
-            newNick = nick + `(${count})`;
-        }
-        localStorage.setItem("nick", newNick);  // Guardamos el nuevo Nick
-        alert(`El Nick que elegiste ya está en uso. Te hemos asignado el Nick: ${newNick}`);
-    } else {
-        localStorage.setItem("nick", nick);  // Si no está en uso, lo guardamos
-    }
-
-    // Actualizamos el Nick en la base de datos
-    await supabase
-        .from('usuarios')
-        .upsert([{
-            user_id: localStorage.getItem("user_id"),
-            nick: localStorage.getItem("nick"),
-            rol: localStorage.getItem("rol")
-        }], { onConflict: 'user_id' });
-
-    cargarMensajesPrivados();  // Recarga los mensajes
-}
-
-// Función para hacer scroll hacia abajo
-function scrollToBottom(elementId) {
-    const container = document.getElementById(elementId);
-    container.scrollTop = container.scrollHeight;
-}
-
-// Función para formatear la hora en formato 24 horas (HH:mm)
-function formatHora(fecha) {
-    const options = { hour: '2-digit', minute: '2-digit', hour12: false };
-    return new Date(fecha).toLocaleTimeString('es-ES', options); // 24 horas en formato HH:mm
-}
-
-// Función para reproducir sonido de campanilla
-function reproducirSonido() {
-    const audio = new Audio('https://mxqrzhpyfwuutardehyu.supabase.co/storage/v1/object/public/audios/campanilla.mp3');
-    audio.play();
-}
-
-// Iniciar Chat Privado Usuario
-async function iniciarChatPrivado() {
-
-    const { data: { user } } = await supabase.auth.getUser();
-    console.log("AUTH UID:", user?.id);
-
-    const usuarioId = localStorage.getItem("user_id");
-    console.log("LOCALSTORAGE UID:", usuarioId);
-
-    if (!usuarioId) {
-        alert("No encontrado user_id en LocalStorage");
         return;
     }
 
-    const idConversacion = await obtenerOcrearConversacionPrivada(usuarioId);
+    await checkNickAvailability(nuevoNick.trim());
+    alert(`Tu Nick ha sido cambiado.`);
+});
+
+// Verificación de Nick
+async function checkNickAvailability(nick) {
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data } = await supabase
+        .from('usuarios')
+        .select('nick')
+        .eq('nick', nick);
+
+    let nickFinal = nick;
+
+    if (data.length > 0) {
+        let count = 1;
+        nickFinal = `${nick}(${count})`;
+
+        while (data.some(u => u.nick === nickFinal)) {
+            count++;
+            nickFinal = `${nick}(${count})`;
+        }
+
+        alert(`Nick en uso. Nuevo: ${nickFinal}`);
+    }
+
+    localStorage.setItem("nick", nickFinal);
+
+    await supabase
+        .from('usuarios')
+        .upsert([{
+            user_id: user.id,
+            nick: nickFinal,
+            rol: localStorage.getItem("rol") || 'usuario'
+        }], { onConflict: 'user_id' });
+}
+
+// Scroll
+function scrollToBottom(id) {
+    const el = document.getElementById(id);
+    if (el) el.scrollTop = el.scrollHeight;
+}
+
+// Hora
+function formatHora(fecha) {
+    return new Date(fecha).toLocaleTimeString('es-ES', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    });
+}
+
+// Sonido
+function reproducirSonido() {
+    new Audio('https://mxqrzhpyfwuutardehyu.supabase.co/storage/v1/object/public/audios/campanilla.mp3').play();
+}
+
+// Iniciar chat privado
+async function iniciarChatPrivado() {
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        alert("Sesión inválida");
+        return;
+    }
+
+    const idConversacion = await obtenerOcrearConversacionPrivada(user.id);
+
     if (!idConversacion) {
         alert("Error creando conversación privada");
         return;
     }
 
     mostrarPantalla('pantalla-chat-privado');
-    cargarMensajesPrivados(idConversacion);
-    suscribirChatPrivado(idConversacion);
 
-    const btnPrivado = document.getElementById("enviarMensajePrivadoBtn");
-    btnPrivado.onclick = () => enviarMensajePrivado(idConversacion);
+    await cargarMensajesPrivados(idConversacion);
+    await suscribirChatPrivado(idConversacion);
+
+    const btn = document.getElementById("enviarMensajePrivadoBtn");
+    if (btn) {
+        btn.onclick = () => enviarMensajePrivado(idConversacion);
+    }
 }
 
-// Obtener o crear conversación privada
+// Crear o recuperar conversación
 async function obtenerOcrearConversacionPrivada(usuarioId) {
-    // Primero intentamos encontrar una conversación activa
-    let { data, error } = await supabase
+
+    const { data: existente } = await supabase
         .from('conversaciones_privadas')
         .select('id, estado')
         .eq('usuario_id', usuarioId)
         .maybeSingle();
 
-    if (data) {
-        if (data.estado === 'cerrada') {
-            // Si la conversación está cerrada, la reactivamos
-            const { error: errorUpdate } = await supabase
+    if (existente) {
+        if (existente.estado === 'cerrada') {
+            await supabase
                 .from('conversaciones_privadas')
-                .update({ estado: 'activa' })  // Reactivamos la conversación
-                .eq('id', data.id);
-
-            if (errorUpdate) {
-                console.error('Error al reactivar la conversación:', errorUpdate);
-                return null;
-            }
-            console.log('Conversación reactivada.');
-            return data.id;
-        } else if (data.estado === 'activa') {
-            return data.id;  // Ya existe una conversación activa
+                .update({ estado: 'activa' })
+                .eq('id', existente.id);
         }
+        return existente.id;
     }
 
-    // Si no existe ninguna conversación activa o cerrada, creamos una nueva
-    const { data: nueva, error: errInsert } = await supabase
+    const { data: nueva, error } = await supabase
         .from('conversaciones_privadas')
-        .insert([{ usuario_id: usuarioId, admin_id: 'Admin' }])
+        .insert([{
+            usuario_id: usuarioId,
+            admin_id: null,
+            estado: 'activa'
+        }])
         .select()
         .single();
 
-    if (errInsert) {
-        console.error(errInsert);
+    if (error) {
+        console.error(error);
         return null;
     }
+
     return nueva.id;
 }
 
-// Suscribir a cambios en chat privado
+// Suscripción realtime
 async function suscribirChatPrivado(idConversacion) {
+
     if (canalPrivadoActivo) await supabase.removeChannel(canalPrivadoActivo);
 
     canalPrivadoActivo = supabase.channel('chat_privado_' + idConversacion)
@@ -2661,201 +2651,87 @@ async function suscribirChatPrivado(idConversacion) {
             filter: `conversation_privada_id=eq.${idConversacion}`
         }, () => {
             cargarMensajesPrivados(idConversacion);
-            reproducirSonido();  // Reproducir sonido de campanilla al recibir un mensaje
+            reproducirSonido();
         })
         .subscribe();
 }
 
-// Cargar mensajes privados (usuario)
+// Cargar mensajes
 async function cargarMensajesPrivados(idConversacion) {
-    const miUserId = localStorage.getItem("user_id");
 
-    const { data, error } = await supabase
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const { data } = await supabase
         .from('mensajes_privados')
         .select('*')
         .eq('conversation_privada_id', idConversacion)
         .order('fecha_envio', { ascending: true });
 
     const contenedor = document.getElementById("mensaje-chat-privado");
+    if (!contenedor) return;
+
     contenedor.innerHTML = '';
 
-    if (data) {
-        for (const msg of data) {
-            const div = document.createElement('div');
-            div.className = 'mensaje-privado';
-            div.style.textAlign = (msg.user_id === miUserId) ? "right" : "left";
+    for (const msg of data || []) {
+        const div = document.createElement('div');
+        div.style.textAlign = (msg.user_id === user.id) ? "right" : "left";
 
-            // Obtener el nick desde la tabla 'usuarios' por el user_id
-            const nick = await obtenerNickPorId(msg.user_id);
+        const nick = await obtenerNickPorId(msg.user_id);
 
-            div.innerHTML = `<strong>${nick}:</strong> ${msg.mensaje}<br><small>${formatHora(msg.fecha_envio)}</small>`;
-            contenedor.appendChild(div);
-        }
+        div.innerHTML = `
+            <strong>${nick}:</strong> ${msg.mensaje}
+            <br><small>${formatHora(msg.fecha_envio)}</small>
+        `;
+
+        contenedor.appendChild(div);
     }
 
-    // Hacer scroll hacia abajo después de cargar los mensajes
     scrollToBottom('mensaje-chat-privado');
 }
 
-// Enviar mensaje privado
+// Enviar mensaje usuario
 async function enviarMensajePrivado(idConversacion) {
-    const mensaje = document.getElementById('mensajeUsuarioPrivado').value.trim();
+
+    const input = document.getElementById('mensajeUsuarioPrivado');
+    if (!input) return;
+
+    const mensaje = input.value.trim();
     if (!mensaje) return;
 
-    const { error } = await supabase
+    const { data: { user } } = await supabase.auth.getUser();
+
+    await supabase
         .from('mensajes_privados')
         .insert([{
             conversation_privada_id: idConversacion,
             mensaje,
-            user_id: localStorage.getItem("user_id"),
-            rol: localStorage.getItem("rol")
+            user_id: user.id,
+            rol: 'usuario'
         }]);
 
-    document.getElementById('mensajeUsuarioPrivado').value = '';
+    input.value = '';
     cargarMensajesPrivados(idConversacion);
-
-    // Hacer scroll hacia abajo después de enviar el mensaje
-    scrollToBottom('mensaje-chat-privado');
 }
 
-// Mostrar pantalla Admin Chat
-async function mostrarPantallaAdminChat() {
-    mostrarPantalla('pantalla-admin-chat');
-
-    const { data, error } = await supabase
-        .from('conversaciones_privadas')
-        .select('*')
-        .eq('estado', 'activa');
-
-    const lista = document.getElementById("lista-conversaciones");
-    const contador = document.getElementById("contador-conversaciones");
-    lista.innerHTML = '';
-
-    if (data) {
-        if (data.length > 0) {
-            contador.textContent = `Actualmente hay ${data.length} conversaciones activas.`;
-            document.getElementById("sin-conversaciones-activa").style.display = "none";
-        } else {
-            contador.textContent = `Actualmente no hay conversaciones activas.`;
-            document.getElementById("sin-conversaciones-activa").style.display = "block";
-        }
-
-        for (const conv of data) {
-            const nickUsuario = await obtenerNickPorId(conv.usuario_id);
-            const btn = document.createElement('button');
-            btn.textContent = `Chat con ${nickUsuario}`;
-            btn.onclick = () => abrirChatComoAdmin(conv.id, nickUsuario, conv.usuario_id);
-            lista.appendChild(btn);
-        }
-    } else {
-        contador.textContent = `Error cargando conversaciones.`;
-    }
-}
-
-// Abrir conversación como admin
-async function abrirChatComoAdmin(idConversacion, nickUsuario, userIdUsuario) {
-    idConversacionAdminActual = idConversacion;
-    document.getElementById("nombreUsuarioChat").textContent = nickUsuario;
-    document.getElementById("chat-admin-panel").style.display = "block";
-    document.getElementById("sin-conversaciones-activa").style.display = "none";
-
-    cargarMensajesAdmin(idConversacion, userIdUsuario);
-
-    if (canalAdminActivo) await supabase.removeChannel(canalAdminActivo);
-
-    canalAdminActivo = supabase.channel('admin_chat_' + idConversacion)
-        .on('postgres_changes', {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'mensajes_privados',
-            filter: `conversation_privada_id=eq.${idConversacion}`
-        }, () => {
-            cargarMensajesAdmin(idConversacion, userIdUsuario);
-            reproducirSonido();  // Reproducir sonido de campanilla al recibir un mensaje
-        })
-        .subscribe();
-}
-
-// Cargar mensajes para admin
-async function cargarMensajesAdmin(idConversacion, userIdUsuario) {
-    const { data, error } = await supabase
-        .from('mensajes_privados')
-        .select('*')
-        .eq('conversation_privada_id', idConversacion)
-        .order('fecha_envio', { ascending: true });
-
-    const contenedor = document.getElementById("admin-chat-mensajes");
-    contenedor.innerHTML = '';
-
-    const nickUsuario = await obtenerNickPorId(userIdUsuario);  // Obtener el Nick del usuario
-
-    if (data) {
-        for (const msg of data) {
-            const div = document.createElement('div');
-            div.style.textAlign = (msg.rol === "admin") ? "right" : "left";
-
-            const nick = (msg.rol === "admin") ? "Admin" : nickUsuario;
-
-            div.innerHTML = `<strong>${nick}:</strong> ${msg.mensaje} <small>${formatHora(msg.fecha_envio)}</small>`;
-            contenedor.appendChild(div);
-        }
-    }
-
-    // Hacer scroll hacia abajo después de cargar los mensajes
-    scrollToBottom('admin-chat-mensajes');
-}
-
-// Enviar respuesta como admin
+// Enviar mensaje admin
 async function enviarMensajePrivadoAdmin() {
+
     const mensaje = document.getElementById('mensajeAdminPrivado').value.trim();
     if (!mensaje) return;
 
-    const { error } = await supabase
+    const { data: { user } } = await supabase.auth.getUser();
+
+    await supabase
         .from('mensajes_privados')
         .insert([{
             conversation_privada_id: idConversacionAdminActual,
             mensaje,
-            user_id: 'Admin',
+            user_id: user.id,
             rol: 'admin'
         }]);
 
-
     document.getElementById('mensajeAdminPrivado').value = '';
-    cargarMensajesAdmin(idConversacionAdminActual);
-
-    // Hacer scroll hacia abajo después de enviar el mensaje
-    scrollToBottom('admin-chat-mensajes');
-}
-
-// Volver a lista de conversaciones
-function mostrarListaConversaciones() {
-    document.getElementById("chat-admin-panel").style.display = "none";
-    document.getElementById("sin-conversaciones-activa").style.display = "none";
-    mostrarPantallaAdminChat();
-}
-
-// Cerrar conversación
-async function cerrarConversacion() {
-    if (!idConversacionAdminActual) return;
-
-    // Cerramos la conversación en la base de datos (sin alterar el Nick del usuario)
-    const { error } = await supabase
-        .from('conversaciones_privadas')
-        .update({ estado: 'cerrada' })  // Solo marcamos como cerrada
-        .eq('id', idConversacionAdminActual);
-
-    if (error) {
-        alert("Error cerrando conversación.");
-        console.error(error);
-        return;
-    }
-
-    alert("Conversación cerrada correctamente ✅");
-
-    // Restablecemos el estado de la UI
-    idConversacionAdminActual = null;
-    document.getElementById("chat-admin-panel").style.display = "none";
-    await mostrarPantallaAdminChat();  // Regresamos a la pantalla principal de conversaciones
+    cargarMensajesPrivados(idConversacionAdminActual);
 }
 
 // <---- boton salir de secion----->

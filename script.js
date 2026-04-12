@@ -2221,15 +2221,15 @@ window.mostrarClaveInput = mostrarClaveInput;
 window.verificarClave = verificarClave;
 window.cerrarModalClave = cerrarModalClave;
 
-// Enlazar las funciones a los botones del DOM (forma segura)
-const selectSindicato = document.getElementById("select-sindicato");
-if (selectSindicato) {
-    selectSindicato.addEventListener("change", mostrarClaveInput);
+// Enlazar las funciones a los botones del DOM (CORREGIDO SIN ROMPER)
+const elSelectSindicato = document.getElementById("select-sindicato");
+if (elSelectSindicato !== null) {
+    elSelectSindicato.addEventListener("change", mostrarClaveInput);
 }
 
-const ingresarBtn = document.getElementById("ingresarBtn");
-if (ingresarBtn) {
-    ingresarBtn.addEventListener("click", verificarClave);
+const elIngresarBtn = document.getElementById("ingresarBtn");
+if (elIngresarBtn !== null) {
+    elIngresarBtn.addEventListener("click", verificarClave);
 }
 
 // ******bienvenida*********

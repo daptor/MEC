@@ -2254,6 +2254,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 //***************************** chat grupal ********************************
+
+// Variable global para el canal
+let canalGrupal = null;
+
 // Función para generar un UUID único
 function generarUUID() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -2263,47 +2267,86 @@ function generarUUID() {
     });
 }
 
-// Verificar si existe user_id y rol en localStorage al cargar la página
+// Verificar user_id y rol
 if (!localStorage.getItem("user_id")) {
-    localStorage.setItem("user_id", generarUUID());  // Generar UUID único si no existe
+    localStorage.setItem("user_id", generarUUID());
 }
 
-// Verificar si existe el rol en localStorage, si no lo tiene asignarlo como usuario
 if (!localStorage.getItem("rol")) {
-    localStorage.setItem("rol", "usuario");  // Asignamos el rol como 'usuario' por defecto
+    localStorage.setItem("rol", "usuario");
 }
 
-// Verificar si el Nick está guardado en localStorage, si no, pedirlo
+// =========================
+// INGRESO AL CHAT
+// =========================
 async function ingresarAlChat() {
-    // Asegura que haya un user_id y rol
+
     if (!localStorage.getItem("user_id")) {
-        localStorage.setItem("user_id", generarUUID());  // Generar UUID único
+        localStorage.setItem("user_id", generarUUID());
     }
 
     if (!localStorage.getItem("rol")) {
         localStorage.setItem("rol", "usuario");
     }
 
-    // Verifica si ya hay un nick
     if (!localStorage.getItem("nick")) {
         let nick = prompt("Por favor, ingresa tu Nick:");
         if (!nick || nick.trim() === "") {
             alert("Debes ingresar un Nick para acceder al chat.");
             return;
         }
-        await checkNickAvailability(nick.trim()); // Verifica disponibilidad
+        await checkNickAvailability(nick.trim());
     } else {
-        cargarMensajes(); // Si ya hay nick, cargar mensajes directamente
+        await cargarMensajes();
     }
 
-    mostrarPantalla("pantalla-chat"); // Mostrar el chat
+    // 🔥 IMPORTANTE: suscribirse SIEMPRE al entrar
+    suscribirseChatGrupal();
+
+    mostrarPantalla("pantalla-chat");
 }
 
+// =========================
+// SUSCRIPCIÓN REALTIME
+// =========================
+function suscribirseChatGrupal() {
+
+    const user_id = localStorage.getItem("user_id");
+
+    if (canalGrupal) {
+        supabase.removeChannel(canalGrupal);
+        canalGrupal = null;
+    }
+
+    canalGrupal = supabase.channel('mensajes_channel')
+        .on('postgres_changes', {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'mensajes'
+        }, payload => {
+
+            if (payload.new.user_id !== user_id) {
+                console.log("📩 Mensaje recibido:", payload);
+
+                cargarMensajes();
+
+                const audio = new Audio('https://mxqrzhpyfwuutardehyu.supabase.co/storage/v1/object/public/audios/campanilla.mp3');
+                audio.play();
+            }
+        })
+        .subscribe((status) => {
+            console.log("📡 Canal grupal:", status);
+        });
+}
+
+// =========================
+// CHECK NICK
+// =========================
 async function checkNickAvailability(nick) {
     const { data, error } = await supabase
         .from('usuarios')
-        .select('user_id')  // Verificamos si el user_id (nick) ya existe en la tabla
-        .eq('nick', nick);  // Buscamos directamente el nick
+        .select('user_id, nick')
+        .eq('nick', nick);
 
     if (error) {
         console.error("Error al verificar el Nick:", error);
@@ -2311,20 +2354,20 @@ async function checkNickAvailability(nick) {
     }
 
     if (data.length > 0) {
-        // Si el Nick existe, asignamos un número
         let count = 1;
         let newNick = nick + `(${count})`;
+
         while (data.some(user => user.nick === newNick)) {
             count++;
             newNick = nick + `(${count})`;
         }
-        localStorage.setItem("nick", newNick);  // Guardamos el nuevo Nick en el localStorage
-        alert(`El Nick que elegiste ya está en uso. Te hemos asignado el Nick: ${newNick}`);
+
+        localStorage.setItem("nick", newNick);
+        alert(`El Nick ya está en uso. Nuevo Nick: ${newNick}`);
     } else {
-        localStorage.setItem("nick", nick);  // Si el Nick no está en uso, lo guardamos
+        localStorage.setItem("nick", nick);
     }
 
-    // Guardar el usuario en la tabla 'usuarios' (upsert)
     await supabase
         .from('usuarios')
         .upsert([{
@@ -2333,150 +2376,111 @@ async function checkNickAvailability(nick) {
             rol: localStorage.getItem("rol") || 'usuario'
         }], { onConflict: 'user_id' });
 
-    cargarMensajes();  // Cargamos los mensajes
+    await cargarMensajes();
 }
 
-async function obtenerNickPorId(userId) {
-    const { data, error } = await supabase
-        .from('usuarios')
-        .select('nick')
-        .eq('user_id', userId)  // Ajustamos el filtro a 'user_id'
-        .single();
-
-    if (error || !data) {
-        console.error('Error obteniendo nick:', error);
-        return userId; // Si no encuentra, muestra el ID igual.
-    }
-
-    return data.nick;
-}
-
-// Función para cargar los mensajes desde supabase y mostrarlo en el chat
+// =========================
+// CARGAR MENSAJES
+// =========================
 async function cargarMensajes() {
+
     const user_id = localStorage.getItem("user_id");
     const rol = localStorage.getItem("rol");
     const nick = localStorage.getItem("nick");
 
     if (!user_id || !rol || !nick) {
-        console.error("No se encontró user_id, rol o nick en localStorage.");
+        console.error("Faltan datos en localStorage");
         return;
     }
 
     const { data: mensajes, error } = await supabase
         .from('mensajes')
-        .select('id, mensaje, respuesta, fecha_envio, rol, user_id, nick')  // Seleccionamos también el 'nick'
-        .or('rol.eq.admin,rol.eq.usuario')  // Permite mostrar tanto mensajes de 'admin' como de 'usuario'
+        .select('id, mensaje, respuesta, fecha_envio, rol, user_id, nick')
         .order('fecha_envio', { ascending: true });
 
-    const mensajeChatContainer = document.getElementById('mensaje-chat');
-    mensajeChatContainer.innerHTML = '';
+    const contenedor = document.getElementById('mensaje-chat');
+    contenedor.innerHTML = '';
 
     if (error) {
-        console.error("Error al cargar los mensajes:", error);
+        console.error("Error al cargar mensajes:", error);
         return;
     }
 
     if (!mensajes || mensajes.length === 0) {
-        mensajeChatContainer.innerHTML = '<p style="text-align:center; color:gray;">Aún no hay mensajes en el chat 👀</p>';
+        contenedor.innerHTML = '<p style="text-align:center; color:gray;">Aún no hay mensajes 👀</p>';
         return;
     }
 
     let lastDate = null;
 
     mensajes.forEach(mensaje => {
-        // Ajusta la fecha y hora al horario chileno
+
         const fechaEnvio = new Date(mensaje.fecha_envio);
-        const fechaStr = fechaEnvio.toLocaleDateString('es-CL', { year: '2-digit', month: '2-digit', day: '2-digit' });
+        const fechaStr = fechaEnvio.toLocaleDateString('es-CL');
         const horaStr = fechaEnvio.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hour12: false });
 
         if (lastDate !== fechaStr) {
-            const dateSeparator = document.createElement('div');
-            dateSeparator.classList.add('fecha-separador');
-
-            const hoy = new Date();
-            const ayer = new Date();
-            ayer.setDate(hoy.getDate() - 1);
-
-            const fechaActual = fechaEnvio.toLocaleDateString();
-            const fechaHoy = hoy.toLocaleDateString();
-            const fechaAyer = ayer.toLocaleDateString();
-
-            if (fechaActual === fechaHoy) {
-                dateSeparator.innerHTML = 'Hoy';
-            } else if (fechaActual === fechaAyer) {
-                dateSeparator.innerHTML = 'Ayer';
-            } else {
-                dateSeparator.innerHTML = fechaStr;
-            }
-
-            mensajeChatContainer.appendChild(dateSeparator);
+            const separador = document.createElement('div');
+            separador.classList.add('fecha-separador');
+            separador.innerHTML = fechaStr;
+            contenedor.appendChild(separador);
         }
 
-        const divMensaje = document.createElement('div');
-        divMensaje.classList.add('mensaje');
+        const div = document.createElement('div');
+        div.classList.add('mensaje');
 
-        divMensaje.innerHTML = `
+        div.innerHTML = `
             <p><strong>${mensaje.rol === 'admin' ? 'Admin:' : mensaje.nick + ':'}</strong> ${mensaje.mensaje}</p>
-            <p><span class="hora">${horaStr}</span></p>  <!-- Hora envuelta en un <span> -->
+            <p><span class="hora">${horaStr}</span></p>
         `;
 
         if (mensaje.respuesta) {
-            divMensaje.innerHTML += `<p><strong>Respuesta:</strong> ${mensaje.respuesta}</p>`;
+            div.innerHTML += `<p><strong>Respuesta:</strong> ${mensaje.respuesta}</p>`;
         }
 
-        mensajeChatContainer.appendChild(divMensaje);
+        contenedor.appendChild(div);
 
         lastDate = fechaStr;
     });
-
-    // Aquí añadimos la suscripción para que solo suene cuando llegue un mensaje nuevo
-    const channel = supabase.channel('mensajes_channel')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mensajes' }, payload => {
-            if (payload.new.user_id !== user_id) {  // Verificamos que el mensaje no sea el enviado por el usuario actual
-                cargarMensajes();  // Recargar los mensajes cuando se inserte uno nuevo
-                const audio = new Audio('https://mxqrzhpyfwuutardehyu.supabase.co/storage/v1/object/public/audios/campanilla.mp3');
-                audio.play();  // Reproducir el sonido cuando se recibe un mensaje nuevo
-            }
-        })
-        .subscribe();  // Activar la suscripción en tiempo real
 }
 
-// Función para enviar un mensaje al administrador
-document.getElementById('enviarMensajeBtn').addEventListener('click', async function () {
-    const mensaje = document.getElementById('mensajeUsuario').value;
-    const user_id = localStorage.getItem("user_id");  // Obtenemos el user_id como texto
-    const rol = localStorage.getItem("rol");  // Obtenemos el rol del usuario (admin o usuario)
-    const nick = localStorage.getItem("nick");  // Obtenemos el Nick del usuario
+// =========================
+// ENVIAR MENSAJE
+// =========================
+const btnEnviar = document.getElementById('enviarMensajeBtn');
 
-    if (!user_id || !rol || !nick) {  // Verificar si no existe user_id, rol o Nick
-        console.error("No se encontró user_id, rol o nick en localStorage.");
-        return;
-    }
+if (btnEnviar) {
+    btnEnviar.addEventListener('click', async function () {
 
-    if (!mensaje) {
-        alert("Por favor, ingresa un mensaje.");
-        return;
-    }
+        const mensaje = document.getElementById('mensajeUsuario').value;
+        const user_id = localStorage.getItem("user_id");
+        const rol = localStorage.getItem("rol");
+        const nick = localStorage.getItem("nick");
 
-    // Insertamos el mensaje en supabase
-    const { data, error } = await supabase
-        .from('mensajes')
-        .insert([{
-            user_id: user_id,  // Usamos el user_id como texto
-            mensaje: mensaje,
-            estado: 'pendiente',
-            fecha_envio: new Date(),
-            rol: rol,
-            nick: nick
-        }]);
+        if (!mensaje) {
+            alert("Ingresa un mensaje");
+            return;
+        }
 
-    if (error) {
-        console.error("Error al enviar el mensaje:", error);
-    } else {
-        cargarMensajes();  // Recargamos los mensajes después de enviar uno nuevo
-        document.getElementById('mensajeUsuario').value = '';  // Limpiamos el campo de mensaje
-    }
-});
+        const { error } = await supabase
+            .from('mensajes')
+            .insert([{
+                user_id,
+                mensaje,
+                estado: 'pendiente',
+                fecha_envio: new Date(),
+                rol,
+                nick
+            }]);
+
+        if (error) {
+            console.error("Error al enviar:", error);
+        } else {
+            document.getElementById('mensajeUsuario').value = '';
+            cargarMensajes();
+        }
+    });
+}
 
 // *************************** chat privado  ****************************
 

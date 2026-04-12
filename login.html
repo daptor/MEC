@@ -62,7 +62,10 @@ button{
   <div id="msg" class="msg"></div>
 </div>
 
-<!-- ⚠️ IMPORTANTE: usamos TU cliente existente -->
+<!-- ✅ Librería Supabase (FALTABA) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- ✅ Tu cliente -->
 <script src="supabaseClient.js"></script>
 
 <script>
@@ -111,9 +114,7 @@ async function login(){
     mensaje(error.message,"red");
   }else{
     mensaje("Ingreso correcto","green");
-
-    // 🔥 AQUÍ ESTÁ LA CLAVE
-  window.location.replace("app-protegida.html");
+    window.location.replace("app-protegida.html");
   }
 }
 

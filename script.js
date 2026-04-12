@@ -2204,25 +2204,33 @@ document.addEventListener("DOMContentLoaded", function () {
         mostrarPantalla("pantalla-documentos");
     }
 
-    // Función para cerrar el modal de clave
-    function cerrarModalClave() {
-        const modalClave = document.getElementById("modal-clave");
-        if (modalClave) modalClave.classList.add("oculto");
-        const claveInput = document.getElementById("clave-input");
-        if (claveInput) claveInput.value = "";
-        const mensajeError = document.getElementById("mensaje-error");
-        if (mensajeError) mensajeError.style.display = "none";
-    }
+// Función para cerrar el modal de clave
+function cerrarModalClave() {
+    const modalClave = document.getElementById("modal-clave");
+    if (modalClave) modalClave.classList.add("oculto");
 
-    // Asignar las funciones al objeto global 'window'
-    window.mostrarClaveInput = mostrarClaveInput;
-    window.verificarClave = verificarClave;
-    window.cerrarModalClave = cerrarModalClave;
+    const claveInput = document.getElementById("clave-input");
+    if (claveInput) claveInput.value = "";
 
-    // Enlazar las funciones a los botones del DOM
-    document.getElementById("select-sindicato").addEventListener("change", mostrarClaveInput);
-    document.getElementById("ingresarBtn").addEventListener("click", verificarClave);
-});
+    const mensajeError = document.getElementById("mensaje-error");
+    if (mensajeError) mensajeError.style.display = "none";
+}
+
+// Asignar las funciones al objeto global 'window'
+window.mostrarClaveInput = mostrarClaveInput;
+window.verificarClave = verificarClave;
+window.cerrarModalClave = cerrarModalClave;
+
+// Enlazar las funciones a los botones del DOM (forma segura)
+const selectSindicato = document.getElementById("select-sindicato");
+if (selectSindicato) {
+    selectSindicato.addEventListener("change", mostrarClaveInput);
+}
+
+const ingresarBtn = document.getElementById("ingresarBtn");
+if (ingresarBtn) {
+    ingresarBtn.addEventListener("click", verificarClave);
+}
 
 // ******bienvenida*********
 document.addEventListener("DOMContentLoaded", function () {

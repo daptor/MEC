@@ -2495,7 +2495,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         .from("usuarios")
         .select("rol")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
     const btnAdmin = document.getElementById("btnAdminChatPrivado");
     const btnUser = document.getElementById("btnChatPrivado");
@@ -2510,22 +2510,17 @@ document.addEventListener("DOMContentLoaded", async function () {
 });
 
 // =========================
-// OBTENER NICK (FIX 406)
+// OBTENER NICK
 // =========================
 async function obtenerNickPorId(userId) {
 
-    const { data, error } = await supabase
+    const { data } = await supabase
         .from('usuarios')
         .select('nick')
         .eq('user_id', userId)
-        .maybeSingle(); // 🔥 evita error 406
+        .maybeSingle();
 
-    if (error || !data) {
-        console.warn('Nick no encontrado para:', userId);
-        return "Usuario";
-    }
-
-    return data.nick;
+    return data?.nick || "Usuario";
 }
 
 // =========================
@@ -2555,7 +2550,7 @@ async function iniciarChatPrivado() {
 }
 
 // =========================
-// CREAR / OBTENER CONVERSACIÓN
+// CREAR / OBTENER CONVERSACIÓN (FIX REAL)
 // =========================
 async function obtenerOcrearConversacionPrivada(usuarioId) {
 
@@ -2567,14 +2562,32 @@ async function obtenerOcrearConversacionPrivada(usuarioId) {
 
     if (data) return data.id;
 
-    const { data: nueva } = await supabase
+    // 🔥 OBTENER ADMIN REAL DESDE TABLA
+    const { data: adminData } = await supabase
+        .from("usuarios")
+        .select("user_id")
+        .eq("rol", "admin")
+        .maybeSingle();
+
+    if (!adminData) {
+        alert("No existe admin configurado");
+        return null;
+    }
+
+    const { data: nueva, error } = await supabase
         .from('conversaciones_privadas')
         .insert([{
             usuario_id: usuarioId,
+            admin_id: adminData.user_id, // 🔥 FIX CLAVE
             estado: 'abierta'
         }])
         .select()
         .single();
+
+    if (error) {
+        console.error("Error creando conversación:", error);
+        return null;
+    }
 
     return nueva.id;
 }
@@ -2615,6 +2628,8 @@ async function cargarMensajesPrivados(idConversacion) {
         .order('fecha_envio', { ascending: true });
 
     const contenedor = document.getElementById("mensaje-chat-privado");
+    if (!contenedor) return;
+
     contenedor.innerHTML = '';
 
     if (data) {
@@ -2644,14 +2659,16 @@ async function enviarMensajePrivado(idConversacion) {
     if (!user) return;
 
     const input = document.getElementById('mensajeUsuarioPrivado');
-    const mensaje = input.value.trim();
+    if (!input) return;
 
+    const mensaje = input.value.trim();
     if (!mensaje) return;
 
     await supabase.from('mensajes_privados').insert([{
         conversation_privada_id: idConversacion,
         mensaje,
-        user_id: user.id
+        user_id: user.id,
+        rol: 'usuario'
     }]);
 
     input.value = '';
@@ -2670,6 +2687,8 @@ async function mostrarPantallaAdminChat() {
         .eq('estado', 'abierta');
 
     const lista = document.getElementById("lista-conversaciones");
+    if (!lista) return;
+
     lista.innerHTML = '';
 
     for (const conv of data || []) {
@@ -2721,6 +2740,8 @@ async function cargarMensajesAdmin(idConversacion, userIdUsuario) {
         .order('fecha_envio', { ascending: true });
 
     const contenedor = document.getElementById("admin-chat-mensajes");
+    if (!contenedor) return;
+
     contenedor.innerHTML = '';
 
     const nickUsuario = await obtenerNickPorId(userIdUsuario);
@@ -2751,14 +2772,16 @@ async function enviarMensajePrivadoAdmin() {
     if (!user) return;
 
     const input = document.getElementById('mensajeAdminPrivado');
-    const mensaje = input.value.trim();
+    if (!input) return;
 
+    const mensaje = input.value.trim();
     if (!mensaje) return;
 
     await supabase.from('mensajes_privados').insert([{
         conversation_privada_id: idConversacionAdminActual,
         mensaje,
-        user_id: user.id
+        user_id: user.id,
+        rol: 'admin'
     }]);
 
     input.value = '';

@@ -2675,60 +2675,37 @@ async function enviarMensajePrivado(idConversacion) {
 }
 
 // =========================
-// ADMIN
+// ADMIN (COMPLETO ORIGINAL)
 // =========================
 async function mostrarPantallaAdminChat() {
-
     mostrarPantalla('pantalla-admin-chat');
 
-    const user = await getUser();
-    if (!user) return;
-
-    // 🔥 SOLO conversaciones de ESTE admin
-    const { data, error } = await supabase
+    const { data } = await supabase
         .from('conversaciones_privadas')
         .select('*')
-        .eq('admin_id', user.id) // 🔥 FIX CLAVE
-        .eq('estado', 'abierta');
-
-    if (error) {
-        console.error("Error cargando conversaciones:", error);
-        return;
-    }
+        .eq('estado', 'abierta'); // 🔥 FIX
 
     const lista = document.getElementById("lista-conversaciones");
     const contador = document.getElementById("contador-conversaciones");
 
-    if (!lista) return;
+    if (!lista || !contador) return;
 
     lista.innerHTML = '';
 
     if (data && data.length > 0) {
-
-        if (contador) {
-            contador.textContent = `Hay ${data.length} conversaciones activas`;
-        }
+        contador.textContent = `Actualmente hay ${data.length} conversaciones activas.`;
 
         for (const conv of data) {
-
-            const nick = await obtenerNickPorId(conv.usuario_id);
-
+            const nickUsuario = await obtenerNickPorId(conv.usuario_id);
             const btn = document.createElement('button');
-            btn.textContent = `Chat con ${nick}`;
 
-            btn.onclick = () => {
-                console.log("Abriendo chat:", conv.id);
-                abrirChatComoAdmin(conv.id, conv.usuario_id);
-            };
+            btn.textContent = `Chat con ${nickUsuario}`;
+            btn.onclick = () => abrirChatComoAdmin(conv.id, nickUsuario, conv.usuario_id);
 
             lista.appendChild(btn);
         }
-
     } else {
-
-        if (contador) {
-            contador.textContent = "No hay conversaciones activas";
-        }
+        contador.textContent = `Actualmente no hay conversaciones activas.`;
     }
 }
 

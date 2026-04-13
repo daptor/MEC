@@ -2681,25 +2681,54 @@ async function mostrarPantallaAdminChat() {
 
     mostrarPantalla('pantalla-admin-chat');
 
-    const { data } = await supabase
+    const user = await getUser();
+    if (!user) return;
+
+    // 🔥 SOLO conversaciones de ESTE admin
+    const { data, error } = await supabase
         .from('conversaciones_privadas')
         .select('*')
+        .eq('admin_id', user.id) // 🔥 FIX CLAVE
         .eq('estado', 'abierta');
 
+    if (error) {
+        console.error("Error cargando conversaciones:", error);
+        return;
+    }
+
     const lista = document.getElementById("lista-conversaciones");
+    const contador = document.getElementById("contador-conversaciones");
+
     if (!lista) return;
 
     lista.innerHTML = '';
 
-    for (const conv of data || []) {
+    if (data && data.length > 0) {
 
-        const nick = await obtenerNickPorId(conv.usuario_id);
+        if (contador) {
+            contador.textContent = `Hay ${data.length} conversaciones activas`;
+        }
 
-        const btn = document.createElement('button');
-        btn.textContent = `Chat con ${nick}`;
-        btn.onclick = () => abrirChatComoAdmin(conv.id, conv.usuario_id);
+        for (const conv of data) {
 
-        lista.appendChild(btn);
+            const nick = await obtenerNickPorId(conv.usuario_id);
+
+            const btn = document.createElement('button');
+            btn.textContent = `Chat con ${nick}`;
+
+            btn.onclick = () => {
+                console.log("Abriendo chat:", conv.id);
+                abrirChatComoAdmin(conv.id, conv.usuario_id);
+            };
+
+            lista.appendChild(btn);
+        }
+
+    } else {
+
+        if (contador) {
+            contador.textContent = "No hay conversaciones activas";
+        }
     }
 }
 

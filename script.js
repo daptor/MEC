@@ -2258,49 +2258,50 @@ document.addEventListener("DOMContentLoaded", function () {
 // Variable global para el canal
 let canalGrupal = null;
 
-// Función para generar un UUID único
-function generarUUID() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        var r = Math.random() * 16 | 0,
-            v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-    });
-}
-
-// Verificar user_id y rol
-if (!localStorage.getItem("user_id")) {
-    localStorage.setItem("user_id", generarUUID());
-}
-
-if (!localStorage.getItem("rol")) {
-    localStorage.setItem("rol", "usuario");
-}
-
 // =========================
 // INGRESO AL CHAT
 // =========================
 async function ingresarAlChat() {
 
-    if (!localStorage.getItem("user_id")) {
-        localStorage.setItem("user_id", generarUUID());
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        alert("Usuario no autenticado");
+        return;
     }
 
-    if (!localStorage.getItem("rol")) {
-        localStorage.setItem("rol", "usuario");
+    const user_id = user.id;
+
+    // 🔥 LIMPIAR SESIÓN LOCAL (evita heredar admin u otros datos)
+    localStorage.removeItem("rol");
+    localStorage.removeItem("nick");
+
+    // 🔥 CARGAR DATOS REALES DESDE BD
+    const { data: usuarioDB } = await supabase
+        .from("usuarios")
+        .select("nick, rol")
+        .eq("user_id", user_id)
+        .single();
+
+    if (usuarioDB) {
+        localStorage.setItem("user_id", user_id);
+        localStorage.setItem("nick", usuarioDB.nick);
+        localStorage.setItem("rol", usuarioDB.rol);
     }
 
-    if (!localStorage.getItem("nick")) {
+    // 🔥 SI NO TIENE NICK DEFINIDO
+    if (!localStorage.getItem("nick") || localStorage.getItem("nick") === "usuario") {
         let nick = prompt("Por favor, ingresa tu Nick:");
         if (!nick || nick.trim() === "") {
             alert("Debes ingresar un Nick para acceder al chat.");
             return;
         }
-        await checkNickAvailability(nick.trim());
+        await checkNickAvailability(nick.trim(), user_id);
     } else {
         await cargarMensajes();
     }
 
-    // 🔥 IMPORTANTE: suscribirse SIEMPRE al entrar
+    // 🔥 Suscribirse siempre
     suscribirseChatGrupal();
 
     mostrarPantalla("pantalla-chat");
@@ -2342,18 +2343,16 @@ function suscribirseChatGrupal() {
 // =========================
 // CHECK NICK
 // =========================
-async function checkNickAvailability(nick) {
-    const { data, error } = await supabase
+async function checkNickAvailability(nick, user_id) {
+
+    const { data } = await supabase
         .from('usuarios')
         .select('user_id, nick')
         .eq('nick', nick);
 
-    if (error) {
-        console.error("Error al verificar el Nick:", error);
-        return false;
-    }
+    let finalNick = nick;
 
-    if (data.length > 0) {
+    if (data && data.length > 0) {
         let count = 1;
         let newNick = nick + `(${count})`;
 
@@ -2362,19 +2361,16 @@ async function checkNickAvailability(nick) {
             newNick = nick + `(${count})`;
         }
 
-        localStorage.setItem("nick", newNick);
-        alert(`El Nick ya está en uso. Nuevo Nick: ${newNick}`);
-    } else {
-        localStorage.setItem("nick", nick);
+        finalNick = newNick;
+        alert(`Nick en uso. Nuevo Nick: ${finalNick}`);
     }
+
+    localStorage.setItem("nick", finalNick);
 
     await supabase
         .from('usuarios')
-        .upsert([{
-            user_id: localStorage.getItem("user_id"),
-            nick: localStorage.getItem("nick"),
-            rol: localStorage.getItem("rol") || 'usuario'
-        }], { onConflict: 'user_id' });
+        .update({ nick: finalNick })
+        .eq('user_id', user_id);
 
     await cargarMensajes();
 }
@@ -2383,15 +2379,6 @@ async function checkNickAvailability(nick) {
 // CARGAR MENSAJES
 // =========================
 async function cargarMensajes() {
-
-    const user_id = localStorage.getItem("user_id");
-    const rol = localStorage.getItem("rol");
-    const nick = localStorage.getItem("nick");
-
-    if (!user_id || !rol || !nick) {
-        console.error("Faltan datos en localStorage");
-        return;
-    }
 
     const { data: mensajes, error } = await supabase
         .from('mensajes')

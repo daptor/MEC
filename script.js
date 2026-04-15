@@ -1,79 +1,34 @@
-// 🔒 evita doble ejecución
-let contadorEjecutado = false;
-
-// ***************** Función para actualizar el contador *******************
+// ***************** Función para actualizar el contador global en Supabase *******************
 async function actualizarContadorVisitas() {
+    // Solo actualizamos si el usuario es "usuario" (no admin)
+    if (localStorage.getItem("rol") === "usuario") {
 
-    console.log("🔥 contador entrando");
+        const { data, error } = await supabase
+            .from('contador')
+            .select('visitas')
+            .eq('id', 1)
+            .single();
 
-    const { data: { user } } = await supabase.auth.getUser();
+        if (error) {
+            console.error("Error al obtener el contador:", error);
+            return;
+        }
 
-    if (!user) {
-        console.log("❌ no hay usuario logeado");
-        return;
+        const nuevoValor = data.visitas + 1;
+
+        const { error: updateError } = await supabase
+            .from('contador')
+            .update({ visitas: nuevoValor })
+            .eq('id', 1);
+
+        if (updateError) {
+            console.error("Error al actualizar el contador:", updateError);
+        }
     }
-
-    console.log("✅ usuario detectado:", user.id);
-
-    const { data, error } = await supabase
-        .from('contador')
-        .select('visitas')
-        .eq('id', 1)
-        .single();
-
-    if (error) {
-        console.error("❌ Error al obtener el contador:", error);
-        return;
-    }
-
-    console.log("📊 valor actual:", data.visitas);
-
-    const nuevoValor = data.visitas + 1;
-
-    const { error: updateError } = await supabase
-        .from('contador')
-        .update({ visitas: nuevoValor })
-        .eq('id', 1);
-
-    if (updateError) {
-        console.error("❌ Error al actualizar el contador:", updateError);
-        return;
-    }
-
-    console.log("📈 nuevo valor:", nuevoValor);
-
-    // 🔥 actualizar en pantalla directamente
-    const el = document.getElementById("contador");
-    if (el) el.textContent = nuevoValor;
 }
 
 
-// ***************** Inicialización *******************
-document.addEventListener("DOMContentLoaded", async () => {
-
-    actualizarFechaHora();
-    setInterval(actualizarFechaHora, 1000);
-
-    const { data: { user } } = await supabase.auth.getUser();
-
-    console.log("👤 user en carga:", user);
-
-    if (user && !contadorEjecutado) {
-        contadorEjecutado = true;
-        await actualizarContadorVisitas();
-    } else {
-        await mostrarContadorVisitas();
-    }
-
-    const resetBoton = document.getElementById("resetContador");
-    if (resetBoton) {
-        resetBoton.addEventListener("click", resetearContadorVisitas);
-    }
-
-});
-
-
-// ***************** Mostrar contador *******************
+// Mostrar contador en pantalla
 async function mostrarContadorVisitas() {
     const { data, error } = await supabase
         .from('contador')
@@ -91,7 +46,7 @@ async function mostrarContadorVisitas() {
 }
 
 
-// ***************** Reset contador *******************
+// Reset contador (solo admin)
 async function resetearContadorVisitas() {
     if (localStorage.getItem("rol") !== "admin") return;
 
@@ -110,7 +65,7 @@ async function resetearContadorVisitas() {
 }
 
 
-// ***************** Fecha y hora *******************
+// Fecha y hora
 function actualizarFechaHora() {
     const fechaElemento = document.getElementById("fecha");
     const horaElemento = document.getElementById("hora");
@@ -120,36 +75,64 @@ function actualizarFechaHora() {
     if (horaElemento) horaElemento.textContent = ahora.toLocaleTimeString();
 }
 
+
+// Inicialización
+document.addEventListener("DOMContentLoaded", () => {
+
+    actualizarFechaHora();
+    setInterval(actualizarFechaHora, 1000);
+
+    mostrarContadorVisitas();
+
+    const resetBoton = document.getElementById("resetContador");
+    if (resetBoton) {
+        resetBoton.addEventListener("click", resetearContadorVisitas);
+    }
+
 });
+
+
+// 🔥 NUEVO: Detectar sesión existente (login por correo)
+document.addEventListener("DOMContentLoaded", async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (user) {
+        // Asumimos que es usuario normal (puedes ajustar si manejas admin en BD)
+        localStorage.setItem("rol", "usuario");
+
+        // Ejecutar contador como en el sistema original
+        await actualizarContadorVisitas();
+    }
+});
+
 
 // Función para obtener las claves desde la API en Vercel
 async function obtenerClaves() {
-    const response = await fetch("/api/keys");  // Llama a la API en Vercel
+    const response = await fetch("/api/keys");
     const data = await response.json();
     return data;
 }
 
-// Verificación del código de acceso
+
+// Verificación del código de acceso (sistema antiguo)
 const btnIngresar = document.getElementById("ingresarBtn");
 
 if (btnIngresar) {
     btnIngresar.addEventListener("click", async function () {
         const codigoIngresado = document.getElementById("codigoAcceso").value;
-        const claves = await obtenerClaves(); // Obtener claves desde Vercel
+        const claves = await obtenerClaves();
 
         if (codigoIngresado === claves.ADMIN_KEY) {
-            // Si es administrador, guarda el rol en localStorage
             localStorage.setItem("rol", "admin");
             document.getElementById("login-container").style.display = "none";
             document.getElementById("menu-principal").style.display = "block";
-            document.body.classList.add('admin');  // Agregar clase 'admin'
+            document.body.classList.add('admin');
         } else if (codigoIngresado === claves.CODIGO_ACCESO) {
-            // Si es usuario normal
             localStorage.setItem("rol", "usuario");
             document.getElementById("login-container").style.display = "none";
             document.getElementById("menu-principal").style.display = "block";
 
-            // Actualizar contador
+            // ✅ ORIGINAL (SE MANTIENE)
             await actualizarContadorVisitas();
         } else {
             const mensajeError = document.getElementById("mensajeError");

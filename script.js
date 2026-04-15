@@ -1,30 +1,33 @@
 
 // ***************** Función para actualizar el contador global en Supabase *******************
 async function actualizarContadorVisitas() {
-    // Solo actualizamos si el usuario es "usuario" (no admin)
-    if (localStorage.getItem("rol") === "usuario") {
 
-        const { data, error } = await supabase
-            .from('contador')
-            .select('visitas')
-            .eq('id', 1)
-            .single();
+    const { data: { user } } = await supabase.auth.getUser();
 
-        if (error) {
-            console.error("Error al obtener el contador:", error);
-            return;
-        }
+    // Si NO hay usuario logeado → no contar
+    if (!user) return;
 
-        const nuevoValor = data.visitas + 1;
+    // Obtener contador actual
+    const { data, error } = await supabase
+        .from('contador')
+        .select('visitas')
+        .eq('id', 1)
+        .single();
 
-        const { error: updateError } = await supabase
-            .from('contador')
-            .update({ visitas: nuevoValor })
-            .eq('id', 1);
+    if (error) {
+        console.error("Error al obtener el contador:", error);
+        return;
+    }
 
-        if (updateError) {
-            console.error("Error al actualizar el contador:", updateError);
-        }
+    const nuevoValor = data.visitas + 1;
+
+    const { error: updateError } = await supabase
+        .from('contador')
+        .update({ visitas: nuevoValor })
+        .eq('id', 1);
+
+    if (updateError) {
+        console.error("Error al actualizar el contador:", updateError);
     }
 }
 

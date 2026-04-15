@@ -117,24 +117,32 @@ if (btnIngresar) {
         if (codigoIngresado === claves.ADMIN_KEY) {
 
             localStorage.setItem("rol", "admin");
+
             document.getElementById("login-container").style.display = "none";
             document.getElementById("menu-principal").style.display = "block";
             document.body.classList.add('admin');
 
-            await mostrarContadorVisitas();
+            // ⏳ Esperar a que el DOM muestre el menú antes de leer contador
+            await new Promise(resolve => setTimeout(resolve, 300));
 
+            await mostrarContadorVisitas();
         }
+
         // 👤 USUARIO NORMAL (SÍ suma visitas)
         else if (codigoIngresado === claves.CODIGO_ACCESO) {
 
             localStorage.setItem("rol", "usuario");
+
             document.getElementById("login-container").style.display = "none";
             document.getElementById("menu-principal").style.display = "block";
 
-            // 🔥 AQUÍ SE SUMA LA VISITA REAL EN SUPABASE
-            await incrementarVisitas();
+            // ⏳ Esperar a que el DOM renderice el contador en pantalla
+            await new Promise(resolve => setTimeout(resolve, 300));
 
+            // 🔥 Incrementar visita REAL en Supabase y refrescar contador
+            await incrementarVisitas();
         }
+
         else {
             const mensajeError = document.getElementById("mensajeError");
             mensajeError.style.display = "block";

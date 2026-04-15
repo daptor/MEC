@@ -1,13 +1,17 @@
-
-// ***************** Función para actualizar el contador global en Supabase *******************
+// ***************** Función para actualizar el contador *******************
 async function actualizarContadorVisitas() {
+
+    console.log("🔥 contador entrando");
 
     const { data: { user } } = await supabase.auth.getUser();
 
-    // Si NO hay usuario logeado → no contar
-    if (!user) return;
+    if (!user) {
+        console.log("❌ no hay usuario logeado aún");
+        return;
+    }
 
-    // Obtener contador actual
+    console.log("✅ usuario detectado:", user.id);
+
     const { data, error } = await supabase
         .from('contador')
         .select('visitas')
@@ -15,9 +19,11 @@ async function actualizarContadorVisitas() {
         .single();
 
     if (error) {
-        console.error("Error al obtener el contador:", error);
+        console.error("❌ Error al obtener el contador:", error);
         return;
     }
+
+    console.log("📊 valor actual:", data.visitas);
 
     const nuevoValor = data.visitas + 1;
 
@@ -27,12 +33,50 @@ async function actualizarContadorVisitas() {
         .eq('id', 1);
 
     if (updateError) {
-        console.error("Error al actualizar el contador:", updateError);
+        console.error("❌ Error al actualizar el contador:", updateError);
+        return;
     }
+
+    console.log("📈 nuevo valor:", nuevoValor);
 }
 
 
-// Mostrar contador en pantalla
+// 🔥 Detecta login real
+supabase.auth.onAuthStateChange(async (event, session) => {
+
+    if (event === "SIGNED_IN" && session?.user) {
+        console.log("🚀 usuario logeado");
+        await actualizarContadorVisitas();
+        await mostrarContadorVisitas();
+    }
+
+});
+
+
+// 🔥 Al cargar la app (sesión ya existente)
+document.addEventListener("DOMContentLoaded", async () => {
+
+    actualizarFechaHora();
+    setInterval(actualizarFechaHora, 1000);
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (user) {
+        console.log("🔁 sesión ya activa");
+        await actualizarContadorVisitas();
+    }
+
+    await mostrarContadorVisitas();
+
+    const resetBoton = document.getElementById("resetContador");
+    if (resetBoton) {
+        resetBoton.addEventListener("click", resetearContadorVisitas);
+    }
+
+});
+
+
+// Mostrar contador
 async function mostrarContadorVisitas() {
     const { data, error } = await supabase
         .from('contador')
@@ -78,7 +122,6 @@ function actualizarFechaHora() {
     if (fechaElemento) fechaElemento.textContent = ahora.toLocaleDateString();
     if (horaElemento) horaElemento.textContent = ahora.toLocaleTimeString();
 }
-
 
 // Inicialización
 document.addEventListener("DOMContentLoaded", async () => {

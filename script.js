@@ -1,3 +1,6 @@
+// 🔒 evita doble ejecución
+let contadorEjecutado = false;
+
 // ***************** Función para actualizar el contador *******************
 async function actualizarContadorVisitas() {
 
@@ -38,10 +41,14 @@ async function actualizarContadorVisitas() {
     }
 
     console.log("📈 nuevo valor:", nuevoValor);
+
+    // 🔥 actualizar en pantalla directamente
+    const el = document.getElementById("contador");
+    if (el) el.textContent = nuevoValor;
 }
 
 
-// Inicialización SIMPLE y estable
+// ***************** Inicialización *******************
 document.addEventListener("DOMContentLoaded", async () => {
 
     actualizarFechaHora();
@@ -51,11 +58,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     console.log("👤 user en carga:", user);
 
-    if (user) {
+    if (user && !contadorEjecutado) {
+        contadorEjecutado = true;
         await actualizarContadorVisitas();
+    } else {
+        await mostrarContadorVisitas();
     }
-
-    await mostrarContadorVisitas();
 
     const resetBoton = document.getElementById("resetContador");
     if (resetBoton) {
@@ -65,7 +73,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 
-// Mostrar contador
+// ***************** Mostrar contador *******************
 async function mostrarContadorVisitas() {
     const { data, error } = await supabase
         .from('contador')
@@ -83,7 +91,7 @@ async function mostrarContadorVisitas() {
 }
 
 
-// Reset contador (solo admin)
+// ***************** Reset contador *******************
 async function resetearContadorVisitas() {
     if (localStorage.getItem("rol") !== "admin") return;
 
@@ -102,7 +110,7 @@ async function resetearContadorVisitas() {
 }
 
 
-// Fecha y hora
+// ***************** Fecha y hora *******************
 function actualizarFechaHora() {
     const fechaElemento = document.getElementById("fecha");
     const horaElemento = document.getElementById("hora");
@@ -111,25 +119,6 @@ function actualizarFechaHora() {
     if (fechaElemento) fechaElemento.textContent = ahora.toLocaleDateString();
     if (horaElemento) horaElemento.textContent = ahora.toLocaleTimeString();
 }
-
-// Inicialización
-document.addEventListener("DOMContentLoaded", async () => {
-
-    actualizarFechaHora();
-    setInterval(actualizarFechaHora, 1000);
-
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (user) {
-        await actualizarContadorVisitas(); // 🔥 ahora sí suma
-    }
-
-    mostrarContadorVisitas();
-
-    const resetBoton = document.getElementById("resetContador");
-    if (resetBoton) {
-        resetBoton.addEventListener("click", resetearContadorVisitas);
-    }
 
 });
 

@@ -1,101 +1,112 @@
-// ***************** CONTADOR GLOBAL SUPABASE (VERSIÓN FINAL REAL CON RPC) *****************
+// ***************** CONTADOR GLOBAL SUPABASE (VERSIÓN FINAL LIMPIA) *****************
 
-// 🔥 ESTA ES LA FUNCIÓN CORRECTA QUE LLAMA A SUPABASE RPC
+// 🔥 INCREMENTAR VISITAS (SOLO USUARIOS)
 async function incrementarVisitas() {
 
-    // Solo usuarios normales suman visitas
     if (localStorage.getItem("rol") !== "usuario") return;
 
-    const { error } = await supabase.rpc("incrementar_visitas");
+    try {
+        const { error } = await supabase.rpc("incrementar_visitas");
 
-    if (error) {
-        console.error("❌ Error al incrementar visitas (RPC):", error);
-        return;
+        if (error) {
+            console.error("❌ Error RPC incrementar_visitas:", error);
+            return;
+        }
+
+        console.log("✅ Visita incrementada");
+
+        await mostrarContadorVisitas();
+
+    } catch (err) {
+        console.error("❌ Error inesperado incrementarVisitas:", err);
     }
-
-    console.log("✅ Visita incrementada en Supabase");
-
-    // Refrescamos contador en pantalla con valor REAL desde BD
-    await mostrarContadorVisitas();
 }
 
 
-
-// 🔵 Mostrar contador al cargar app
+// 🔵 MOSTRAR CONTADOR DESDE SUPABASE
 async function mostrarContadorVisitas() {
-    const { data, error } = await supabase
-        .from('contador')
-        .select('visitas')
-        .eq('id', 1)
-        .single();
 
-    if (error) {
-        console.error("Error al obtener el contador:", error);
-        return;
+    try {
+        const { data, error } = await supabase
+            .from('contador')
+            .select('visitas')
+            .eq('id', 1)
+            .single();
+
+        if (error) {
+            console.error("❌ Error al obtener contador:", error);
+            return;
+        }
+
+        const el = document.getElementById("contador");
+        if (el) el.textContent = data.visitas;
+
+    } catch (err) {
+        console.error("❌ Error inesperado mostrarContador:", err);
     }
-
-    const el = document.getElementById("contador");
-    if (el) el.textContent = data.visitas;
 }
 
 
-
-// 🔴 Reset contador (solo admin)
+// 🔴 RESET (SOLO ADMIN)
 async function resetearContadorVisitas() {
 
     if (localStorage.getItem("rol") !== "admin") return;
 
-    const { data, error } = await supabase
-        .from('contador')
-        .update({ visitas: 0 })
-        .eq('id', 1)
-        .select()
-        .single();
+    try {
+        const { data, error } = await supabase
+            .from('contador')
+            .update({ visitas: 0 })
+            .eq('id', 1)
+            .select()
+            .single();
 
-    if (error) {
-        console.error("Error al resetear el contador:", error);
-        return;
+        if (error) {
+            console.error("❌ Error reset contador:", error);
+            return;
+        }
+
+        const el = document.getElementById("contador");
+        if (el) el.textContent = data.visitas;
+
+        console.log("🧹 Contador reseteado");
+
+    } catch (err) {
+        console.error("❌ Error inesperado reset:", err);
     }
-
-    const el = document.getElementById("contador");
-    if (el) el.textContent = data.visitas;
-
-    console.log("🧹 Contador reseteado por admin");
 }
 
 
-
-// 🕒 Fecha y hora
+// 🕒 FECHA Y HORA
 function actualizarFechaHora() {
     const fechaElemento = document.getElementById("fecha");
     const horaElemento = document.getElementById("hora");
 
     const ahora = new Date();
+
     if (fechaElemento) fechaElemento.textContent = ahora.toLocaleDateString();
     if (horaElemento) horaElemento.textContent = ahora.toLocaleTimeString();
 }
 
 
-
-// 🚀 Inicialización (NO incrementa visitas aquí)
+// 🚀 INICIALIZACIÓN
 document.addEventListener("DOMContentLoaded", async () => {
 
     actualizarFechaHora();
     setInterval(actualizarFechaHora, 1000);
 
-    // Solo mostrar contador al cargar
     await mostrarContadorVisitas();
+
+    // 🔥 refresco automático tipo “tiempo real”
+    setInterval(mostrarContadorVisitas, 5000);
 
     const resetBoton = document.getElementById("resetContador");
     if (resetBoton) {
         resetBoton.addEventListener("click", resetearContadorVisitas);
     }
-
 });
 
 
-
-// 🔐 Obtener claves desde Vercel
+// 🔐 OBTENER CLAVES
 async function obtenerClaves() {
     const response = await fetch("/api/keys");
     const data = await response.json();
@@ -103,8 +114,7 @@ async function obtenerClaves() {
 }
 
 
-
-// 🔑 LOGIN POR CÓDIGO (AQUÍ OCURRE LA VISITA REAL)
+// 🔑 LOGIN (VISITA REAL AQUÍ)
 const btnIngresar = document.getElementById("ingresarBtn");
 
 if (btnIngresar) {
@@ -113,7 +123,7 @@ if (btnIngresar) {
         const codigoIngresado = document.getElementById("codigoAcceso").value;
         const claves = await obtenerClaves();
 
-        // 👑 ADMIN (NO suma visitas)
+        // 👑 ADMIN
         if (codigoIngresado === claves.ADMIN_KEY) {
 
             localStorage.setItem("rol", "admin");
@@ -122,13 +132,11 @@ if (btnIngresar) {
             document.getElementById("menu-principal").style.display = "block";
             document.body.classList.add('admin');
 
-            // ⏳ Esperar a que el DOM muestre el menú antes de leer contador
             await new Promise(resolve => setTimeout(resolve, 300));
-
             await mostrarContadorVisitas();
         }
 
-        // 👤 USUARIO NORMAL (SÍ suma visitas)
+        // 👤 USUARIO NORMAL
         else if (codigoIngresado === claves.CODIGO_ACCESO) {
 
             localStorage.setItem("rol", "usuario");
@@ -136,25 +144,24 @@ if (btnIngresar) {
             document.getElementById("login-container").style.display = "none";
             document.getElementById("menu-principal").style.display = "block";
 
-            // ⏳ Esperar a que el DOM renderice el contador en pantalla
             await new Promise(resolve => setTimeout(resolve, 300));
 
-            // 🔥 Incrementar visita REAL en Supabase y refrescar contador
             await incrementarVisitas();
         }
 
         else {
             const mensajeError = document.getElementById("mensajeError");
-            mensajeError.style.display = "block";
-            mensajeError.textContent = "Código incorrecto. Intenta nuevamente.";
+            if (mensajeError) {
+                mensajeError.style.display = "block";
+                mensajeError.textContent = "Código incorrecto. Intenta nuevamente.";
+            }
         }
-
     });
 }
 
 // Función para mostrar una pantalla específica
 function mostrarPantalla(idPantalla) {
-    document.querySelectorAll(".pantalla").forEach(pantalla => {f
+    document.querySelectorAll(".pantalla").forEach(pantalla => {
         pantalla.style.display = "none";
     });
 
@@ -2884,5 +2891,20 @@ document.addEventListener("DOMContentLoaded", async () => {
       window.location.href = "/login.html";
     });
   }
+
+});
+
+document.addEventListener("DOMContentLoaded", async () => {
+
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (session) {
+        try {
+            await supabase.rpc("incrementar_visitas");
+            console.log("Visita registrada");
+        } catch (e) {
+            console.error("Error contador:", e);
+        }
+    }
 
 });

@@ -1,43 +1,46 @@
-// ***************** Función para actualizar el contador global en Supabase *******************
+// ***************** CONTADOR GLOBAL SUPABASE (VERSIÓN REAL) *****************
+
 async function actualizarContadorVisitas() {
 
-    const { data: { user } } = await supabase.auth.getUser();
+    // Solo usuarios normales suman
+    if (localStorage.getItem("rol") !== "usuario") return;
 
-    // Si no hay usuario logeado → no contar
-    if (!user) return;
-
-    // ❌ NO contar si es admin
-    if (localStorage.getItem("rol") === "admin") return;
-
-    const { data, error } = await supabase
+    // 1️⃣ Obtener valor actual
+    const { data: actual, error: errorSelect } = await supabase
         .from('contador')
         .select('visitas')
         .eq('id', 1)
         .single();
 
-    if (error) {
-        console.error("Error al obtener el contador:", error);
+    if (errorSelect) {
+        console.error("Error al leer contador:", errorSelect);
         return;
     }
 
-    const nuevoValor = data.visitas + 1;
+    const nuevoValor = Number(actual.visitas) + 1;
 
-    const { error: updateError } = await supabase
+    // 2️⃣ Actualizar en Supabase y devolver el valor guardado
+    const { data: actualizado, error: errorUpdate } = await supabase
         .from('contador')
         .update({ visitas: nuevoValor })
-        .eq('id', 1);
+        .eq('id', 1)
+        .select()
+        .single();
 
-    if (updateError) {
-        console.error("Error al actualizar el contador:", updateError);
+    if (errorUpdate) {
+        console.error("❌ Supabase BLOQUEÓ el update:", errorUpdate);
         return;
     }
 
+    // 3️⃣ Mostrar valor REAL guardado
     const el = document.getElementById("contador");
-    if (el) el.textContent = nuevoValor;
+    if (el) el.textContent = actualizado.visitas;
+
+    console.log("✅ Contador guardado en BD:", actualizado.visitas);
 }
 
 
-// Mostrar contador en pantalla
+// 🔵 Mostrar contador al cargar app
 async function mostrarContadorVisitas() {
     const { data, error } = await supabase
         .from('contador')
@@ -55,14 +58,16 @@ async function mostrarContadorVisitas() {
 }
 
 
-// Reset contador (solo admin)
+// 🔴 Reset contador (solo admin)
 async function resetearContadorVisitas() {
     if (localStorage.getItem("rol") !== "admin") return;
 
-    const { error } = await supabase
+    const { data, error } = await supabase
         .from('contador')
         .update({ visitas: 0 })
-        .eq('id', 1);
+        .eq('id', 1)
+        .select()
+        .single();
 
     if (error) {
         console.error("Error al resetear el contador:", error);
@@ -70,11 +75,11 @@ async function resetearContadorVisitas() {
     }
 
     const el = document.getElementById("contador");
-    if (el) el.textContent = 0;
+    if (el) el.textContent = data.visitas;
 }
 
 
-// Fecha y hora
+// 🕒 Fecha y hora
 function actualizarFechaHora() {
     const fechaElemento = document.getElementById("fecha");
     const horaElemento = document.getElementById("hora");
@@ -85,33 +90,22 @@ function actualizarFechaHora() {
 }
 
 
-// Inicialización
-document.addEventListener("DOMContentLoaded", () => {
+// 🚀 Inicialización
+document.addEventListener("DOMContentLoaded", async () => {
 
     actualizarFechaHora();
     setInterval(actualizarFechaHora, 1000);
 
-    mostrarContadorVisitas();
+    await mostrarContadorVisitas();
 
     const resetBoton = document.getElementById("resetContador");
     if (resetBoton) {
         resetBoton.addEventListener("click", resetearContadorVisitas);
     }
-
 });
 
 
-// 🔥 Detectar sesión existente (login por correo)
-document.addEventListener("DOMContentLoaded", async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (user) {
-        await actualizarContadorVisitas();
-    }
-});
-
-
-// Función para obtener las claves desde la API en Vercel
+// 🔐 Obtener claves desde Vercel
 async function obtenerClaves() {
     const response = await fetch("/api/keys");
     const data = await response.json();
@@ -119,25 +113,31 @@ async function obtenerClaves() {
 }
 
 
-// Verificación del código de acceso (sistema antiguo)
+// 🔑 Login por código
 const btnIngresar = document.getElementById("ingresarBtn");
 
 if (btnIngresar) {
     btnIngresar.addEventListener("click", async function () {
+
         const codigoIngresado = document.getElementById("codigoAcceso").value;
         const claves = await obtenerClaves();
 
         if (codigoIngresado === claves.ADMIN_KEY) {
+
             localStorage.setItem("rol", "admin");
             document.getElementById("login-container").style.display = "none";
             document.getElementById("menu-principal").style.display = "block";
             document.body.classList.add('admin');
+
         } else if (codigoIngresado === claves.CODIGO_ACCESO) {
+
             localStorage.setItem("rol", "usuario");
             document.getElementById("login-container").style.display = "none";
             document.getElementById("menu-principal").style.display = "block";
 
+            // 🔥 FUNCIÓN CORRECTA (antes estaba mal escrita)
             await actualizarContadorVisitas();
+
         } else {
             const mensajeError = document.getElementById("mensajeError");
             mensajeError.style.display = "block";
@@ -2875,8 +2875,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (logoutBtn) {
     logoutBtn.addEventListener("click", async () => {
       await supabase.auth.signOut();
-      localStorage.removeItem("rol"); // 🔥 importante
-      window.location.href = "/";     // 🔥 corrección
+      window.location.href = "/login.html";
     });
   }
 

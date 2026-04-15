@@ -1,30 +1,36 @@
 // ***************** Función para actualizar el contador global en Supabase *******************
 async function actualizarContadorVisitas() {
-    // Solo actualizamos si el usuario es "usuario" (no admin)
-    if (localStorage.getItem("rol") === "usuario") {
 
-        const { data, error } = await supabase
-            .from('contador')
-            .select('visitas')
-            .eq('id', 1)
-            .single();
+    const { data: { user } } = await supabase.auth.getUser();
 
-        if (error) {
-            console.error("Error al obtener el contador:", error);
-            return;
-        }
+    // Si no hay usuario logeado → no contar
+    if (!user) return;
 
-        const nuevoValor = data.visitas + 1;
+    const { data, error } = await supabase
+        .from('contador')
+        .select('visitas')
+        .eq('id', 1)
+        .single();
 
-        const { error: updateError } = await supabase
-            .from('contador')
-            .update({ visitas: nuevoValor })
-            .eq('id', 1);
-
-        if (updateError) {
-            console.error("Error al actualizar el contador:", updateError);
-        }
+    if (error) {
+        console.error("Error al obtener el contador:", error);
+        return;
     }
+
+    const nuevoValor = data.visitas + 1;
+
+    const { error: updateError } = await supabase
+        .from('contador')
+        .update({ visitas: nuevoValor })
+        .eq('id', 1);
+
+    if (updateError) {
+        console.error("Error al actualizar el contador:", updateError);
+        return;
+    }
+
+    const el = document.getElementById("contador");
+    if (el) el.textContent = nuevoValor;
 }
 
 
@@ -92,15 +98,11 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
-// 🔥 NUEVO: Detectar sesión existente (login por correo)
+// 🔥 Detectar sesión existente (login por correo)
 document.addEventListener("DOMContentLoaded", async () => {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (user) {
-        // Asumimos que es usuario normal (puedes ajustar si manejas admin en BD)
-        localStorage.setItem("rol", "usuario");
-
-        // Ejecutar contador como en el sistema original
         await actualizarContadorVisitas();
     }
 });
@@ -132,7 +134,7 @@ if (btnIngresar) {
             document.getElementById("login-container").style.display = "none";
             document.getElementById("menu-principal").style.display = "block";
 
-            // ✅ ORIGINAL (SE MANTIENE)
+            // Mantiene funcionamiento original
             await actualizarContadorVisitas();
         } else {
             const mensajeError = document.getElementById("mensajeError");

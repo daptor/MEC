@@ -6,7 +6,7 @@ async function actualizarContadorVisitas() {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-        console.log("❌ no hay usuario logeado aún");
+        console.log("❌ no hay usuario logeado");
         return;
     }
 
@@ -41,19 +41,7 @@ async function actualizarContadorVisitas() {
 }
 
 
-// 🔥 Detecta login real
-supabase.auth.onAuthStateChange(async (event, session) => {
-
-    if (event === "SIGNED_IN" && session?.user) {
-        console.log("🚀 usuario logeado");
-        await actualizarContadorVisitas();
-        await mostrarContadorVisitas();
-    }
-
-});
-
-
-// 🔥 Al cargar la app (sesión ya existente)
+// Inicialización SIMPLE y estable
 document.addEventListener("DOMContentLoaded", async () => {
 
     actualizarFechaHora();
@@ -61,8 +49,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const { data: { user } } = await supabase.auth.getUser();
 
+    console.log("👤 user en carga:", user);
+
     if (user) {
-        console.log("🔁 sesión ya activa");
         await actualizarContadorVisitas();
     }
 

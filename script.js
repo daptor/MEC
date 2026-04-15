@@ -6,6 +6,9 @@ async function actualizarContadorVisitas() {
     // Si no hay usuario logeado → no contar
     if (!user) return;
 
+    // ❌ NO contar si es admin
+    if (localStorage.getItem("rol") === "admin") return;
+
     const { data, error } = await supabase
         .from('contador')
         .select('visitas')
@@ -134,7 +137,6 @@ if (btnIngresar) {
             document.getElementById("login-container").style.display = "none";
             document.getElementById("menu-principal").style.display = "block";
 
-            // Mantiene funcionamiento original
             await actualizarContadorVisitas();
         } else {
             const mensajeError = document.getElementById("mensajeError");
@@ -2873,7 +2875,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (logoutBtn) {
     logoutBtn.addEventListener("click", async () => {
       await supabase.auth.signOut();
-      window.location.href = "/login.html";
+      localStorage.removeItem("rol"); // 🔥 importante
+      window.location.href = "/";     // 🔥 corrección
     });
   }
 

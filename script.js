@@ -1,43 +1,24 @@
-// ***************** CONTADOR GLOBAL SUPABASE (VERSIÓN REAL) *****************
+// ***************** CONTADOR GLOBAL SUPABASE (VERSIÓN FINAL REAL CON RPC) *****************
 
-async function actualizarContadorVisitas() {
+// 🔥 ESTA ES LA FUNCIÓN CORRECTA QUE LLAMA A SUPABASE RPC
+async function incrementarVisitas() {
 
-    // Solo usuarios normales suman
+    // Solo usuarios normales suman visitas
     if (localStorage.getItem("rol") !== "usuario") return;
 
-    // 1️⃣ Obtener valor actual
-    const { data: actual, error: errorSelect } = await supabase
-        .from('contador')
-        .select('visitas')
-        .eq('id', 1)
-        .single();
+    const { error } = await supabase.rpc("incrementar_visitas");
 
-    if (errorSelect) {
-        console.error("Error al leer contador:", errorSelect);
+    if (error) {
+        console.error("❌ Error al incrementar visitas (RPC):", error);
         return;
     }
 
-    const nuevoValor = Number(actual.visitas) + 1;
+    console.log("✅ Visita incrementada en Supabase");
 
-    // 2️⃣ Actualizar en Supabase y devolver el valor guardado
-    const { data: actualizado, error: errorUpdate } = await supabase
-        .from('contador')
-        .update({ visitas: nuevoValor })
-        .eq('id', 1)
-        .select()
-        .single();
-
-    if (errorUpdate) {
-        console.error("❌ Supabase BLOQUEÓ el update:", errorUpdate);
-        return;
-    }
-
-    // 3️⃣ Mostrar valor REAL guardado
-    const el = document.getElementById("contador");
-    if (el) el.textContent = actualizado.visitas;
-
-    console.log("✅ Contador guardado en BD:", actualizado.visitas);
+    // Refrescamos contador en pantalla con valor REAL desde BD
+    await mostrarContadorVisitas();
 }
+
 
 
 // 🔵 Mostrar contador al cargar app
@@ -58,8 +39,10 @@ async function mostrarContadorVisitas() {
 }
 
 
+
 // 🔴 Reset contador (solo admin)
 async function resetearContadorVisitas() {
+
     if (localStorage.getItem("rol") !== "admin") return;
 
     const { data, error } = await supabase
@@ -76,7 +59,10 @@ async function resetearContadorVisitas() {
 
     const el = document.getElementById("contador");
     if (el) el.textContent = data.visitas;
+
+    console.log("🧹 Contador reseteado por admin");
 }
+
 
 
 // 🕒 Fecha y hora
@@ -90,19 +76,23 @@ function actualizarFechaHora() {
 }
 
 
-// 🚀 Inicialización
+
+// 🚀 Inicialización (NO incrementa visitas aquí)
 document.addEventListener("DOMContentLoaded", async () => {
 
     actualizarFechaHora();
     setInterval(actualizarFechaHora, 1000);
 
+    // Solo mostrar contador al cargar
     await mostrarContadorVisitas();
 
     const resetBoton = document.getElementById("resetContador");
     if (resetBoton) {
         resetBoton.addEventListener("click", resetearContadorVisitas);
     }
+
 });
+
 
 
 // 🔐 Obtener claves desde Vercel
@@ -113,7 +103,8 @@ async function obtenerClaves() {
 }
 
 
-// 🔑 Login por código
+
+// 🔑 LOGIN POR CÓDIGO (AQUÍ OCURRE LA VISITA REAL)
 const btnIngresar = document.getElementById("ingresarBtn");
 
 if (btnIngresar) {
@@ -122,6 +113,7 @@ if (btnIngresar) {
         const codigoIngresado = document.getElementById("codigoAcceso").value;
         const claves = await obtenerClaves();
 
+        // 👑 ADMIN (NO suma visitas)
         if (codigoIngresado === claves.ADMIN_KEY) {
 
             localStorage.setItem("rol", "admin");
@@ -129,20 +121,26 @@ if (btnIngresar) {
             document.getElementById("menu-principal").style.display = "block";
             document.body.classList.add('admin');
 
-        } else if (codigoIngresado === claves.CODIGO_ACCESO) {
+            await mostrarContadorVisitas();
+
+        }
+        // 👤 USUARIO NORMAL (SÍ suma visitas)
+        else if (codigoIngresado === claves.CODIGO_ACCESO) {
 
             localStorage.setItem("rol", "usuario");
             document.getElementById("login-container").style.display = "none";
             document.getElementById("menu-principal").style.display = "block";
 
-            // 🔥 FUNCIÓN CORRECTA (antes estaba mal escrita)
-            await actualizarContadorVisitas();
+            // 🔥 AQUÍ SE SUMA LA VISITA REAL EN SUPABASE
+            await incrementarVisitas();
 
-        } else {
+        }
+        else {
             const mensajeError = document.getElementById("mensajeError");
             mensajeError.style.display = "block";
             mensajeError.textContent = "Código incorrecto. Intenta nuevamente.";
         }
+
     });
 }
 

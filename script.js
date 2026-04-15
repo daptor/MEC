@@ -81,10 +81,16 @@ function actualizarFechaHora() {
 
 
 // Inicialización
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
 
     actualizarFechaHora();
     setInterval(actualizarFechaHora, 1000);
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (user) {
+        await actualizarContadorVisitas(); // 🔥 ahora sí suma
+    }
 
     mostrarContadorVisitas();
 

@@ -120,7 +120,7 @@ if (btnIngresar) {
             document.getElementById("menu-principal").style.display = "block";
 
             // Actualizar contador
-            await actualizarContadorsupabase();
+            await actualizarContadorVisitas();
         } else {
             const mensajeError = document.getElementById("mensajeError");
             mensajeError.style.display = "block";
@@ -131,7 +131,7 @@ if (btnIngresar) {
 
 // Función para mostrar una pantalla específica
 function mostrarPantalla(idPantalla) {
-    document.querySelectorAll(".pantalla").forEach(pantalla => {
+    document.querySelectorAll(".pantalla").forEach(pantalla => {f
         pantalla.style.display = "none";
     });
 

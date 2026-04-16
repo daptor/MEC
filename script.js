@@ -1245,7 +1245,10 @@ document.getElementById('resultadoAnalisis').innerHTML += pagosTxt.join('');
 
 // ---------- FIN: ANÁLISIS COMISIÓN GRUPAL ----------
 
-// ✅ Registrar uso SOLO cuando todo terminó bien
+// 🌐 contador global (como antes)
+await supabase.rpc("incrementar_visitas");
+
+// 🔥 contador real (nuevo)
 await registrarUso("analisis");
 
 }

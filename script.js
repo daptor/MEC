@@ -1,35 +1,32 @@
+// ***************** CONTADOR GLOBAL SUPABASE (VERSIÓN FINAL REAL CON RPC) *****************
 
-// ***************** Función para actualizar el contador global en Supabase *******************
-async function actualizarContadorVisitas() {
-    // Solo actualizamos si el usuario es "usuario" (no admin)
-    if (localStorage.getItem("rol") === "usuario") {
+// 🔥 FUNCIÓN QUE LLAMA A SUPABASE RPC (AJUSTADA)
+async function incrementarVisitas() {
 
-        const { data, error } = await supabase
-            .from('contador')
-            .select('visitas')
-            .eq('id', 1)
-            .single();
+    // 🔍 Detectar usuario por sesión (Supabase) o por código
+    const { data: { session } } = await supabase.auth.getSession();
 
-        if (error) {
-            console.error("Error al obtener el contador:", error);
-            return;
-        }
+    const esUsuarioCodigo = localStorage.getItem("rol") === "usuario";
 
-        const nuevoValor = data.visitas + 1;
+    // ❌ Si no hay sesión ni usuario por código → no sumar
+    if (!session && !esUsuarioCodigo) return;
 
-        const { error: updateError } = await supabase
-            .from('contador')
-            .update({ visitas: nuevoValor })
-            .eq('id', 1);
+    const { error } = await supabase.rpc("incrementar_visitas");
 
-        if (updateError) {
-            console.error("Error al actualizar el contador:", updateError);
-        }
+    if (error) {
+        console.error("❌ Error al incrementar visitas (RPC):", error);
+        return;
     }
+
+    console.log("✅ Visita incrementada en Supabase");
+
+    // Refrescamos contador en pantalla con valor REAL desde BD
+    await mostrarContadorVisitas();
 }
 
 
-// Mostrar contador en pantalla
+
+// 🔵 Mostrar contador al cargar app
 async function mostrarContadorVisitas() {
     const { data, error } = await supabase
         .from('contador')
@@ -47,14 +44,18 @@ async function mostrarContadorVisitas() {
 }
 
 
-// Reset contador (solo admin)
+
+// 🔴 Reset contador (solo admin)
 async function resetearContadorVisitas() {
+
     if (localStorage.getItem("rol") !== "admin") return;
 
-    const { error } = await supabase
+    const { data, error } = await supabase
         .from('contador')
         .update({ visitas: 0 })
-        .eq('id', 1);
+        .eq('id', 1)
+        .select()
+        .single();
 
     if (error) {
         console.error("Error al resetear el contador:", error);
@@ -62,11 +63,14 @@ async function resetearContadorVisitas() {
     }
 
     const el = document.getElementById("contador");
-    if (el) el.textContent = 0;
+    if (el) el.textContent = data.visitas;
+
+    console.log("🧹 Contador reseteado por admin");
 }
 
 
-// Fecha y hora
+
+// 🕒 Fecha y hora
 function actualizarFechaHora() {
     const fechaElemento = document.getElementById("fecha");
     const horaElemento = document.getElementById("hora");
@@ -77,61 +81,90 @@ function actualizarFechaHora() {
 }
 
 
-// Inicialización
-document.addEventListener("DOMContentLoaded", () => {
+
+// 🚀 INICIALIZACIÓN (AQUÍ ESTÁ LA CLAVE)
+document.addEventListener("DOMContentLoaded", async () => {
 
     actualizarFechaHora();
     setInterval(actualizarFechaHora, 1000);
 
-    mostrarContadorVisitas();
+    await mostrarContadorVisitas();
 
     const resetBoton = document.getElementById("resetContador");
     if (resetBoton) {
         resetBoton.addEventListener("click", resetearContadorVisitas);
     }
 
+    // 🔥 SOLUCIÓN REAL: contar visitas al entrar
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        const esUsuarioCodigo = localStorage.getItem("rol") === "usuario";
+
+        if (user || esUsuarioCodigo) {
+            console.log("🔁 Usuario detectado al cargar, incrementando visita...");
+            await incrementarVisitas();
+        }
+
+    } catch (e) {
+        console.error("Error verificando usuario:", e);
+    }
+
 });
 
-// Función para obtener las claves desde la API en Vercel
+
+
+// 🔐 Obtener claves desde Vercel
 async function obtenerClaves() {
-    const response = await fetch("/api/keys");  // Llama a la API en Vercel
+    const response = await fetch("/api/keys");
     const data = await response.json();
     return data;
 }
 
-// Verificación del código de acceso
+
+
+// 🔑 LOGIN POR CÓDIGO (SE MANTIENE IGUAL)
 const btnIngresar = document.getElementById("ingresarBtn");
 
 if (btnIngresar) {
     btnIngresar.addEventListener("click", async function () {
-        const codigoIngresado = document.getElementById("codigoAcceso").value;
-        const claves = await obtenerClaves(); // Obtener claves desde Vercel
 
+        const codigoIngresado = document.getElementById("codigoAcceso").value;
+        const claves = await obtenerClaves();
+
+        // 👑 ADMIN (NO suma visitas)
         if (codigoIngresado === claves.ADMIN_KEY) {
-            // Si es administrador, guarda el rol en localStorage
+
             localStorage.setItem("rol", "admin");
             document.getElementById("login-container").style.display = "none";
             document.getElementById("menu-principal").style.display = "block";
-            document.body.classList.add('admin');  // Agregar clase 'admin'
-        } else if (codigoIngresado === claves.CODIGO_ACCESO) {
-            // Si es usuario normal
+            document.body.classList.add('admin');
+
+            await mostrarContadorVisitas();
+
+        }
+        // 👤 USUARIO NORMAL (SÍ suma visitas)
+        else if (codigoIngresado === claves.CODIGO_ACCESO) {
+
             localStorage.setItem("rol", "usuario");
             document.getElementById("login-container").style.display = "none";
             document.getElementById("menu-principal").style.display = "block";
 
-            // Actualizar contador
-            await actualizarContadorsupabase();
-        } else {
+            // 🔥 SIGUE SUMANDO AQUÍ TAMBIÉN
+            await incrementarVisitas();
+
+        }
+        else {
             const mensajeError = document.getElementById("mensajeError");
             mensajeError.style.display = "block";
             mensajeError.textContent = "Código incorrecto. Intenta nuevamente.";
         }
+
     });
 }
 
 // Función para mostrar una pantalla específica
 function mostrarPantalla(idPantalla) {
-    document.querySelectorAll(".pantalla").forEach(pantalla => {
+    document.querySelectorAll(".pantalla").forEach(pantalla => {f
         pantalla.style.display = "none";
     });
 

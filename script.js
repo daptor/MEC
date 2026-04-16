@@ -2898,7 +2898,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (logoutBtn) {
     logoutBtn.addEventListener("click", async () => {
       await supabase.auth.signOut();
-      window.location.href = "/";
+      window.location.href = "https://mec1.vercel.app/";
     });
   }
 

@@ -1,9 +1,19 @@
-// ***************** CONTADOR GLOBAL SUPABASE (VERSIÓN FINAL LIMPIA) *****************
+// ***************** CONTADOR GLOBAL SUPABASE (VERSIÓN FINAL ESTABLE) *****************
+
+// 🔒 bloqueo anti doble suma
+let bloqueoIncremento = false;
+
 
 // 🔥 INCREMENTAR VISITAS (SOLO USUARIOS)
 async function incrementarVisitas() {
 
+    // ❌ ADMIN NUNCA SUMA
     if (localStorage.getItem("rol") !== "usuario") return;
+
+    // ❌ evita doble ejecución (problema 2x)
+    if (bloqueoIncremento) return;
+
+    bloqueoIncremento = true;
 
     try {
         const { error } = await supabase.rpc("incrementar_visitas");
@@ -19,6 +29,12 @@ async function incrementarVisitas() {
 
     } catch (err) {
         console.error("❌ Error inesperado incrementarVisitas:", err);
+
+    } finally {
+        // 🔥 libera bloqueo después de corto tiempo
+        setTimeout(() => {
+            bloqueoIncremento = false;
+        }, 2000);
     }
 }
 
@@ -96,7 +112,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     await mostrarContadorVisitas();
 
-    // 🔥 refresco automático tipo “tiempo real”
+    // 🔥 refresco automático (sin sobrecargar)
     setInterval(mostrarContadorVisitas, 5000);
 
     const resetBoton = document.getElementById("resetContador");
@@ -114,7 +130,7 @@ async function obtenerClaves() {
 }
 
 
-// 🔑 LOGIN (VISITA REAL AQUÍ)
+// 🔑 LOGIN
 const btnIngresar = document.getElementById("ingresarBtn");
 
 if (btnIngresar) {
@@ -123,7 +139,7 @@ if (btnIngresar) {
         const codigoIngresado = document.getElementById("codigoAcceso").value;
         const claves = await obtenerClaves();
 
-        // 👑 ADMIN
+        // 👑 ADMIN (NO SUMA VISITAS)
         if (codigoIngresado === claves.ADMIN_KEY) {
 
             localStorage.setItem("rol", "admin");
@@ -134,9 +150,11 @@ if (btnIngresar) {
 
             await new Promise(resolve => setTimeout(resolve, 300));
             await mostrarContadorVisitas();
+
+            return; // 🔥 corta ejecución
         }
 
-        // 👤 USUARIO NORMAL
+        // 👤 USUARIO NORMAL (SÍ SUMA)
         else if (codigoIngresado === claves.CODIGO_ACCESO) {
 
             localStorage.setItem("rol", "usuario");
@@ -2872,10 +2890,13 @@ async function cerrarConversacion() {
     await mostrarPantallaAdminChat();
 }
 
-// <---- boton salir de secion----->
 document.addEventListener("DOMContentLoaded", async () => {
 
+  // =========================
+  // SESIÓN + USUARIO + LOGOUT
+  // =========================
   const { data: { session } } = await supabase.auth.getSession();
+
   if (!session) return;
 
   const user = session.user;
@@ -2891,20 +2912,5 @@ document.addEventListener("DOMContentLoaded", async () => {
       window.location.href = "/login.html";
     });
   }
-
-});
-
-document.addEventListener("DOMContentLoaded", async () => {
-
-    const { data: { session } } = await supabase.auth.getSession();
-
-    if (session) {
-        try {
-            await supabase.rpc("incrementar_visitas");
-            console.log("Visita registrada");
-        } catch (e) {
-            console.error("Error contador:", e);
-        }
-    }
 
 });

@@ -1,14 +1,23 @@
 // ***************** CONTADOR GLOBAL SUPABASE (VERSIÓN FINAL REAL CON RPC) *****************
 
-// 🔥 FUNCIÓN QUE LLAMA A SUPABASE RPC (AJUSTADA)
 async function incrementarVisitas() {
 
-    // 🔍 Detectar usuario por sesión (Supabase) o por código
     const { data: { session } } = await supabase.auth.getSession();
 
-    const esUsuarioCodigo = localStorage.getItem("rol") === "usuario";
+    const rol = localStorage.getItem("rol");
 
-    // ❌ Si no hay sesión ni usuario por código → no sumar
+    const esUsuarioCodigo = rol === "usuario";
+    const esAdminCodigo = rol === "admin";
+
+    // 🔴 Admin por código → NO suma
+    if (esAdminCodigo) return;
+
+    // 🔴 Admin real (tú)
+    const adminEmail = "christorfu@gmail.com";
+
+    if (session?.user?.email === adminEmail) return;
+
+    // ❌ Si no hay sesión ni usuario válido → no sumar
     if (!session && !esUsuarioCodigo) return;
 
     const { error } = await supabase.rpc("incrementar_visitas");
@@ -20,10 +29,8 @@ async function incrementarVisitas() {
 
     console.log("✅ Visita incrementada en Supabase");
 
-    // Refrescamos contador en pantalla con valor REAL desde BD
     await mostrarContadorVisitas();
 }
-
 
 
 // 🔵 Mostrar contador al cargar app

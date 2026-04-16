@@ -2,20 +2,21 @@
 
 // Función para mostrar una pantalla específica y ocultar las demás
 function mostrarPantallaGastoReal(idPantalla) {
-  // Oculta todas las pantallas y menús
   document.querySelectorAll('.pantalla, .menu').forEach(el => {
     el.style.display = 'none';
   });
-  // Muestra la pantalla solicitada
+
   const pantalla = document.getElementById(idPantalla);
   if (pantalla) pantalla.style.display = 'block';
 }
 
-// Hacerla global para que pueda llamarse desde HTML
+// Hacerla global
 window.mostrarPantallaGastoReal = mostrarPantallaGastoReal;
 
-// 🔐 CONTROL DE USUARIO (mostrar email + logout)
+
+// 🔐 CONTROL DE USUARIO (mostrar email + logout + sync entre pestañas)
 document.addEventListener("DOMContentLoaded", async () => {
+
   const { data: { user } } = await supabase.auth.getUser();
 
   // Mostrar email
@@ -32,4 +33,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       window.location.replace("/");
     });
   }
+
+});
+
+
+// 🔥 ESCUCHAR CAMBIOS DE SESIÓN (esto arregla tu problema)
+supabase.auth.onAuthStateChange((event, session) => {
+
+  if (event === "SIGNED_OUT") {
+    window.location.replace("/login.html");
+  }
+
 });

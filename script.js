@@ -1244,6 +1244,10 @@ pagosTxt.push(`<hr>`);
 document.getElementById('resultadoAnalisis').innerHTML += pagosTxt.join('');
 
 // ---------- FIN: ANÁLISIS COMISIÓN GRUPAL ----------
+
+// ✅ Registrar uso SOLO cuando todo terminó bien
+await registrarUso("analisis");
+
 }
 
 // **************** Función de cálculo de vacaciones ****************

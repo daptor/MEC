@@ -45,3 +45,36 @@ supabase.auth.onAuthStateChange((event, session) => {
   }
 
 });
+
+// 🔥 REGISTRO DE USO (NUEVO - NO TOCA NADA EXISTENTE)
+async function registrarUso(tipo) {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      console.log("⚠️ No hay usuario logueado");
+      return;
+    }
+
+    const { error } = await supabase
+      .from("uso_usuario")
+      .insert([
+        {
+          user_id: user.id,
+          tipo: tipo
+        }
+      ]);
+
+    if (error) {
+      console.error("❌ Error registrando uso:", error);
+    } else {
+      console.log("✅ Uso registrado:", tipo);
+    }
+
+  } catch (err) {
+    console.error("❌ Error inesperado:", err);
+  }
+}
+
+// Hacerla global (para poder probar desde consola)
+window.registrarUso = registrarUso;

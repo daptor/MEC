@@ -119,6 +119,10 @@
   </div>
 </div>
 
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabaseClient.js"></script>
+
 <script>
 function abrirModal(){
   document.getElementById("modalClave").style.display="block";
@@ -127,6 +131,15 @@ function abrirModal(){
 function cerrarModal(){
   document.getElementById("modalClave").style.display="none";
 }
+
+// 🚀 REDIRECCIÓN INTELIGENTE
+document.addEventListener("DOMContentLoaded", async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (session) {
+    window.location.replace("app-protegida.html");
+  }
+});
 </script>
 
 </body>

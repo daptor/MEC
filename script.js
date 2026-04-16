@@ -2882,24 +2882,3 @@ async function cerrarConversacion() {
     await mostrarPantallaAdminChat();
 }
 
-// <---- boton salir de secion----->
-document.addEventListener("DOMContentLoaded", async () => {
-
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return;
-
-  const user = session.user;
-
-  const emailEl = document.getElementById("userEmail");
-  if (emailEl) emailEl.textContent = user.email;
-
-  const logoutBtn = document.getElementById("btnLogout");
-
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", async () => {
-      await supabase.auth.signOut();
-      window.location.href = "https://mec1.vercel.app/";
-    });
-  }
-
-});

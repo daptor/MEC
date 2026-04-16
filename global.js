@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (btnLogout) {
     btnLogout.addEventListener("click", async () => {
       await supabase.auth.signOut();
-      window.location.href = "login.html";
+      window.location.replace("/");
     });
   }
 });

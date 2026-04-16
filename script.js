@@ -1,48 +1,9 @@
-// ***************** CONTADOR GLOBAL SUPABASE (VERSIÓN FINAL ESTABLE) *****************
 
-// 🔒 bloqueo anti doble suma
-let bloqueoIncremento = false;
+// ***************** Función para actualizar el contador global en Supabase *******************
+async function actualizarContadorVisitas() {
+    // Solo actualizamos si el usuario es "usuario" (no admin)
+    if (localStorage.getItem("rol") === "usuario") {
 
-
-// 🔥 INCREMENTAR VISITAS (SOLO USUARIOS)
-async function incrementarVisitas() {
-
-    // ❌ ADMIN NUNCA SUMA
-    if (localStorage.getItem("rol") !== "usuario") return;
-
-    // ❌ evita doble ejecución (problema 2x)
-    if (bloqueoIncremento) return;
-
-    bloqueoIncremento = true;
-
-    try {
-        const { error } = await supabase.rpc("incrementar_visitas");
-
-        if (error) {
-            console.error("❌ Error RPC incrementar_visitas:", error);
-            return;
-        }
-
-        console.log("✅ Visita incrementada");
-
-        await mostrarContadorVisitas();
-
-    } catch (err) {
-        console.error("❌ Error inesperado incrementarVisitas:", err);
-
-    } finally {
-        // 🔥 libera bloqueo después de corto tiempo
-        setTimeout(() => {
-            bloqueoIncremento = false;
-        }, 2000);
-    }
-}
-
-
-// 🔵 MOSTRAR CONTADOR DESDE SUPABASE
-async function mostrarContadorVisitas() {
-
-    try {
         const { data, error } = await supabase
             .from('contador')
             .select('visitas')
@@ -50,129 +11,120 @@ async function mostrarContadorVisitas() {
             .single();
 
         if (error) {
-            console.error("❌ Error al obtener contador:", error);
+            console.error("Error al obtener el contador:", error);
             return;
         }
 
-        const el = document.getElementById("contador");
-        if (el) el.textContent = data.visitas;
+        const nuevoValor = data.visitas + 1;
 
-    } catch (err) {
-        console.error("❌ Error inesperado mostrarContador:", err);
+        const { error: updateError } = await supabase
+            .from('contador')
+            .update({ visitas: nuevoValor })
+            .eq('id', 1);
+
+        if (updateError) {
+            console.error("Error al actualizar el contador:", updateError);
+        }
     }
 }
 
 
-// 🔴 RESET (SOLO ADMIN)
-async function resetearContadorVisitas() {
+// Mostrar contador en pantalla
+async function mostrarContadorVisitas() {
+    const { data, error } = await supabase
+        .from('contador')
+        .select('visitas')
+        .eq('id', 1)
+        .single();
 
+    if (error) {
+        console.error("Error al obtener el contador:", error);
+        return;
+    }
+
+    const el = document.getElementById("contador");
+    if (el) el.textContent = data.visitas;
+}
+
+
+// Reset contador (solo admin)
+async function resetearContadorVisitas() {
     if (localStorage.getItem("rol") !== "admin") return;
 
-    try {
-        const { data, error } = await supabase
-            .from('contador')
-            .update({ visitas: 0 })
-            .eq('id', 1)
-            .select()
-            .single();
+    const { error } = await supabase
+        .from('contador')
+        .update({ visitas: 0 })
+        .eq('id', 1);
 
-        if (error) {
-            console.error("❌ Error reset contador:", error);
-            return;
-        }
-
-        const el = document.getElementById("contador");
-        if (el) el.textContent = data.visitas;
-
-        console.log("🧹 Contador reseteado");
-
-    } catch (err) {
-        console.error("❌ Error inesperado reset:", err);
+    if (error) {
+        console.error("Error al resetear el contador:", error);
+        return;
     }
+
+    const el = document.getElementById("contador");
+    if (el) el.textContent = 0;
 }
 
 
-// 🕒 FECHA Y HORA
+// Fecha y hora
 function actualizarFechaHora() {
     const fechaElemento = document.getElementById("fecha");
     const horaElemento = document.getElementById("hora");
 
     const ahora = new Date();
-
     if (fechaElemento) fechaElemento.textContent = ahora.toLocaleDateString();
     if (horaElemento) horaElemento.textContent = ahora.toLocaleTimeString();
 }
 
 
-// 🚀 INICIALIZACIÓN
-document.addEventListener("DOMContentLoaded", async () => {
+// Inicialización
+document.addEventListener("DOMContentLoaded", () => {
 
     actualizarFechaHora();
     setInterval(actualizarFechaHora, 1000);
 
-    await mostrarContadorVisitas();
-
-    // 🔥 refresco automático (sin sobrecargar)
-    setInterval(mostrarContadorVisitas, 5000);
+    mostrarContadorVisitas();
 
     const resetBoton = document.getElementById("resetContador");
     if (resetBoton) {
         resetBoton.addEventListener("click", resetearContadorVisitas);
     }
+
 });
 
-
-// 🔐 OBTENER CLAVES
+// Función para obtener las claves desde la API en Vercel
 async function obtenerClaves() {
-    const response = await fetch("/api/keys");
+    const response = await fetch("/api/keys");  // Llama a la API en Vercel
     const data = await response.json();
     return data;
 }
 
-
-// 🔑 LOGIN
+// Verificación del código de acceso
 const btnIngresar = document.getElementById("ingresarBtn");
 
 if (btnIngresar) {
     btnIngresar.addEventListener("click", async function () {
-
         const codigoIngresado = document.getElementById("codigoAcceso").value;
-        const claves = await obtenerClaves();
+        const claves = await obtenerClaves(); // Obtener claves desde Vercel
 
-        // 👑 ADMIN (NO SUMA VISITAS)
         if (codigoIngresado === claves.ADMIN_KEY) {
-
+            // Si es administrador, guarda el rol en localStorage
             localStorage.setItem("rol", "admin");
-
             document.getElementById("login-container").style.display = "none";
             document.getElementById("menu-principal").style.display = "block";
-            document.body.classList.add('admin');
-
-            await new Promise(resolve => setTimeout(resolve, 300));
-            await mostrarContadorVisitas();
-
-            return; // 🔥 corta ejecución
-        }
-
-        // 👤 USUARIO NORMAL (SÍ SUMA)
-        else if (codigoIngresado === claves.CODIGO_ACCESO) {
-
+            document.body.classList.add('admin');  // Agregar clase 'admin'
+        } else if (codigoIngresado === claves.CODIGO_ACCESO) {
+            // Si es usuario normal
             localStorage.setItem("rol", "usuario");
-
             document.getElementById("login-container").style.display = "none";
             document.getElementById("menu-principal").style.display = "block";
 
-            await new Promise(resolve => setTimeout(resolve, 300));
-
-            await incrementarVisitas();
-        }
-
-        else {
+            // Actualizar contador
+            await actualizarContadorsupabase();
+        } else {
             const mensajeError = document.getElementById("mensajeError");
-            if (mensajeError) {
-                mensajeError.style.display = "block";
-                mensajeError.textContent = "Código incorrecto. Intenta nuevamente.";
-            }
+            mensajeError.style.display = "block";
+            mensajeError.textContent = "Código incorrecto. Intenta nuevamente.";
         }
     });
 }
@@ -2890,13 +2842,10 @@ async function cerrarConversacion() {
     await mostrarPantallaAdminChat();
 }
 
+// <---- boton salir de secion----->
 document.addEventListener("DOMContentLoaded", async () => {
 
-  // =========================
-  // SESIÓN + USUARIO + LOGOUT
-  // =========================
   const { data: { session } } = await supabase.auth.getSession();
-
   if (!session) return;
 
   const user = session.user;

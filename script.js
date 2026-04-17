@@ -1248,7 +1248,7 @@ document.getElementById('resultadoAnalisis').innerHTML += pagosTxt.join('');
 
 await supabase.rpc("incrementar_visitas");
 await registrarUso("analisis");
-
+}
 
 // **************** Función de cálculo de vacaciones ****************
 document.addEventListener("DOMContentLoaded", function () {

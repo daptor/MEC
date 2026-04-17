@@ -92,24 +92,6 @@ function actualizarFechaHora() {
 // 🚀 INICIALIZACIÓN (AQUÍ ESTÁ LA CLAVE)
 document.addEventListener("DOMContentLoaded", async () => {
 
-    // 🔐 CONTROL FREEMIUM GLOBAL
-    window.usuarioBloqueado = true;
-
-    try {
-        const puede = await puedeUsar();
-
-        if (!puede) {
-            window.usuarioBloqueado = true;
-            console.log("🔒 Usuario bloqueado por límite mensual");
-        } else {
-            console.log("✅ Usuario con acceso disponible");
-        }
-
-    } catch (err) {
-        console.error("Error verificando uso:", err);
-    }
-
-    // 🚀 TU APP NORMAL (LO QUE YA TENÍAS)
     actualizarFechaHora();
     setInterval(actualizarFechaHora, 1000);
 
@@ -381,9 +363,6 @@ const formatCurrency = (value) =>
     new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(value);
 
 async function analizarArchivo() {
-    
-    if (verificarBloqueoSesion()) return;
-
     const archivo = document.getElementById('fileInput').files[0];
     const jornadaSeleccionada = document.getElementById('jornada').value;
     const regexMovilizacion = /MOVILIZACION\s*\((\d+)\)\s*\$\s*([\d.,]+)/i;
@@ -398,6 +377,14 @@ async function analizarArchivo() {
       return;
   }
   
+// 🚨 CONTROL FREEMIUM MEC (ANTES DEL ANÁLISIS)
+const permitido = await puedeUsar();
+
+if (!permitido) {
+    alert("⚠️ Alcanzaste el límite mensual gratuito (5 análisis).\n\nActiva MEC PRO para continuar.");
+    return;
+}
+
   const factorObj = listaHoraExtra.find(item => item.horas === jornadaSeleccionada);
 if (!factorObj) {
     alert('No se encontró el factor de horas extras para esta jornada.');
@@ -2891,12 +2878,3 @@ async function cerrarConversacion() {
     await mostrarPantallaAdminChat();
 }
 
-// 👇 al final de script.js
-
-function verificarBloqueoSesion() {
-    if (window.usuarioBloqueado) {
-        alert("🚫 Alcanzaste el límite mensual gratuito.\n\nActiva MEC PRO para seguir usando la app.");
-        return true;
-    }
-    return false;
-}

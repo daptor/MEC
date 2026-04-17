@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       window.location.replace("/");
     });
   }
-
+  await obtenerUsosMes();
 });
 
 
@@ -78,3 +78,37 @@ async function registrarUso(tipo) {
 
 // Hacerla global (para poder probar desde consola)
 window.registrarUso = registrarUso;
+
+// 📊 OBTENER USOS DEL MES
+async function obtenerUsosMes() {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) return;
+
+    const inicioMes = new Date();
+    inicioMes.setDate(1);
+    inicioMes.setHours(0,0,0,0);
+
+    const { data, error } = await supabase
+      .from("uso_usuario")
+      .select("*")
+      .eq("user_id", user.id)
+      .gte("fecha", inicioMes.toISOString());
+
+    if (error) {
+      console.error("Error obteniendo usos:", error);
+      return;
+    }
+
+    const total = data.length;
+
+    const el = document.getElementById("contadorUsos");
+    if (el) {
+      el.textContent = `${total} / 5`;
+    }
+
+  } catch (err) {
+    console.error("Error inesperado:", err);
+  }
+}

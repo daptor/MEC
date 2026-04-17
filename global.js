@@ -112,3 +112,37 @@ async function obtenerUsosMes() {
     console.error("Error inesperado:", err);
   }
 }
+
+// 🚫 VALIDAR SI PUEDE USAR (CON ADMIN INCLUIDO)
+async function puedeUsar() {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+
+    // 🟢 ADMIN: sin límite
+    if (user.email === "christorfu@gmail.com") {
+      return true;
+    }
+
+    const inicioMes = new Date();
+    inicioMes.setDate(1);
+    inicioMes.setHours(0,0,0,0);
+
+    const { data, error } = await supabase
+      .from("uso_usuario")
+      .select("*")
+      .eq("user_id", user.id)
+      .gte("fecha", inicioMes.toISOString());
+
+    if (error) {
+      console.error("Error validando uso:", error);
+      return false;
+    }
+
+    return data.length < 5;
+
+  } catch (err) {
+    console.error("Error inesperado:", err);
+    return false;
+  }
+}

@@ -391,6 +391,14 @@ async function analizarArchivo() {
       return;
   }
 
+  // 🚫 VALIDAR USO (DESPUÉS de validar inputs)
+const permitido = await puedeUsar();
+
+if (!permitido) {
+  alert("Has alcanzado el límite gratuito de análisis este mes.");
+  return;
+}
+
   const factorObj = listaHoraExtra.find(item => item.horas === jornadaSeleccionada);
 if (!factorObj) {
     alert('No se encontró el factor de horas extras para esta jornada.');

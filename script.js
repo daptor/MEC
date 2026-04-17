@@ -20,7 +20,7 @@ async function incrementarVisitas() {
     // ❌ Si no hay sesión ni usuario válido → no sumar
     if (!session && !esUsuarioCodigo) return;
 
-    const { error } = await supabase.rpc("incrementar_visitas");
+    await registrarUso("visita");
 
     if (error) {
         console.error("❌ Error al incrementar visitas (RPC):", error);

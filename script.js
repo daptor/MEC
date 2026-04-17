@@ -390,14 +390,7 @@ async function analizarArchivo() {
       alert('Por favor, selecciona una jornada y un archivo PDF.');
       return;
   }
-
-  // 🚫 VALIDAR USO (DESPUÉS de validar inputs)
-const permitido = await puedeUsar();
-
-if (!permitido) {
-  alert("Has alcanzado el límite gratuito de análisis este mes.");
-  return;
-}
+  
 
   const factorObj = listaHoraExtra.find(item => item.horas === jornadaSeleccionada);
 if (!factorObj) {
@@ -1253,26 +1246,8 @@ document.getElementById('resultadoAnalisis').innerHTML += pagosTxt.join('');
 
 // ---------- FIN: ANÁLISIS COMISIÓN GRUPAL ----------
 
-const { data: { user } } = await supabase.auth.getUser();
-
-// ---------- FIN: ANÁLISIS COMISIÓN GRUPAL ----------
-
-const { data: { user } } = await supabase.auth.getUser();
-
-// 🛡️ Validación segura
-if (!user) {
-  console.log("⚠️ Usuario no disponible");
-} else {
-
-  // 🟢 ADMIN: no suma
-  if (user.email !== "christorfu@gmail.com") {
-
-    await supabase.rpc("incrementar_visitas");
-    await registrarUso("analisis");
-
-  }
-
-}
+await supabase.rpc("incrementar_visitas");
+await registrarUso("analisis");
 
 
 // **************** Función de cálculo de vacaciones ****************

@@ -1265,7 +1265,7 @@ if (!user) {
 } else {
 
   // 🟢 ADMIN: no suma
-  if (user.email !== "TU_EMAIL_AQUI") {
+  if (user.email !== "christorfu@gmail.com") {
 
     await supabase.rpc("incrementar_visitas");
     await registrarUso("analisis");

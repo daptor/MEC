@@ -1253,11 +1253,16 @@ document.getElementById('resultadoAnalisis').innerHTML += pagosTxt.join('');
 
 // ---------- FIN: ANÁLISIS COMISIÓN GRUPAL ----------
 
-// 🌐 contador global (como antes)
-await supabase.rpc("incrementar_visitas");
+const { data: { user } } = await supabase.auth.getUser();
 
-// 🔥 contador real (nuevo)
-await registrarUso("analisis");
+// 🟢 ADMIN: no suma visitas ni uso
+if (user.email !== "christorfu@gmail.com") {
+
+  // 🌐 contador global
+  await supabase.rpc("incrementar_visitas");
+
+  // 🔥 contador real
+  await registrarUso("analisis");
 
 }
 

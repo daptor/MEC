@@ -46,13 +46,19 @@ supabase.auth.onAuthStateChange((event, session) => {
 
 });
 
-// 🔥 REGISTRO DE USO (NUEVO - NO TOCA NADA EXISTENTE)
+// 🔥 REGISTRO DE USO (FILTRA--> ADMIN EXCLUIDO)
 async function registrarUso(tipo) {
   try {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
       console.log("⚠️ No hay usuario logueado");
+      return;
+    }
+
+    // 🟢 ADMIN: no registrar uso
+    if (user.email === "TU_EMAIL_AQUI") {
+      console.log("🟢 Admin detectado - no se registra uso");
       return;
     }
 

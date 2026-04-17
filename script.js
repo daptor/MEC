@@ -1246,7 +1246,6 @@ document.getElementById('resultadoAnalisis').innerHTML += pagosTxt.join('');
 
 // ---------- FIN: ANÁLISIS COMISIÓN GRUPAL ----------
 
-await supabase.rpc("incrementar_visitas");
 await registrarUso("analisis");
 }
 

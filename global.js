@@ -1,5 +1,8 @@
 // global.js
 
+// 🔑 CONFIG
+const ADMIN_EMAIL = "christorfu@gmail.com";
+
 // Función para mostrar una pantalla específica y ocultar las demás
 function mostrarPantallaGastoReal(idPantalla) {
   document.querySelectorAll('.pantalla, .menu').forEach(el => {
@@ -14,7 +17,7 @@ function mostrarPantallaGastoReal(idPantalla) {
 window.mostrarPantallaGastoReal = mostrarPantallaGastoReal;
 
 
-// 🔐 CONTROL DE USUARIO (mostrar email + logout + sync entre pestañas)
+// 🔐 CONTROL DE USUARIO
 document.addEventListener("DOMContentLoaded", async () => {
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -33,20 +36,20 @@ document.addEventListener("DOMContentLoaded", async () => {
       window.location.replace("/");
     });
   }
+
   await obtenerUsosMes();
 });
 
 
-// 🔥 ESCUCHAR CAMBIOS DE SESIÓN (esto arregla tu problema)
-supabase.auth.onAuthStateChange((event, session) => {
-
+// 🔥 ESCUCHAR CAMBIOS DE SESIÓN
+supabase.auth.onAuthStateChange((event) => {
   if (event === "SIGNED_OUT") {
     window.location.replace("/login.html");
   }
-
 });
 
-// 🔥 REGISTRO DE USO (FILTRA--> ADMIN EXCLUIDO)
+
+// 🔥 REGISTRO DE USO (CONTROL CENTRAL)
 async function registrarUso(tipo) {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -56,12 +59,18 @@ async function registrarUso(tipo) {
       return;
     }
 
-    // 🟢 ADMIN: no registrar uso
-    if (user.email === "TU_EMAIL_AQUI") {
-      console.log("🟢 Admin detectado - no se registra uso");
+    const esAdmin = user.email === ADMIN_EMAIL;
+
+    // 🟢 ADMIN: no suma nada
+    if (esAdmin) {
+      console.log("🟢 Admin detectado - no suma uso ni visitas");
       return;
     }
 
+    // 🌐 visitas (solo usuarios reales)
+    await supabase.rpc("incrementar_visitas");
+
+    // 🔥 uso real
     const { error } = await supabase
       .from("uso_usuario")
       .insert([
@@ -82,8 +91,9 @@ async function registrarUso(tipo) {
   }
 }
 
-// Hacerla global (para poder probar desde consola)
+// Hacerla global
 window.registrarUso = registrarUso;
+
 
 // 📊 OBTENER USOS DEL MES
 async function obtenerUsosMes() {
@@ -119,14 +129,15 @@ async function obtenerUsosMes() {
   }
 }
 
-// 🚫 VALIDAR SI PUEDE USAR (CON ADMIN INCLUIDO)
+
+// 🚫 VALIDAR SI PUEDE USAR
 async function puedeUsar() {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return false;
 
-    // 🟢 ADMIN: sin límite
-    if (user.email === "christorfu@gmail.com") {
+    // 🟢 ADMIN: ilimitado
+    if (user.email === ADMIN_EMAIL) {
       return true;
     }
 

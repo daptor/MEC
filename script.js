@@ -2630,7 +2630,7 @@ async function obtenerOcrearConversacionPrivada(usuarioId) {
 }
 
 // =========================
-// REALTIME USUARIO
+// REALTIME USUARIO (CORREGIDO)
 // =========================
 async function suscribirChatPrivado(idConversacion) {
 
@@ -2644,10 +2644,27 @@ async function suscribirChatPrivado(idConversacion) {
             schema: 'public',
             table: 'mensajes_privados',
             filter: `conversation_privada_id=eq.${idConversacion}`
-        }, () => {
-            cargarMensajesPrivados(idConversacion);
+        }, async (payload) => {
+
+            const user = await getUser();
+            if (!user) return;
+
+            // 🔥 siempre recarga (para ver el mensaje)
+            await cargarMensajesPrivados(idConversacion);
+
+            // 🔊 SOLO suena si el mensaje NO es mío
+            if (payload.new.user_id !== user.id) {
+
+                console.log("📩 Mensaje privado recibido:", payload);
+
+                const audio = new Audio('https://mxqrzhpyfwuutardehyu.supabase.co/storage/v1/object/public/audios/campanilla.mp3');
+                audio.play();
+            }
+
         })
-        .subscribe();
+        .subscribe((status) => {
+            console.log("📡 Canal privado:", status);
+        });
 }
 
 // =========================
@@ -2760,7 +2777,7 @@ async function mostrarPantallaAdminChat() {
 }
 
 // =========================
-// ADMIN - ABRIR CHAT
+// ADMIN - ABRIR CHAT (CORREGIDO)
 // =========================
 async function abrirChatComoAdmin(idConversacion, userIdUsuario) {
 
@@ -2783,12 +2800,28 @@ async function abrirChatComoAdmin(idConversacion, userIdUsuario) {
             schema: 'public',
             table: 'mensajes_privados',
             filter: `conversation_privada_id=eq.${idConversacion}`
-        }, () => {
-            cargarMensajesAdmin(idConversacion, userIdUsuario);
-        })
-        .subscribe();
-}
+        }, async (payload) => {
 
+            const user = await getUser();
+            if (!user) return;
+
+            // 🔥 SIEMPRE recargar mensajes
+            await cargarMensajesAdmin(idConversacion, userIdUsuario);
+
+            // 🔊 SOLO sonar si el mensaje NO es del admin actual
+            if (payload.new.user_id !== user.id) {
+
+                console.log("📩 Mensaje privado (admin):", payload);
+
+                const audio = new Audio('https://mxqrzhpyfwuutardehyu.supabase.co/storage/v1/object/public/audios/campanilla.mp3');
+                audio.play();
+            }
+
+        })
+        .subscribe((status) => {
+            console.log("📡 Canal admin:", status);
+        });
+}
 // =========================
 // ADMIN - CARGAR MENSAJES
 // =========================

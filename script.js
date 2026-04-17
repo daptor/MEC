@@ -377,10 +377,10 @@ async function analizarArchivo() {
       return;
   }
   
-  // 🚨 CONTROL DE LÍMITE MENSUAL MEC
-const limiteAlcanzado = await incrementarVisitas();
+// 🚨 CONTROL FREEMIUM MEC (ANTES DEL ANÁLISIS)
+const permitido = await puedeUsar();
 
-if (limiteAlcanzado) {
+if (!permitido) {
     alert("⚠️ Alcanzaste el límite mensual gratuito (5 análisis).\n\nActiva MEC PRO para continuar.");
     return;
 }
@@ -1239,7 +1239,7 @@ document.getElementById('resultadoAnalisis').innerHTML += pagosTxt.join('');
 
 // ---------- FIN: ANÁLISIS COMISIÓN GRUPAL ----------
 
-await registrarUso("analisis");
+await registrarUso();
 }
 
 // **************** Función de cálculo de vacaciones ****************

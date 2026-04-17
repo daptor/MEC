@@ -1255,16 +1255,25 @@ document.getElementById('resultadoAnalisis').innerHTML += pagosTxt.join('');
 
 const { data: { user } } = await supabase.auth.getUser();
 
-// 🟢 ADMIN: no suma visitas ni uso
-if (user.email !== "christorfu@gmail.com") {
+// ---------- FIN: ANÁLISIS COMISIÓN GRUPAL ----------
 
-  // 🌐 contador global
-  await supabase.rpc("incrementar_visitas");
+const { data: { user } } = await supabase.auth.getUser();
 
-  // 🔥 contador real
-  await registrarUso("analisis");
+// 🛡️ Validación segura
+if (!user) {
+  console.log("⚠️ Usuario no disponible");
+} else {
+
+  // 🟢 ADMIN: no suma
+  if (user.email !== "TU_EMAIL_AQUI") {
+
+    await supabase.rpc("incrementar_visitas");
+    await registrarUso("analisis");
+
+  }
 
 }
+
 
 // **************** Función de cálculo de vacaciones ****************
 document.addEventListener("DOMContentLoaded", function () {

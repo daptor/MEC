@@ -102,20 +102,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         resetBoton.addEventListener("click", resetearContadorVisitas);
     }
 
-    // 🔥 SOLUCIÓN REAL: contar visitas al entrar
-    try {
-        const { data: { user } } = await supabase.auth.getUser();
-        const esUsuarioCodigo = localStorage.getItem("rol") === "usuario";
-
-        if (user || esUsuarioCodigo) {
-            console.log("🔁 Usuario detectado al cargar, incrementando visita...");
-            await incrementarVisitas();
-        }
-
-    } catch (e) {
-        console.error("Error verificando usuario:", e);
-    }
-
 });
 
 
@@ -391,6 +377,13 @@ async function analizarArchivo() {
       return;
   }
   
+  // 🚨 CONTROL DE LÍMITE MENSUAL MEC
+const limiteAlcanzado = await incrementarVisitas();
+
+if (limiteAlcanzado) {
+    alert("⚠️ Alcanzaste el límite mensual gratuito (5 análisis).\n\nActiva MEC PRO para continuar.");
+    return;
+}
 
   const factorObj = listaHoraExtra.find(item => item.horas === jornadaSeleccionada);
 if (!factorObj) {

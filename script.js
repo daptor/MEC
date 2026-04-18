@@ -2547,14 +2547,6 @@ contadorNotificaciones = 0;
 actualizarBadge();
 
 // =========================
-// RESET NOTIFICACIONES
-// =========================
-function resetearNotificaciones() {
-    contadorNotificaciones = 0;
-    actualizarBadge();
-}
-
-// =========================
 // OBTENER USUARIO REAL
 // =========================
 async function getUser() {
@@ -2613,9 +2605,6 @@ async function iniciarChatPrivado() {
         return;
     }
 
-    // 🔴 RESET AQUÍ
-    resetearNotificaciones();
-
     const idConversacion = await obtenerOcrearConversacionPrivada(user.id);
 
     if (!idConversacion) {
@@ -2645,7 +2634,6 @@ async function obtenerOcrearConversacionPrivada(usuarioId) {
 
     if (data) return data.id;
 
-    // obtener admin real
     const { data: adminData } = await supabase
         .from("usuarios")
         .select("user_id")
@@ -2676,7 +2664,7 @@ async function obtenerOcrearConversacionPrivada(usuarioId) {
 }
 
 // =========================
-// REALTIME USUARIO (CON NOTIFICACIÓN)
+// REALTIME USUARIO
 // =========================
 async function suscribirChatPrivado(idConversacion) {
 
@@ -2695,13 +2683,9 @@ async function suscribirChatPrivado(idConversacion) {
             const user = await getUser();
             if (!user) return;
 
-            // 🔥 SIEMPRE recargar mensajes
             await cargarMensajesPrivados(idConversacion);
 
-            // 🔔 SOLO si no es tu mensaje
             if (payload.new.user_id !== user.id) {
-
-                console.log("📩 Mensaje privado recibido:", payload);
 
                 contadorNotificaciones++;
                 actualizarBadge();
@@ -2711,9 +2695,7 @@ async function suscribirChatPrivado(idConversacion) {
             }
 
         })
-        .subscribe((status) => {
-            console.log("📡 Canal privado:", status);
-        });
+        .subscribe();
 }
 
 // =========================
@@ -2793,19 +2775,14 @@ async function mostrarPantallaAdminChat() {
         .eq('admin_id', user.id)
         .eq('estado', 'abierta');
 
-    if (error) {
-        console.error("Error:", error);
-        return;
-    }
+    if (error) return;
 
     const lista = document.getElementById("lista-conversaciones");
     const contador = document.getElementById("contador-conversaciones");
 
-    if (!lista) return;
-
     lista.innerHTML = '';
 
-    if (data && data.length > 0) {
+    if (data?.length) {
 
         contador.textContent = `Hay ${data.length} conversaciones activas`;
 
@@ -2831,9 +2808,6 @@ async function mostrarPantallaAdminChat() {
 async function abrirChatComoAdmin(idConversacion, userIdUsuario) {
 
     idConversacionAdminActual = idConversacion;
-
-    // 🔴 RESET AQUÍ
-    resetearNotificaciones();
 
     const nickUsuario = await obtenerNickPorId(userIdUsuario);
 
@@ -2861,16 +2835,15 @@ async function abrirChatComoAdmin(idConversacion, userIdUsuario) {
 
             if (payload.new.user_id !== user.id) {
 
-                console.log("📩 Mensaje privado (admin):", payload);
+                contadorNotificaciones++;
+                actualizarBadge();
 
                 const audio = new Audio('https://mxqrzhpyfwuutardehyu.supabase.co/storage/v1/object/public/audios/campanilla.mp3');
                 audio.play();
             }
 
         })
-        .subscribe((status) => {
-            console.log("📡 Canal admin:", status);
-        });
+        .subscribe();
 }
 
 // =========================
@@ -2952,8 +2925,6 @@ async function cerrarConversacion() {
         .from('conversaciones_privadas')
         .update({ estado: 'cerrada' })
         .eq('id', idConversacionAdminActual);
-
-    alert("Conversación cerrada");
 
     idConversacionAdminActual = null;
 

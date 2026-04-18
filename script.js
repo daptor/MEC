@@ -2293,6 +2293,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // Variable global para el canal
 let canalGrupal = null;
+let contadorNotificaciones = 0;
 
 // =========================
 // INGRESO AL CHAT
@@ -2363,17 +2364,37 @@ function suscribirseChatGrupal() {
         }, payload => {
 
             if (payload.new.user_id !== user_id) {
+
                 console.log("📩 Mensaje recibido:", payload);
 
                 cargarMensajes();
 
+                contadorNotificaciones++;
+                actualizarBadge();
+
                 const audio = new Audio('https://mxqrzhpyfwuutardehyu.supabase.co/storage/v1/object/public/audios/campanilla.mp3');
                 audio.play();
             }
+
         })
         .subscribe((status) => {
             console.log("📡 Canal grupal:", status);
         });
+}
+
+// =========================
+// BADGE NOTIFICACIONES
+// =========================
+function actualizarBadge() {
+    const badge = document.getElementById("badgeChat");
+    if (!badge) return;
+
+    if (contadorNotificaciones > 0) {
+        badge.style.display = "inline-block";
+        badge.textContent = contadorNotificaciones;
+    } else {
+        badge.style.display = "none";
+    }
 }
 
 // =========================
@@ -2511,6 +2532,9 @@ let canalPrivadoActivo = null;
 let canalAdminActivo = null;
 let idConversacionAdminActual = null;
 
+contadorNotificaciones = 0;
+actualizarBadge();
+
 // =========================
 // OBTENER USUARIO REAL
 // =========================
@@ -2630,7 +2654,7 @@ async function obtenerOcrearConversacionPrivada(usuarioId) {
 }
 
 // =========================
-// REALTIME USUARIO (CORREGIDO)
+// REALTIME USUARIO (CON NOTIFICACIÓN)
 // =========================
 async function suscribirChatPrivado(idConversacion) {
 
@@ -2649,13 +2673,16 @@ async function suscribirChatPrivado(idConversacion) {
             const user = await getUser();
             if (!user) return;
 
-            // 🔥 siempre recarga (para ver el mensaje)
+            // 🔥 SIEMPRE recargar mensajes
             await cargarMensajesPrivados(idConversacion);
 
-            // 🔊 SOLO suena si el mensaje NO es mío
+            // 🔔 SOLO si no es tu mensaje
             if (payload.new.user_id !== user.id) {
 
                 console.log("📩 Mensaje privado recibido:", payload);
+
+                contadorNotificaciones++;
+                actualizarBadge();
 
                 const audio = new Audio('https://mxqrzhpyfwuutardehyu.supabase.co/storage/v1/object/public/audios/campanilla.mp3');
                 audio.play();

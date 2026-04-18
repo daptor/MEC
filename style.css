@@ -599,3 +599,22 @@ body.admin #resetContador {
   line-height: 1.2;
   margin: 0;
 }
+
+
+/* NOTIFICACION DEL BOTON chat */
+.btn-chat {
+  position: relative;
+}
+
+.badge-chat {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: red;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 4px 7px;
+  border-radius: 50%;
+  display: none;
+}

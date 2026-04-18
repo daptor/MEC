@@ -2537,11 +2537,14 @@ if (btnEnviar) {
     });
 }
 
-// *************************** CHAT PRIVADO (FIX ESTABLE) ****************************
+// *************************** CHAT PRIVADO FINAL ****************************
 
 let canalPrivadoActivo = null;
 let canalAdminActivo = null;
 let idConversacionAdminActual = null;
+
+contadorNotificaciones = 0;
+actualizarBadge();
 
 // =========================
 // OBTENER USUARIO REAL
@@ -2550,6 +2553,32 @@ async function getUser() {
     const { data } = await supabase.auth.getUser();
     return data.user;
 }
+
+// =========================
+// BOTONES SEGÚN ROL
+// =========================
+document.addEventListener("DOMContentLoaded", async function () {
+
+    const user = await getUser();
+    if (!user) return;
+
+    const { data } = await supabase
+        .from("usuarios")
+        .select("rol")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+    const btnAdmin = document.getElementById("btnAdminChatPrivado");
+    const btnUser = document.getElementById("btnChatPrivado");
+
+    if (data?.rol === "admin") {
+        if (btnAdmin) btnAdmin.style.display = "block";
+        if (btnUser) btnUser.style.display = "none";
+    } else {
+        if (btnAdmin) btnAdmin.style.display = "none";
+        if (btnUser) btnUser.style.display = "block";
+    }
+});
 
 // =========================
 // OBTENER NICK
@@ -2571,13 +2600,17 @@ async function obtenerNickPorId(userId) {
 async function iniciarChatPrivado() {
 
     const user = await getUser();
-    if (!user) return alert("No autenticado");
-
-    // usa función global existente
-    resetearNotificaciones();
+    if (!user) {
+        alert("No autenticado");
+        return;
+    }
 
     const idConversacion = await obtenerOcrearConversacionPrivada(user.id);
-    if (!idConversacion) return alert("Error creando conversación");
+
+    if (!idConversacion) {
+        alert("Error creando conversación");
+        return;
+    }
 
     mostrarPantalla('pantalla-chat-privado');
 
@@ -2607,7 +2640,10 @@ async function obtenerOcrearConversacionPrivada(usuarioId) {
         .eq("rol", "admin")
         .maybeSingle();
 
-    if (!adminData) return null;
+    if (!adminData) {
+        alert("No existe admin configurado");
+        return null;
+    }
 
     const { data: nueva, error } = await supabase
         .from('conversaciones_privadas')
@@ -2619,7 +2655,10 @@ async function obtenerOcrearConversacionPrivada(usuarioId) {
         .select()
         .single();
 
-    if (error) return null;
+    if (error) {
+        console.error("Error creando conversación:", error);
+        return null;
+    }
 
     return nueva.id;
 }
@@ -2646,12 +2685,8 @@ async function suscribirChatPrivado(idConversacion) {
 
             await cargarMensajesPrivados(idConversacion);
 
-            // 🔔 SOLO si no es tu mensaje
             if (payload.new.user_id !== user.id) {
 
-                console.log("📩 Mensaje privado:", payload);
-
-                // ⚠️ NO reinicia contador global (IMPORTANTE FIX)
                 contadorNotificaciones++;
                 actualizarBadge();
 
@@ -2660,7 +2695,9 @@ async function suscribirChatPrivado(idConversacion) {
             }
 
         })
-        .subscribe();
+        .subscribe((status) => {
+            console.log("📡 Canal privado:", status);
+        });
 }
 
 // =========================
@@ -2682,20 +2719,22 @@ async function cargarMensajesPrivados(idConversacion) {
 
     contenedor.innerHTML = '';
 
-    data?.forEach(async (msg) => {
+    if (data) {
+        for (const msg of data) {
 
-        const div = document.createElement('div');
-        div.style.textAlign = (msg.user_id === user.id) ? "right" : "left";
+            const div = document.createElement('div');
+            div.style.textAlign = (msg.user_id === user.id) ? "right" : "left";
 
-        const nick = await obtenerNickPorId(msg.user_id);
+            const nick = await obtenerNickPorId(msg.user_id);
 
-        div.innerHTML = `
-            <strong>${nick}:</strong> ${msg.mensaje}
-            <br><small>${new Date(msg.fecha_envio).toLocaleTimeString()}</small>
-        `;
+            div.innerHTML = `
+                <strong>${nick}:</strong> ${msg.mensaje}
+                <br><small>${new Date(msg.fecha_envio).toLocaleTimeString()}</small>
+            `;
 
-        contenedor.appendChild(div);
-    });
+            contenedor.appendChild(div);
+        }
+    }
 }
 
 // =========================
@@ -2723,17 +2762,63 @@ async function enviarMensajePrivado(idConversacion) {
 }
 
 // =========================
-// ADMIN - ABRIR CHAT
+// ADMIN - LISTA DE CHATS
+// =========================
+async function mostrarPantallaAdminChat() {
+
+    mostrarPantalla('pantalla-admin-chat');
+
+    const user = await getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase
+        .from('conversaciones_privadas')
+        .select('*')
+        .eq('admin_id', user.id)
+        .eq('estado', 'abierta');
+
+    if (error) {
+        console.error("Error:", error);
+        return;
+    }
+
+    const lista = document.getElementById("lista-conversaciones");
+    const contador = document.getElementById("contador-conversaciones");
+
+    if (!lista) return;
+
+    lista.innerHTML = '';
+
+    if (data && data.length > 0) {
+
+        contador.textContent = `Hay ${data.length} conversaciones activas`;
+
+        for (const conv of data) {
+
+            const nick = await obtenerNickPorId(conv.usuario_id);
+
+            const btn = document.createElement('button');
+            btn.textContent = `Chat con ${nick}`;
+            btn.onclick = () => abrirChatComoAdmin(conv.id, conv.usuario_id);
+
+            lista.appendChild(btn);
+        }
+
+    } else {
+        contador.textContent = "No hay conversaciones activas";
+    }
+}
+
+// =========================
+// ADMIN - ABRIR CHAT (CORREGIDO)
 // =========================
 async function abrirChatComoAdmin(idConversacion, userIdUsuario) {
 
     idConversacionAdminActual = idConversacion;
 
-    resetearNotificaciones();
+    const nickUsuario = await obtenerNickPorId(userIdUsuario);
 
-    const nick = await obtenerNickPorId(userIdUsuario);
-
-    document.getElementById("nombreUsuarioChat").textContent = nick;
+    document.getElementById("nombreUsuarioChat").textContent = nickUsuario;
     document.getElementById("chat-admin-panel").style.display = "block";
 
     await cargarMensajesAdmin(idConversacion, userIdUsuario);
@@ -2756,16 +2841,23 @@ async function abrirChatComoAdmin(idConversacion, userIdUsuario) {
             await cargarMensajesAdmin(idConversacion, userIdUsuario);
 
             if (payload.new.user_id !== user.id) {
+
+                // ✅ CORRECCIÓN REAL
                 contadorNotificaciones++;
                 actualizarBadge();
+
+                const audio = new Audio('https://mxqrzhpyfwuutardehyu.supabase.co/storage/v1/object/public/audios/campanilla.mp3');
+                audio.play();
             }
 
         })
-        .subscribe();
+        .subscribe((status) => {
+            console.log("📡 Canal admin:", status);
+        });
 }
 
 // =========================
-// CARGAR MENSAJES ADMIN
+// ADMIN - CARGAR MENSAJES
 // =========================
 async function cargarMensajesAdmin(idConversacion, userIdUsuario) {
 
@@ -2780,24 +2872,28 @@ async function cargarMensajesAdmin(idConversacion, userIdUsuario) {
 
     contenedor.innerHTML = '';
 
-    const nick = await obtenerNickPorId(userIdUsuario);
+    const nickUsuario = await obtenerNickPorId(userIdUsuario);
 
-    data?.forEach(msg => {
+    if (data) {
+        for (const msg of data) {
 
-        const div = document.createElement('div');
-        div.style.textAlign = (msg.rol === "admin") ? "right" : "left";
+            const div = document.createElement('div');
+            div.style.textAlign = (msg.rol === "admin") ? "right" : "left";
 
-        div.innerHTML = `
-            <strong>${msg.rol === "admin" ? "Admin" : nick}:</strong> ${msg.mensaje}
-            <br><small>${new Date(msg.fecha_envio).toLocaleTimeString()}</small>
-        `;
+            const nick = (msg.rol === "admin") ? "Admin" : nickUsuario;
 
-        contenedor.appendChild(div);
-    });
+            div.innerHTML = `
+                <strong>${nick}:</strong> ${msg.mensaje}
+                <small>${new Date(msg.fecha_envio).toLocaleTimeString()}</small>
+            `;
+
+            contenedor.appendChild(div);
+        }
+    }
 }
 
 // =========================
-// ENVIAR MENSAJE ADMIN
+// ADMIN - ENVIAR MENSAJE
 // =========================
 async function enviarMensajePrivadoAdmin() {
 
@@ -2819,3 +2915,33 @@ async function enviarMensajePrivadoAdmin() {
 
     input.value = '';
 }
+
+// =========================
+// ADMIN - VOLVER
+// =========================
+function mostrarListaConversaciones() {
+    document.getElementById("chat-admin-panel").style.display = "none";
+    mostrarPantallaAdminChat();
+}
+
+// =========================
+// ADMIN - CERRAR CHAT
+// =========================
+async function cerrarConversacion() {
+
+    if (!idConversacionAdminActual) return;
+
+    await supabase
+        .from('conversaciones_privadas')
+        .update({ estado: 'cerrada' })
+        .eq('id', idConversacionAdminActual);
+
+    alert("Conversación cerrada");
+
+    idConversacionAdminActual = null;
+
+    document.getElementById("chat-admin-panel").style.display = "none";
+
+    await mostrarPantallaAdminChat();
+}
+

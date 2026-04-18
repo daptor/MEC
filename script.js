@@ -2539,11 +2539,13 @@ if (btnEnviar) {
 
 // *************************** CHAT PRIVADO FINAL ****************************
 
+// 🔧 FIX: declaración correcta de variable global
 let canalPrivadoActivo = null;
 let canalAdminActivo = null;
+let canalAdminGlobal = null; // 👈 NUEVO: escucha global admin
 let idConversacionAdminActual = null;
 
-contadorNotificaciones = 0;
+let contadorNotificaciones = 0;
 actualizarBadge();
 
 // =========================
@@ -2572,13 +2574,66 @@ document.addEventListener("DOMContentLoaded", async function () {
     const btnUser = document.getElementById("btnChatPrivado");
 
     if (data?.rol === "admin") {
+
         if (btnAdmin) btnAdmin.style.display = "block";
         if (btnUser) btnUser.style.display = "none";
+
+        // 🚨 NUEVO: activar escucha global admin
+        suscribirAdminGlobal(user.id);
+
     } else {
+
         if (btnAdmin) btnAdmin.style.display = "none";
         if (btnUser) btnUser.style.display = "block";
     }
 });
+
+// =========================
+// 🚨 NUEVO: ESCUCHA GLOBAL ADMIN (FIX PRINCIPAL)
+// =========================
+async function suscribirAdminGlobal(adminId) {
+
+    if (canalAdminGlobal) {
+        await supabase.removeChannel(canalAdminGlobal);
+    }
+
+    canalAdminGlobal = supabase
+        .channel('admin_global_notifications')
+        .on('postgres_changes', {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'mensajes_privados'
+        }, async (payload) => {
+
+            const user = await getUser();
+            if (!user || user.id !== adminId) return;
+
+            // buscar si la conversación pertenece a este admin
+            const { data: conv } = await supabase
+                .from('conversaciones_privadas')
+                .select('id')
+                .eq('id', payload.new.conversation_privada_id)
+                .eq('admin_id', adminId)
+                .maybeSingle();
+
+            if (!conv) return;
+
+            // 🔥 si el admin NO está dentro del chat activo → notificar
+            if (idConversacionAdminActual !== conv.id) {
+
+                console.log("📩 Notificación admin global:", payload);
+
+                contadorNotificaciones++;
+                actualizarBadge();
+
+                const audio = new Audio('https://mxqrzhpyfwuutardehyu.supabase.co/storage/v1/object/public/audios/campanilla.mp3');
+                audio.play();
+            }
+        })
+        .subscribe((status) => {
+            console.log("📡 Admin global channel:", status);
+        });
+}
 
 // =========================
 // OBTENER NICK
@@ -2769,13 +2824,11 @@ async function mostrarPantallaAdminChat() {
     const user = await getUser();
     if (!user) return;
 
-    const { data, error } = await supabase
+    const { data } = await supabase
         .from('conversaciones_privadas')
         .select('*')
         .eq('admin_id', user.id)
         .eq('estado', 'abierta');
-
-    if (error) return;
 
     const lista = document.getElementById("lista-conversaciones");
     const contador = document.getElementById("contador-conversaciones");
@@ -2803,7 +2856,7 @@ async function mostrarPantallaAdminChat() {
 }
 
 // =========================
-// ADMIN - ABRIR CHAT
+// ADMIN CHAT ABIERTO
 // =========================
 async function abrirChatComoAdmin(idConversacion, userIdUsuario) {
 
@@ -2833,21 +2886,12 @@ async function abrirChatComoAdmin(idConversacion, userIdUsuario) {
 
             await cargarMensajesAdmin(idConversacion, userIdUsuario);
 
-            if (payload.new.user_id !== user.id) {
-
-                contadorNotificaciones++;
-                actualizarBadge();
-
-                const audio = new Audio('https://mxqrzhpyfwuutardehyu.supabase.co/storage/v1/object/public/audios/campanilla.mp3');
-                audio.play();
-            }
-
         })
         .subscribe();
 }
 
 // =========================
-// ADMIN - CARGAR MENSAJES
+// ADMIN MENSAJES
 // =========================
 async function cargarMensajesAdmin(idConversacion, userIdUsuario) {
 
@@ -2858,7 +2902,6 @@ async function cargarMensajesAdmin(idConversacion, userIdUsuario) {
         .order('fecha_envio', { ascending: true });
 
     const contenedor = document.getElementById("admin-chat-mensajes");
-    if (!contenedor) return;
 
     contenedor.innerHTML = '';
 
@@ -2870,7 +2913,7 @@ async function cargarMensajesAdmin(idConversacion, userIdUsuario) {
             const div = document.createElement('div');
             div.style.textAlign = (msg.rol === "admin") ? "right" : "left";
 
-            const nick = (msg.rol === "admin") ? "Admin" : nickUsuario;
+            const nick = msg.rol === "admin" ? "Admin" : nickUsuario;
 
             div.innerHTML = `
                 <strong>${nick}:</strong> ${msg.mensaje}
@@ -2883,7 +2926,7 @@ async function cargarMensajesAdmin(idConversacion, userIdUsuario) {
 }
 
 // =========================
-// ADMIN - ENVIAR MENSAJE
+// ADMIN ENVIAR
 // =========================
 async function enviarMensajePrivadoAdmin() {
 
@@ -2891,9 +2934,8 @@ async function enviarMensajePrivadoAdmin() {
     if (!user || !idConversacionAdminActual) return;
 
     const input = document.getElementById('mensajeAdminPrivado');
-    if (!input) return;
-
     const mensaje = input.value.trim();
+
     if (!mensaje) return;
 
     await supabase.from('mensajes_privados').insert([{
@@ -2907,7 +2949,7 @@ async function enviarMensajePrivadoAdmin() {
 }
 
 // =========================
-// ADMIN - VOLVER
+// ADMIN VOLVER
 // =========================
 function mostrarListaConversaciones() {
     document.getElementById("chat-admin-panel").style.display = "none";
@@ -2915,7 +2957,7 @@ function mostrarListaConversaciones() {
 }
 
 // =========================
-// ADMIN - CERRAR CHAT
+// ADMIN CERRAR CHAT
 // =========================
 async function cerrarConversacion() {
 

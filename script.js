@@ -1235,12 +1235,14 @@ document.getElementById('resultadoAnalisis').innerHTML += pagosTxt.join('');
 // ---------- FIN: ANÁLISIS COMISIÓN GRUPAL ----------
 
 await registrarUso();
-}
 
 // 🔒 BLOQUEO FEATURE PRO (ANÁLISIS MEC)
 if (!requireProFeature("Análisis de liquidación")) {
     return;
 }
+
+}
+
 
 // **************** Función de cálculo de vacaciones ****************
 document.addEventListener("DOMContentLoaded", function () {

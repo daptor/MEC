@@ -163,3 +163,13 @@ async function puedeUsar() {
     return false;
   }
 }
+
+// =============================
+// Helper global SaaS (bloqueos)
+// =============================
+function requireProFeature(featureName = "Esta función") {
+  return PAYWALL.require(
+    PERMISSIONS.FEATURES.FUNCIONES_AVANZADAS,
+    featureName
+  );
+}

@@ -1239,33 +1239,10 @@ if (montoBrutoIncentivo !== null) {
     }
 }
 
-// =========================================
-// 💰 FREEMIUM — BLOQUEO RESULTADO COMPLETO
-// =========================================
-
-const resultadoHTML = pagosTxt.join('');
-
-// si el usuario es PRO → mostrar todo normal
-if (PERMISSIONS.canUse(PERMISSIONS.FEATURES.EXPORTES)) {
-    document.getElementById('resultadoAnalisis').innerHTML += resultadoHTML;
-} else {
-
-    console.log("🆓 Usuario FREE → mostrando preview del análisis");
-
-    // dividir resultado en bloques HTML
-    const bloques = resultadoHTML.split("<hr>");
-
-    // mostrar solo la primera parte como preview
-    const preview = bloques.slice(0, 1).join("<hr>");
-
-    document.getElementById('resultadoAnalisis').innerHTML += preview;
-
-    // mostrar paywall
-    PAYWALL.show("Ver análisis completo");
-}
-
 // ---------- FIN: ANÁLISIS COMISIÓN GRUPAL ----------
+// muestra parcial de resultados para plan free 
 
+mostrarResultadoFreemium(pagosTxt.join(''));
 
 }
 

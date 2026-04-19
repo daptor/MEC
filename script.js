@@ -51,7 +51,6 @@ async function mostrarContadorVisitas() {
 }
 
 
-
 // 🔴 Reset contador (solo admin)
 async function resetearContadorVisitas() {
 
@@ -76,7 +75,6 @@ async function resetearContadorVisitas() {
 }
 
 
-
 // 🕒 Fecha y hora
 function actualizarFechaHora() {
     const fechaElemento = document.getElementById("fecha");
@@ -86,7 +84,6 @@ function actualizarFechaHora() {
     if (fechaElemento) fechaElemento.textContent = ahora.toLocaleDateString();
     if (horaElemento) horaElemento.textContent = ahora.toLocaleTimeString();
 }
-
 
 
 // 🚀 INICIALIZACIÓN (AQUÍ ESTÁ LA CLAVE)
@@ -105,14 +102,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 
-
 // 🔐 Obtener claves desde Vercel
 async function obtenerClaves() {
     const response = await fetch("/api/keys");
     const data = await response.json();
     return data;
 }
-
 
 
 // 🔑 LOGIN POR CÓDIGO (SE MANTIENE IGUAL)
@@ -1240,6 +1235,11 @@ document.getElementById('resultadoAnalisis').innerHTML += pagosTxt.join('');
 // ---------- FIN: ANÁLISIS COMISIÓN GRUPAL ----------
 
 await registrarUso();
+}
+
+// 🔒 BLOQUEO FEATURE PRO (ANÁLISIS MEC)
+if (!requireProFeature("Análisis de liquidación")) {
+    return;
 }
 
 // **************** Función de cálculo de vacaciones ****************

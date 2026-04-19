@@ -358,6 +358,24 @@ const formatCurrency = (value) =>
     new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(value);
 
 async function analizarArchivo() {
+
+// 💰 CONTROL DE PLAN + LÍMITE MENSUAL
+
+// si es PRO → acceso total
+if (PERMISSIONS.isPro()) {
+    console.log("💎 Usuario PRO → acceso ilimitado");
+} else {
+
+    console.log("🆓 Usuario FREE → aplicando límite mensual");
+
+    const permitido = await puedeUsar();
+
+    if (!permitido) {
+        PAYWALL.show("Has alcanzado los 5 análisis gratuitos del mes");
+        return;
+    }
+}
+
     const archivo = document.getElementById('fileInput').files[0];
     const jornadaSeleccionada = document.getElementById('jornada').value;
     const regexMovilizacion = /MOVILIZACION\s*\((\d+)\)\s*\$\s*([\d.,]+)/i;
@@ -372,14 +390,6 @@ async function analizarArchivo() {
       return;
   }
   
-// 🚨 CONTROL FREEMIUM MEC (ANTES DEL ANÁLISIS)
-const permitido = await puedeUsar();
-
-if (!permitido) {
-    alert("⚠️ Alcanzaste el límite mensual gratuito (5 análisis).\n\nActiva MEC PRO para continuar.");
-    return;
-}
-
   const factorObj = listaHoraExtra.find(item => item.horas === jornadaSeleccionada);
 if (!factorObj) {
     alert('No se encontró el factor de horas extras para esta jornada.');
@@ -1256,12 +1266,6 @@ if (PERMISSIONS.canUse(PERMISSIONS.FEATURES.EXPORTES)) {
 
 // ---------- FIN: ANÁLISIS COMISIÓN GRUPAL ----------
 
-await registrarUso();
-
-// 🔒 BLOQUEO FEATURE PRO (ANÁLISIS MEC)
-if (!requireProFeature("Análisis de liquidación")) {
-    return;
-}
 
 }
 

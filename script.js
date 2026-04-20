@@ -71,6 +71,28 @@ async function sumarUsoAnalisisTotal() {
     console.log("➕ Nuevo uso registrado. Total:", nuevosUsos);
 }
 
+async function actualizarContadorAnalisisUI() {
+
+    const user = (await supabase.auth.getUser()).data.user;
+    if (!user) return;
+
+    const { data, error } = await supabase
+        .from("profiles")
+        .select("analisis_usados")
+        .eq("id", user.id)
+        .single();
+
+    if (error) {
+        console.error("Error obteniendo contador:", error);
+        return;
+    }
+
+    const el = document.getElementById("contador-analisis");
+    if (!el) return;
+
+    el.textContent = `${data.analisis_usados || 0} de 5`;
+}
+
 // 🔐 ESPERAR PLAN USUARIO (SaaS CORE)
 // Debe estar al inicio absoluto del archivo
 async function esperarPlanUsuario() {
@@ -318,6 +340,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     setInterval(actualizarFechaHora, 1000);
 
     await mostrarContadorVisitas();
+    await actualizarContadorAnalisisUI();
    
     const resetBoton = document.getElementById("resetContador");
     if (resetBoton) {
@@ -608,6 +631,7 @@ if (window.userPlan === "pro") {
 
     // 🔥 SUMAR USO (solo FREE y solo si sí puede usar)
     await sumarUsoAnalisisTotal();
+    await actualizarContadorAnalisisUI(); // 👈 ACTUALIZA EN TIEMPO REAL
 
 }
 

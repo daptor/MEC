@@ -16,6 +16,63 @@ async function esperarPlanUsuario() {
   console.log("🎯 Plan listo para usar:", window.userPlan);
 }
 
+// =========================================
+// 🧮 FREEMIUM — LÍMITE TOTAL DE ANÁLISIS
+// =========================================
+
+// Verifica si aún puede usar análisis FREE
+async function puedeUsarAnalisisTotal() {
+
+    const user = (await supabase.auth.getUser()).data.user;
+    if (!user) return false;
+
+    const { data, error } = await supabase
+        .from("profiles")
+        .select("analisis_usados")
+        .eq("id", user.id)
+        .single();
+
+    if (error) {
+        console.error("Error obteniendo usos:", error);
+        return false;
+    }
+
+    const usados = data.analisis_usados || 0;
+
+    console.log("📊 Análisis usados:", usados, "/ 5");
+
+    return usados < 5;
+}
+
+// Suma 1 uso de análisis FREE
+async function sumarUsoAnalisisTotal() {
+
+    const user = (await supabase.auth.getUser()).data.user;
+    if (!user) return;
+
+    const { data, error } = await supabase
+        .from("profiles")
+        .select("analisis_usados")
+        .eq("id", user.id)
+        .single();
+
+    if (error) {
+        console.error("Error obteniendo usos:", error);
+        return;
+    }
+
+    const nuevosUsos = (data.analisis_usados || 0) + 1;
+
+    await supabase
+        .from("profiles")
+        .update({ analisis_usados: nuevosUsos })
+        .eq("id", user.id);
+
+    console.log("➕ Nuevo uso registrado. Total:", nuevosUsos);
+}
+
+
+
 // ***************** CONTADOR GLOBAL SUPABASE (VERSIÓN FINAL REAL CON RPC) *****************
 
 async function incrementarVisitas() {
@@ -380,24 +437,27 @@ async function analizarArchivo() {
     // ⏳ ESPERAR PLAN DEL USUARIO (MUY IMPORTANTE)
     await esperarPlanUsuario();
 
-    // 💰 CONTROL DE PLAN + LÍMITE MENSUAL
-    
+ 
 
-// 💰 CONTROL DE PLAN + LÍMITE MENSUAL
+// 💰 CONTROL DE PLAN + LÍMITE TOTAL (FREEMIUM REAL)
 
-// si es PRO → acceso total
-if (PERMISSIONS.isPro()) {
+// 💎 PRO → acceso ilimitado
+if (window.userPlan === "pro") {
     console.log("💎 Usuario PRO → acceso ilimitado");
+
 } else {
 
-    console.log("🆓 Usuario FREE → aplicando límite mensual");
+    console.log("🆓 Usuario FREE → verificando límite TOTAL");
 
-    const permitido = await puedeUsar();
+    const permitido = await puedeUsarAnalisisTotal();
 
     if (!permitido) {
-        PAYWALL.show("Has alcanzado los 5 análisis gratuitos del mes");
+        PAYWALL.show("Ya usaste tus 5 análisis gratuitos");
         return;
     }
+
+    // 🔥 SUMAR USO (solo FREE y solo si sí puede usar)
+    await sumarUsoAnalisisTotal();
 }
 
     const archivo = document.getElementById('fileInput').files[0];

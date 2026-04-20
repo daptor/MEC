@@ -3220,24 +3220,15 @@ function mostrarResultadoFreemium(htmlResultado) {
         return;
     }
 
-    // 💎 USUARIO PRO → agrega resultado sin borrar lo anterior
-    if (PERMISSIONS.canUse(PERMISSIONS.FEATURES.EXPORTES)) {
+    // 💎 PRO → todo normal
+    if (window.userPlan === "pro") {
         console.log("💎 Usuario PRO → mostrando análisis completo");
-        contenedor.innerHTML += htmlResultado; // 🔥 CLAVE: ahora agrega
+        contenedor.innerHTML += htmlResultado;
         return;
     }
 
-    // 🆓 USUARIO FREE → preview + paywall
-    console.log("🆓 Usuario FREE → mostrando preview del análisis");
+    // 🆓 FREE → mostrar TODO mientras esté dentro del límite
+    console.log("🆓 Usuario FREE → mostrando análisis completo (dentro del límite)");
 
-    // dividir por bloques usando <hr>
-    const bloques = htmlResultado.split("<hr>");
-
-    // mostrar solo el primer bloque como preview
-    const preview = bloques.slice(0, 1).join("<hr>");
-
-    contenedor.innerHTML += preview; // 🔥 también agrega, no borra
-
-    // mostrar paywall
-    PAYWALL.show("Ver análisis completo");
+    contenedor.innerHTML += htmlResultado;
 }

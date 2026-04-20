@@ -318,8 +318,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     setInterval(actualizarFechaHora, 1000);
 
     await mostrarContadorVisitas();
-    await actualizarContadorAnalisisUI();
-
+   
     const resetBoton = document.getElementById("resetContador");
     if (resetBoton) {
         resetBoton.addEventListener("click", resetearContadorVisitas);
@@ -609,7 +608,7 @@ if (window.userPlan === "pro") {
 
     // 🔥 SUMAR USO (solo FREE y solo si sí puede usar)
     await sumarUsoAnalisisTotal();
-    await actualizarContadorAnalisisUI();
+
 }
 
     const archivo = document.getElementById('fileInput').files[0];

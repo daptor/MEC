@@ -1,3 +1,21 @@
+// 🔐 ESPERAR PLAN USUARIO (SaaS CORE)
+// Debe estar al inicio absoluto del archivo
+async function esperarPlanUsuario() {
+  let intentos = 0;
+
+  while (!window.userPlan && intentos < 50) {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    intentos++;
+  }
+
+  if (!window.userPlan) {
+    console.warn("⚠ No se pudo cargar el plan, usando FREE por defecto");
+    window.userPlan = "free";
+  }
+
+  console.log("🎯 Plan listo para usar:", window.userPlan);
+}
+
 // ***************** CONTADOR GLOBAL SUPABASE (VERSIÓN FINAL REAL CON RPC) *****************
 
 async function incrementarVisitas() {
@@ -358,6 +376,12 @@ const formatCurrency = (value) =>
     new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(value);
 
 async function analizarArchivo() {
+
+    // ⏳ ESPERAR PLAN DEL USUARIO (MUY IMPORTANTE)
+    await esperarPlanUsuario();
+
+    // 💰 CONTROL DE PLAN + LÍMITE MENSUAL
+    
 
 // 💰 CONTROL DE PLAN + LÍMITE MENSUAL
 

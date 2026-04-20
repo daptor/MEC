@@ -1240,12 +1240,11 @@ if (montoBrutoIncentivo !== null) {
 }
 
 // ---------- FIN: ANÁLISIS COMISIÓN GRUPAL ----------
-// muestra parcial de resultados para plan free 
+// ********** Muestra parcial de resultados para plan free ***********
 
 mostrarResultadoFreemium(pagosTxt.join(''));
 
 }
-
 
 // **************** Función de cálculo de vacaciones ****************
 document.addEventListener("DOMContentLoaded", function () {
@@ -2948,4 +2947,40 @@ async function cerrarConversacion() {
     document.getElementById("chat-admin-panel").style.display = "none";
 
     await mostrarPantallaAdminChat();
+}
+
+// =========================================
+// 💰 FREEMIUM — MOSTRAR RESULTADO DEL ANÁLISIS
+// =========================================
+function mostrarResultadoFreemium(htmlResultado) {
+
+    const contenedor = document.getElementById('resultadoAnalisis');
+
+    if (!contenedor) {
+        console.error("❌ No existe #resultadoAnalisis en el HTML");
+        return;
+    }
+
+    // limpiar antes de pintar
+    contenedor.innerHTML = "";
+
+    // 💎 USUARIO PRO → ve todo
+    if (PERMISSIONS.canUse(PERMISSIONS.FEATURES.EXPORTES)) {
+        console.log("💎 Usuario PRO → mostrando análisis completo");
+        contenedor.innerHTML = htmlResultado;
+        return;
+    }
+
+    // 🆓 USUARIO FREE → preview + paywall
+    console.log("🆓 Usuario FREE → mostrando preview del análisis");
+
+    // dividir por bloques usando <hr>
+    const bloques = htmlResultado.split("<hr>");
+
+    // mostrar solo el primer bloque
+    const preview = bloques.slice(0, 1).join("<hr>");
+    contenedor.innerHTML = preview;
+
+    // mostrar paywall
+    PAYWALL.show("Ver análisis completo");
 }

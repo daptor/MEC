@@ -74,6 +74,12 @@ async function sumarUsoAnalisisTotal() {
 
 async function actualizarContadorAnalisisUI() {
 
+    // ⛔ BLOQUEAR contador FREE si el usuario es PRO
+    if (window.bloquearContadorFree) {
+        console.log("⛔ Contador FREE bloqueado por usuario PRO");
+        return;
+    }
+
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) return;
 
@@ -93,7 +99,6 @@ async function actualizarContadorAnalisisUI() {
 
     el.textContent = `${data.analisis_usados || 0} de 5`;
 }
-
 
 // ***************** CONTADOR GLOBAL SUPABASE (VERSIÓN FINAL REAL CON RPC) *****************
 
@@ -3101,22 +3106,37 @@ function actualizarUIsegunPlan() {
 
   console.log("🎨 Actualizando UI según plan:", plan);
 
-  // botón PRO
   const btnPro = document.getElementById("btnUpgradePro");
-
-  // contador de análisis (el texto que ya muestras arriba)
   const contador = document.getElementById("contador");
 
+  // 💎 =========================
+  // USUARIO PRO
+  // 💎 =========================
   if (plan === "pro") {
-    // ocultar botón PRO
+    console.log("💎 UI en modo PRO");
+
+    // ocultar botón PRO SIEMPRE
     if (btnPro) btnPro.style.display = "none";
 
-    // cambiar texto contador
+    // contador definitivo PRO (bloquea al FREE)
     if (contador) {
-      contador.innerHTML = "💎 Plan PRO activo | Análisis ilimitados";
+      contador.innerHTML =
+        "💎 Plan PRO activo | Análisis ilimitados";
     }
-  } else {
-    // mostrar botón PRO si es FREE
-    if (btnPro) btnPro.style.display = "block";
+
+    // 🚨 BLOQUEA cualquier intento del contador FREE
+    window.bloquearContadorFree = true;
+
+    return; // ⛔ corta la función aquí
   }
+
+  // 🆓 =========================
+  // USUARIO FREE
+  // 🆓 =========================
+  console.log("🆓 UI en modo FREE");
+
+  window.bloquearContadorFree = false;
+
+  // mostrar botón PRO
+  if (btnPro) btnPro.style.display = "block";
 }

@@ -14,6 +14,7 @@ async function esperarPlanUsuario() {
   }
 
   console.log("🎯 Plan listo para usar:", window.userPlan);
+  actualizarUIsegunPlan();
 }
 
 // =========================================
@@ -3088,4 +3089,34 @@ function mostrarResultadoFreemium(htmlResultado) {
 
 document.addEventListener("planUpdated", () => {
   console.log("💎 Usuario ahora es PRO → desbloqueando límites");
+  actualizarUIsegunPlan();
 });
+
+// ========================================
+// 🎨 UI REACTIVA AL PLAN (FREE vs PRO)
+// ========================================
+
+function actualizarUIsegunPlan() {
+  const plan = window.userPlan || "free";
+
+  console.log("🎨 Actualizando UI según plan:", plan);
+
+  // botón PRO
+  const btnPro = document.getElementById("btnUpgradePro");
+
+  // contador de análisis (el texto que ya muestras arriba)
+  const contador = document.getElementById("contador");
+
+  if (plan === "pro") {
+    // ocultar botón PRO
+    if (btnPro) btnPro.style.display = "none";
+
+    // cambiar texto contador
+    if (contador) {
+      contador.innerHTML = "💎 Plan PRO activo | Análisis ilimitados";
+    }
+  } else {
+    // mostrar botón PRO si es FREE
+    if (btnPro) btnPro.style.display = "block";
+  }
+}

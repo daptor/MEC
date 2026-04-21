@@ -138,7 +138,6 @@ async function incrementarVisitas() {
     await mostrarContadorVisitas();
 }
 
-
 // 🔵 Mostrar contador al cargar app
 async function mostrarContadorVisitas() {
 

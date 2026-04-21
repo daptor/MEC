@@ -141,6 +141,16 @@ async function incrementarVisitas() {
 
 // 🔵 Mostrar contador al cargar app
 async function mostrarContadorVisitas() {
+
+    const el = document.getElementById("contador");
+    if (!el) return;
+
+    // 💎 SI ES PRO → NO mostrar contador global nunca más
+    if (window.userPlan === "pro") {
+        console.log("💎 Ocultando contador global porque es PRO");
+        return;
+    }
+
     const { data, error } = await supabase
         .from('contador')
         .select('visitas')
@@ -152,8 +162,7 @@ async function mostrarContadorVisitas() {
         return;
     }
 
-    const el = document.getElementById("contador");
-    if (el) el.textContent = data.visitas;
+    el.textContent = data.visitas;
 }
 
 

@@ -64,3 +64,48 @@ window.PAYWALL = {
 };
 
 console.log("💳 Sistema de paywall listo");
+
+// ========================================
+// 💎 ACTIVAR PLAN PRO
+// ========================================
+
+async function upgradeToPro() {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      alert("Debes iniciar sesión");
+      return;
+    }
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({ plan: "pro" })
+      .eq("id", user.id);
+
+    if (error) {
+      console.error("Error upgrade:", error);
+      alert("Error al activar PRO");
+      return;
+    }
+
+    // actualizar estado global
+    window.userPlan = "pro";
+    window.userProfile.plan = "pro";
+
+    alert("🎉 ¡PRO activado!");
+
+    // avisar al resto del sistema
+    document.dispatchEvent(new Event("planUpdated"));
+
+  } catch (err) {
+    console.error(err);
+    alert("Error inesperado");
+  }
+}
+
+// conectar botón PRO
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("btnUpgradePro");
+  if (btn) btn.addEventListener("click", upgradeToPro);
+});

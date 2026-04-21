@@ -3081,3 +3081,11 @@ function mostrarResultadoFreemium(htmlResultado) {
 
     contenedor.innerHTML += htmlResultado;
 }
+
+// ========================================
+// 🔄 CUANDO EL USUARIO SE VUELVE PRO
+// ========================================
+
+document.addEventListener("planUpdated", () => {
+  console.log("💎 Usuario ahora es PRO → desbloqueando límites");
+});

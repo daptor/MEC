@@ -72,14 +72,21 @@ async function sumarUsoAnalisisTotal() {
     console.log("➕ Nuevo uso registrado. Total:", nuevosUsos);
 }
 
+
+// ACTUALIZA DE FREE A PRO EL CONTADOR -------
 async function actualizarContadorAnalisisUI() {
 
-    // ⛔ BLOQUEAR contador FREE si el usuario es PRO
+    const el = document.getElementById("contador-analisis");
+    if (!el) return;
+
+    // 💎 SI ES PRO → borrar definitivamente contador FREE
     if (window.bloquearContadorFree) {
-        console.log("⛔ Contador FREE bloqueado por usuario PRO");
+        console.log("💎 Limpiando contador FREE porque usuario es PRO");
+        el.textContent = ""; // ← ESTA LINEA ES LA CLAVE
         return;
     }
 
+    // 🆓 SOLO USUARIOS FREE LLEGAN AQUÍ
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) return;
 
@@ -93,9 +100,6 @@ async function actualizarContadorAnalisisUI() {
         console.error("Error obteniendo contador:", error);
         return;
     }
-
-    const el = document.getElementById("contador-analisis");
-    if (!el) return;
 
     el.textContent = `${data.analisis_usados || 0} de 5`;
 }

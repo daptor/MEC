@@ -1,18 +1,19 @@
-// 🔐 ESPERAR PLAN USUARIO (SaaS CORE)
-// Debe estar al inicio absoluto del archivo
-// 🔐 ESPERAR PLAN USUARIO (FIX REAL)
+// 🔐 ESPERAR PLAN USUARIO (SaaS CORE - FIX VISITAS)
 function esperarPlanUsuario() {
     return new Promise(resolve => {
 
         let intentos = 0;
 
-        const intervalo = setInterval(() => {
+        const intervalo = setInterval(async () => {
 
             if (window.userPlan) {
                 clearInterval(intervalo);
 
                 console.log("🎯 Plan listo para usar:", window.userPlan);
                 actualizarUIsegunPlan();
+
+                // 📈 NUEVO: registrar visita global al iniciar app
+                await registrarVisitaGlobalUnaVez();
 
                 resolve(window.userPlan);
             }
@@ -26,11 +27,30 @@ function esperarPlanUsuario() {
                 window.userPlan = "free";
                 actualizarUIsegunPlan();
 
+                // 📈 NUEVO: registrar visita incluso si cae a FREE por defecto
+                await registrarVisitaGlobalUnaVez();
+
                 resolve("free");
             }
 
         }, 100);
     });
+}
+
+// 📈 VISITAS GLOBALES — se ejecuta solo 1 vez por carga
+let visitaRegistrada = false;
+
+async function registrarVisitaGlobalUnaVez() {
+    if (visitaRegistrada) return;
+    visitaRegistrada = true;
+
+    try {
+        await incrementarVisitas();
+        await mostrarContadorVisitas();
+        console.log("📈 Visita global registrada correctamente");
+    } catch (err) {
+        console.warn("⚠ No se pudo registrar visita:", err);
+    }
 }
 
 // =========================================

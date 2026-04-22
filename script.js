@@ -74,19 +74,20 @@ async function sumarUsoAnalisisTotal() {
 
 
 // ACTUALIZA DE FREE A PRO EL CONTADOR -------
+// ACTUALIZA CONTADOR SEGÚN PLAN (FIX UX PRO)
 async function actualizarContadorAnalisisUI() {
 
     const el = document.getElementById("contador-analisis");
     if (!el) return;
 
-    // 💎 SI ES PRO → borrar definitivamente contador FREE
-    if (window.bloquearContadorFree) {
-        console.log("💎 Limpiando contador FREE porque usuario es PRO");
-        el.textContent = ""; // ← ESTA LINEA ES LA CLAVE
+    // 💎 USUARIO PRO
+    if (window.userPlan === "pro") {
+        console.log("💎 Usuario PRO → mostrando estado ilimitado");
+        el.textContent = "💎 Plan PRO activo | Análisis ilimitados";
         return;
     }
 
-    // 🆓 SOLO USUARIOS FREE LLEGAN AQUÍ
+    // 🆓 USUARIO FREE
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) return;
 

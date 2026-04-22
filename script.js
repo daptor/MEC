@@ -3153,3 +3153,10 @@ function actualizarUIsegunPlan() {
   // mostrar botón PRO
   if (btnPro) btnPro.style.display = "block";
 }
+
+// 🔄 ACTUALIZAR UI CUANDO CAMBIA PLAN (FIX PRO)
+document.addEventListener("planUpdated", async () => {
+    console.log("🔄 Plan actualizado → refrescando contador");
+
+    await actualizarContadorAnalisisUI();
+});

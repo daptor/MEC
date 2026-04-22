@@ -155,16 +155,15 @@ async function incrementarVisitas() {
     await mostrarContadorVisitas();
 }
 
-// 🔵 Mostrar contador al cargar app
+// 🔵 Mostrar contador al cargar app (FIX PRO + UI)
 async function mostrarContadorVisitas() {
 
     const el = document.getElementById("contador");
     if (!el) return;
 
-    // 💎 SI ES PRO → NO mostrar contador global nunca más
+    // 💎 PRO → ya no bloquea, solo informa
     if (window.userPlan === "pro") {
-        console.log("💎 Ocultando contador global porque es PRO");
-        return;
+        console.log("💎 Usuario PRO → contador informativo activo");
     }
 
     const { data, error } = await supabase

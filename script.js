@@ -1,20 +1,36 @@
 // 🔐 ESPERAR PLAN USUARIO (SaaS CORE)
 // Debe estar al inicio absoluto del archivo
-async function esperarPlanUsuario() {
-  let intentos = 0;
+// 🔐 ESPERAR PLAN USUARIO (FIX REAL)
+function esperarPlanUsuario() {
+    return new Promise(resolve => {
 
-  while (!window.userPlan && intentos < 50) {
-    await new Promise(resolve => setTimeout(resolve, 100));
-    intentos++;
-  }
+        let intentos = 0;
 
-  if (!window.userPlan) {
-    console.warn("⚠ No se pudo cargar el plan, usando FREE por defecto");
-    window.userPlan = "free";
-  }
+        const intervalo = setInterval(() => {
 
-  console.log("🎯 Plan listo para usar:", window.userPlan);
-  actualizarUIsegunPlan();
+            if (window.userPlan) {
+                clearInterval(intervalo);
+
+                console.log("🎯 Plan listo para usar:", window.userPlan);
+                actualizarUIsegunPlan();
+
+                resolve(window.userPlan);
+            }
+
+            intentos++;
+
+            if (intentos > 50) {
+                clearInterval(intervalo);
+
+                console.warn("⚠ No se pudo cargar el plan, usando FREE por defecto");
+                window.userPlan = "free";
+                actualizarUIsegunPlan();
+
+                resolve("free");
+            }
+
+        }, 100);
+    });
 }
 
 // =========================================
@@ -201,12 +217,16 @@ function actualizarFechaHora() {
 }
 
 
-// 🚀 INICIALIZACIÓN (AQUÍ ESTÁ LA CLAVE)
+// 🚀 INICIALIZACIÓN (FIX ORDEN PLAN → UI)
 document.addEventListener("DOMContentLoaded", async () => {
 
     actualizarFechaHora();
     setInterval(actualizarFechaHora, 1000);
 
+    // 🧠 1. ESPERAR PLAN ANTES DE CUALQUIER UI
+    await esperarPlanUsuario();
+
+    // 📊 2. AHORA SÍ MOSTRAR DATOS CORRECTOS
     await mostrarContadorVisitas();
     await actualizarContadorAnalisisUI();
    

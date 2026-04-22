@@ -3151,11 +3151,8 @@ function actualizarUIsegunPlan() {
     // ocultar botón PRO SIEMPRE
     if (btnPro) btnPro.style.display = "none";
 
-    // contador definitivo PRO (bloquea al FREE)
-    if (contador) {
-      contador.innerHTML =
-        "💎 Plan PRO activo | Análisis ilimitados";
-    }
+ // ❌ NO TOCAR el contador numérico
+// el estado PRO se maneja en "contador-analisis"
 
     // 🚨 BLOQUEA cualquier intento del contador FREE
     window.bloquearContadorFree = true;

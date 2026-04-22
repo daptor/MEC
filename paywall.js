@@ -111,26 +111,3 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // FUNCION DE INICIAR PAGO REAL
-async function iniciarUpgradePRO() {
-
-    const user = (await supabase.auth.getUser()).data.user;
-
-    if (!user) {
-        alert("Debes iniciar sesión");
-        return;
-    }
-
-    console.log("💰 Usuario quiere PRO:", user.email);
-
-    try {
-        await registrarUso("upgrade_intent");
-
-        console.log("📊 Intento de upgrade registrado");
-
-    } catch (err) {
-        console.error("❌ Error registrando intento:", err);
-    }
-
-    // UX mejorada (más pro)
-    alert("🚀 Estamos activando pagos PRO.\nPronto podrás desbloquear acceso ilimitado.");
-}

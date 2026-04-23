@@ -3155,7 +3155,6 @@ function actualizarUIsegunPlan() {
   console.log("🎨 Actualizando UI según plan:", plan);
 
   const btnPro = document.getElementById("btnUpgradePro");
-  const contador = document.getElementById("contador");
 
   // 💎 =========================
   // USUARIO PRO
@@ -3163,16 +3162,27 @@ function actualizarUIsegunPlan() {
   if (plan === "pro") {
     console.log("💎 UI en modo PRO");
 
-    // ocultar botón PRO SIEMPRE
     if (btnPro) btnPro.style.display = "none";
 
- // ❌ NO TOCAR el contador numérico
-// el estado PRO se maneja en "contador-analisis"
-
-    // 🚨 BLOQUEA cualquier intento del contador FREE
     window.bloquearContadorFree = true;
 
-    return; // ⛔ corta la función aquí
+    return;
+  }
+
+  // ⏳ =========================
+  // USUARIO PRO_PENDING
+  // ⏳ =========================
+  if (plan === "pro_pending") {
+    console.log("⏳ UI en modo PRO_PENDING");
+
+    window.bloquearContadorFree = false;
+
+    if (btnPro) {
+      btnPro.style.display = "block";
+      btnPro.innerText = "Continuar pago"; // ⭐ cambio UX
+    }
+
+    return;
   }
 
   // 🆓 =========================
@@ -3182,8 +3192,10 @@ function actualizarUIsegunPlan() {
 
   window.bloquearContadorFree = false;
 
-  // mostrar botón PRO
-  if (btnPro) btnPro.style.display = "block";
+  if (btnPro) {
+    btnPro.style.display = "block";
+    btnPro.innerText = "Activar PRO"; // asegurar texto correcto
+  }
 }
 
 // 🔄 ACTUALIZAR UI CUANDO CAMBIA PLAN (FIX PRO COMPLETO)

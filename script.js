@@ -3145,7 +3145,7 @@ function mostrarResultadoFreemium(htmlResultado) {
 // ========================================
 
 document.addEventListener("planUpdated", () => {
-  console.log("💎 Usuario ahora es PRO → desbloqueando límites");
+  console.log("⏳ Usuario en proceso de pago (pro_pending)");
   actualizarUIsegunPlan();
 });
 

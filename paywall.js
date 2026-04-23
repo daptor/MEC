@@ -163,7 +163,7 @@ async function guardarDatosPro() {
         nombre_real: nombre,
         rut: rut,
         plan: "pro_pending",      // ⭐ estado previo al pago
-        pro_desde: null,
+        pro_desde: new Date(),
         pro_hasta: null
       })
       .eq("id", user.id)

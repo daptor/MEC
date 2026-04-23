@@ -120,45 +120,90 @@ function abrirRegistroPro() {
 // ========================================
 
 async function guardarDatosPro() {
-  const nombre = document.getElementById("proNombre").value.trim();
-  const rut = document.getElementById("proRut").value.trim();
 
-  if (!nombre || !rut) {
-    alert("Completa todos los campos");
-    return;
-  }
+  const btn = document.getElementById("btnContinuarPago");
+  if (btn) btn.disabled = true;
 
   try {
-    const { data: { user } } = await supabase.auth.getUser();
 
-    const { error } = await supabase
+    // 1️⃣ Obtener usuario autenticado
+    const { data, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !data?.user) {
+      alert("Debes iniciar sesión nuevamente.");
+      location.reload();
+      return;
+    }
+
+    const user = data.user;
+
+    // 2️⃣ Obtener datos del formulario
+    const nombre = document.getElementById("proNombre").value.trim();
+    const rut = document.getElementById("proRut").value.trim();
+
+    if (!nombre || !rut) {
+      alert("Completa todos los campos");
+      if (btn) btn.disabled = false;
+      return;
+    }
+
+    // 3️⃣ Validación simple de RUT (mínima pero útil)
+    if (rut.length < 8) {
+      alert("RUT inválido");
+      if (btn) btn.disabled = false;
+      return;
+    }
+
+    console.log("🟡 Guardando datos PRO para:", user.id);
+
+    // 4️⃣ Guardar datos en profiles
+    const { data: updateData, error: updateError } = await supabase
       .from("profiles")
       .update({
         nombre_real: nombre,
         rut: rut,
-        plan: "pro_pending"   // ⭐ CLAVE DEL PASO ACTUAL
+        plan: "pro_pending",      // ⭐ estado previo al pago
+        pro_desde: null,
+        pro_hasta: null
       })
-      .eq("id", user.id);
+      .eq("id", user.id)
+      .select();  // 👈 IMPORTANTE para confirmar update
 
-    if (error) {
-      console.error(error);
-      alert("Error guardando datos");
+    if (updateError) {
+      console.error("❌ Error update:", updateError);
+      alert("Error guardando datos.");
+      if (btn) btn.disabled = false;
       return;
     }
 
-    alert("Datos guardados ✅\nAhora podrás continuar al pago.");
+    if (!updateData || updateData.length === 0) {
+      console.error("❌ No se actualizó ninguna fila");
+      alert("No se pudo actualizar el perfil.");
+      if (btn) btn.disabled = false;
+      return;
+    }
 
-    document.getElementById("modal-pro").remove();
+    console.log("🟢 Datos PRO guardados:", updateData);
 
-    // avisar al sistema que el plan cambió
+    // 5️⃣ Cerrar modal
+    const modal = document.getElementById("modal-pro");
+    if (modal) modal.remove();
+
+    // 6️⃣ Notificar al sistema que el plan cambió
     document.dispatchEvent(new Event("planUpdated"));
 
+    alert("Datos guardados ✅\nAhora continúa al pago.");
+
+    // 🔜 AQUÍ LUEGO CONECTAREMOS MERCADOPAGO / STRIPE
+    // iniciarFlujoPago();
+
   } catch (err) {
-    console.error(err);
-    alert("Error inesperado");
+    console.error("🔥 Error inesperado:", err);
+    alert("Error inesperado.");
+  } finally {
+    if (btn) btn.disabled = false;
   }
 }
-
 
 // ========================================
 // 🔌 Conectar botón "Activar PRO"
@@ -168,5 +213,4 @@ document.addEventListener("DOMContentLoaded", () => {
   const btn = document.getElementById("btnUpgradePro");
   if (btn) btn.addEventListener("click", abrirRegistroPro);
 });
-
 

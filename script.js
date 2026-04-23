@@ -3190,9 +3190,39 @@ function actualizarUIsegunPlan() {
   if (btnPro) btnPro.style.display = "block";
 }
 
-// 🔄 ACTUALIZAR UI CUANDO CAMBIA PLAN (FIX PRO)
+// 🔄 ACTUALIZAR UI CUANDO CAMBIA PLAN (FIX PRO COMPLETO)
 document.addEventListener("planUpdated", async () => {
-    console.log("🔄 Plan actualizado → refrescando contador");
+    console.log("🔄 Plan actualizado → recargando perfil completo...");
 
-    await actualizarContadorAnalisisUI();
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+            console.warn("⚠ No hay usuario");
+            return;
+        }
+
+        const { data: profile, error } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", user.id)
+            .single();
+
+        if (error || !profile) {
+            console.error("❌ Error recargando perfil:", error);
+            return;
+        }
+
+        // 🔥 ACTUALIZAR VARIABLES GLOBALES
+        window.userProfile = profile;
+        window.userPlan = profile.plan || "free";
+
+        console.log("💰 Nuevo plan:", window.userPlan);
+
+        // 🔄 REFRESCAR UI COMPLETA
+        actualizarUIsegunPlan();
+
+    } catch (err) {
+        console.error("🔥 Error en planUpdated:", err);
+    }
 });

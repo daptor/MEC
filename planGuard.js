@@ -30,7 +30,39 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    // 3️⃣ Guardar globalmente (infraestructura SaaS)
+    // 🧠 3️⃣ CONTROL DE EXPIRACIÓN pro_pending usando pro_desde
+
+    if (profile.plan === "pro_pending" && profile.pro_desde) {
+
+      const ahora = Date.now();
+      const inicio = new Date(profile.pro_desde).getTime();
+
+      const minutos = (ahora - inicio) / 1000 / 60;
+
+      console.log(`⏳ pro_pending activo: ${minutos.toFixed(1)} min`);
+
+      if (minutos > 15) {
+
+        console.log("🔄 pro_pending expirado → volviendo a FREE");
+
+        const { error: updateError } = await supabase
+          .from("profiles")
+          .update({
+            plan: "free",
+            pro_desde: null
+          })
+          .eq("id", profile.id);
+
+        if (updateError) {
+          console.error("Error actualizando plan:", updateError);
+        } else {
+          // 🔥 sincronizar el objeto local
+          profile.plan = "free";
+        }
+      }
+    }
+
+    // 4️⃣ Guardar globalmente (YA VALIDADO)
     window.userProfile = profile;
     window.userPlan = profile.plan || "free";
 

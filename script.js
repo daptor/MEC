@@ -152,25 +152,21 @@ async function incrementarVisitas() {
     const esUsuarioCodigo = rol === "usuario";
     const esAdminCodigo = rol === "admin";
 
-    // 🔴 Admin por código → NO suma
     if (esAdminCodigo) return;
 
-    // 🔴 Admin real (tú)
     const adminEmail = "christorfu@gmail.com";
 
     if (session?.user?.email === adminEmail) return;
 
-    // ❌ Si no hay sesión ni usuario válido → no sumar
     if (!session && !esUsuarioCodigo) return;
 
-    await registrarUso("visita");
-
-    if (error) {
+    try {
+        await registrarUso("visita");
+        console.log("✅ Visita incrementada en Supabase");
+    } catch (error) {
         console.error("❌ Error al incrementar visitas (RPC):", error);
         return;
     }
-
-    console.log("✅ Visita incrementada en Supabase");
 
     await mostrarContadorVisitas();
 }

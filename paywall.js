@@ -58,7 +58,7 @@ console.log("💳 Sistema de paywall listo");
 
 
 // ========================================
-// 💎 NUEVO FLUJO ACTIVAR PRO (registro previo al pago)
+// 💎 NUEVO FLUJO ACTIVAR PRO
 // ========================================
 
 function abrirRegistroPro() {
@@ -116,7 +116,7 @@ function abrirRegistroPro() {
 
 
 // ========================================
-// 💾 Guardar datos PRO → usuario listo para pagar
+// 💾 Guardar datos PRO
 // ========================================
 
 async function guardarDatosPro() {
@@ -125,8 +125,6 @@ async function guardarDatosPro() {
   if (btn) btn.disabled = true;
 
   try {
-
-    // 1️⃣ Obtener usuario autenticado
     const { data, error: authError } = await supabase.auth.getUser();
 
     if (authError || !data?.user) {
@@ -137,7 +135,6 @@ async function guardarDatosPro() {
 
     const user = data.user;
 
-    // 2️⃣ Obtener datos del formulario
     const nombre = document.getElementById("proNombre").value.trim();
     const rut = document.getElementById("proRut").value.trim();
 
@@ -147,7 +144,6 @@ async function guardarDatosPro() {
       return;
     }
 
-    // 3️⃣ Validación simple de RUT (mínima pero útil)
     if (rut.length < 8) {
       alert("RUT inválido");
       if (btn) btn.disabled = false;
@@ -156,18 +152,17 @@ async function guardarDatosPro() {
 
     console.log("🟡 Guardando datos PRO para:", user.id);
 
-    // 4️⃣ Guardar datos en profiles
     const { data: updateData, error: updateError } = await supabase
       .from("profiles")
       .update({
         nombre_real: nombre,
         rut: rut,
-        plan: "pro_pending",      // ⭐ estado previo al pago
+        plan: "pro_pending",
         pro_desde: new Date(),
         pro_hasta: null
       })
       .eq("id", user.id)
-      .select();  // 👈 IMPORTANTE para confirmar update
+      .select();
 
     if (updateError) {
       console.error("❌ Error update:", updateError);
@@ -176,26 +171,17 @@ async function guardarDatosPro() {
       return;
     }
 
-    if (!updateData || updateData.length === 0) {
-      console.error("❌ No se actualizó ninguna fila");
-      alert("No se pudo actualizar el perfil.");
-      if (btn) btn.disabled = false;
-      return;
-    }
-
     console.log("🟢 Datos PRO guardados:", updateData);
 
-    // 5️⃣ Cerrar modal
+    // 🔥 sincronizar frontend
+    window.userPlan = "pro_pending";
+
     const modal = document.getElementById("modal-pro");
     if (modal) modal.remove();
 
-    // 6️⃣ Notificar al sistema que el plan cambió
     document.dispatchEvent(new Event("planUpdated"));
 
     alert("Datos guardados ✅\nAhora continúa al pago.");
-
-    // 🔜 AQUÍ LUEGO CONECTAREMOS MERCADOPAGO / STRIPE
-    // iniciarFlujoPago();
 
   } catch (err) {
     console.error("🔥 Error inesperado:", err);
@@ -205,12 +191,35 @@ async function guardarDatosPro() {
   }
 }
 
+
 // ========================================
-// 🔌 Conectar botón "Activar PRO"
+// 💳 CONTINUAR PAGO (nuevo)
+// ========================================
+
+function continuarPago() {
+  console.log("💳 Usuario retomando pago...");
+  alert("Tienes un pago pendiente.\nAhora debes completar el pago.");
+}
+
+
+// ========================================
+// 🔌 BOTÓN INTELIGENTE (FIX REAL)
 // ========================================
 
 document.addEventListener("DOMContentLoaded", () => {
   const btn = document.getElementById("btnUpgradePro");
-  if (btn) btn.addEventListener("click", abrirRegistroPro);
-});
 
+  if (!btn) return;
+
+  btn.addEventListener("click", () => {
+
+    console.log("🧪 Plan actual al hacer click:", window.userPlan);
+
+    if (window.userPlan === "pro_pending") {
+      continuarPago();
+    } else {
+      abrirRegistroPro();
+    }
+
+  });
+});

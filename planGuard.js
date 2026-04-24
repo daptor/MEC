@@ -66,7 +66,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.userProfile = profile;
     window.userPlan = profile.plan || "free";
 
-    console.log("✅ Perfil cargado:", profile);
+    console.log("✅ Perfil cargado:", profile.email);
     console.log("💰 Plan cargado:", window.userPlan);
 
   } catch (err) {

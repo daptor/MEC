@@ -2681,6 +2681,10 @@ let idConversacionAdminActual = null;
 contadorNotificaciones = 0;
 actualizarBadge();
 
+// 🧠 NUEVO: control de render + cache
+let mensajesPrivadosRenderizados = new Set();
+let cacheNicks = {};
+
 // =========================
 // OBTENER USUARIO REAL
 // =========================
@@ -2716,9 +2720,13 @@ document.addEventListener("DOMContentLoaded", async function () {
 });
 
 // =========================
-// OBTENER NICK
+// OBTENER NICK (CON CACHE)
 // =========================
 async function obtenerNickPorId(userId) {
+
+    if (cacheNicks[userId]) {
+        return cacheNicks[userId];
+    }
 
     const { data } = await supabase
         .from('usuarios')
@@ -2726,7 +2734,11 @@ async function obtenerNickPorId(userId) {
         .eq('user_id', userId)
         .maybeSingle();
 
-    return data?.nick || "Usuario";
+    const nick = data?.nick || "Usuario";
+
+    cacheNicks[userId] = nick;
+
+    return nick;
 }
 
 // =========================
@@ -2799,7 +2811,7 @@ async function obtenerOcrearConversacionPrivada(usuarioId) {
 }
 
 // =========================
-// REALTIME USUARIO
+// REALTIME USUARIO (SIN REFRESH)
 // =========================
 async function suscribirChatPrivado(idConversacion) {
 
@@ -2818,7 +2830,8 @@ async function suscribirChatPrivado(idConversacion) {
             const user = await getUser();
             if (!user) return;
 
-            await cargarMensajesPrivados(idConversacion);
+            // 🔥 SOLO agregar mensaje nuevo (NO recargar todo)
+            await agregarMensajePrivadoAlDOM(payload.new);
 
             if (payload.new.user_id !== user.id) {
 
@@ -2836,7 +2849,7 @@ async function suscribirChatPrivado(idConversacion) {
 }
 
 // =========================
-// CARGAR MENSAJES USUARIO
+// CARGA INICIAL (UNA SOLA VEZ)
 // =========================
 async function cargarMensajesPrivados(idConversacion) {
 
@@ -2853,23 +2866,40 @@ async function cargarMensajesPrivados(idConversacion) {
     if (!contenedor) return;
 
     contenedor.innerHTML = '';
+    mensajesPrivadosRenderizados.clear();
 
     if (data) {
         for (const msg of data) {
-
-            const div = document.createElement('div');
-            div.style.textAlign = (msg.user_id === user.id) ? "right" : "left";
-
-            const nick = await obtenerNickPorId(msg.user_id);
-
-            div.innerHTML = `
-                <strong>${nick}:</strong> ${msg.mensaje}
-                <br><small>${new Date(msg.fecha_envio).toLocaleTimeString()}</small>
-            `;
-
-            contenedor.appendChild(div);
+            await agregarMensajePrivadoAlDOM(msg);
         }
     }
+}
+
+// =========================
+// RENDER INCREMENTAL REAL
+// =========================
+async function agregarMensajePrivadoAlDOM(msg) {
+
+    if (mensajesPrivadosRenderizados.has(msg.id)) return;
+
+    const user = await getUser();
+    const contenedor = document.getElementById("mensaje-chat-privado");
+
+    const div = document.createElement('div');
+    div.style.textAlign = (msg.user_id === user.id) ? "right" : "left";
+
+    const nick = await obtenerNickPorId(msg.user_id);
+
+    div.innerHTML = `
+        <strong>${nick}:</strong> ${msg.mensaje}
+        <br><small>${new Date(msg.fecha_envio).toLocaleTimeString()}</small>
+    `;
+
+    contenedor.appendChild(div);
+
+    mensajesPrivadosRenderizados.add(msg.id);
+
+    contenedor.scrollTop = contenedor.scrollHeight;
 }
 
 // =========================

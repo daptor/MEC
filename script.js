@@ -141,6 +141,9 @@ async function actualizarContadorAnalisisUI() {
     el.textContent = `${data.analisis_usados || 0} de 5`;
 }
 
+let ultimoIdMensajeGrupal = 0;
+let chatYaCargado = false;
+
 // ***************** CONTADOR GLOBAL SUPABASE (VERSIÓN FINAL REAL CON RPC) *****************
 
 async function incrementarVisitas() {
@@ -303,7 +306,7 @@ if (btnIngresar) {
 
 // Función para mostrar una pantalla específica
 function mostrarPantalla(idPantalla) {
-    document.querySelectorAll(".pantalla").forEach(pantalla => {f
+    document.querySelectorAll(".pantalla").forEach(pantalla => {
         pantalla.style.display = "none";
     });
 
@@ -2620,7 +2623,7 @@ async function cargarMensajes() {
         .order('fecha_envio', { ascending: true });
 
     const contenedor = document.getElementById('mensaje-chat');
-    contenedor.innerHTML = '';
+    // contenedor.innerHTML = ''; ----- eliminado
 
     if (error) {
         console.error("Error al cargar mensajes:", error);
@@ -2630,6 +2633,12 @@ async function cargarMensajes() {
     if (!mensajes || mensajes.length === 0) {
         contenedor.innerHTML = '<p style="text-align:center; color:gray;">Aún no hay mensajes 👀</p>';
         return;
+    }
+
+    chatYaCargado = true;
+
+    if (mensajes.length > 0) {
+        ultimoIdMensajeGrupal = mensajes[mensajes.length - 1].id || 0;
     }
 
     let lastDate = null;
@@ -2849,7 +2858,24 @@ async function suscribirChatPrivado(idConversacion) {
             const user = await getUser();
             if (!user) return;
 
-            await cargarMensajesPrivados(idConversacion);
+            // await cargarMensajesPrivados(idConversacion); ----
+
+            const contenedor = document.getElementById('mensaje-chat');
+            if (!contenedor) return;
+
+            const mensaje = payload.new;
+
+            const div = document.createElement('div');
+            div.classList.add('mensaje');
+
+            div.innerHTML = `
+                <p><strong>${mensaje.rol === 'admin' ? 'Admin:' : mensaje.nick + ':'}</strong> ${mensaje.mensaje}</p>
+            `;
+
+            contenedor.appendChild(div);
+            contenedor.scrollTop = contenedor.scrollHeight;
+
+            ultimoIdMensajeGrupal = mensaje.id || ultimoIdMensajeGrupal;
 
             if (payload.new.user_id !== user.id) {
 

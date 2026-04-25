@@ -2927,7 +2927,13 @@ async function enviarMensajePrivado(idConversacion) {
 }
 
 // =========================
-// ADMIN - LISTA DE CHATS
+// ADMIN - CONTROL RENDER
+// =========================
+let mensajesAdminRenderizados = new Set();
+
+
+// =========================
+// ADMIN - LISTA DE CHATS (SIN CAMBIOS CRÍTICOS)
 // =========================
 async function mostrarPantallaAdminChat() {
 
@@ -2974,6 +2980,7 @@ async function mostrarPantallaAdminChat() {
     }
 }
 
+
 // =========================
 // ADMIN - ABRIR CHAT (CORREGIDO)
 // =========================
@@ -3003,11 +3010,11 @@ async function abrirChatComoAdmin(idConversacion, userIdUsuario) {
             const user = await getUser();
             if (!user) return;
 
-            await cargarMensajesAdmin(idConversacion, userIdUsuario);
+            // 🔥 SOLO agregar nuevo mensaje (NO recargar todo)
+            await agregarMensajeAdminAlDOM(payload.new, userIdUsuario);
 
             if (payload.new.user_id !== user.id) {
 
-                // ✅ CORRECCIÓN REAL
                 contadorNotificaciones++;
                 actualizarBadge();
 
@@ -3021,8 +3028,9 @@ async function abrirChatComoAdmin(idConversacion, userIdUsuario) {
         });
 }
 
+
 // =========================
-// ADMIN - CARGAR MENSAJES
+// ADMIN - CARGA INICIAL
 // =========================
 async function cargarMensajesAdmin(idConversacion, userIdUsuario) {
 
@@ -3036,26 +3044,50 @@ async function cargarMensajesAdmin(idConversacion, userIdUsuario) {
     if (!contenedor) return;
 
     contenedor.innerHTML = '';
+    mensajesAdminRenderizados.clear();
 
     const nickUsuario = await obtenerNickPorId(userIdUsuario);
 
     if (data) {
         for (const msg of data) {
-
-            const div = document.createElement('div');
-            div.style.textAlign = (msg.rol === "admin") ? "right" : "left";
-
-            const nick = (msg.rol === "admin") ? "Admin" : nickUsuario;
-
-            div.innerHTML = `
-                <strong>${nick}:</strong> ${msg.mensaje}
-                <small>${new Date(msg.fecha_envio).toLocaleTimeString()}</small>
-            `;
-
-            contenedor.appendChild(div);
+            agregarMensajeAdminAlDOM(msg, userIdUsuario, nickUsuario);
         }
     }
 }
+
+
+// =========================
+// ADMIN - RENDER INCREMENTAL
+// =========================
+async function agregarMensajeAdminAlDOM(msg, userIdUsuario, nickUsuarioCache = null) {
+
+    if (mensajesAdminRenderizados.has(msg.id)) return;
+
+    const contenedor = document.getElementById("admin-chat-mensajes");
+
+    const div = document.createElement('div');
+    div.style.textAlign = (msg.rol === "admin") ? "right" : "left";
+
+    let nick;
+
+    if (msg.rol === "admin") {
+        nick = "Admin";
+    } else {
+        nick = nickUsuarioCache || await obtenerNickPorId(userIdUsuario);
+    }
+
+    div.innerHTML = `
+        <strong>${nick}:</strong> ${msg.mensaje}
+        <small>${new Date(msg.fecha_envio).toLocaleTimeString()}</small>
+    `;
+
+    contenedor.appendChild(div);
+
+    mensajesAdminRenderizados.add(msg.id);
+
+    contenedor.scrollTop = contenedor.scrollHeight;
+}
+
 
 // =========================
 // ADMIN - ENVIAR MENSAJE
@@ -3081,6 +3113,7 @@ async function enviarMensajePrivadoAdmin() {
     input.value = '';
 }
 
+
 // =========================
 // ADMIN - VOLVER
 // =========================
@@ -3088,6 +3121,7 @@ function mostrarListaConversaciones() {
     document.getElementById("chat-admin-panel").style.display = "none";
     mostrarPantallaAdminChat();
 }
+
 
 // =========================
 // ADMIN - CERRAR CHAT

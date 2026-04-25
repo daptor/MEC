@@ -2455,172 +2455,18 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 
-//***************************** chat grupal ********************************
-
-// Variable global para el canal
-let canalGrupal = null;
-let contadorNotificaciones = 0;
-
 // =========================
-// RESET NOTIFICACIONES
-// =========================
-function resetearNotificaciones() {
-    contadorNotificaciones = 0;
-    actualizarBadge();
-}
-
-// =========================
-// INGRESO AL CHAT
-// =========================
-async function ingresarAlChat() {
-
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-        alert("Usuario no autenticado");
-        return;
-    }
-
-    const user_id = user.id;
-
-    // 🔥 RESET al entrar (CLAVE)
-    resetearNotificaciones();
-
-    // 🔥 LIMPIAR SESIÓN LOCAL
-    localStorage.removeItem("rol");
-    localStorage.removeItem("nick");
-
-    // 🔥 CARGAR DATOS REALES DESDE BD
-    const { data: usuarioDB } = await supabase
-        .from("usuarios")
-        .select("nick, rol")
-        .eq("user_id", user_id)
-        .single();
-
-    if (usuarioDB) {
-        localStorage.setItem("user_id", user_id);
-        localStorage.setItem("nick", usuarioDB.nick);
-        localStorage.setItem("rol", usuarioDB.rol);
-    }
-
-    // 🔥 SI NO TIENE NICK DEFINIDO
-    if (!localStorage.getItem("nick") || localStorage.getItem("nick") === "usuario") {
-        let nick = prompt("Por favor, ingresa tu Nick:");
-        if (!nick || nick.trim() === "") {
-            alert("Debes ingresar un Nick para acceder al chat.");
-            return;
-        }
-        await checkNickAvailability(nick.trim(), user_id);
-    } else {
-        await cargarMensajes();
-    }
-
-    // 🔥 Suscribirse siempre
-    suscribirseChatGrupal();
-
-    mostrarPantalla("pantalla-chat");
-}
-
-// =========================
-// SUSCRIPCIÓN REALTIME
-// =========================
-function suscribirseChatGrupal() {
-
-    const user_id = localStorage.getItem("user_id");
-
-    if (canalGrupal) {
-        supabase.removeChannel(canalGrupal);
-        canalGrupal = null;
-    }
-
-    canalGrupal = supabase.channel('mensajes_channel')
-        .on('postgres_changes', {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'mensajes'
-        }, payload => {
-
-            if (payload.new.user_id !== user_id) {
-
-                console.log("📩 Mensaje recibido:", payload);
-
-                cargarMensajes();
-
-                contadorNotificaciones++;
-                actualizarBadge();
-
-                const audio = new Audio('https://mxqrzhpyfwuutardehyu.supabase.co/storage/v1/object/public/audios/campanilla.mp3');
-                audio.play();
-            }
-
-        })
-        .subscribe((status) => {
-            console.log("📡 Canal grupal:", status);
-        });
-}
-
-// =========================
-// BADGE NOTIFICACIONES
-// =========================
-function actualizarBadge() {
-    const badge = document.getElementById("badgeChat");
-    if (!badge) return;
-
-    if (contadorNotificaciones > 0) {
-        badge.style.display = "inline-block";
-        badge.textContent = contadorNotificaciones;
-    } else {
-        badge.style.display = "none";
-    }
-}
-
-// =========================
-// CHECK NICK
-// =========================
-async function checkNickAvailability(nick, user_id) {
-
-    const { data } = await supabase
-        .from('usuarios')
-        .select('user_id, nick')
-        .eq('nick', nick);
-
-    let finalNick = nick;
-
-    if (data && data.length > 0) {
-        let count = 1;
-        let newNick = nick + `(${count})`;
-
-        while (data.some(user => user.nick === newNick)) {
-            count++;
-            newNick = nick + `(${count})`;
-        }
-
-        finalNick = newNick;
-        alert(`Nick en uso. Nuevo Nick: ${finalNick}`);
-    }
-
-    localStorage.setItem("nick", finalNick);
-
-    await supabase
-        .from('usuarios')
-        .update({ nick: finalNick })
-        .eq('user_id', user_id);
-
-    await cargarMensajes();
-}
-
-// =========================
-// CARGAR MENSAJES (SIN PARPADEO REAL)
+// CARGAR MENSAJES (SIN PARPADEO)
 // =========================
 async function cargarMensajes() {
-
-    const contenedor = document.getElementById('mensaje-chat');
-    if (!contenedor) return;
 
     const { data: mensajes, error } = await supabase
         .from('mensajes')
         .select('id, mensaje, respuesta, fecha_envio, rol, user_id, nick')
         .order('fecha_envio', { ascending: true });
+
+    const contenedor = document.getElementById('mensaje-chat');
+    if (!contenedor) return;
 
     if (error) {
         console.error("Error al cargar mensajes:", error);
@@ -2628,20 +2474,12 @@ async function cargarMensajes() {
     }
 
     if (!mensajes || mensajes.length === 0) {
-        if (!contenedor.dataset.vacio) {
-            contenedor.innerHTML = '<p style="text-align:center; color:gray;">Aún no hay mensajes 👀</p>';
-            contenedor.dataset.vacio = "true";
-        }
+        contenedor.innerHTML = '<p style="text-align:center; color:gray;">Aún no hay mensajes 👀</p>';
         return;
     }
 
-    // 🚫 SI NO CAMBIÓ LA CANTIDAD → NO REDIBUJAR
-    if (contenedor.dataset.totalMensajes == mensajes.length) {
-        return;
-    }
-
-    // ✅ SI CAMBIÓ → RECIÉN AHÍ REDIBUJA
-    contenedor.innerHTML = '';
+    // 🔥 NUEVO: fragmento en memoria (NO visible)
+    const fragment = document.createDocumentFragment();
 
     let lastDate = null;
 
@@ -2649,17 +2487,17 @@ async function cargarMensajes() {
 
         const fechaEnvio = new Date(mensaje.fecha_envio);
         const fechaStr = fechaEnvio.toLocaleDateString('es-CL');
-        const horaStr = fechaEnvio.toLocaleTimeString('es-CL', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
+        const horaStr = fechaEnvio.toLocaleTimeString('es-CL', { 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            hour12: false 
         });
 
         if (lastDate !== fechaStr) {
             const separador = document.createElement('div');
             separador.classList.add('fecha-separador');
             separador.innerHTML = fechaStr;
-            contenedor.appendChild(separador);
+            fragment.appendChild(separador); // 🔁 antes: contenedor.appendChild
         }
 
         const div = document.createElement('div');
@@ -2674,15 +2512,16 @@ async function cargarMensajes() {
             div.innerHTML += `<p><strong>Respuesta:</strong> ${mensaje.respuesta}</p>`;
         }
 
-        contenedor.appendChild(div);
+        fragment.appendChild(div); // 🔁 antes: contenedor.appendChild
 
         lastDate = fechaStr;
     });
 
-    // 🔑 Guardamos cantidad actual
-    contenedor.dataset.totalMensajes = mensajes.length;
+    // 🔥 CLAVE: se limpia y se inserta TODO en un solo paso
+    contenedor.innerHTML = '';
+    contenedor.appendChild(fragment);
 
-    // 🔽 Mantener scroll abajo
+    // mantener scroll abajo
     contenedor.scrollTop = contenedor.scrollHeight;
 }
 

@@ -2457,9 +2457,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
 //***************************** chat grupal ********************************
 
-// Variable global para el canal
 let canalGrupal = null;
 let contadorNotificaciones = 0;
+
+// 🧠 NUEVO: control de mensajes ya renderizados
+let mensajesRenderizados = new Set();
 
 // =========================
 // RESET NOTIFICACIONES
@@ -2483,14 +2485,11 @@ async function ingresarAlChat() {
 
     const user_id = user.id;
 
-    // 🔥 RESET al entrar (CLAVE)
     resetearNotificaciones();
 
-    // 🔥 LIMPIAR SESIÓN LOCAL
     localStorage.removeItem("rol");
     localStorage.removeItem("nick");
 
-    // 🔥 CARGAR DATOS REALES DESDE BD
     const { data: usuarioDB } = await supabase
         .from("usuarios")
         .select("nick, rol")
@@ -2503,7 +2502,6 @@ async function ingresarAlChat() {
         localStorage.setItem("rol", usuarioDB.rol);
     }
 
-    // 🔥 SI NO TIENE NICK DEFINIDO
     if (!localStorage.getItem("nick") || localStorage.getItem("nick") === "usuario") {
         let nick = prompt("Por favor, ingresa tu Nick:");
         if (!nick || nick.trim() === "") {
@@ -2512,12 +2510,10 @@ async function ingresarAlChat() {
         }
         await checkNickAvailability(nick.trim(), user_id);
     } else {
-        await cargarMensajes();
+        await cargarMensajes(); // 🔹 solo carga inicial
     }
 
-    // 🔥 Suscribirse siempre
     suscribirseChatGrupal();
-
     mostrarPantalla("pantalla-chat");
 }
 
@@ -2540,12 +2536,11 @@ function suscribirseChatGrupal() {
             table: 'mensajes'
         }, payload => {
 
+            console.log("📩 Mensaje realtime:", payload);
+
+            agregarMensajeAlDOM(payload.new);
+
             if (payload.new.user_id !== user_id) {
-
-                console.log("📩 Mensaje recibido:", payload);
-
-                cargarMensajes();
-
                 contadorNotificaciones++;
                 actualizarBadge();
 
@@ -2560,57 +2555,18 @@ function suscribirseChatGrupal() {
 }
 
 // =========================
-// BADGE NOTIFICACIONES
+// BADGE
 // =========================
 function actualizarBadge() {
     const badge = document.getElementById("badgeChat");
     if (!badge) return;
 
-    if (contadorNotificaciones > 0) {
-        badge.style.display = "inline-block";
-        badge.textContent = contadorNotificaciones;
-    } else {
-        badge.style.display = "none";
-    }
+    badge.style.display = contadorNotificaciones > 0 ? "inline-block" : "none";
+    badge.textContent = contadorNotificaciones;
 }
 
 // =========================
-// CHECK NICK
-// =========================
-async function checkNickAvailability(nick, user_id) {
-
-    const { data } = await supabase
-        .from('usuarios')
-        .select('user_id, nick')
-        .eq('nick', nick);
-
-    let finalNick = nick;
-
-    if (data && data.length > 0) {
-        let count = 1;
-        let newNick = nick + `(${count})`;
-
-        while (data.some(user => user.nick === newNick)) {
-            count++;
-            newNick = nick + `(${count})`;
-        }
-
-        finalNick = newNick;
-        alert(`Nick en uso. Nuevo Nick: ${finalNick}`);
-    }
-
-    localStorage.setItem("nick", finalNick);
-
-    await supabase
-        .from('usuarios')
-        .update({ nick: finalNick })
-        .eq('user_id', user_id);
-
-    await cargarMensajes();
-}
-
-// =========================
-// CARGAR MENSAJES
+// CARGA INICIAL
 // =========================
 async function cargarMensajes() {
 
@@ -2619,50 +2575,65 @@ async function cargarMensajes() {
         .select('id, mensaje, respuesta, fecha_envio, rol, user_id, nick')
         .order('fecha_envio', { ascending: true });
 
+    if (error) {
+        console.error(error);
+        return;
+    }
+
     const contenedor = document.getElementById('mensaje-chat');
     contenedor.innerHTML = '';
 
-    if (error) {
-        console.error("Error al cargar mensajes:", error);
-        return;
-    }
+    mensajesRenderizados.clear();
 
-    if (!mensajes || mensajes.length === 0) {
-        contenedor.innerHTML = '<p style="text-align:center; color:gray;">Aún no hay mensajes 👀</p>';
-        return;
-    }
+    mensajes.forEach(m => agregarMensajeAlDOM(m));
+}
 
-    let lastDate = null;
+// =========================
+// 🔥 RENDER INCREMENTAL REAL
+// =========================
+function agregarMensajeAlDOM(mensaje) {
 
-    mensajes.forEach(mensaje => {
+    if (mensajesRenderizados.has(mensaje.id)) return;
 
-        const fechaEnvio = new Date(mensaje.fecha_envio);
-        const fechaStr = fechaEnvio.toLocaleDateString('es-CL');
-        const horaStr = fechaEnvio.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const contenedor = document.getElementById('mensaje-chat');
 
-        if (lastDate !== fechaStr) {
-            const separador = document.createElement('div');
-            separador.classList.add('fecha-separador');
-            separador.innerHTML = fechaStr;
-            contenedor.appendChild(separador);
-        }
-
-        const div = document.createElement('div');
-        div.classList.add('mensaje');
-
-        div.innerHTML = `
-            <p><strong>${mensaje.rol === 'admin' ? 'Admin:' : mensaje.nick + ':'}</strong> ${mensaje.mensaje}</p>
-            <p><span class="hora">${horaStr}</span></p>
-        `;
-
-        if (mensaje.respuesta) {
-            div.innerHTML += `<p><strong>Respuesta:</strong> ${mensaje.respuesta}</p>`;
-        }
-
-        contenedor.appendChild(div);
-
-        lastDate = fechaStr;
+    const fecha = new Date(mensaje.fecha_envio);
+    const fechaStr = fecha.toLocaleDateString('es-CL');
+    const horaStr = fecha.toLocaleTimeString('es-CL', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
     });
+
+    const ultimo = contenedor.lastElementChild;
+    const ultimaFecha = ultimo?.dataset?.fecha;
+
+    if (ultimaFecha !== fechaStr) {
+        const sep = document.createElement('div');
+        sep.classList.add('fecha-separador');
+        sep.dataset.fecha = fechaStr;
+        sep.innerHTML = fechaStr;
+        contenedor.appendChild(sep);
+    }
+
+    const div = document.createElement('div');
+    div.classList.add('mensaje');
+    div.dataset.id = mensaje.id;
+
+    div.innerHTML = `
+        <p><strong>${mensaje.rol === 'admin' ? 'Admin:' : mensaje.nick + ':'}</strong> ${mensaje.mensaje}</p>
+        <p><span class="hora">${horaStr}</span></p>
+    `;
+
+    if (mensaje.respuesta) {
+        div.innerHTML += `<p><strong>Respuesta:</strong> ${mensaje.respuesta}</p>`;
+    }
+
+    contenedor.appendChild(div);
+
+    mensajesRenderizados.add(mensaje.id);
+
+    contenedor.scrollTop = contenedor.scrollHeight;
 }
 
 // =========================
@@ -2694,11 +2665,9 @@ if (btnEnviar) {
                 nick
             }]);
 
-        if (error) {
-            console.error("Error al enviar:", error);
-        } else {
+        if (!error) {
             document.getElementById('mensajeUsuario').value = '';
-            cargarMensajes();
+            // ❌ NO cargarMensajes()
         }
     });
 }

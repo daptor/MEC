@@ -141,9 +141,6 @@ async function actualizarContadorAnalisisUI() {
     el.textContent = `${data.analisis_usados || 0} de 5`;
 }
 
-let ultimoIdMensajeGrupal = 0;
-let chatYaCargado = false;
-
 // ***************** CONTADOR GLOBAL SUPABASE (VERSIÓN FINAL REAL CON RPC) *****************
 
 async function incrementarVisitas() {
@@ -306,7 +303,7 @@ if (btnIngresar) {
 
 // Función para mostrar una pantalla específica
 function mostrarPantalla(idPantalla) {
-    document.querySelectorAll(".pantalla").forEach(pantalla => {
+    document.querySelectorAll(".pantalla").forEach(pantalla => {f
         pantalla.style.display = "none";
     });
 
@@ -2613,17 +2610,17 @@ async function checkNickAvailability(nick, user_id) {
 }
 
 // =========================
-// CARGAR MENSAJES
+// CARGAR MENSAJES (SIN PARPADEO REAL)
 // =========================
 async function cargarMensajes() {
+
+    const contenedor = document.getElementById('mensaje-chat');
+    if (!contenedor) return;
 
     const { data: mensajes, error } = await supabase
         .from('mensajes')
         .select('id, mensaje, respuesta, fecha_envio, rol, user_id, nick')
         .order('fecha_envio', { ascending: true });
-
-    const contenedor = document.getElementById('mensaje-chat');
-    // contenedor.innerHTML = ''; ----- eliminado
 
     if (error) {
         console.error("Error al cargar mensajes:", error);
@@ -2631,15 +2628,20 @@ async function cargarMensajes() {
     }
 
     if (!mensajes || mensajes.length === 0) {
-        contenedor.innerHTML = '<p style="text-align:center; color:gray;">Aún no hay mensajes 👀</p>';
+        if (!contenedor.dataset.vacio) {
+            contenedor.innerHTML = '<p style="text-align:center; color:gray;">Aún no hay mensajes 👀</p>';
+            contenedor.dataset.vacio = "true";
+        }
         return;
     }
 
-    chatYaCargado = true;
-
-    if (mensajes.length > 0) {
-        ultimoIdMensajeGrupal = mensajes[mensajes.length - 1].id || 0;
+    // 🚫 SI NO CAMBIÓ LA CANTIDAD → NO REDIBUJAR
+    if (contenedor.dataset.totalMensajes == mensajes.length) {
+        return;
     }
+
+    // ✅ SI CAMBIÓ → RECIÉN AHÍ REDIBUJA
+    contenedor.innerHTML = '';
 
     let lastDate = null;
 
@@ -2647,7 +2649,11 @@ async function cargarMensajes() {
 
         const fechaEnvio = new Date(mensaje.fecha_envio);
         const fechaStr = fechaEnvio.toLocaleDateString('es-CL');
-        const horaStr = fechaEnvio.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hour12: false });
+        const horaStr = fechaEnvio.toLocaleTimeString('es-CL', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        });
 
         if (lastDate !== fechaStr) {
             const separador = document.createElement('div');
@@ -2672,44 +2678,12 @@ async function cargarMensajes() {
 
         lastDate = fechaStr;
     });
-}
 
-// =========================
-// ENVIAR MENSAJE
-// =========================
-const btnEnviar = document.getElementById('enviarMensajeBtn');
+    // 🔑 Guardamos cantidad actual
+    contenedor.dataset.totalMensajes = mensajes.length;
 
-if (btnEnviar) {
-    btnEnviar.addEventListener('click', async function () {
-
-        const mensaje = document.getElementById('mensajeUsuario').value;
-        const user_id = localStorage.getItem("user_id");
-        const rol = localStorage.getItem("rol");
-        const nick = localStorage.getItem("nick");
-
-        if (!mensaje) {
-            alert("Ingresa un mensaje");
-            return;
-        }
-
-        const { error } = await supabase
-            .from('mensajes')
-            .insert([{
-                user_id,
-                mensaje,
-                estado: 'pendiente',
-                fecha_envio: new Date(),
-                rol,
-                nick
-            }]);
-
-        if (error) {
-            console.error("Error al enviar:", error);
-        } else {
-            document.getElementById('mensajeUsuario').value = '';
-            cargarMensajes();
-        }
-    });
+    // 🔽 Mantener scroll abajo
+    contenedor.scrollTop = contenedor.scrollHeight;
 }
 
 // *************************** CHAT PRIVADO FINAL ****************************
@@ -2858,24 +2832,7 @@ async function suscribirChatPrivado(idConversacion) {
             const user = await getUser();
             if (!user) return;
 
-            // await cargarMensajesPrivados(idConversacion); ----
-
-            const contenedor = document.getElementById('mensaje-chat');
-            if (!contenedor) return;
-
-            const mensaje = payload.new;
-
-            const div = document.createElement('div');
-            div.classList.add('mensaje');
-
-            div.innerHTML = `
-                <p><strong>${mensaje.rol === 'admin' ? 'Admin:' : mensaje.nick + ':'}</strong> ${mensaje.mensaje}</p>
-            `;
-
-            contenedor.appendChild(div);
-            contenedor.scrollTop = contenedor.scrollHeight;
-
-            ultimoIdMensajeGrupal = mensaje.id || ultimoIdMensajeGrupal;
+            await cargarMensajesPrivados(idConversacion);
 
             if (payload.new.user_id !== user.id) {
 

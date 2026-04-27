@@ -9,7 +9,7 @@ async function verificarTrialProPending() {
     const proDesde = window.userProfile.pro_desde;
     if (!proDesde) return;
 
-    const diasTrial = 7;
+    const diasTrial = 0; // <--------- ACA SE PONE LOS DIAS DE EVALUACION TRIAL (3 DIAS)
 
     const fechaInicio = new Date(proDesde);
     const hoy = new Date();

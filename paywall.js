@@ -53,7 +53,6 @@ function requireFeature(feature, featureName) {
 }
 
 window.PAYWALL = { show: showPaywall, require: requireFeature };
-
 console.log("💳 Sistema de paywall listo");
 
 
@@ -116,12 +115,12 @@ function abrirRegistroPro() {
 
 
 // ========================================
-// 💾 Guardar datos PRO
+// 💾 Guardar datos PRO (AHORA VIA RPC)
 // ========================================
 
 async function guardarDatosPro() {
 
-  const btn = document.getElementById("btnContinuarPago");
+  const btn = document.getElementById("guardarDatosPro");
   if (btn) btn.disabled = true;
 
   try {
@@ -150,28 +149,22 @@ async function guardarDatosPro() {
       return;
     }
 
-    console.log("🟡 Guardando datos PRO para:", user.id);
+    console.log("🟡 Guardando datos PRO vía RPC para:", user.id);
 
-    const { data: updateData, error: updateError } = await supabase
-      .from("profiles")
-      .update({
-        nombre_real: nombre,
-        rut: rut,
-        plan: "pro_pending",
-        pro_desde: new Date(),
-        pro_hasta: null
-      })
-      .eq("id", user.id)
-      .select();
+    // 🔥 CAMBIO CLAVE → RPC (evita error 403 RLS)
+    const { error: rpcError } = await supabase.rpc("activar_pro", {
+      p_nombre: nombre,
+      p_rut: rut
+    });
 
-    if (updateError) {
-      console.error("❌ Error update:", updateError);
-      alert("Error guardando datos.");
+    if (rpcError) {
+      console.error("❌ Error RPC:", rpcError);
+      alert("Error guardando datos en servidor.");
       if (btn) btn.disabled = false;
       return;
     }
 
-    console.log("🟢 Datos PRO guardados:", updateData);
+    console.log("🟢 Datos PRO guardados vía RPC");
 
     // 🔥 sincronizar frontend
     window.userPlan = "pro_pending";
@@ -193,7 +186,7 @@ async function guardarDatosPro() {
 
 
 // ========================================
-// 💳 CONTINUAR PAGO (nuevo)
+// 💳 CONTINUAR PAGO
 // ========================================
 
 function continuarPago() {
@@ -203,16 +196,14 @@ function continuarPago() {
 
 
 // ========================================
-// 🔌 BOTÓN INTELIGENTE (FIX REAL)
+// 🔌 BOTÓN INTELIGENTE
 // ========================================
 
 document.addEventListener("DOMContentLoaded", () => {
   const btn = document.getElementById("btnUpgradePro");
-
   if (!btn) return;
 
   btn.addEventListener("click", () => {
-
     console.log("🧪 Plan actual al hacer click:", window.userPlan);
 
     if (window.userPlan === "pro_pending") {
@@ -220,6 +211,5 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       abrirRegistroPro();
     }
-
   });
 });

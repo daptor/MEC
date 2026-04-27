@@ -3,6 +3,13 @@
 
 document.addEventListener("DOMContentLoaded", async () => {
   try {
+
+    // 🔒 SI HAY TRANSICIÓN DE PLAN, NO INTERFERIR
+    if (window.planTransition) {
+      console.log("⏳ Transición de plan activa, planGuard en espera...");
+      return;
+    }
+
     // 1️⃣ Obtener sesión actual
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
@@ -31,8 +38,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     // 🧠 3️⃣ CONTROL DE EXPIRACIÓN pro_pending usando pro_desde
+    // 🔒 solo si NO estamos en transición
 
-    if (profile.plan === "pro_pending" && profile.pro_desde) {
+    if (!window.planTransition &&
+        profile.plan === "pro_pending" &&
+        profile.pro_desde) {
 
       const ahora = Date.now();
       const inicio = new Date(profile.pro_desde).getTime();
@@ -45,22 +55,23 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         console.log("🔄 pro_pending expirado → volviendo a FREE");
 
-        // 🔒 CAMBIO CLAVE: usar RPC en vez de update directo
         const { error: updateError } = await supabase.rpc("expire_trial");
 
         if (updateError) {
           console.error("Error ejecutando RPC expire_trial:", updateError);
         } else {
-          // 🔥 sincronizar el objeto local
           profile.plan = "free";
           profile.pro_desde = null;
         }
       }
     }
 
-    // 4️⃣ Guardar globalmente (YA VALIDADO)
+    // 4️⃣ Guardar globalmente (YA ESTABILIZADO)
     window.userProfile = profile;
     window.userPlan = profile.plan || "free";
+
+    // 🔓 liberar transición si venía bloqueado por flujo externo
+    window.planTransition = false;
 
     console.log("✅ Perfil cargado:", profile.email);
     console.log("💰 Plan cargado:", window.userPlan);

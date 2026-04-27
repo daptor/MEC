@@ -1,7 +1,7 @@
 // paywall.js
 // PAYWALL UX V2 – flujo único sin fricción
 
-let PAYWALL_STATE = "blocked"; 
+let PAYWALL_STATE = "blocked";
 // blocked → form → success
 
 // =====================================================
@@ -118,10 +118,19 @@ async function guardarDatosPro() {
 
     console.log("🟢 Datos PRO guardados vía RPC");
 
+    // 🔒 BLOQUEO DE TRANSICIÓN (evita doble conteo FREE)
+    window.planTransition = true;
+
+    // estado inmediato
     window.userPlan = "pro_pending";
     document.dispatchEvent(new Event("planUpdated"));
 
     renderPasoExito();
+
+    // 🔓 liberar transición luego de estabilización
+    setTimeout(() => {
+      window.planTransition = false;
+    }, 1500);
 
   } catch (err) {
     console.error(err);
@@ -162,6 +171,8 @@ function showPaywall(featureName="esta función") {
 }
 
 function requireFeature(feature, featureName) {
+  if (window.planTransition) return true;
+
   if (!PERMISSIONS.canUse(feature)) {
     showPaywall(featureName);
     return false;

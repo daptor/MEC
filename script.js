@@ -2,51 +2,55 @@
 // ⏱️ VERIFICAR EXPIRACIÓN PRO_PENDING (TRIAL)
 // ========================================
 async function verificarTrialProPending() {
-  try {
-    if (!window.userProfile) return;
-    if (window.userPlan !== "pro_pending") return;
+    try {
+        if (!window.userProfile) return;
+        if (window.userPlan !== "pro_pending") return;
 
-    const proDesde = window.userProfile.pro_desde;
-    if (!proDesde) return;
+        const proDesde = window.userProfile.pro_desde;
+        if (!proDesde) return;
 
-    const diasTrial = 1; // <--------- ACA SE PONE LOS DIAS DE EVALUACION TRIAL (3 DIAS)
+        const diasTrial = 1;
 
-    const fechaInicio = new Date(proDesde);
-    const hoy = new Date();
+        const fechaInicio = new Date(proDesde);
+        const hoy = new Date();
 
-    const diferenciaMs = hoy - fechaInicio;
-    const diasPasados = Math.floor(diferenciaMs / (1000 * 60 * 60 * 24));
+        const diferenciaMs = hoy - fechaInicio;
+        const diasPasados = Math.floor(diferenciaMs / (1000 * 60 * 60 * 24));
 
-    console.log("⏱️ Días desde activación PRO_PENDING:", diasPasados);
+        console.log("⏱️ Días desde activación PRO_PENDING:", diasPasados);
 
-    if (diasPasados >= diasTrial) {
-      console.warn("⛔ Trial expirado → volviendo a FREE");
+        if (diasPasados >= diasTrial) {
+            console.warn("⛔ Trial expirado → volviendo a FREE");
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
 
-      const { error } = await supabase
-        .from("profiles")
-        .update({ plan: "free" })
-        .eq("id", user.id);
+            const { error } = await supabase
+                .from("profiles")
+                .update({ plan: "free" })
+                .eq("id", user.id);
 
-      if (error) {
-        console.error("❌ Error expirando trial:", error);
-        return;
-      }
+            if (error) {
+                console.error("❌ Error expirando trial:", error);
+                return;
+            }
 
-      alert("Tu acceso PRO temporal ha finalizado 💎");
+            window.userPlan = "free";
+            window.userProfile.plan = "free";
 
-      location.reload();
+            alert("Tu acceso PRO temporal ha finalizado 💎");
+            location.reload();
+        }
+
+    } catch (err) {
+        console.error("🔥 Error verificando trial:", err);
     }
-
-  } catch (err) {
-    console.error("🔥 Error verificando trial:", err);
-  }
 }
 
 
-// 🔐 ESPERAR PLAN USUARIO (SaaS CORE - FIX VISITAS)
+// ========================================
+// 🔐 ESPERAR PLAN USUARIO (FIX ORDEN SAAS)
+// ========================================
 function esperarPlanUsuario() {
     return new Promise(resolve => {
 
@@ -55,17 +59,22 @@ function esperarPlanUsuario() {
         const intervalo = setInterval(async () => {
 
             if (window.userPlan) {
+
                 clearInterval(intervalo);
 
                 console.log("🎯 Plan listo para usar:", window.userPlan);
+
                 actualizarUIsegunPlan();
 
-                await verificarTrialProPending();
+                // 🔒 IMPORTANTE: evitar doble ejecución en transición
+                if (!window.planTransition) {
+                    await verificarTrialProPending();
+                }
 
-                // 📈 NUEVO: registrar visita global al iniciar app
                 await registrarVisitaGlobalUnaVez();
 
                 resolve(window.userPlan);
+                return;
             }
 
             intentos++;
@@ -73,13 +82,12 @@ function esperarPlanUsuario() {
             if (intentos > 50) {
                 clearInterval(intervalo);
 
-                console.warn("⚠ No se pudo cargar el plan, usando FREE por defecto");
+                console.warn("⚠ Plan fallback FREE");
+
                 window.userPlan = "free";
+
                 actualizarUIsegunPlan();
 
-                await verificarTrialProPending();
-
-                // 📈 NUEVO: registrar visita incluso si cae a FREE por defecto
                 await registrarVisitaGlobalUnaVez();
 
                 resolve("free");
@@ -89,7 +97,10 @@ function esperarPlanUsuario() {
     });
 }
 
-// 📈 VISITAS GLOBALES — se ejecuta solo 1 vez por carga
+
+// =========================================
+// 📈 VISITAS GLOBALES (1 sola ejecución)
+// =========================================
 let visitaRegistrada = false;
 
 async function registrarVisitaGlobalUnaVez() {
@@ -101,15 +112,15 @@ async function registrarVisitaGlobalUnaVez() {
         await mostrarContadorVisitas();
         console.log("📈 Visita global registrada correctamente");
     } catch (err) {
-        console.warn("⚠ No se pudo registrar visita:", err);
+        console.warn("⚠ Error visitas:", err);
     }
 }
 
+
 // =========================================
-// 🧮 FREEMIUM — LÍMITE TOTAL DE ANÁLISIS
+// 🧮 ANÁLISIS FREEMIUM (CONTROL ÚNICO)
 // =========================================
 
-// Verifica si aún puede usar análisis FREE
 async function puedeUsarAnalisisTotal() {
 
     const user = (await supabase.auth.getUser()).data.user;
@@ -122,7 +133,7 @@ async function puedeUsarAnalisisTotal() {
         .single();
 
     if (error) {
-        console.error("Error obteniendo usos:", error);
+        console.error("Error usos:", error);
         return false;
     }
 
@@ -133,43 +144,42 @@ async function puedeUsarAnalisisTotal() {
     return usados < 5;
 }
 
+
+// =========================================
+// ➕ SUMAR ANÁLISIS (SIN DOBLE CONTEO)
+// =========================================
+
 async function sumarUsoAnalisisTotal() {
 
     try {
         const { error } = await supabase.rpc("incrementar_analisis");
 
-        if (error) {
-            throw error;
-        }
+        if (error) throw error;
 
         console.log("➕ Uso registrado vía backend (RPC)");
 
-        // 🔄 refrescar contador en pantalla
         await actualizarContadorAnalisisUI();
 
     } catch (error) {
         console.warn("⚠ Límite alcanzado o error:", error.message);
-
-        // 🚫 aquí puedes luego activar paywall si quieres
     }
 }
 
 
-// ACTUALIZA DE FREE A PRO EL CONTADOR -------
-// ACTUALIZA CONTADOR SEGÚN PLAN (FIX UX PRO)
+// =========================================
+// 🧮 UI CONTADOR (SIN DESINCRONIZACIÓN)
+// =========================================
+
 async function actualizarContadorAnalisisUI() {
 
     const el = document.getElementById("contador-analisis");
     if (!el) return;
 
-    // 💎 USUARIO PRO
     if (window.userPlan === "pro") {
-        console.log("💎 Usuario PRO → mostrando estado ilimitado");
-        el.textContent = "💎 Plan PRO activo | Análisis ilimitados";
+        el.textContent = "💎 Plan PRO activo | Ilimitado";
         return;
     }
 
-    // 🆓 USUARIO FREE
     const user = (await supabase.auth.getUser()).data.user;
     if (!user) return;
 
@@ -180,7 +190,7 @@ async function actualizarContadorAnalisisUI() {
         .single();
 
     if (error) {
-        console.error("Error obteniendo contador:", error);
+        console.error(error);
         return;
     }
 

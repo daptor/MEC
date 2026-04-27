@@ -1,47 +1,164 @@
 // paywall.js
-// Sistema de bloqueo suave + flujo real PRO (pre-pago)
+// PAYWALL UX V2 – flujo único sin fricción
 
-// ========================================
-// ⭐ PAYWALL BASE (no rompe funciones)
-// ========================================
+let PAYWALL_STATE = "blocked"; 
+// blocked → form → success
 
-function showPaywall(featureName = "esta función") {
+// =====================================================
+// 🧩 CREAR MODAL BASE
+// =====================================================
+
+function crearModalBase() {
   if (document.getElementById("paywall-overlay")) return;
 
   const overlay = document.createElement("div");
   overlay.id = "paywall-overlay";
-  overlay.style.position = "fixed";
-  overlay.style.top = "0";
-  overlay.style.left = "0";
-  overlay.style.width = "100%";
-  overlay.style.height = "100%";
-  overlay.style.background = "rgba(0,0,0,0.6)";
-  overlay.style.display = "flex";
-  overlay.style.alignItems = "center";
-  overlay.style.justifyContent = "center";
-  overlay.style.zIndex = "9999";
+  overlay.style = `
+    position:fixed; inset:0; background:rgba(0,0,0,.6);
+    display:flex; align-items:center; justify-content:center;
+    z-index:9999;
+  `;
 
   overlay.innerHTML = `
-    <div style="
+    <div id="paywall-box" style="
       background:#fff;
       padding:30px;
-      border-radius:12px;
-      max-width:350px;
-      text-align:center;
+      border-radius:14px;
+      width:90%;
+      max-width:420px;
       font-family:sans-serif;
+      text-align:center;
     ">
-      <h2>⭐ Función Pro</h2>
-      <p>${featureName} está disponible en el plan Pro.</p>
-      <button id="closePaywall"
-        style="margin-top:15px;padding:10px 20px;border:none;
-        background:#4CAF50;color:#fff;border-radius:6px;cursor:pointer">
-        Entendido
-      </button>
+      <div id="paywall-content"></div>
     </div>
   `;
 
   document.body.appendChild(overlay);
-  document.getElementById("closePaywall").onclick = () => overlay.remove();
+}
+
+// =====================================================
+// 🟡 PASO 1 — BLOQUEO + CTA
+// =====================================================
+
+function renderPasoBloqueo(featureName="esta función") {
+  PAYWALL_STATE = "blocked";
+  crearModalBase();
+
+  document.getElementById("paywall-content").innerHTML = `
+    <h2>⭐ Desbloquea el análisis completo</h2>
+    <p>Has alcanzado el límite gratuito.</p>
+    <p><b>Activa PRO para continuar usando MEC sin límites.</b></p>
+
+    <button id="btnIrRegistro"
+      style="margin-top:18px;padding:12px 18px;
+      background:#4CAF50;color:white;border:none;border-radius:8px;width:100%">
+      Activar PRO ahora
+    </button>
+  `;
+
+  document.getElementById("btnIrRegistro").onclick = renderPasoFormulario;
+}
+
+// =====================================================
+// 🟠 PASO 2 — FORMULARIO
+// =====================================================
+
+function renderPasoFormulario() {
+  PAYWALL_STATE = "form";
+
+  document.getElementById("paywall-content").innerHTML = `
+    <h2>💎 Activar Plan PRO</h2>
+    <p>Completa tus datos para continuar.</p>
+
+    <input id="proNombre" placeholder="Nombre completo"
+      style="width:100%;padding:10px;margin-top:10px"/>
+
+    <input id="proRut" placeholder="RUT (ej: 12.345.678-9)"
+      style="width:100%;padding:10px;margin-top:10px"/>
+
+    <button id="btnGuardarPro"
+      style="margin-top:15px;padding:12px;width:100%;
+      background:#4CAF50;color:#fff;border:none;border-radius:8px">
+      Continuar
+    </button>
+  `;
+
+  document.getElementById("btnGuardarPro").onclick = guardarDatosPro;
+}
+
+// =====================================================
+// 🟢 PASO 3 — GUARDAR DATOS VIA RPC
+// =====================================================
+
+async function guardarDatosPro() {
+  try {
+    const { data } = await supabase.auth.getUser();
+    const user = data.user;
+
+    const nombre = document.getElementById("proNombre").value.trim();
+    const rut = document.getElementById("proRut").value.trim();
+
+    if (!nombre || !rut) {
+      alert("Completa los datos");
+      return;
+    }
+
+    console.log("🟡 Guardando datos PRO vía RPC para:", user.id);
+
+    const { error } = await supabase.rpc("activar_pro", {
+      p_nombre: nombre,
+      p_rut: rut
+    });
+
+    if (error) {
+      console.error(error);
+      alert("Error guardando datos");
+      return;
+    }
+
+    console.log("🟢 Datos PRO guardados vía RPC");
+
+    window.userPlan = "pro_pending";
+    document.dispatchEvent(new Event("planUpdated"));
+
+    renderPasoExito();
+
+  } catch (err) {
+    console.error(err);
+    alert("Error inesperado");
+  }
+}
+
+// =====================================================
+// 🎉 PASO FINAL — CONFIRMACIÓN
+// =====================================================
+
+function renderPasoExito() {
+  PAYWALL_STATE = "success";
+
+  document.getElementById("paywall-content").innerHTML = `
+    <h2>✅ PRO activado</h2>
+    <p><b>Tu acceso PRO temporal está activo.</b></p>
+    <p>Puedes seguir usando MEC sin límites.</p>
+
+    <button id="cerrarPaywall"
+      style="margin-top:18px;padding:12px 18px;
+      background:#4CAF50;color:white;border:none;border-radius:8px;width:100%">
+      Continuar usando MEC
+    </button>
+  `;
+
+  document.getElementById("cerrarPaywall").onclick = () => {
+    document.getElementById("paywall-overlay").remove();
+  };
+}
+
+// =====================================================
+// 🔐 FUNCIÓN GLOBAL PAYWALL
+// =====================================================
+
+function showPaywall(featureName="esta función") {
+  renderPasoBloqueo(featureName);
 }
 
 function requireFeature(feature, featureName) {
@@ -53,163 +170,5 @@ function requireFeature(feature, featureName) {
 }
 
 window.PAYWALL = { show: showPaywall, require: requireFeature };
-console.log("💳 Sistema de paywall listo");
 
-
-// ========================================
-// 💎 NUEVO FLUJO ACTIVAR PRO
-// ========================================
-
-function abrirRegistroPro() {
-  if (document.getElementById("modal-pro")) return;
-
-  const overlay = document.createElement("div");
-  overlay.id = "modal-pro";
-  overlay.style.position = "fixed";
-  overlay.style.top = "0";
-  overlay.style.left = "0";
-  overlay.style.width = "100%";
-  overlay.style.height = "100%";
-  overlay.style.background = "rgba(0,0,0,0.6)";
-  overlay.style.display = "flex";
-  overlay.style.alignItems = "center";
-  overlay.style.justifyContent = "center";
-  overlay.style.zIndex = "9999";
-
-  overlay.innerHTML = `
-    <div style="
-      background:#fff;
-      padding:30px;
-      border-radius:12px;
-      max-width:420px;
-      width:90%;
-      font-family:sans-serif;
-    ">
-      <h2>💎 Activar Plan PRO</h2>
-      <p>Completa tus datos para continuar con la suscripción.</p>
-
-      <input id="proNombre" placeholder="Nombre completo"
-        style="width:100%;padding:10px;margin-top:10px"/>
-
-      <input id="proRut" placeholder="RUT (ej: 12.345.678-9)"
-        style="width:100%;padding:10px;margin-top:10px"/>
-
-      <button id="guardarDatosPro"
-        style="margin-top:15px;padding:12px;width:100%;
-        background:#4CAF50;color:#fff;border:none;border-radius:6px">
-        Continuar
-      </button>
-
-      <button id="cerrarModalPro"
-        style="margin-top:10px;padding:8px;width:100%">
-        Cancelar
-      </button>
-    </div>
-  `;
-
-  document.body.appendChild(overlay);
-
-  document.getElementById("cerrarModalPro").onclick = () => overlay.remove();
-  document.getElementById("guardarDatosPro").onclick = guardarDatosPro;
-}
-
-
-// ========================================
-// 💾 Guardar datos PRO (AHORA VIA RPC)
-// ========================================
-
-async function guardarDatosPro() {
-
-  const btn = document.getElementById("guardarDatosPro");
-  if (btn) btn.disabled = true;
-
-  try {
-    const { data, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !data?.user) {
-      alert("Debes iniciar sesión nuevamente.");
-      location.reload();
-      return;
-    }
-
-    const user = data.user;
-
-    const nombre = document.getElementById("proNombre").value.trim();
-    const rut = document.getElementById("proRut").value.trim();
-
-    if (!nombre || !rut) {
-      alert("Completa todos los campos");
-      if (btn) btn.disabled = false;
-      return;
-    }
-
-    if (rut.length < 8) {
-      alert("RUT inválido");
-      if (btn) btn.disabled = false;
-      return;
-    }
-
-    console.log("🟡 Guardando datos PRO vía RPC para:", user.id);
-
-    // 🔥 CAMBIO CLAVE → RPC (evita error 403 RLS)
-    const { error: rpcError } = await supabase.rpc("activar_pro", {
-      p_nombre: nombre,
-      p_rut: rut
-    });
-
-    if (rpcError) {
-      console.error("❌ Error RPC:", rpcError);
-      alert("Error guardando datos en servidor.");
-      if (btn) btn.disabled = false;
-      return;
-    }
-
-    console.log("🟢 Datos PRO guardados vía RPC");
-
-    // 🔥 sincronizar frontend
-    window.userPlan = "pro_pending";
-
-    const modal = document.getElementById("modal-pro");
-    if (modal) modal.remove();
-
-    document.dispatchEvent(new Event("planUpdated"));
-
-    alert("Datos guardados ✅\nAhora continúa al pago.");
-
-  } catch (err) {
-    console.error("🔥 Error inesperado:", err);
-    alert("Error inesperado.");
-  } finally {
-    if (btn) btn.disabled = false;
-  }
-}
-
-
-// ========================================
-// 💳 CONTINUAR PAGO
-// ========================================
-
-function continuarPago() {
-  console.log("💳 Usuario retomando pago...");
-  alert("Tienes un pago pendiente.\nAhora debes completar el pago.");
-}
-
-
-// ========================================
-// 🔌 BOTÓN INTELIGENTE
-// ========================================
-
-document.addEventListener("DOMContentLoaded", () => {
-  const btn = document.getElementById("btnUpgradePro");
-  if (!btn) return;
-
-  btn.addEventListener("click", () => {
-    console.log("🧪 Plan actual al hacer click:", window.userPlan);
-
-    if (window.userPlan === "pro_pending") {
-      continuarPago();
-    } else {
-      abrirRegistroPro();
-    }
-  });
-});
+console.log("💳 Paywall UX V2 cargado");

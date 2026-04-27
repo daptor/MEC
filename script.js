@@ -1,3 +1,51 @@
+// ========================================
+// ⏱️ VERIFICAR EXPIRACIÓN PRO_PENDING (TRIAL)
+// ========================================
+async function verificarTrialProPending() {
+  try {
+    if (!window.userProfile) return;
+    if (window.userPlan !== "pro_pending") return;
+
+    const proDesde = window.userProfile.pro_desde;
+    if (!proDesde) return;
+
+    const diasTrial = 7;
+
+    const fechaInicio = new Date(proDesde);
+    const hoy = new Date();
+
+    const diferenciaMs = hoy - fechaInicio;
+    const diasPasados = Math.floor(diferenciaMs / (1000 * 60 * 60 * 24));
+
+    console.log("⏱️ Días desde activación PRO_PENDING:", diasPasados);
+
+    if (diasPasados >= diasTrial) {
+      console.warn("⛔ Trial expirado → volviendo a FREE");
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({ plan: "free" })
+        .eq("id", user.id);
+
+      if (error) {
+        console.error("❌ Error expirando trial:", error);
+        return;
+      }
+
+      alert("Tu acceso PRO temporal ha finalizado 💎");
+
+      location.reload();
+    }
+
+  } catch (err) {
+    console.error("🔥 Error verificando trial:", err);
+  }
+}
+
+
 // 🔐 ESPERAR PLAN USUARIO (SaaS CORE - FIX VISITAS)
 function esperarPlanUsuario() {
     return new Promise(resolve => {
@@ -11,6 +59,8 @@ function esperarPlanUsuario() {
 
                 console.log("🎯 Plan listo para usar:", window.userPlan);
                 actualizarUIsegunPlan();
+
+                await verificarTrialProPending();
 
                 // 📈 NUEVO: registrar visita global al iniciar app
                 await registrarVisitaGlobalUnaVez();
@@ -26,6 +76,8 @@ function esperarPlanUsuario() {
                 console.warn("⚠ No se pudo cargar el plan, usando FREE por defecto");
                 window.userPlan = "free";
                 actualizarUIsegunPlan();
+
+                await verificarTrialProPending();
 
                 // 📈 NUEVO: registrar visita incluso si cae a FREE por defecto
                 await registrarVisitaGlobalUnaVez();
@@ -3275,3 +3327,4 @@ function actualizarUIsegunPlan() {
 
   window.bloquearContadorFree = false;
 }
+

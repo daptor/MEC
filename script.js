@@ -3164,18 +3164,48 @@ function mostrarResultadoFreemium(htmlResultado) {
 }
 
 // ========================================
-// 🔄 CUANDO EL USUARIO SE VUELVE PRO
+// 🔄 CUANDO EL PLAN CAMBIA (upgrade / pago)
 // ========================================
+document.addEventListener("planUpdated", async () => {
+  console.log("🔄 Plan actualizado → recargando perfil completo...");
 
-document.addEventListener("planUpdated", () => {
-  console.log("⏳ Usuario en proceso de pago (pro_pending)");
-  actualizarUIsegunPlan();
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      console.warn("⚠ No hay usuario logeado");
+      return;
+    }
+
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single();
+
+    if (error || !profile) {
+      console.error("❌ Error recargando perfil:", error);
+      return;
+    }
+
+    // 🔥 ACTUALIZAR VARIABLES GLOBALES
+    window.userProfile = profile;
+    window.userPlan = profile.plan || "free";
+
+    console.log("💰 Nuevo plan:", window.userPlan);
+
+    // 🔄 REFRESCAR UI COMPLETA
+    actualizarUIsegunPlan();
+
+  } catch (err) {
+    console.error("🔥 Error en planUpdated:", err);
+  }
 });
 
-// ========================================
-// 🎨 UI REACTIVA AL PLAN (FREE vs PRO)
-// ========================================
 
+// ========================================
+// 🎨 UI REACTIVA AL PLAN (FREE / PRO / PRO_PENDING)
+// ========================================
 function actualizarUIsegunPlan() {
   const plan = window.userPlan || "free";
 
@@ -3183,81 +3213,65 @@ function actualizarUIsegunPlan() {
 
   const btnPro = document.getElementById("btnUpgradePro");
 
-  // 💎 =========================
-  // USUARIO PRO
-  // 💎 =========================
+  // 🔒 BOTONES DEL MENÚ QUE SON SOLO PRO
+  const botonesPro = [
+    document.getElementById("btnAnalisisCompleto"),
+    document.getElementById("btnVacaciones"),
+    document.getElementById("btnFiniquito"),
+    document.getElementById("btnHorasExtra"),
+    document.getElementById("btnArchivoSindical")
+  ];
+
+  // ========================================
+  // 💎 USUARIO PRO (pagado)
+  // ========================================
   if (plan === "pro") {
     console.log("💎 UI en modo PRO");
 
     if (btnPro) btnPro.style.display = "none";
 
-    window.bloquearContadorFree = true;
+    // Mostrar todo
+    botonesPro.forEach(btn => {
+      if (btn) btn.style.display = "block";
+    });
 
+    window.bloquearContadorFree = true;
     return;
   }
 
-  // ⏳ =========================
-  // USUARIO PRO_PENDING
-  // ⏳ =========================
+  // ========================================
+  // ⏳ USUARIO PRO_PENDING (solicitó PRO)
+  // 👉 funciones PRO desaparecen del menú
+  // ========================================
   if (plan === "pro_pending") {
     console.log("⏳ UI en modo PRO_PENDING");
 
-    window.bloquearContadorFree = false;
+    // Ocultar botón upgrade (ya lo pidió)
+    if (btnPro) btnPro.style.display = "none";
 
-    if (btnPro) {
-      btnPro.style.display = "block";
-      btnPro.innerText = "Continuar pago"; // ⭐ cambio UX
-    }
+    // 🔥 OCULTAR FUNCIONES PRO DEL MENÚ
+    botonesPro.forEach(btn => {
+      if (btn) btn.style.display = "none";
+    });
 
+    window.bloquearContadorFree = true;
     return;
   }
 
-  // 🆓 =========================
-  // USUARIO FREE
-  // 🆓 =========================
+  // ========================================
+  // 🆓 USUARIO FREE
+  // ========================================
   console.log("🆓 UI en modo FREE");
-
-  window.bloquearContadorFree = false;
 
   if (btnPro) {
     btnPro.style.display = "block";
-    btnPro.innerText = "Activar PRO"; // asegurar texto correcto
+    btnPro.innerText = "Activar PRO";
   }
+
+  // Mostrar funciones PRO (pero bloqueadas por paywall)
+  botonesPro.forEach(btn => {
+    if (btn) btn.style.display = "block";
+  });
+
+  window.bloquearContadorFree = false;
 }
-
-// 🔄 ACTUALIZAR UI CUANDO CAMBIA PLAN (FIX PRO COMPLETO)
-document.addEventListener("planUpdated", async () => {
-    console.log("🔄 Plan actualizado → recargando perfil completo...");
-
-    try {
-        const { data: { user } } = await supabase.auth.getUser();
-
-        if (!user) {
-            console.warn("⚠ No hay usuario");
-            return;
-        }
-
-        const { data: profile, error } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", user.id)
-            .single();
-
-        if (error || !profile) {
-            console.error("❌ Error recargando perfil:", error);
-            return;
-        }
-
-        // 🔥 ACTUALIZAR VARIABLES GLOBALES
-        window.userProfile = profile;
-        window.userPlan = profile.plan || "free";
-
-        console.log("💰 Nuevo plan:", window.userPlan);
-
-        // 🔄 REFRESCAR UI COMPLETA
-        actualizarUIsegunPlan();
-
-    } catch (err) {
-        console.error("🔥 Error en planUpdated:", err);
-    }
-});

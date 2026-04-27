@@ -45,19 +45,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         console.log("🔄 pro_pending expirado → volviendo a FREE");
 
-        const { error: updateError } = await supabase
-          .from("profiles")
-          .update({
-            plan: "free",
-            pro_desde: null
-          })
-          .eq("id", profile.id);
+        // 🔒 CAMBIO CLAVE: usar RPC en vez de update directo
+        const { error: updateError } = await supabase.rpc("expire_trial");
 
         if (updateError) {
-          console.error("Error actualizando plan:", updateError);
+          console.error("Error ejecutando RPC expire_trial:", updateError);
         } else {
           // 🔥 sincronizar el objeto local
           profile.plan = "free";
+          profile.pro_desde = null;
         }
       }
     }

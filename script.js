@@ -81,31 +81,25 @@ async function puedeUsarAnalisisTotal() {
     return usados < 5;
 }
 
-// Suma 1 uso de análisis FREE
 async function sumarUsoAnalisisTotal() {
 
-    const user = (await supabase.auth.getUser()).data.user;
-    if (!user) return;
+    try {
+        const { error } = await supabase.rpc("incrementar_analisis");
 
-    const { data, error } = await supabase
-        .from("profiles")
-        .select("analisis_usados")
-        .eq("id", user.id)
-        .single();
+        if (error) {
+            throw error;
+        }
 
-    if (error) {
-        console.error("Error obteniendo usos:", error);
-        return;
+        console.log("➕ Uso registrado vía backend (RPC)");
+
+        // 🔄 refrescar contador en pantalla
+        await actualizarContadorAnalisisUI();
+
+    } catch (error) {
+        console.warn("⚠ Límite alcanzado o error:", error.message);
+
+        // 🚫 aquí puedes luego activar paywall si quieres
     }
-
-    const nuevosUsos = (data.analisis_usados || 0) + 1;
-
-    await supabase
-        .from("profiles")
-        .update({ analisis_usados: nuevosUsos })
-        .eq("id", user.id);
-
-    console.log("➕ Nuevo uso registrado. Total:", nuevosUsos);
 }
 
 

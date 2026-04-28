@@ -206,7 +206,7 @@ async function personalizarBotonLogout() {
     if (!user) return;
 
     // Texto elegante del botón
-    btn.textContent = `Cerrar sesión → ${user.email}`;
+    btn.textContent = `Cerrar sesión : ${user.email}`;
 
     btn.onclick = async () => {
         await supabase.auth.signOut();

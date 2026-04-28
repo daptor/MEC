@@ -25,7 +25,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const user = session.user;
 
-    // 2️⃣ Obtener perfil desde Supabase
+    // ⏰ Verificar expiración automática de PRO_PENDING (24h) en Supabase
+    try {
+      await supabase.rpc("verificar_expiracion_pro_pending");
+      console.log("⏰ Verificación de expiración PRO_PENDING ejecutada");
+    } catch (e) {
+      console.warn("No se pudo verificar expiración PRO_PENDING", e);
+    }
+
+    // 2️⃣ Obtener perfil desde Supabase (YA ACTUALIZADO)
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("*")
@@ -37,36 +45,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    // 🧠 3️⃣ CONTROL DE EXPIRACIÓN pro_pending usando pro_desde
-    // 🔒 solo si NO estamos en transición
-
-    if (!window.planTransition &&
-        profile.plan === "pro_pending" &&
-        profile.pro_desde) {
-
-      const ahora = Date.now();
-      const inicio = new Date(profile.pro_desde).getTime();
-
-      const minutos = (ahora - inicio) / 1000 / 60;
-
-      console.log(`⏳ pro_pending activo: ${minutos.toFixed(1)} min`);
-
-      if (minutos > 15) {
-
-        console.log("🔄 pro_pending expirado → volviendo a FREE");
-
-        const { error: updateError } = await supabase.rpc("expire_trial");
-
-        if (updateError) {
-          console.error("Error ejecutando RPC expire_trial:", updateError);
-        } else {
-          profile.plan = "free";
-          profile.pro_desde = null;
-        }
-      }
-    }
-
-    // 4️⃣ Guardar globalmente (YA ESTABILIZADO)
+    // 3️⃣ Guardar globalmente
     window.userProfile = profile;
     window.userPlan = profile.plan || "free";
 

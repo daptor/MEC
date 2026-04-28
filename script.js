@@ -1,54 +1,4 @@
 // ========================================
-// ⏱️ VERIFICAR EXPIRACIÓN PRO_PENDING (TRIAL)
-// ========================================
-async function verificarTrialProPending() {
-    try {
-        if (!window.userProfile) return;
-        if (window.userPlan !== "pro_pending") return;
-
-        const proDesde = window.userProfile.pro_desde;
-        if (!proDesde) return;
-
-        const diasTrial = 1;
-
-        const fechaInicio = new Date(proDesde);
-        const hoy = new Date();
-
-        const diferenciaMs = hoy - fechaInicio;
-        const diasPasados = Math.floor(diferenciaMs / (1000 * 60 * 60 * 24));
-
-        console.log("⏱️ Días desde activación PRO_PENDING:", diasPasados);
-
-        if (diasPasados >= diasTrial) {
-            console.warn("⛔ Trial expirado → volviendo a FREE");
-
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-
-            const { error } = await supabase
-                .from("profiles")
-                .update({ plan: "free" })
-                .eq("id", user.id);
-
-            if (error) {
-                console.error("❌ Error expirando trial:", error);
-                return;
-            }
-
-            window.userPlan = "free";
-            window.userProfile.plan = "free";
-
-            alert("Tu acceso PRO temporal ha finalizado 💎");
-            location.reload();
-        }
-
-    } catch (err) {
-        console.error("🔥 Error verificando trial:", err);
-    }
-}
-
-
-// ========================================
 // 🔐 ESPERAR PLAN USUARIO (FIX ORDEN SAAS)
 // ========================================
 function esperarPlanUsuario() {
@@ -61,16 +11,9 @@ function esperarPlanUsuario() {
             if (window.userPlan) {
 
                 clearInterval(intervalo);
-
                 console.log("🎯 Plan listo para usar:", window.userPlan);
 
                 actualizarUIsegunPlan();
-
-                // 🔒 IMPORTANTE: evitar doble ejecución en transición
-                if (!window.planTransition) {
-                    await verificarTrialProPending();
-                }
-
                 await registrarVisitaGlobalUnaVez();
 
                 resolve(window.userPlan);
@@ -85,9 +28,7 @@ function esperarPlanUsuario() {
                 console.warn("⚠ Plan fallback FREE");
 
                 window.userPlan = "free";
-
                 actualizarUIsegunPlan();
-
                 await registrarVisitaGlobalUnaVez();
 
                 resolve("free");
@@ -120,7 +61,6 @@ async function registrarVisitaGlobalUnaVez() {
 // =========================================
 // 🧮 ANÁLISIS FREEMIUM (CONTROL ÚNICO)
 // =========================================
-
 async function puedeUsarAnalisisTotal() {
 
     const user = (await supabase.auth.getUser()).data.user;
@@ -138,7 +78,6 @@ async function puedeUsarAnalisisTotal() {
     }
 
     const usados = data.analisis_usados || 0;
-
     console.log("📊 Análisis usados:", usados, "/ 5");
 
     return usados < 5;
@@ -146,18 +85,15 @@ async function puedeUsarAnalisisTotal() {
 
 
 // =========================================
-// ➕ SUMAR ANÁLISIS (SIN DOBLE CONTEO)
+// ➕ SUMAR ANÁLISIS (RPC BACKEND)
 // =========================================
-
 async function sumarUsoAnalisisTotal() {
 
     try {
         const { error } = await supabase.rpc("incrementar_analisis");
-
         if (error) throw error;
 
         console.log("➕ Uso registrado vía backend (RPC)");
-
         await actualizarContadorAnalisisUI();
 
     } catch (error) {
@@ -167,9 +103,8 @@ async function sumarUsoAnalisisTotal() {
 
 
 // =========================================
-// 🧮 UI CONTADOR (SIN DESINCRONIZACIÓN)
+// 🧮 UI CONTADOR ANÁLISIS
 // =========================================
-
 async function actualizarContadorAnalisisUI() {
 
     const el = document.getElementById("contador-analisis");
@@ -197,46 +132,39 @@ async function actualizarContadorAnalisisUI() {
     el.textContent = `${data.analisis_usados || 0} de 5`;
 }
 
-// ***************** CONTADOR GLOBAL SUPABASE (VERSIÓN FINAL REAL CON RPC) *****************
 
+// =========================================
+// 📈 CONTADOR GLOBAL SUPABASE
+// =========================================
 async function incrementarVisitas() {
 
     const { data: { session } } = await supabase.auth.getSession();
-
     const rol = localStorage.getItem("rol");
 
-    const esUsuarioCodigo = rol === "usuario";
-    const esAdminCodigo = rol === "admin";
-
-    if (esAdminCodigo) return;
+    if (rol === "admin") return;
 
     const adminEmail = "christorfu@gmail.com";
-
     if (session?.user?.email === adminEmail) return;
 
-    if (!session && !esUsuarioCodigo) return;
+    if (!session && rol !== "usuario") return;
 
     try {
         await registrarUso("visita");
         console.log("✅ Visita incrementada en Supabase");
     } catch (error) {
-        console.error("❌ Error al incrementar visitas (RPC):", error);
+        console.error("❌ Error al incrementar visitas:", error);
         return;
     }
 
     await mostrarContadorVisitas();
 }
 
-// 🔵 Mostrar contador al cargar app (FIX PRO + UI)
+
+// 🔵 Mostrar contador visitas
 async function mostrarContadorVisitas() {
 
     const el = document.getElementById("contador");
     if (!el) return;
-
-    // 💎 PRO → ya no bloquea, solo informa
-    if (window.userPlan === "pro") {
-        console.log("💎 Usuario PRO → contador informativo activo");
-    }
 
     const { data, error } = await supabase
         .from('contador')
@@ -245,35 +173,11 @@ async function mostrarContadorVisitas() {
         .single();
 
     if (error) {
-        console.error("Error al obtener el contador:", error);
+        console.error("Error al obtener contador:", error);
         return;
     }
 
     el.textContent = data.visitas;
-}
-
-
-// 🔴 Reset contador (solo admin)
-async function resetearContadorVisitas() {
-
-    if (localStorage.getItem("rol") !== "admin") return;
-
-    const { data, error } = await supabase
-        .from('contador')
-        .update({ visitas: 0 })
-        .eq('id', 1)
-        .select()
-        .single();
-
-    if (error) {
-        console.error("Error al resetear el contador:", error);
-        return;
-    }
-
-    const el = document.getElementById("contador");
-    if (el) el.textContent = data.visitas;
-
-    console.log("🧹 Contador reseteado por admin");
 }
 
 
@@ -288,36 +192,27 @@ function actualizarFechaHora() {
 }
 
 
-// 🚀 INICIALIZACIÓN (FIX ORDEN PLAN → UI)
+// 🚀 INICIALIZACIÓN APP
 document.addEventListener("DOMContentLoaded", async () => {
 
     actualizarFechaHora();
     setInterval(actualizarFechaHora, 1000);
 
-    // 🧠 1. ESPERAR PLAN ANTES DE CUALQUIER UI
     await esperarPlanUsuario();
-
-    // 📊 2. AHORA SÍ MOSTRAR DATOS CORRECTOS
     await mostrarContadorVisitas();
     await actualizarContadorAnalisisUI();
-   
-    const resetBoton = document.getElementById("resetContador");
-    if (resetBoton) {
-        resetBoton.addEventListener("click", resetearContadorVisitas);
-    }
 
 });
 
 
-// 🔐 Obtener claves desde Vercel
+// =========================================
+// 🔑 LOGIN POR CÓDIGO (SE MANTIENE)
+// =========================================
 async function obtenerClaves() {
     const response = await fetch("/api/keys");
-    const data = await response.json();
-    return data;
+    return await response.json();
 }
 
-
-// 🔑 LOGIN POR CÓDIGO (SE MANTIENE IGUAL)
 const btnIngresar = document.getElementById("ingresarBtn");
 
 if (btnIngresar) {
@@ -326,57 +221,37 @@ if (btnIngresar) {
         const codigoIngresado = document.getElementById("codigoAcceso").value;
         const claves = await obtenerClaves();
 
-        // 👑 ADMIN (NO suma visitas)
         if (codigoIngresado === claves.ADMIN_KEY) {
-
             localStorage.setItem("rol", "admin");
             document.getElementById("login-container").style.display = "none";
             document.getElementById("menu-principal").style.display = "block";
             document.body.classList.add('admin');
-
             await mostrarContadorVisitas();
-
         }
-        // 👤 USUARIO NORMAL (SÍ suma visitas)
         else if (codigoIngresado === claves.CODIGO_ACCESO) {
-
             localStorage.setItem("rol", "usuario");
             document.getElementById("login-container").style.display = "none";
             document.getElementById("menu-principal").style.display = "block";
-
-            // 🔥 SIGUE SUMANDO AQUÍ TAMBIÉN
             await incrementarVisitas();
-
         }
         else {
             const mensajeError = document.getElementById("mensajeError");
             mensajeError.style.display = "block";
-            mensajeError.textContent = "Código incorrecto. Intenta nuevamente.";
+            mensajeError.textContent = "Código incorrecto.";
         }
-
     });
 }
 
-// Función para mostrar una pantalla específica
+
+// =========================================
+// 🧭 NAVEGACIÓN PANTALLAS
+// =========================================
 function mostrarPantalla(idPantalla) {
-    document.querySelectorAll(".pantalla").forEach(pantalla => {
-        pantalla.style.display = "none";
-    });
-
+    document.querySelectorAll(".pantalla").forEach(p => p.style.display = "none");
     const pantalla = document.getElementById(idPantalla);
-    if (pantalla) {
-        pantalla.style.display = "block";
-    } else {
-        console.error("No se encontró el elemento con id:", idPantalla);
-    }
+    if (pantalla) pantalla.style.display = "block";
 }
 
-// Mostrar la pantalla de Recursos Útiles
-function mostrarPantallaRecursos() {
-    mostrarPantalla('pantalla-recursos');
-}
-
-// Función para volver al menú principal desde cualquier pantalla
 function volverAlMenu() {
     mostrarPantalla('menu-principal');
 }

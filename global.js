@@ -173,3 +173,18 @@ function requireProFeature(featureName = "Esta función") {
     featureName
   );
 }
+
+// =====================================================
+// 🔒 BOTÓN CERRAR SESIÓN (versión menú)
+// =====================================================
+
+document.addEventListener("DOMContentLoaded", () => {
+  const btnLogout = document.getElementById("btnLogout");
+
+  if (btnLogout) {
+    btnLogout.addEventListener("click", async () => {
+      await supabase.auth.signOut();
+      window.location.href = "login.html";
+    });
+  }
+});

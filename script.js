@@ -210,7 +210,7 @@ async function personalizarBotonLogout() {
 
     btn.onclick = async () => {
         await supabase.auth.signOut();
-        window.location.href = "/login.html";
+        window.location.href = "/";
     };
 }
 

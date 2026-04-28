@@ -1,15 +1,17 @@
-// paywall.js
-// PAYWALL UX V2 – flujo único sin fricción
+// =====================================================
+// 💳 PAYWALL UX V3 – flujo único real unificado
+// =====================================================
 
 let PAYWALL_STATE = "blocked";
-// blocked → form → success
+let paywallOpen = false;
 
 // =====================================================
-// 🧩 CREAR MODAL BASE
+// 🧩 CREAR MODAL BASE (único)
 // =====================================================
 
 function crearModalBase() {
-  if (document.getElementById("paywall-overlay")) return;
+  if (paywallOpen) return;
+  paywallOpen = true;
 
   const overlay = document.createElement("div");
   overlay.id = "paywall-overlay";
@@ -36,8 +38,14 @@ function crearModalBase() {
   document.body.appendChild(overlay);
 }
 
+function cerrarModal() {
+  const overlay = document.getElementById("paywall-overlay");
+  if (overlay) overlay.remove();
+  paywallOpen = false;
+}
+
 // =====================================================
-// 🟡 PASO 1 — BLOQUEO + CTA
+// 🟡 PASO 1 — BLOQUEO
 // =====================================================
 
 function renderPasoBloqueo(featureName="esta función") {
@@ -49,14 +57,17 @@ function renderPasoBloqueo(featureName="esta función") {
     <p>Has alcanzado el límite gratuito.</p>
     <p><b>Activa PRO para continuar usando MEC sin límites.</b></p>
 
-    <button id="btnIrRegistro"
-      style="margin-top:18px;padding:12px 18px;
-      background:#4CAF50;color:white;border:none;border-radius:8px;width:100%">
+    <button id="btnIrRegistro" class="btn-principal">
       Activar PRO ahora
+    </button>
+
+    <button id="btnCerrar" class="btn-secundario">
+      Volver
     </button>
   `;
 
   document.getElementById("btnIrRegistro").onclick = renderPasoFormulario;
+  document.getElementById("btnCerrar").onclick = cerrarModal;
 }
 
 // =====================================================
@@ -76,18 +87,21 @@ function renderPasoFormulario() {
     <input id="proRut" placeholder="RUT (ej: 12.345.678-9)"
       style="width:100%;padding:10px;margin-top:10px"/>
 
-    <button id="btnGuardarPro"
-      style="margin-top:15px;padding:12px;width:100%;
-      background:#4CAF50;color:#fff;border:none;border-radius:8px">
+    <button id="btnGuardarPro" class="btn-principal">
       Continuar
+    </button>
+
+    <button id="btnVolver" class="btn-secundario">
+      Volver
     </button>
   `;
 
   document.getElementById("btnGuardarPro").onclick = guardarDatosPro;
+  document.getElementById("btnVolver").onclick = renderPasoBloqueo;
 }
 
 // =====================================================
-// 🟢 PASO 3 — GUARDAR DATOS VIA RPC
+// 🟢 PASO 3 — RPC activar_pro
 // =====================================================
 
 async function guardarDatosPro() {
@@ -103,44 +117,35 @@ async function guardarDatosPro() {
       return;
     }
 
-    console.log("🟡 Guardando datos PRO vía RPC para:", user.id);
+    console.log("🟡 RPC activar_pro para:", user.id);
 
     const { error } = await supabase.rpc("activar_pro", {
       p_nombre: nombre,
       p_rut: rut
     });
 
-    if (error) {
-      console.error("❌ Error RPC activar_pro:", error);
-
-      // 🛑 TRIAL YA USADO → mostrar paywall real
-      if (error.message && error.message.includes("TRIAL_ALREADY_USED")) {
-        console.warn("🚫 Trial ya utilizado → mostrar paywall de pago");
-
-        mostrarPaywallPagoReal(); // nueva pantalla UX
-        return;
-      }
-
-      // ⚠️ cualquier otro error
-      alert("Error guardando datos. Intenta nuevamente.");
+    // 🚫 TRIAL YA USADO → PAYWALL REAL
+    if (error && error.message?.includes("TRIAL_ALREADY_USED")) {
+      console.warn("🚫 Trial ya usado → pago real");
+      renderPasoPagoReal();
       return;
     }
 
-    console.log("🟢 Datos PRO guardados vía RPC");
+    if (error) {
+      console.error(error);
+      alert("Error guardando datos.");
+      return;
+    }
 
-    // 🔒 BLOQUEO DE TRANSICIÓN (evita doble conteo FREE)
+    console.log("🟢 PRO_PENDING activado");
+
     window.planTransition = true;
-
-    // estado inmediato
     window.userPlan = "pro_pending";
     document.dispatchEvent(new Event("planUpdated"));
 
     renderPasoExito();
 
-    // 🔓 liberar transición luego de estabilización
-    setTimeout(() => {
-      window.planTransition = false;
-    }, 1500);
+    setTimeout(() => window.planTransition = false, 1500);
 
   } catch (err) {
     console.error(err);
@@ -149,7 +154,7 @@ async function guardarDatosPro() {
 }
 
 // =====================================================
-// 🎉 PASO FINAL — CONFIRMACIÓN
+// 🎉 PASO 4 — ÉXITO TRIAL
 // =====================================================
 
 function renderPasoExito() {
@@ -158,22 +163,45 @@ function renderPasoExito() {
   document.getElementById("paywall-content").innerHTML = `
     <h2>✅ PRO activado</h2>
     <p><b>Tu acceso PRO temporal está activo.</b></p>
-    <p>Puedes seguir usando MEC sin límites.</p>
 
-    <button id="cerrarPaywall"
-      style="margin-top:18px;padding:12px 18px;
-      background:#4CAF50;color:white;border:none;border-radius:8px;width:100%">
+    <button id="cerrarPaywall" class="btn-principal">
       Continuar usando MEC
     </button>
   `;
 
-  document.getElementById("cerrarPaywall").onclick = () => {
-    document.getElementById("paywall-overlay").remove();
-  };
+  document.getElementById("cerrarPaywall").onclick = cerrarModal;
 }
 
 // =====================================================
-// 🔐 FUNCIÓN GLOBAL PAYWALL
+// 💳 PASO EXTRA — PAYWALL REAL (MercadoPago)
+// =====================================================
+
+function renderPasoPagoReal() {
+  PAYWALL_STATE = "payment";
+
+  document.getElementById("paywall-content").innerHTML = `
+    <h2>💳 Activar Suscripción PRO</h2>
+    <p>Tu periodo de prueba ya fue utilizado.</p>
+    <p>Para seguir usando MEC debes activar tu suscripción.</p>
+
+    <button id="btnPago" class="btn-principal">
+      Ir a pagar
+    </button>
+
+    <button id="btnCerrar" class="btn-secundario">
+      Volver
+    </button>
+  `;
+
+  document.getElementById("btnPago").onclick = () => {
+    alert("Aquí conectaremos MercadoPago 💳");
+  };
+
+  document.getElementById("btnCerrar").onclick = cerrarModal;
+}
+
+// =====================================================
+// 🔐 API GLOBAL
 // =====================================================
 
 function showPaywall(featureName="esta función") {
@@ -192,34 +220,4 @@ function requireFeature(feature, featureName) {
 
 window.PAYWALL = { show: showPaywall, require: requireFeature };
 
-console.log("💳 Paywall UX V2 cargado");
-
-// =====================================================
-// 💳 PAYWALL REAL CUANDO TRIAL YA FUE USADO
-// =====================================================
-function mostrarPaywallPagoReal() {
-  const contenedor = document.getElementById("paywallContenido");
-
-  contenedor.innerHTML = `
-    <h2>Tu periodo de prueba ya fue utilizado</h2>
-    <p>Para seguir usando los análisis de MEC debes activar tu suscripción PRO.</p>
-
-    <div style="margin-top:20px">
-      <button onclick="cerrarPaywall()" class="btn-secundario">
-        Volver a la app
-      </button>
-
-      <button onclick="irAPago()" class="btn-principal">
-        Activar suscripción
-      </button>
-    </div>
-  `;
-}
-
-function cerrarPaywall() {
-  document.getElementById("paywall").style.display = "none";
-}
-
-function irAPago() {
-  alert("Aquí conectaremos MercadoPago 💳");
-}
+console.log("💳 Paywall UX V3 cargado");

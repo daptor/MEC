@@ -111,8 +111,18 @@ async function guardarDatosPro() {
     });
 
     if (error) {
-      console.error(error);
-      alert("Error guardando datos");
+      console.error("❌ Error RPC activar_pro:", error);
+
+      // 🛑 TRIAL YA USADO → mostrar paywall real
+      if (error.message && error.message.includes("TRIAL_ALREADY_USED")) {
+        console.warn("🚫 Trial ya utilizado → mostrar paywall de pago");
+
+        mostrarPaywallPagoReal(); // nueva pantalla UX
+        return;
+      }
+
+      // ⚠️ cualquier otro error
+      alert("Error guardando datos. Intenta nuevamente.");
       return;
     }
 
@@ -183,3 +193,33 @@ function requireFeature(feature, featureName) {
 window.PAYWALL = { show: showPaywall, require: requireFeature };
 
 console.log("💳 Paywall UX V2 cargado");
+
+// =====================================================
+// 💳 PAYWALL REAL CUANDO TRIAL YA FUE USADO
+// =====================================================
+function mostrarPaywallPagoReal() {
+  const contenedor = document.getElementById("paywallContenido");
+
+  contenedor.innerHTML = `
+    <h2>Tu periodo de prueba ya fue utilizado</h2>
+    <p>Para seguir usando los análisis de MEC debes activar tu suscripción PRO.</p>
+
+    <div style="margin-top:20px">
+      <button onclick="cerrarPaywall()" class="btn-secundario">
+        Volver a la app
+      </button>
+
+      <button onclick="irAPago()" class="btn-principal">
+        Activar suscripción
+      </button>
+    </div>
+  `;
+}
+
+function cerrarPaywall() {
+  document.getElementById("paywall").style.display = "none";
+}
+
+function irAPago() {
+  alert("Aquí conectaremos MercadoPago 💳");
+}

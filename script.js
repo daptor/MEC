@@ -192,6 +192,29 @@ function actualizarFechaHora() {
 }
 
 
+// =========================================
+// 👤 PERSONALIZAR BOTÓN CERRAR SESIÓN
+// =========================================
+async function personalizarBotonLogout() {
+
+    const btn = document.getElementById("btnLogout");
+    if (!btn) return;
+
+    const { data } = await supabase.auth.getUser();
+    const user = data.user;
+
+    if (!user) return;
+
+    // Texto elegante del botón
+    btn.textContent = `Cerrar sesión → ${user.email}`;
+
+    btn.onclick = async () => {
+        await supabase.auth.signOut();
+        window.location.href = "/login.html";
+    };
+}
+
+
 // 🚀 INICIALIZACIÓN APP
 document.addEventListener("DOMContentLoaded", async () => {
 
@@ -201,7 +224,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     await esperarPlanUsuario();
     await mostrarContadorVisitas();
     await actualizarContadorAnalisisUI();
-
+    await personalizarBotonLogout();   // ⭐ NUEVO
 });
 
 

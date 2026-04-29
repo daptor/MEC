@@ -618,3 +618,137 @@ body.admin #resetContador {
   border-radius: 50%;
   display: none;
 }
+_____________________________________
+
+/* =====================================================
+   🟢 MEC SAFE UI UPGRADE (NO ROMPE NADA)
+   Capa estética progresiva para SaaS
+   ===================================================== */
+
+/* 🎯 Variables base (no afectan nada existente) */
+:root {
+  --mec-radius: 12px;
+  --mec-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  --mec-shadow-hover: 0 12px 28px rgba(0,0,0,0.25);
+  --mec-transition: all 0.2s ease;
+
+  --mec-bg-soft: rgba(255,255,255,0.95);
+  --mec-border: #e5e7eb;
+}
+
+/* =====================================================
+   📦 CONTENEDORES (NO cambia tamaños actuales)
+   ===================================================== */
+#menu-principal,
+.pantalla,
+#login-container,
+#pantalla-recursos,
+#pantalla-menu-tesoreria,
+#pantalla-rgasto-operacional {
+
+  border-radius: var(--mec-radius);
+  box-shadow: var(--mec-shadow);
+  transition: var(--mec-transition);
+}
+
+/* Hover suave (no rompe layout) */
+#menu-principal:hover,
+.pantalla:hover {
+  box-shadow: var(--mec-shadow-hover);
+}
+
+/* =====================================================
+   🔘 BOTONES (MEJORA VISUAL SIN CAMBIAR LÓGICA)
+   ===================================================== */
+button {
+  border-radius: 10px;
+  transition: var(--mec-transition);
+  position: relative;
+  overflow: hidden;
+}
+
+/* efecto suave hover */
+button:hover {
+  transform: translateY(-1px);
+}
+
+/* efecto click */
+button:active {
+  transform: scale(0.98);
+}
+
+/* =====================================================
+   ✏️ INPUTS (MEJORA SIN CAMBIAR ESTRUCTURA)
+   ===================================================== */
+input, select, textarea {
+  transition: var(--mec-transition);
+  border: 2px solid #28a745;
+}
+
+/* foco más limpio */
+input:focus,
+select:focus,
+textarea:focus {
+  box-shadow: 0 0 0 3px rgba(40,167,69,0.2);
+}
+
+/* =====================================================
+   📊 TABLAS (MEJORA VISUAL PROGRESIVA)
+   ===================================================== */
+.tabla-estilo {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* zebra sutil */
+.tabla-estilo tr:nth-child(even) {
+  background-color: rgba(0,0,0,0.03);
+}
+
+/* =====================================================
+   💬 CHAT (SIN CAMBIAR LÓGICA)
+   ===================================================== */
+.mensaje {
+  border-radius: 14px;
+  transition: var(--mec-transition);
+}
+
+/* mejora contraste */
+.mensaje.usuario {
+  background-color: #e2e8f0;
+}
+
+.mensaje.admin {
+  background-color: #d1fae5;
+}
+
+/* =====================================================
+   📢 BADGE CHAT (mejora percepción sin tocar lógica)
+   ===================================================== */
+.badge-chat {
+  animation: mec-pulse 1.5s infinite;
+}
+
+@keyframes mec-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+/* =====================================================
+   🧠 INTRO (más limpio sin romper nada)
+   ===================================================== */
+.intro-container {
+  border-left: 4px solid #28a745;
+}
+
+/* =====================================================
+   ⚡ MICRO INTERACCIONES GLOBALES
+   ===================================================== */
+button,
+input,
+select,
+textarea,
+.mensaje {
+  transition: all 0.15s ease;
+}

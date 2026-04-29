@@ -618,3 +618,164 @@ body.admin #resetContador {
   border-radius: 50%;
   display: none;
 }
+
+/* =========================================
+   🎨 VARIABLES DE MARCA MEC (inspiración Falabella)
+========================================= */
+
+:root {
+  --mec-green: #7AC142;
+  --mec-green-dark: #5EA52F;
+  --mec-dark: #1F2A24;
+  --mec-white: #FFFFFF;
+  --mec-gray-text: #333333;
+  --mec-gray-light: #F5F7F8;
+}
+
+/* =========================================
+   RESET BÁSICO
+========================================= */
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
+  color: var(--mec-gray-text);
+  background: var(--mec-white);
+  line-height: 1.6;
+}
+
+/* =========================================
+   NAVBAR
+========================================= */
+
+.navbar {
+  background: var(--mec-dark);
+  color: white;
+  padding: 14px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.navbar h1 {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: 1px;
+}
+
+.navbar a {
+  color: white;
+  text-decoration: none;
+  margin-left: 20px;
+  font-weight: 500;
+}
+
+/* =========================================
+   HERO PRINCIPAL
+========================================= */
+
+.hero {
+  padding: 90px 20px;
+  text-align: center;
+  max-width: 900px;
+  margin: auto;
+}
+
+.hero h1 {
+  font-size: 44px;
+  margin-bottom: 20px;
+  color: var(--mec-dark);
+}
+
+.hero p {
+  font-size: 20px;
+  color: var(--mec-gray-text);
+  margin-bottom: 40px;
+}
+
+/* =========================================
+   BOTÓN PRINCIPAL (CTA)
+========================================= */
+
+.btn-primary {
+  background: var(--mec-green);
+  color: white;
+  padding: 16px 34px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-size: 18px;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+.btn-primary:hover {
+  background: var(--mec-green-dark);
+  transform: translateY(-2px);
+}
+
+/* =========================================
+   SECCIÓN FEATURES
+========================================= */
+
+.features {
+  background: var(--mec-gray-light);
+  padding: 70px 20px;
+}
+
+.features-container {
+  max-width: 1100px;
+  margin: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 25px;
+}
+
+.feature-card {
+  background: white;
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+  text-align: center;
+}
+
+.feature-card h3 {
+  color: var(--mec-dark);
+  margin-bottom: 10px;
+}
+
+.feature-card p {
+  font-size: 15px;
+}
+
+/* =========================================
+   SECCIÓN SINDICATOS / SOCIAL PROOF
+========================================= */
+
+.social-proof {
+  padding: 70px 20px;
+  text-align: center;
+  max-width: 900px;
+  margin: auto;
+}
+
+.social-proof h2 {
+  color: var(--mec-dark);
+  margin-bottom: 20px;
+}
+
+/* =========================================
+   FOOTER
+========================================= */
+
+.footer {
+  background: var(--mec-dark);
+  color: white;
+  text-align: center;
+  padding: 30px;
+  margin-top: 60px;
+}
+
+.footer p {
+  margin: 5px 0;
+  font-size: 14px;
+}

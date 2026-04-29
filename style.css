@@ -619,138 +619,113 @@ body.admin #resetContador {
   display: none;
 }
 
-<style>
-
-/* ================================
-   BASE ORIGINAL (se respeta)
-   ================================ */
+/* ===== RESET GENERAL ===== */
 body{
-  font-family: Arial, Helvetica, sans-serif;
   margin:0;
-  background:#0f172a; /* tu fondo original */
+  font-family: Arial, Helvetica, sans-serif;
+  background:#ffffff;
+  color:#111;
+}
+
+/* ===== NAVBAR ===== */
+.navbar{
+  background:#111;
   color:white;
+  padding:18px 40px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.navbar a{
+  color:white;
+  text-decoration:none;
+  font-weight:bold;
+}
+
+/* ===== HERO (franja verde suave) ===== */
+.hero{
+  background:#e8f7ee;
+  padding:90px 20px;
   text-align:center;
 }
 
-.container{
-  max-width:900px;
-  margin:auto;
-  padding:60px 20px;
-}
-
-h1{
-  font-size:48px;
+.hero h1{
+  font-size:42px;
   margin-bottom:20px;
 }
 
-/* ================================
-   BARRA SUPERIOR DISCRETA
-   ================================ */
-.topbar{
-  background:#020617;
-  padding:10px;
-  font-size:14px;
-  opacity:.85;
-}
-
-/* ================================
-   BLOQUE VERDE SUAVE (mensaje central)
-   ================================ */
-.hero-highlight{
-  background:#e8fbf1;   /* verde suave elegante */
-  padding:35px 25px;
-  border-radius:14px;
-  margin:30px auto;
-  max-width:750px;
-}
-
-.hero-highlight h2{
-  color:#065f46;
-  font-size:32px;
-  margin-bottom:10px;
-}
-
-.hero-highlight p{
-  color:#065f46;
+.hero-sub{
   font-size:20px;
-  margin:0;
+  max-width:700px;
+  margin:auto;
 }
 
-/* ================================
-   TEXTO DESCRIPCIÓN ORIGINAL
-   ================================ */
-.descripcion{
-  font-size:20px;
-  opacity:.9;
-  margin-bottom:30px;
-}
-
-/* ================================
-   FEATURES (sin exagerar tamaños)
-   ================================ */
-.features{
-  text-align:left;
-  max-width:600px;
-  margin:30px auto;
-  line-height:1.6;
+.hero-claim{
+  margin-top:15px;
+  font-weight:bold;
   font-size:18px;
-  opacity:.95;
 }
 
-/* ================================
-   BOTÓN PRINCIPAL (tu estilo mejorado)
-   ================================ */
-.btn{
+/* ===== BOTONES ===== */
+.btn-primary{
   display:inline-block;
-  margin-top:30px;
-  padding:18px 35px;
-  background:#22c55e;
+  margin-top:35px;
+  padding:16px 32px;
+  background:#2ecc71;
   color:white;
   text-decoration:none;
-  font-size:22px;
-  border-radius:10px;
-  transition:.2s;
-}
-
-.btn:hover{
-  background:#16a34a;
-  transform:scale(1.05);
-}
-
-/* ================================
-   BOTÓN SECUNDARIO
-   ================================ */
-.btn-secondary{
-  display:inline-block;
-  margin-top:15px;
-  padding:12px 25px;
-  background:#334155;
-  color:white;
   border-radius:8px;
-  cursor:pointer;
+  font-size:20px;
+  font-weight:bold;
+  transition:0.2s;
 }
 
-/* ================================
-   MODAL (intacto)
-   ================================ */
-#modalClave{
-  display:none;
-  position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  background-color:rgba(0,0,0,0.6);
-  text-align:center;
-  padding-top:120px;
+.btn-primary:hover{
+  background:#27ae60;
 }
 
-#modalContenido{
-  background:#fff;
-  color:#000;
-  display:inline-block;
+/* ===== FEATURES ===== */
+.features{
+  padding:70px 20px;
+  background:white;
+}
+
+.features-container{
+  max-width:1000px;
+  margin:auto;
+  display:grid;
+  grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
+  gap:25px;
+}
+
+.feature-card{
+  background:#f5f5f5;
   padding:25px;
   border-radius:10px;
+  text-align:center;
 }
 
-</style>
+/* ===== SOCIAL PROOF ===== */
+.social-proof{
+  background:#fafafa;
+  padding:70px 20px;
+  text-align:center;
+}
+
+/* ===== CTA FINAL ===== */
+.cta-final{
+  background:#111;
+  color:white;
+  text-align:center;
+  padding:70px 20px;
+}
+
+/* ===== FOOTER ===== */
+.footer{
+  background:#000;
+  color:#aaa;
+  text-align:center;
+  padding:25px;
+  font-size:14px;
+}

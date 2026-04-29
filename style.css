@@ -618,223 +618,117 @@ body.admin #resetContador {
   border-radius: 50%;
   display: none;
 }
-_____________________________________
 
+=====================================================
 /* =====================================================
-   🚀 MEC UI OVERRIDE REAL (VISIBLE, SIN ROMPER)
+   🎨 MEC THEME V2 — DARK GLASS (NO ROMPE)
+   Activación: agregar class "theme-v2" al <body>
    ===================================================== */
 
-/* 🎯 CONTENEDORES: look SaaS limpio */
-#menu-principal,
-.pantalla,
-#login-container,
-#pantalla-recursos,
-#pantalla-menu-tesoreria,
-#pantalla-rgasto-operacional {
-
-  background: rgba(255,255,255,0.97) !important;
-  border-radius: 16px !important;
-  box-shadow: 0 15px 40px rgba(0,0,0,0.25) !important;
-  padding: 30px !important;
+body.theme-v2 {
+  background: radial-gradient(circle at top, #0f172a, #020617);
+  color: #e5e7eb;
 }
 
-/* 🔥 QUITAMOS efecto antiguo pesado */
-button {
-  background: linear-gradient(135deg, #22c55e, #16a34a) !important;
-  border-radius: 12px !important;
-  font-size: 16px !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.3px;
-  box-shadow: 0 6px 15px rgba(0,0,0,0.2) !important;
+/* contenedores estilo glass */
+body.theme-v2 #menu-principal,
+body.theme-v2 .pantalla,
+body.theme-v2 #login-container,
+body.theme-v2 #pantalla-recursos,
+body.theme-v2 #pantalla-menu-tesoreria,
+body.theme-v2 #pantalla-rgasto-operacional {
+
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+  color: #e5e7eb;
 }
 
-/* hover más SaaS */
-button:hover {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 12px 25px rgba(0,0,0,0.3) !important;
+/* títulos */
+body.theme-v2 h1,
+body.theme-v2 h2,
+body.theme-v2 h3 {
+  color: #f1f5f9;
 }
 
-/* click */
-button:active {
-  transform: scale(0.97) !important;
+/* textos */
+body.theme-v2 p {
+  color: #cbd5f5;
 }
 
-/* ✏️ INPUTS MÁS MODERNOS */
-input, select, textarea {
-  border: 1px solid #d1d5db !important;
-  border-radius: 10px !important;
-  background: #f9fafb !important;
-  padding: 12px !important;
-}
-
-/* foco tipo SaaS */
-input:focus, select:focus, textarea:focus {
-  border-color: #22c55e !important;
-  box-shadow: 0 0 0 3px rgba(34,197,94,0.2) !important;
-  background: #fff !important;
-}
-
-/* 📊 TABLAS LIMPIAS */
-.tabla-estilo {
-  background: white !important;
-  border-radius: 12px !important;
-  overflow: hidden;
-}
-
-.tabla-estilo th {
-  background: #f3f4f6 !important;
+/* botones completamente distintos */
+body.theme-v2 button {
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  color: white;
+  border-radius: 12px;
+  border: none;
   font-weight: 600;
+  box-shadow: 0 10px 25px rgba(59,130,246,0.4);
 }
 
-.tabla-estilo tr:nth-child(even) {
-  background: #f9fafb !important;
+body.theme-v2 button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 35px rgba(59,130,246,0.6);
 }
 
-/* 💬 CHAT ESTILO MODERNO */
-.mensaje {
-  border-radius: 18px !important;
-  padding: 10px 14px !important;
-  font-size: 14px !important;
+/* inputs estilo moderno */
+body.theme-v2 input,
+body.theme-v2 select,
+body.theme-v2 textarea {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: white;
+  border-radius: 10px;
 }
 
-.mensaje.usuario {
-  background: #dbeafe !important;
+body.theme-v2 input:focus,
+body.theme-v2 select:focus,
+body.theme-v2 textarea:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.4);
 }
 
-.mensaje.admin {
-  background: #dcfce7 !important;
+/* tablas */
+body.theme-v2 .tabla-estilo {
+  background: rgba(255,255,255,0.03);
 }
 
-/* 🌐 FONDO MÁS PRO */
-body {
-  background: linear-gradient(135deg, #0f172a, #1e293b) !important;
+body.theme-v2 .tabla-estilo th {
+  background: rgba(255,255,255,0.08);
+  color: white;
 }
 
-/* 🧠 TEXTOS MÁS LIMPIOS */
-h1, h2, h3 {
-  color: #111827 !important;
+body.theme-v2 .tabla-estilo tr:nth-child(even) {
+  background: rgba(255,255,255,0.03);
 }
 
-p {
-  color: #4b5563 !important;
+/* chat estilo app moderna */
+body.theme-v2 .mensaje.usuario {
+  background: #3b82f6;
+  color: white;
 }
 
-______________________________________________________
+body.theme-v2 .mensaje.admin {
+  background: #10b981;
+  color: white;
+}
 
 /* =====================================================
-   🚀 MEC PRODUCT LAYER (CAMBIO REAL DE EXPERIENCIA)
+   📱 RESPONSIVE MEJORADO
    ===================================================== */
 
-/* 🌐 LAYOUT GLOBAL TIPO APP */
-body {
-  background: #0b1220 !important;
-  display: flex;
-  justify-content: center;
+@media (min-width: 768px) {
+  #menu-principal,
+  .pantalla {
+    max-width: 900px;
+  }
 }
 
-/* contenedor general más amplio */
-#menu-principal,
-.pantalla,
-#login-container {
-  max-width: 1100px !important;
-  width: 95%;
-}
-
-/* 🧱 EFECTO "APP CARD CENTRAL" */
-#menu-principal,
-.pantalla,
-#login-container,
-#pantalla-recursos,
-#pantalla-menu-tesoreria,
-#pantalla-rgasto-operacional {
-
-  background: linear-gradient(145deg, #ffffff, #f1f5f9) !important;
-  border-radius: 20px !important;
-  box-shadow:
-    0 20px 60px rgba(0,0,0,0.35),
-    inset 0 1px 0 rgba(255,255,255,0.6);
-}
-
-/* ✨ HEADER MÁS PRO */
-h1 {
-  font-size: 36px !important;
-  font-weight: 800;
-  letter-spacing: -0.5px;
-}
-
-/* 🔘 BOTONES TIPO SaaS REAL */
-button {
-  background: linear-gradient(135deg, #22c55e, #15803d) !important;
-  border-radius: 14px !important;
-  font-size: 15px !important;
-  padding: 14px !important;
-  box-shadow: 0 10px 25px rgba(34,197,94,0.35) !important;
-}
-
-/* hover más premium */
-button:hover {
-  transform: translateY(-3px) !important;
-  box-shadow: 0 18px 35px rgba(34,197,94,0.45) !important;
-}
-
-/* ✏️ INPUTS TIPO APP MODERNA */
-input, select, textarea {
-  background: #f1f5f9 !important;
-  border: none !important;
-  border-radius: 12px !important;
-  padding: 14px !important;
-}
-
-/* foco elegante */
-input:focus, select:focus, textarea:focus {
-  background: #ffffff !important;
-  box-shadow: 0 0 0 3px rgba(34,197,94,0.25) !important;
-}
-
-/* 📊 TABLAS MÁS "DASHBOARD" */
-.tabla-estilo {
-  box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
-  border-radius: 14px !important;
-  overflow: hidden;
-}
-
-.tabla-estilo th {
-  background: #e2e8f0 !important;
-}
-
-.tabla-estilo tr:hover {
-  background: #eef2ff !important;
-}
-
-/* 💬 CHAT MÁS APP */
-#pantalla-chat {
-  background: #f8fafc !important;
-  border-radius: 20px;
-}
-
-.mensaje {
-  font-size: 14px;
-  border-radius: 20px !important;
-}
-
-.mensaje.usuario {
-  background: #3b82f6 !important;
-  color: white !important;
-}
-
-.mensaje.admin {
-  background: #22c55e !important;
-  color: white !important;
-}
-
-/* 🌌 EFECTO PROFUNDO GLOBAL */
-body::before {
-  content: "";
-  position: fixed;
-  top: -20%;
-  left: -20%;
-  width: 140%;
-  height: 140%;
-  background: radial-gradient(circle at center, rgba(34,197,94,0.15), transparent 60%);
-  z-index: -1;
+@media (min-width: 1200px) {
+  #menu-principal,
+  .pantalla {
+    max-width: 1100px;
+  }
 }

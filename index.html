@@ -2,174 +2,154 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>MEC – Entiende tu liquidación</title>
+<title>MEC — Revisa los cálculos de tu liquidación</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 body{
   margin:0;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family:Arial, Helvetica, sans-serif;
   background:#0f172a;
   color:white;
   text-align:center;
 }
 
-.container{
+.hero{
+  padding:90px 20px;
   max-width:900px;
   margin:auto;
-  padding:60px 20px;
 }
 
 h1{
-  font-size:48px;
-  margin-bottom:10px;
+  font-size:56px;
+  margin-bottom:20px;
 }
 
-h2{
-  font-weight:normal;
+.subtitle{
+  font-size:24px;
   opacity:.9;
 }
 
-.hero{
-  margin-top:40px;
+.description{
+  margin-top:25px;
+  font-size:20px;
+  opacity:.9;
 }
 
-.btn{
+.cta{
   display:inline-block;
-  margin-top:35px;
-  padding:18px 38px;
+  margin-top:40px;
+  padding:18px 40px;
   background:#22c55e;
   color:white;
   text-decoration:none;
   font-size:22px;
-  border-radius:10px;
-}
-
-.btn-secondary{
-  display:inline-block;
-  margin-top:15px;
-  padding:12px 25px;
-  background:#334155;
-  border-radius:8px;
-  cursor:pointer;
+  border-radius:12px;
 }
 
 .section{
-  margin-top:80px;
+  background:white;
+  color:#0f172a;
+  padding:70px 20px;
 }
 
 .cards{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
   gap:20px;
-  margin-top:30px;
+  max-width:900px;
+  margin:40px auto;
 }
 
 .card{
-  background:#1e293b;
+  background:#f1f5f9;
   padding:25px;
   border-radius:12px;
-  text-align:left;
+  font-size:18px;
 }
 
-.quote{
-  margin-top:80px;
-  font-style:italic;
-  opacity:.8;
+footer{
+  padding:30px;
+  opacity:.6;
+  font-size:14px;
 }
 </style>
 </head>
 
 <body>
 
-<div class="container">
+<!-- HERO -->
+<section class="hero">
 
-  <!-- HERO -->
-  <div class="hero">
-    <h1>MEC</h1>
-    <h2>¿Sabes realmente calcular tu liquidación de sueldo?</h2>
+<h1>MEC</h1>
 
-    <p style="margin-top:25px; font-size:20px; opacity:.9;">
-      Sube tu liquidación y revisa en minutos  
-      si está correcta o si te están pagando mal.
-    </p>
-
-    <a class="btn" href="login.html">Entrar a la aplicación 🔐</a>
-
-    <br>
-    <div class="btn-secondary" onclick="abrirModal()">
-      ¿No tienes cuenta?
-    </div>
-  </div>
-
-  <!-- PROBLEMA -->
-  <div class="section">
-    <h2>La mayoría de los trabajadores no entiende su liquidación</h2>
-
-    <div class="cards">
-      <div class="card">
-        ❌ Descuentos que no sabes de dónde salen
-      </div>
-      <div class="card">
-        ❌ Horas extra mal calculadas
-      </div>
-      <div class="card">
-        ❌ Vacaciones y finiquitos incorrectos
-      </div>
-    </div>
-  </div>
-
-  <!-- SOLUCIÓN -->
-  <div class="section">
-    <h2>MEC lo analiza por ti automáticamente</h2>
-
-    <div class="cards">
-      <div class="card">
-        ✔ Analiza tu liquidación en segundos
-      </div>
-      <div class="card">
-        ✔ Calcula vacaciones y finiquitos
-      </div>
-      <div class="card">
-        ✔ Detecta posibles errores de pago
-      </div>
-      <div class="card">
-        ✔ Chat con otros trabajadores
-      </div>
-    </div>
-  </div>
-
-  <!-- SINDICATOS -->
-  <div class="section">
-    <h2>Herramienta indispensable para sindicatos</h2>
-    <p style="opacity:.85;">
-      Facilita la revisión de liquidaciones y ayuda a educar a los trabajadores.
-    </p>
-  </div>
-
-  <!-- FRASE -->
-  <div class="quote">
-    “El conocimiento es poder.”
-  </div>
-
+<div class="subtitle">
+¿Sabes calcular tu liquidación de sueldo?
 </div>
 
-<!-- Modal -->
-<div id="modalClave" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);padding-top:120px;">
-  <div style="background:white;color:black;display:inline-block;padding:25px;border-radius:10px;">
-    <p>Crea tu cuenta directamente en la plataforma</p>
-    <p>Haz clic en “Entrar” y luego regístrate con tu correo 📧</p>
-    <button onclick="cerrarModal()">Cerrar</button>
+<p class="description">
+Sube tu liquidación y revisa en minutos  
+si los cálculos principales están correctos.
+</p>
+
+<a class="cta" href="login.html">Entrar a la aplicación 🔐</a>
+
+<p style="margin-top:20px; opacity:.7;">
+Herramienta indispensable para sindicatos y trabajadores
+</p>
+
+</section>
+
+<!-- PROBLEMA -->
+<section class="section">
+
+<h2>¿Por qué existe MEC?</h2>
+
+<div class="cards">
+  <div class="card">
+    ❓ ¿Tus horas extra están bien calculadas?
+  </div>
+  <div class="card">
+    ❓ ¿Tu gratificación está correcta?
+  </div>
+  <div class="card">
+    ❓ ¿Tu finiquito o vacaciones están bien calculados?
   </div>
 </div>
 
+</section>
+
+<!-- SOLUCIÓN -->
+<section class="section" style="background:#f8fafc">
+
+<h2>Lo que puedes hacer con MEC</h2>
+
+<div class="cards">
+  <div class="card">
+    ✔ Verifica cálculos matemáticos de tu liquidación
+  </div>
+  <div class="card">
+    ✔ Calcula vacaciones y finiquitos automáticamente
+  </div>
+  <div class="card">
+    ✔ Detecta errores de cálculo frecuentes
+  </div>
+  <div class="card">
+    ✔ Chat con otros trabajadores
+  </div>
+</div>
+
+</section>
+
+<footer>
+MEC — Herramienta educativa y de apoyo para trabajadores.
+</footer>
+
+<!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabaseClient.js"></script>
 
 <script>
-function abrirModal(){ document.getElementById("modalClave").style.display="block"; }
-function cerrarModal(){ document.getElementById("modalClave").style.display="none"; }
-
 document.addEventListener("DOMContentLoaded", async () => {
   const { data: { session } } = await supabase.auth.getSession();
   if (session) window.location.replace("app-protegida.html");

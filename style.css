@@ -619,164 +619,146 @@ body.admin #resetContador {
   display: none;
 }
 
-/* =========================================
-   🎨 VARIABLES DE MARCA MEC (inspiración Falabella)
-========================================= */
-
-:root {
-  --mec-green: #7AC142;
-  --mec-green-dark: #5EA52F;
-  --mec-dark: #1F2A24;
-  --mec-white: #FFFFFF;
-  --mec-gray-text: #333333;
-  --mec-gray-light: #F5F7F8;
-}
-
-/* =========================================
-   RESET BÁSICO
-========================================= */
-
-body {
-  margin: 0;
-  font-family: "Segoe UI", Roboto, Arial, sans-serif;
-  color: var(--mec-gray-text);
-  background: var(--mec-white);
-  line-height: 1.6;
-}
-
-/* =========================================
-   NAVBAR
-========================================= */
-
-.navbar {
-  background: var(--mec-dark);
-  color: white;
-  padding: 14px 40px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.navbar h1 {
-  margin: 0;
-  font-size: 20px;
-  letter-spacing: 1px;
-}
-
-.navbar a {
-  color: white;
-  text-decoration: none;
-  margin-left: 20px;
-  font-weight: 500;
-}
-
-/* =========================================
-   HERO PRINCIPAL
-========================================= */
-
-.hero{
+<style>
+/* ================================
+   🌙 BASE GENERAL
+   ================================ */
+body{
+  font-family: Arial, Helvetica, sans-serif;
+  margin:0;
+  background:#0f172a;
+  color:white;
   text-align:center;
-  padding:80px 20px;
-  background:linear-gradient(180deg,#f0fdf4,#ffffff);
 }
 
-.hero h1{
-  font-size:42px;
-  color:#0f172a;
-  margin-bottom:20px;
-}
-
-.hero p{
-  font-size:20px;
-  color:#334155;
-  max-width:700px;
+.container{
+  max-width:1000px;
   margin:auto;
-  margin-bottom:30px;
+  padding:60px 20px;
 }
 
-/* =========================================
-   BOTÓN PRINCIPAL (CTA)
-========================================= */
-
-.btn-primary {
-  background: var(--mec-green);
-  color: white;
-  padding: 16px 34px;
-  border-radius: 10px;
-  text-decoration: none;
-  font-size: 18px;
-  font-weight: 600;
-  transition: 0.3s;
+/* ================================
+   🔝 BARRA SUPERIOR (confianza)
+   ================================ */
+.topbar{
+  background:#020617;
+  padding:10px;
+  font-size:14px;
+  opacity:.85;
 }
 
-.btn-primary:hover {
-  background: var(--mec-green-dark);
-  transform: translateY(-2px);
+/* ================================
+   🟢 HERO PRINCIPAL
+   ================================ */
+h1{
+  font-size:56px;
+  margin-bottom:10px;
+  letter-spacing:1px;
 }
 
-/* =========================================
-   SECCIÓN FEATURES
-========================================= */
-
-.features {
-  background: var(--mec-gray-light);
-  padding: 70px 20px;
+.slogan{
+  font-size:22px;
+  opacity:.9;
+  margin-bottom:40px;
 }
 
-.features-container {
-  max-width: 1100px;
-  margin: auto;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 25px;
+/* =====================================================================
+   🌿 BLOQUE CENTRAL DESTACADO
+   ================================ */
+.hero-highlight{
+  background:#dff7ea; /* verde suave visible */
+  padding:45px 25px;
+  border-radius:18px;
+  margin:40px auto;
+  max-width:900px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.08);
 }
 
-.feature-card {
-  background: white;
-  padding: 30px;
-  border-radius: 16px;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.06);
-  text-align: center;
+.hero-highlight h2{
+  font-size:36px;
+  margin-bottom:15px;
+  color:#064e3b;
 }
 
-.feature-card h3 {
-  color: var(--mec-dark);
-  margin-bottom: 10px;
+.hero-highlight p{
+  font-size:21px;
+  color:#065f46;
+  opacity:.95;
 }
 
-.feature-card p {
-  font-size: 15px;
+/* ================================
+   ⭐ LISTA BENEFICIOS
+   ================================ */
+.features{
+  text-align:left;
+  max-width:600px;
+  margin:35px auto;
+  line-height:1.7;
+  font-size:19px;
+  opacity:.95;
+  color:#e2e8f0;
 }
 
-/* =========================================
-   SECCIÓN SINDICATOS / SOCIAL PROOF
-========================================= */
-
-.social-proof {
-  padding: 70px 20px;
-  text-align: center;
-  max-width: 900px;
-  margin: auto;
+/* ================================
+   🟩 BOTÓN PRINCIPAL (CTA)
+   ================================ */
+.btn{
+  display:inline-block;
+  margin-top:35px;
+  padding:20px 45px;
+  background:#22c55e;
+  color:white;
+  text-decoration:none;
+  font-size:24px;
+  border-radius:14px;
+  font-weight:bold;
+  transition:.2s;
+  box-shadow:0 8px 18px rgba(0,0,0,0.2);
 }
 
-.social-proof h2 {
-  color: var(--mec-dark);
-  margin-bottom: 20px;
+.btn:hover{
+  transform:scale(1.05);
+  background:#16a34a;
 }
 
-/* =========================================
-   FOOTER
-========================================= */
-
-.footer {
-  background: var(--mec-dark);
-  color: white;
-  text-align: center;
-  padding: 30px;
-  margin-top: 60px;
+/* ================================
+   ⚪ BOTÓN SECUNDARIO
+   ================================ */
+.btn-secondary{
+  display:inline-block;
+  margin-top:20px;
+  padding:12px 25px;
+  background:#334155;
+  color:white;
+  border-radius:8px;
+  cursor:pointer;
+  transition:.2s;
 }
 
-.footer p {
-  margin: 5px 0;
-  font-size: 14px;
+.btn-secondary:hover{
+  background:#475569;
 }
+
+/* ================================
+   🪟 MODAL
+   ================================ */
+#modalClave{
+  display:none;
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background-color:rgba(0,0,0,0.6);
+  text-align:center;
+  padding-top:120px;
+}
+
+#modalContenido{
+  background:#fff;
+  color:#000;
+  display:inline-block;
+  padding:25px;
+  border-radius:10px;
+}
+</style>

@@ -1,146 +1,77 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>MEC - Analiza tu liquidación</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <style>
-    body{
-      font-family: Arial, Helvetica, sans-serif;
-      margin:0;
-      background:#0f172a;
-      color:white;
-      text-align:center;
-    }
-
-    .container{
-      max-width:900px;
-      margin:auto;
-      padding:60px 20px;
-    }
-
-    h1{font-size:48px;margin-bottom:20px;}
-
-    .descripcion{
-      font-size:20px;
-      opacity:.9;
-      margin-bottom:30px;
-    }
-
-    .features{
-      text-align:left;
-      max-width:600px;
-      margin:30px auto;
-      line-height:1.6;
-      font-size:18px;
-      opacity:.95;
-    }
-
-    .btn{
-      display:inline-block;
-      margin-top:30px;
-      padding:18px 35px;
-      background:#22c55e;
-      color:white;
-      text-decoration:none;
-      font-size:22px;
-      border-radius:10px;
-    }
-
-    .btn-secondary{
-      display:inline-block;
-      margin-top:15px;
-      padding:12px 25px;
-      background:#334155;
-      color:white;
-      border-radius:8px;
-      cursor:pointer;
-    }
-
-    /* Modal */
-    #modalClave{
-      display:none;
-      position:fixed;
-      top:0;
-      left:0;
-      width:100%;
-      height:100%;
-      background-color:rgba(0,0,0,0.6);
-      text-align:center;
-      padding-top:120px;
-    }
-
-    #modalContenido{
-      background:#fff;
-      color:#000;
-      display:inline-block;
-      padding:25px;
-      border-radius:10px;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MEC | Analiza tu liquidación</title>
+<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<div class="container">
-
+<!-- NAVBAR -->
+<div class="navbar">
   <h1>MEC</h1>
+  <div>
+    <a href="login.html">Ingresar</a>
+  </div>
+</div>
 
-  <p class="descripcion">
-    Analiza tus liquidaciones, vacaciones y finiquitos automáticamente.
+<!-- HERO -->
+<section class="hero">
+  <h1>¿Sabes calcular tu liquidación de sueldo?</h1>
+  <p>
+    MEC analiza automáticamente la parte matemática de tu liquidación,
+    vacaciones y finiquitos.  
+    Una herramienta indispensable para trabajadores y sindicatos.
   </p>
 
-  <div class="features">
-    <p><strong>✔ Verifica tu liquidación de sueldo</strong></p>
-    <p>✔ Cálculo de vacaciones y finiquitos</p>
-    <p>✔ Horas extras y recargos domingo</p>
-    <p>✔ Chat grupal y privado</p>
-    <p>✔ Subida de archivos PDF</p>
+  <a href="login.html" class="btn-primary">
+    Ingresar 🔐
+  </a>
+</section>
+
+<!-- FEATURES -->
+<section class="features">
+  <div class="features-container">
+
+    <div class="feature-card">
+      <h3>📄 Analiza tu liquidación</h3>
+      <p>Detecta diferencias y valida cálculos automáticamente.</p>
+    </div>
+
+    <div class="feature-card">
+      <h3>📅 Vacaciones y finiquitos</h3>
+      <p>Calcula correctamente pagos pendientes y proporcionales.</p>
+    </div>
+
+    <div class="feature-card">
+      <h3>⏰ Horas extras y domingos</h3>
+      <p>Verifica recargos y horas trabajadas.</p>
+    </div>
+
+    <div class="feature-card">
+      <h3>💬 Chat laboral</h3>
+      <p>Conversa con trabajadores y sindicatos en tiempo real.</p>
+    </div>
+
   </div>
+</section>
 
-  <a class="btn" href="login.html">Entrar a la aplicación 🔐</a>
+<!-- SOCIAL PROOF -->
+<section class="social-proof">
+  <h2>Herramienta indispensable para sindicatos</h2>
+  <p>
+    MEC nace para ayudar a trabajadores a entender sus remuneraciones
+    de forma clara, simple y automática.
+  </p>
+</section>
 
-  <br>
-
-  <div class="btn-secondary" onclick="abrirModal()">
-    ¿No tienes cuenta?
-  </div>
-
+<!-- FOOTER -->
+<div class="footer">
+  <p>MEC © 2026</p>
+  <p>Plataforma de análisis laboral</p>
 </div>
-
-<!-- Modal -->
-<div id="modalClave">
-  <div id="modalContenido">
-    <p><strong>Crea tu cuenta directamente en la plataforma</strong></p>
-    <p>Haz clic en "Entrar" y luego regístrate con tu correo 📧</p>
-    <br>
-    <button onclick="cerrarModal()">Cerrar</button>
-  </div>
-</div>
-
-<!-- Scripts -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabaseClient.js"></script>
-
-<script>
-function abrirModal(){
-  document.getElementById("modalClave").style.display="block";
-}
-
-function cerrarModal(){
-  document.getElementById("modalClave").style.display="none";
-}
-
-// 🚀 REDIRECCIÓN INTELIGENTE
-document.addEventListener("DOMContentLoaded", async () => {
-  const { data: { session } } = await supabase.auth.getSession();
-
-  if (session) {
-    window.location.replace("app-protegida.html");
-  }
-});
-</script>
 
 </body>
 </html>

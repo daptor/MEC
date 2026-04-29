@@ -2,13 +2,13 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>MEC — Revisa tu sueldo automáticamente</title>
+<title>MEC – Entiende tu liquidación</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
 body{
-  font-family: Arial, Helvetica, sans-serif;
   margin:0;
+  font-family: Arial, Helvetica, sans-serif;
   background:#0f172a;
   color:white;
   text-align:center;
@@ -21,46 +21,28 @@ body{
 }
 
 h1{
-  font-size:52px;
+  font-size:48px;
   margin-bottom:10px;
 }
 
-.subhero{
-  font-size:24px;
+h2{
+  font-weight:normal;
   opacity:.9;
-  margin-bottom:30px;
 }
 
-.section{
-  margin-top:60px;
-}
-
-.box{
-  background:#111827;
-  padding:30px;
-  border-radius:14px;
-  margin-top:20px;
-}
-
-.features{
-  text-align:left;
-  max-width:600px;
-  margin:30px auto;
-  line-height:1.8;
-  font-size:18px;
-  opacity:.95;
+.hero{
+  margin-top:40px;
 }
 
 .btn{
   display:inline-block;
-  margin-top:40px;
-  padding:18px 40px;
+  margin-top:35px;
+  padding:18px 38px;
   background:#22c55e;
   color:white;
   text-decoration:none;
-  font-size:24px;
-  border-radius:12px;
-  font-weight:bold;
+  font-size:22px;
+  border-radius:10px;
 }
 
 .btn-secondary{
@@ -68,53 +50,32 @@ h1{
   margin-top:15px;
   padding:12px 25px;
   background:#334155;
-  color:white;
   border-radius:8px;
   cursor:pointer;
 }
 
-.pricing{
-  display:flex;
+.section{
+  margin-top:80px;
+}
+
+.cards{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
   gap:20px;
-  flex-wrap:wrap;
-  justify-content:center;
   margin-top:30px;
 }
 
-.plan{
-  background:#111827;
+.card{
+  background:#1e293b;
   padding:25px;
   border-radius:12px;
-  width:260px;
+  text-align:left;
 }
 
-.plan h3{
-  font-size:26px;
-}
-
-.highlight{
-  border:2px solid #22c55e;
-}
-
-/* Modal */
-#modalClave{
-  display:none;
-  position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  background-color:rgba(0,0,0,0.6);
-  text-align:center;
-  padding-top:120px;
-}
-
-#modalContenido{
-  background:#fff;
-  color:#000;
-  display:inline-block;
-  padding:25px;
-  border-radius:10px;
+.quote{
+  margin-top:80px;
+  font-style:italic;
+  opacity:.8;
 }
 </style>
 </head>
@@ -124,93 +85,91 @@ h1{
 <div class="container">
 
   <!-- HERO -->
-  <h1>Que no te paguen mal nunca más</h1>
+  <div class="hero">
+    <h1>MEC</h1>
+    <h2>¿Sabes realmente calcular tu liquidación de sueldo?</h2>
 
-  <p class="subhero">
-    Revisa tu liquidación de sueldo en segundos  
-    y detecta errores automáticamente 🇨🇱
-  </p>
+    <p style="margin-top:25px; font-size:20px; opacity:.9;">
+      Sube tu liquidación y revisa en minutos  
+      si está correcta o si te están pagando mal.
+    </p>
 
-  <a class="btn" href="login.html">Entrar a MEC 🔐</a>
+    <a class="btn" href="login.html">Entrar a la aplicación 🔐</a>
 
-  <div class="btn-secondary" onclick="abrirModal()">¿No tienes cuenta?</div>
+    <br>
+    <div class="btn-secondary" onclick="abrirModal()">
+      ¿No tienes cuenta?
+    </div>
+  </div>
 
   <!-- PROBLEMA -->
-  <div class="section box">
-    <h2>La mayoría recibe su sueldo sin saber si está bien calculado</h2>
-    <p>
-      Horas extras mal pagadas. Vacaciones mal calculadas.  
-      Finiquitos incorrectos. Gratificación mal aplicada.
-    </p>
-    <p><strong>Muchos trabajadores lo descubren demasiado tarde.</strong></p>
+  <div class="section">
+    <h2>La mayoría de los trabajadores no entiende su liquidación</h2>
+
+    <div class="cards">
+      <div class="card">
+        ❌ Descuentos que no sabes de dónde salen
+      </div>
+      <div class="card">
+        ❌ Horas extra mal calculadas
+      </div>
+      <div class="card">
+        ❌ Vacaciones y finiquitos incorrectos
+      </div>
+    </div>
   </div>
 
   <!-- SOLUCIÓN -->
   <div class="section">
-    <h2>¿Qué analiza MEC?</h2>
+    <h2>MEC lo analiza por ti automáticamente</h2>
 
-    <div class="features">
-      ✔ Liquidaciones de sueldo<br>
-      ✔ Vacaciones legales<br>
-      ✔ Finiquitos<br>
-      ✔ Horas extras y domingos<br>
-      ✔ Comisiones y gratificación<br>
-      ✔ Chat laboral grupal y privado
+    <div class="cards">
+      <div class="card">
+        ✔ Analiza tu liquidación en segundos
+      </div>
+      <div class="card">
+        ✔ Calcula vacaciones y finiquitos
+      </div>
+      <div class="card">
+        ✔ Detecta posibles errores de pago
+      </div>
+      <div class="card">
+        ✔ Chat con otros trabajadores
+      </div>
     </div>
   </div>
 
-  <!-- PLANES -->
+  <!-- SINDICATOS -->
   <div class="section">
-    <h2>Empieza gratis</h2>
-
-    <div class="pricing">
-
-      <div class="plan">
-        <h3>Gratis</h3>
-        <p>✔ Chat laboral</p>
-        <p>✔ Recursos útiles</p>
-        <p>✔ 5 análisis mensuales</p>
-      </div>
-
-      <div class="plan highlight">
-        <h3>PRO</h3>
-        <p>✔ Análisis ilimitados</p>
-        <p>✔ Funciones completas</p>
-        <p>✔ Futuras herramientas sindicales</p>
-      </div>
-
-    </div>
+    <h2>Herramienta indispensable para sindicatos</h2>
+    <p style="opacity:.85;">
+      Facilita la revisión de liquidaciones y ayuda a educar a los trabajadores.
+    </p>
   </div>
 
-  <!-- CTA FINAL -->
-  <a class="btn" href="login.html">Entrar ahora 🔐</a>
+  <!-- FRASE -->
+  <div class="quote">
+    “El conocimiento es poder.”
+  </div>
 
 </div>
 
 <!-- Modal -->
-<div id="modalClave">
-  <div id="modalContenido">
-    <p><strong>Crea tu cuenta directamente en la plataforma</strong></p>
-    <p>Haz clic en "Entrar" y luego regístrate con tu correo 📧</p>
-    <br>
+<div id="modalClave" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);padding-top:120px;">
+  <div style="background:white;color:black;display:inline-block;padding:25px;border-radius:10px;">
+    <p>Crea tu cuenta directamente en la plataforma</p>
+    <p>Haz clic en “Entrar” y luego regístrate con tu correo 📧</p>
     <button onclick="cerrarModal()">Cerrar</button>
   </div>
 </div>
 
-<!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabaseClient.js"></script>
 
 <script>
-function abrirModal(){
-  document.getElementById("modalClave").style.display="block";
-}
+function abrirModal(){ document.getElementById("modalClave").style.display="block"; }
+function cerrarModal(){ document.getElementById("modalClave").style.display="none"; }
 
-function cerrarModal(){
-  document.getElementById("modalClave").style.display="none";
-}
-
-// 🔐 Redirección automática si ya está logueado
 document.addEventListener("DOMContentLoaded", async () => {
   const { data: { session } } = await supabase.auth.getSession();
   if (session) window.location.replace("app-protegida.html");

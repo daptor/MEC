@@ -2,159 +2,76 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>MEC — Revisa los cálculos de tu liquidación</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<style>
-body{
-  margin:0;
-  font-family:Arial, Helvetica, sans-serif;
-  background:#0f172a;
-  color:white;
-  text-align:center;
-}
-
-.hero{
-  padding:90px 20px;
-  max-width:900px;
-  margin:auto;
-}
-
-h1{
-  font-size:56px;
-  margin-bottom:20px;
-}
-
-.subtitle{
-  font-size:24px;
-  opacity:.9;
-}
-
-.description{
-  margin-top:25px;
-  font-size:20px;
-  opacity:.9;
-}
-
-.cta{
-  display:inline-block;
-  margin-top:40px;
-  padding:18px 40px;
-  background:#22c55e;
-  color:white;
-  text-decoration:none;
-  font-size:22px;
-  border-radius:12px;
-}
-
-.section{
-  background:white;
-  color:#0f172a;
-  padding:70px 20px;
-}
-
-.cards{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
-  gap:20px;
-  max-width:900px;
-  margin:40px auto;
-}
-
-.card{
-  background:#f1f5f9;
-  padding:25px;
-  border-radius:12px;
-  font-size:18px;
-}
-
-footer{
-  padding:30px;
-  opacity:.6;
-  font-size:14px;
-}
-</style>
+<title>MEC | Analiza tu liquidación</title>
+<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
+<!-- NAVBAR -->
+<div class="navbar">
+  <h1>MEC</h1>
+  <div>
+    <a href="login.html">Ingresar</a>
+  </div>
+</div>
+
 <!-- HERO -->
 <section class="hero">
+  <h1>¿Sabes calcular tu liquidación de sueldo?</h1>
+  <p>
+    MEC analiza automáticamente la parte matemática de tu liquidación,
+    vacaciones y finiquitos.  
+    Una herramienta indispensable para trabajadores y sindicatos.
+  </p>
 
-<h1>MEC</h1>
-
-<div class="subtitle">
-¿Sabes calcular tu liquidación de sueldo?
-</div>
-
-<p class="description">
-Sube tu liquidación y revisa en minutos  
-si los cálculos principales están correctos.
-</p>
-
-<a class="cta" href="login.html">Entrar a la aplicación 🔐</a>
-
-<p style="margin-top:20px; opacity:.7;">
-Herramienta indispensable para sindicatos y trabajadores
-</p>
-
+  <a href="login.html" class="btn-primary">
+    Entrar a la aplicación 🔐
+  </a>
 </section>
 
-<!-- PROBLEMA -->
-<section class="section">
+<!-- FEATURES -->
+<section class="features">
+  <div class="features-container">
 
-<h2>¿Por qué existe MEC?</h2>
+    <div class="feature-card">
+      <h3>📄 Analiza tu liquidación</h3>
+      <p>Detecta diferencias y valida cálculos automáticamente.</p>
+    </div>
 
-<div class="cards">
-  <div class="card">
-    ❓ ¿Tus horas extra están bien calculadas?
-  </div>
-  <div class="card">
-    ❓ ¿Tu gratificación está correcta?
-  </div>
-  <div class="card">
-    ❓ ¿Tu finiquito o vacaciones están bien calculados?
-  </div>
-</div>
+    <div class="feature-card">
+      <h3>📅 Vacaciones y finiquitos</h3>
+      <p>Calcula correctamente pagos pendientes y proporcionales.</p>
+    </div>
 
+    <div class="feature-card">
+      <h3>⏰ Horas extras y domingos</h3>
+      <p>Verifica recargos y horas trabajadas.</p>
+    </div>
+
+    <div class="feature-card">
+      <h3>💬 Chat laboral</h3>
+      <p>Conversa con trabajadores y sindicatos en tiempo real.</p>
+    </div>
+
+  </div>
 </section>
 
-<!-- SOLUCIÓN -->
-<section class="section" style="background:#f8fafc">
-
-<h2>Lo que puedes hacer con MEC</h2>
-
-<div class="cards">
-  <div class="card">
-    ✔ Verifica cálculos matemáticos de tu liquidación
-  </div>
-  <div class="card">
-    ✔ Calcula vacaciones y finiquitos automáticamente
-  </div>
-  <div class="card">
-    ✔ Detecta errores de cálculo frecuentes
-  </div>
-  <div class="card">
-    ✔ Chat con otros trabajadores
-  </div>
-</div>
-
+<!-- SOCIAL PROOF -->
+<section class="social-proof">
+  <h2>Herramienta indispensable para sindicatos</h2>
+  <p>
+    MEC nace para ayudar a trabajadores a entender sus remuneraciones
+    de forma clara, simple y automática.
+  </p>
 </section>
 
-<footer>
-MEC — Herramienta educativa y de apoyo para trabajadores.
-</footer>
-
-<!-- Supabase -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabaseClient.js"></script>
-
-<script>
-document.addEventListener("DOMContentLoaded", async () => {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session) window.location.replace("app-protegida.html");
-});
-</script>
+<!-- FOOTER -->
+<div class="footer">
+  <p>MEC © 2026</p>
+  <p>Plataforma de análisis laboral</p>
+</div>
 
 </body>
 </html>

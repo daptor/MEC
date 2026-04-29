@@ -1,111 +1,189 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>MEC - Analiza tu liquidación</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>MEC — Revisa tu sueldo automáticamente</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <style>
-    body{
-      font-family: Arial, Helvetica, sans-serif;
-      margin:0;
-      background:#0f172a;
-      color:white;
-      text-align:center;
-    }
+<style>
+body{
+  font-family: Arial, Helvetica, sans-serif;
+  margin:0;
+  background:#0f172a;
+  color:white;
+  text-align:center;
+}
 
-    .container{
-      max-width:900px;
-      margin:auto;
-      padding:60px 20px;
-    }
+.container{
+  max-width:900px;
+  margin:auto;
+  padding:60px 20px;
+}
 
-    h1{font-size:48px;margin-bottom:20px;}
+h1{
+  font-size:52px;
+  margin-bottom:10px;
+}
 
-    .descripcion{
-      font-size:20px;
-      opacity:.9;
-      margin-bottom:30px;
-    }
+.subhero{
+  font-size:24px;
+  opacity:.9;
+  margin-bottom:30px;
+}
 
-    .features{
-      text-align:left;
-      max-width:600px;
-      margin:30px auto;
-      line-height:1.6;
-      font-size:18px;
-      opacity:.95;
-    }
+.section{
+  margin-top:60px;
+}
 
-    .btn{
-      display:inline-block;
-      margin-top:30px;
-      padding:18px 35px;
-      background:#22c55e;
-      color:white;
-      text-decoration:none;
-      font-size:22px;
-      border-radius:10px;
-    }
+.box{
+  background:#111827;
+  padding:30px;
+  border-radius:14px;
+  margin-top:20px;
+}
 
-    .btn-secondary{
-      display:inline-block;
-      margin-top:15px;
-      padding:12px 25px;
-      background:#334155;
-      color:white;
-      border-radius:8px;
-      cursor:pointer;
-    }
+.features{
+  text-align:left;
+  max-width:600px;
+  margin:30px auto;
+  line-height:1.8;
+  font-size:18px;
+  opacity:.95;
+}
 
-    /* Modal */
-    #modalClave{
-      display:none;
-      position:fixed;
-      top:0;
-      left:0;
-      width:100%;
-      height:100%;
-      background-color:rgba(0,0,0,0.6);
-      text-align:center;
-      padding-top:120px;
-    }
+.btn{
+  display:inline-block;
+  margin-top:40px;
+  padding:18px 40px;
+  background:#22c55e;
+  color:white;
+  text-decoration:none;
+  font-size:24px;
+  border-radius:12px;
+  font-weight:bold;
+}
 
-    #modalContenido{
-      background:#fff;
-      color:#000;
-      display:inline-block;
-      padding:25px;
-      border-radius:10px;
-    }
-  </style>
+.btn-secondary{
+  display:inline-block;
+  margin-top:15px;
+  padding:12px 25px;
+  background:#334155;
+  color:white;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.pricing{
+  display:flex;
+  gap:20px;
+  flex-wrap:wrap;
+  justify-content:center;
+  margin-top:30px;
+}
+
+.plan{
+  background:#111827;
+  padding:25px;
+  border-radius:12px;
+  width:260px;
+}
+
+.plan h3{
+  font-size:26px;
+}
+
+.highlight{
+  border:2px solid #22c55e;
+}
+
+/* Modal */
+#modalClave{
+  display:none;
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background-color:rgba(0,0,0,0.6);
+  text-align:center;
+  padding-top:120px;
+}
+
+#modalContenido{
+  background:#fff;
+  color:#000;
+  display:inline-block;
+  padding:25px;
+  border-radius:10px;
+}
+</style>
 </head>
 
 <body>
 
 <div class="container">
 
-  <h1>MEC</h1>
+  <!-- HERO -->
+  <h1>Que no te paguen mal nunca más</h1>
 
-  <p class="descripcion">
-    Analiza tus liquidaciones, vacaciones y finiquitos automáticamente.
+  <p class="subhero">
+    Revisa tu liquidación de sueldo en segundos  
+    y detecta errores automáticamente 🇨🇱
   </p>
 
-  <div class="features">
-    <p><strong>✔ Verifica tu liquidación de sueldo</strong></p>
-    <p>✔ Cálculo de vacaciones y finiquitos</p>
-    <p>✔ Horas extras y recargos domingo</p>
-    <p>✔ Chat grupal y privado</p>
-    <p>✔ Subida de archivos PDF</p>
+  <a class="btn" href="login.html">Entrar a MEC 🔐</a>
+
+  <div class="btn-secondary" onclick="abrirModal()">¿No tienes cuenta?</div>
+
+  <!-- PROBLEMA -->
+  <div class="section box">
+    <h2>La mayoría recibe su sueldo sin saber si está bien calculado</h2>
+    <p>
+      Horas extras mal pagadas. Vacaciones mal calculadas.  
+      Finiquitos incorrectos. Gratificación mal aplicada.
+    </p>
+    <p><strong>Muchos trabajadores lo descubren demasiado tarde.</strong></p>
   </div>
 
-  <a class="btn" href="login.html">Entrar a la aplicación 🔐</a>
+  <!-- SOLUCIÓN -->
+  <div class="section">
+    <h2>¿Qué analiza MEC?</h2>
 
-  <br>
-
-  <div class="btn-secondary" onclick="abrirModal()">
-    ¿No tienes cuenta?
+    <div class="features">
+      ✔ Liquidaciones de sueldo<br>
+      ✔ Vacaciones legales<br>
+      ✔ Finiquitos<br>
+      ✔ Horas extras y domingos<br>
+      ✔ Comisiones y gratificación<br>
+      ✔ Chat laboral grupal y privado
+    </div>
   </div>
+
+  <!-- PLANES -->
+  <div class="section">
+    <h2>Empieza gratis</h2>
+
+    <div class="pricing">
+
+      <div class="plan">
+        <h3>Gratis</h3>
+        <p>✔ Chat laboral</p>
+        <p>✔ Recursos útiles</p>
+        <p>✔ 5 análisis mensuales</p>
+      </div>
+
+      <div class="plan highlight">
+        <h3>PRO</h3>
+        <p>✔ Análisis ilimitados</p>
+        <p>✔ Funciones completas</p>
+        <p>✔ Futuras herramientas sindicales</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CTA FINAL -->
+  <a class="btn" href="login.html">Entrar ahora 🔐</a>
 
 </div>
 
@@ -119,7 +197,7 @@
   </div>
 </div>
 
-<!-- Scripts -->
+<!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabaseClient.js"></script>
 
@@ -132,13 +210,10 @@ function cerrarModal(){
   document.getElementById("modalClave").style.display="none";
 }
 
-// 🚀 REDIRECCIÓN INTELIGENTE
+// 🔐 Redirección automática si ya está logueado
 document.addEventListener("DOMContentLoaded", async () => {
   const { data: { session } } = await supabase.auth.getSession();
-
-  if (session) {
-    window.location.replace("app-protegida.html");
-  }
+  if (session) window.location.replace("app-protegida.html");
 });
 </script>
 

@@ -619,17 +619,24 @@ body.admin #resetContador {
   display: none;
 }
 
-/* ===== RESET GENERAL ===== */
+______________________________________________
+
+/* =========================================
+   MEC LANDING — ESTRUCTURA VISUAL 3 BLOQUES
+   (NO BORRAR NADA ANTERIOR)
+========================================= */
+
+/* RESET SUAVE SOLO PARA LANDING */
 body{
   margin:0;
   font-family: Arial, Helvetica, sans-serif;
   background:#ffffff;
-  color:#111;
+  color:#111827;
 }
 
-/* ===== NAVBAR ===== */
+/* ===== 1️⃣ NAVBAR OSCURA ===== */
 .navbar{
-  background:#111;
+  background:#111827;           /* negro elegante */
   color:white;
   padding:18px 40px;
   display:flex;
@@ -637,95 +644,125 @@ body{
   align-items:center;
 }
 
+.navbar h1{
+  margin:0;
+  font-size:26px;
+  letter-spacing:1px;
+}
+
 .navbar a{
   color:white;
   text-decoration:none;
+  background:#22c55e;
+  padding:10px 18px;
+  border-radius:8px;
   font-weight:bold;
+  transition:.2s;
 }
 
-/* ===== HERO (franja verde suave) ===== */
+.navbar a:hover{
+  background:#16a34a;
+}
+
+
+/* ===== 2️⃣ HERO VERDE SUAVE (GANCHO) ===== */
 .hero{
-  background:#e8f7ee;
-  padding:90px 20px;
+  background:#e9fbe9; /* VERDE MUY SUAVE */
+  padding:90px 20px 80px 20px;
   text-align:center;
 }
 
 .hero h1{
   font-size:42px;
   margin-bottom:20px;
+  color:#065f46;
 }
 
-.hero-sub{
-  font-size:20px;
+.hero p{
   max-width:700px;
   margin:auto;
+  font-size:20px;
+  line-height:1.6;
+  color:#374151;
 }
 
-.hero-claim{
-  margin-top:15px;
-  font-weight:bold;
-  font-size:18px;
-}
-
-/* ===== BOTONES ===== */
 .btn-primary{
   display:inline-block;
   margin-top:35px;
   padding:16px 32px;
-  background:#2ecc71;
+  font-size:20px;
+  background:#22c55e;
   color:white;
   text-decoration:none;
-  border-radius:8px;
-  font-size:20px;
+  border-radius:10px;
   font-weight:bold;
-  transition:0.2s;
+  transition:.2s;
 }
 
 .btn-primary:hover{
-  background:#27ae60;
+  background:#16a34a;
+  transform:scale(1.05);
 }
 
-/* ===== FEATURES ===== */
+
+/* ===== 3️⃣ FEATURES ZONA BLANCA ===== */
 .features{
   padding:70px 20px;
   background:white;
 }
 
 .features-container{
-  max-width:1000px;
+  max-width:1100px;
   margin:auto;
   display:grid;
-  grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
+  grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
   gap:25px;
 }
 
 .feature-card{
-  background:#f5f5f5;
-  padding:25px;
-  border-radius:10px;
+  background:#f9fafb;
+  padding:30px;
+  border-radius:14px;
   text-align:center;
+  box-shadow:0 6px 18px rgba(0,0,0,0.06);
+  transition:.2s;
 }
 
-/* ===== SOCIAL PROOF ===== */
+.feature-card:hover{
+  transform:translateY(-5px);
+}
+
+.feature-card h3{
+  margin-bottom:12px;
+  color:#065f46;
+}
+
+
+/* ===== 4️⃣ SOCIAL PROOF ===== */
 .social-proof{
-  background:#fafafa;
-  padding:70px 20px;
+  background:#f3f4f6;
+  padding:60px 20px;
   text-align:center;
 }
 
-/* ===== CTA FINAL ===== */
-.cta-final{
-  background:#111;
-  color:white;
-  text-align:center;
-  padding:70px 20px;
+.social-proof h2{
+  font-size:28px;
+  margin-bottom:15px;
 }
 
-/* ===== FOOTER ===== */
+.social-proof p{
+  max-width:650px;
+  margin:auto;
+  font-size:18px;
+  color:#374151;
+}
+
+
+/* ===== 5️⃣ FOOTER ===== */
 .footer{
-  background:#000;
-  color:#aaa;
+  background:#111827;
+  color:#d1d5db;
+  padding:30px;
   text-align:center;
-  padding:25px;
   font-size:14px;
 }

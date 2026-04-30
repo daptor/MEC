@@ -2,60 +2,82 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>MEC - Analiza tu liquidación</title>
+  <title>MEC - Revisa tu liquidación</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
     body{
       font-family: Arial, Helvetica, sans-serif;
       margin:0;
-      background:#0f172a;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
       color:white;
-      text-align:center;
     }
 
     .container{
       max-width:900px;
       margin:auto;
-      padding:60px 20px;
+      padding:80px 20px;
+      text-align:center;
     }
 
-    h1{font-size:48px;margin-bottom:20px;}
+    h1{
+      font-size:48px;
+      margin-bottom:20px;
+    }
 
-    .descripcion{
-      font-size:20px;
+    .hero-text{
+      font-size:22px;
       opacity:.9;
-      margin-bottom:30px;
+      margin-bottom:25px;
     }
 
-    .features{
-      text-align:left;
-      max-width:600px;
-      margin:30px auto;
-      line-height:1.6;
-      font-size:18px;
-      opacity:.95;
+    .sub{
+      font-size:16px;
+      opacity:.7;
+      margin-bottom:40px;
     }
 
     .btn{
       display:inline-block;
-      margin-top:30px;
-      padding:18px 35px;
+      padding:18px 40px;
       background:#22c55e;
       color:white;
       text-decoration:none;
-      font-size:22px;
-      border-radius:10px;
+      font-size:20px;
+      border-radius:12px;
+      transition:.2s;
     }
 
-    .btn-secondary{
-      display:inline-block;
-      margin-top:15px;
-      padding:12px 25px;
-      background:#334155;
-      color:white;
-      border-radius:8px;
+    .btn:hover{
+      background:#16a34a;
+      transform:scale(1.05);
+    }
+
+    .mini-link{
+      margin-top:25px;
+      display:block;
+      font-size:14px;
+      opacity:.7;
       cursor:pointer;
+    }
+
+    .mini-link:hover{
+      opacity:1;
+    }
+
+    .features{
+      margin-top:70px;
+      display:grid;
+      grid-template-columns:1fr;
+      gap:15px;
+      font-size:18px;
+      opacity:.9;
+    }
+
+    .feature{
+      background:rgba(255,255,255,0.05);
+      padding:15px;
+      border-radius:10px;
     }
 
     /* Modal */
@@ -77,7 +99,9 @@
       display:inline-block;
       padding:25px;
       border-radius:10px;
+      max-width:300px;
     }
+
   </style>
 </head>
 
@@ -85,26 +109,28 @@
 
 <div class="container">
 
-  <h1>MEC</h1>
+  <h1>¿Te has preguntado si tu liquidación está correcta?</h1>
 
-  <p class="descripcion">
-    Analiza tus liquidaciones, vacaciones y finiquitos automáticamente.
+  <p class="hero-text">
+    Ingresa y revisa tu liquidación en segundos.
   </p>
 
+  <p class="sub">
+    Sin cálculos. Sin conocimientos técnicos.
+  </p>
+
+  <a class="btn" href="login.html">
+    Ingresar y analizar mi liquidación
+  </a>
+
+  <span class="mini-link" onclick="window.location.href='info.html'">
+    ¿Quieres saber más sobre MEC?
+  </span>
+
   <div class="features">
-    <p><strong>✔ Verifica tu liquidación de sueldo</strong></p>
-    <p>✔ Cálculo de vacaciones y finiquitos</p>
-    <p>✔ Horas extras y recargos domingo</p>
-    <p>✔ Chat grupal y privado</p>
-    <p>✔ Subida de archivos PDF</p>
-  </div>
-
-  <a class="btn" href="login.html">Entrar a la aplicación 🔐</a>
-
-  <br>
-
-  <div class="btn-secondary" onclick="abrirModal()">
-    ¿No tienes cuenta?
+    <div class="feature">✔ Revisa si tu sueldo está bien calculado</div>
+    <div class="feature">✔ Detecta posibles errores</div>
+    <div class="feature">✔ Entiende tu liquidación sin complicaciones</div>
   </div>
 
 </div>
@@ -112,8 +138,8 @@
 <!-- Modal -->
 <div id="modalClave">
   <div id="modalContenido">
-    <p><strong>Crea tu cuenta directamente en la plataforma</strong></p>
-    <p>Haz clic en "Entrar" y luego regístrate con tu correo 📧</p>
+    <p><strong>Crea tu cuenta en segundos</strong></p>
+    <p>Haz clic en ingresar y regístrate con tu correo 📧</p>
     <br>
     <button onclick="cerrarModal()">Cerrar</button>
   </div>

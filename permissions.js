@@ -1,12 +1,12 @@
 // permissions.js
-// Sistema base de permisos freemium (extendido sin romper lógica existente)
+// Sistema de permisos MEC (alineado a modelo real)
 
-// Espera a que planGuard cargue el plan
+// Obtener plan actual
 function getUserPlan() {
   return window.userPlan || "free";
 }
 
-// Helpers simples
+// Helpers
 function isFree() {
   return getUserPlan() === "free";
 }
@@ -19,57 +19,44 @@ function isProPending() {
   return getUserPlan() === "pro_pending";
 }
 
-// Definición centralizada de features SaaS
+// 🔐 FEATURES REALES DE MEC
 const FEATURES = {
   CHAT_GRUPAL: "chat_grupal",
   CHAT_PRIVADO: "chat_privado",
-  RECURSOS: "recursos",
-  FUNCIONES_AVANZADAS: "funciones_avanzadas",
-  EXPORTES: "exportes",
-  PRIORIDAD_RESPUESTAS: "prioridad_respuestas"
+  ANALISIS: "analisis",
+  VACACIONES: "vacaciones",
+  FINIQUITO: "finiquito"
 };
 
-// Permisos por plan (extendido)
+// Permisos por plan
 const PLAN_PERMISSIONS = {
   free: [
     FEATURES.CHAT_GRUPAL,
     FEATURES.CHAT_PRIVADO
-    // ❗ dejamos fuera funciones avanzadas
   ],
 
-  pro_pending: [
-    FEATURES.CHAT_GRUPAL,
-    FEATURES.CHAT_PRIVADO,
-    FEATURES.RECURSOS,
-    FEATURES.FUNCIONES_AVANZADAS,
-    FEATURES.EXPORTES
-  ],
+  pro_pending: Object.values(FEATURES), // todo habilitado
 
-  pro: Object.values(FEATURES) // acceso total
+  pro: Object.values(FEATURES) // todo habilitado
 };
 
-// Función principal del SaaS
+// Verificar acceso
 function canUse(feature) {
   const plan = getUserPlan();
   const permissions = PLAN_PERMISSIONS[plan] || PLAN_PERMISSIONS.free;
   return permissions.includes(feature);
 }
 
-// 🔥 NUEVO: función para bloquear sin repetir código
+// Bloqueo simple
 function requireFeature(feature) {
   if (!canUse(feature)) {
-    mostrarPaywall(feature);
+    alert("Esta función está disponible en MEC PRO");
     return false;
   }
   return true;
 }
 
-// 🔥 NUEVO: paywall simple (puedes mejorar después)
-function mostrarPaywall(feature) {
-  alert("Esta función está disponible en MEC PRO");
-}
-
-// Exponer globalmente (sin romper nada existente)
+// Exponer globalmente
 window.PERMISSIONS = {
   FEATURES,
   isFree,
@@ -79,4 +66,4 @@ window.PERMISSIONS = {
   requireFeature
 };
 
-console.log("🔐 Sistema de permisos cargado (extendido)");sessionStorage.js ""
+console.log("🔐 Sistema de permisos MEC cargado");

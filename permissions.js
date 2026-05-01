@@ -79,4 +79,4 @@ window.PERMISSIONS = {
   requireFeature
 };
 
-console.log("🔐 Sistema de permisos cargado (extendido)");
+console.log("🔐 Sistema de permisos cargado (extendido)");sessionStorage.js ""

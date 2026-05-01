@@ -78,9 +78,9 @@ async function puedeUsarAnalisisTotal() {
     }
 
     const usados = data.analisis_usados || 0;
-    console.log("📊 Análisis usados:", usados, "/ 5");
+    console.log("📊 Análisis usados:", usados, "/ 2");
 
-    return usados < 5;
+    return usados < 2;
 }
 
 
@@ -129,7 +129,7 @@ async function actualizarContadorAnalisisUI() {
         return;
     }
 
-    el.textContent = `${data.analisis_usados || 0} de 5`;
+    el.textContent = `${data.analisis_usados || 0} de 2`;
 }
 
 

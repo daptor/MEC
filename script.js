@@ -1563,6 +1563,9 @@ function seleccionarLiquidacionesParaPromedio(datos, pdfSeleccionado) {
 
 // Ajuste en la función 'calcularVacaciones' para manejar la lógica de selección de liquidaciones con "COMISIÓN VACACIONES"
 document.getElementById('calcularVacacionesBtn').addEventListener('click', async () => {
+
+    if (!PERMISSIONS.requireFeature(PERMISSIONS.FEATURES.FUNCIONES_AVANZADAS)) return;
+    
     const archivos = document.getElementById('vacacionInput').files;
     const resultadoDiv = document.getElementById('resultadoVacaciones');
     resultadoDiv.innerHTML = '';

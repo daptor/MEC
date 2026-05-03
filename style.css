@@ -56,6 +56,37 @@ h1, h2, h3,
   text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
 }
 
+/* Botones generales y menú Tesorería */
+button,
+#pantalla-menu-tesoreria button {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  font-size: 18px;
+  font-weight: bold;
+  color: #fff;
+  background: linear-gradient(135deg, #28a745, #218838);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: center;
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+  transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+button:hover,
+#pantalla-menu-tesoreria button:hover {
+  background: linear-gradient(135deg, #218838, #1e7e34);
+  transform: scale(1.05);
+  box-shadow: 4px 4px 8px rgba(0,0,0,0.3);
+}
+
+button:disabled,
+#pantalla-menu-tesoreria button:disabled {
+  background-color: #ccc;
+}
+
 /* Inputs, selects y textarea (general y menú Tesorería) */
 input, select, textarea,
 #pantalla-menu-tesoreria input,

@@ -1691,6 +1691,9 @@ function mostrarPantalla(id) {
 // ****************** Funciones para la Pantalla de Cálculo de Horas ******************
 
 function calcularHoras() {
+
+    // 🔒 BLOQUEO FREEMIUM (Horas)
+    if (!PERMISSIONS.requireFeature(PERMISSIONS.FEATURES.ANALISIS)) return;
     const sueldo = parseFloat(document.getElementById("horas-sueldoBase").value);
     const jornada = document.getElementById("horas-jornada").value;
     const extra = parseFloat(document.getElementById("horas-horasExtras").value) || 0;
@@ -1771,6 +1774,10 @@ document.addEventListener("DOMContentLoaded", function () {
   const resultadosFiniquito = document.getElementById("resultadosFiniquito");
 
   btnCalcularFiniquito.addEventListener("click", async function () {
+
+  // 🔒 BLOQUEO FREEMIUM (Finiquito)
+  if (!PERMISSIONS.requireFeature(PERMISSIONS.FEATURES.FINIQUITO)) return;
+
     const fechaInicio = new Date(document.getElementById("fechaInicioContrato").value);
     const fechaDesvinculacion = new Date(document.getElementById("fechaDesvinculacion").value);
 

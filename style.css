@@ -622,8 +622,8 @@ body.admin #resetContador {
 =================================================
 /* BOTÓN PRO NARANJA */
 .btn-pro {
-    width: 50%;
-    margin-top: 10px;
+    width: 1%;
+    margin-top: 5px;
     background: #f59e0b;
     color: white;
     font-weight: bold;

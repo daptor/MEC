@@ -35,7 +35,12 @@ const PLAN_PERMISSIONS = {
     FEATURES.CHAT_PRIVADO
   ],
 
-  pro_pending: Object.values(FEATURES), // todo habilitado
+  // 🔥 CORREGIDO: ya NO tiene acceso a todo
+  pro_pending: [
+    FEATURES.CHAT_GRUPAL,
+    FEATURES.CHAT_PRIVADO,
+    FEATURES.ANALISIS
+  ],
 
   pro: Object.values(FEATURES) // todo habilitado
 };

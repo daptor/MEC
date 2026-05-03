@@ -1692,8 +1692,12 @@ function mostrarPantalla(id) {
 
 function calcularHoras() {
 
-    // 🔒 BLOQUEO FREEMIUM (Horas)
-    if (!PERMISSIONS.requireFeature(PERMISSIONS.FEATURES.ANALISIS)) return;
+    // 🔒 BLOQUEO FREEMIUM (Horas → SOLO PRO)
+    if (!PERMISSIONS.isPro()) {
+        alert("Esta función está disponible en MEC PRO");
+        return;
+    }
+
     const sueldo = parseFloat(document.getElementById("horas-sueldoBase").value);
     const jornada = document.getElementById("horas-jornada").value;
     const extra = parseFloat(document.getElementById("horas-horasExtras").value) || 0;
@@ -1706,41 +1710,35 @@ function calcularHoras() {
         return;
     }
 
-    // Cálculo del valor de la hora base:
-    // Fórmula: (sueldo / 30) * (28 / (jornada * 4))
+    // Cálculo del valor de la hora base
     const valorHoraBase = (sueldo / 30) * (28 / (parseInt(jornada) * 4));
     document.getElementById("horas-valorHoraBase").textContent = valorHoraBase.toFixed(2);
 
-    // Buscar el factor correspondiente a la jornada en la tabla
+    // Buscar el factor correspondiente a la jornada
     const factorObj = listaHoraExtra.find(item => item.horas === jornada);
     const factor = factorObj ? factorObj.factor : 0;
     document.getElementById("horas-factor").textContent = factor.toFixed(7);
 
-    // Cálculo de Horas Extras:
-    // Fórmula: sueldo * factor * (cantidad de horas extras)
+    // Cálculo de Horas Extras
     const valorHorasExtras = sueldo * factor * extra;
     document.getElementById("horas-valorHorasExtras").textContent = valorHorasExtras.toFixed(2);
 
-    // Cálculo de Recargo Domingo:
-    // Fórmula: valorHoraBase * 0.30 * (cantidad de horas recargo domingo)
+    // Recargo Domingo
     const valorRecargoDomingo = valorHoraBase * 0.30 * recargo;
     document.getElementById("horas-valorRecargoDomingo").textContent = valorRecargoDomingo.toFixed(2);
 
-    // Cálculo de Horas Extras Domingo:
-    // Fórmula: valorHoraBase * 1.3 * 1.5 * (cantidad de horas extras domingo)
+    // Horas Extras Domingo
     const valorHorasExtrasDomingo = valorHoraBase * 1.3 * 1.5 * extraDomingo;
     document.getElementById("horas-valorHorasExtrasDomingo").textContent = valorHorasExtrasDomingo.toFixed(2);
 }
 
 function refrescarHoras() {
-    // Limpia todos los campos de la pantalla de cálculo de horas
     document.getElementById("horas-sueldoBase").value = "";
     document.getElementById("horas-jornada").value = "";
     document.getElementById("horas-horasExtras").value = "";
     document.getElementById("horas-horasRecargoDomingo").value = "";
     document.getElementById("horas-horasExtrasDomingo").value = "";
 
-    // Limpia los resultados
     document.getElementById("horas-factor").textContent = "";
     document.getElementById("horas-valorHoraBase").textContent = "";
     document.getElementById("horas-valorHorasExtras").textContent = "";

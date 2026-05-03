@@ -622,7 +622,7 @@ body.admin #resetContador {
 =================================================
 /* BOTÓN PRO NARANJA */
 .btn-pro {
-    width: 100%;
+    width: 50%;
     margin-top: 10px;
     background: #f59e0b;
     color: white;
@@ -640,7 +640,7 @@ body.admin #resetContador {
 
 /* BOTONES BLOQUEADOS (CON CANDADO) */
 .btn-pro-lock {
-    opacity: 0.75;
+    opacity: 0.85;
     position: relative;
 }
 

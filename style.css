@@ -619,3 +619,32 @@ body.admin #resetContador {
   display: none;
 }
 
+=================================================
+/* BOTÓN PRO NARANJA */
+.btn-pro {
+    width: 100%;
+    margin-top: 10px;
+    background: #f59e0b;
+    color: white;
+    font-weight: bold;
+    border-radius: 12px;
+    padding: 12px;
+    border: none;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-pro:hover {
+    background: #d97706;
+}
+
+/* BOTONES BLOQUEADOS (CON CANDADO) */
+.btn-pro-lock {
+    opacity: 0.75;
+    position: relative;
+}
+
+/* opcional: leve efecto visual */
+.btn-pro-lock:hover {
+    transform: none; /* evita efecto hover normal */
+}

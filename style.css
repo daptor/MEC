@@ -619,21 +619,3 @@ body.admin #resetContador {
   display: none;
 }
 
-____________________________________________
-.lock-icon {
-  margin-left: 6px;
-  font-size: 14px;
-  opacity: 0.8;
-}
-
-.pro-locked {
-  opacity: 0.6;
-}
-
-.pro-locked .lock-icon {
-  display: inline;
-}
-
-.pro-unlocked .lock-icon {
-  display: none;
-}

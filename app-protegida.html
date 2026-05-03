@@ -95,25 +95,22 @@
 
     <!--h1>Menú Principal</h1-->
     <button onclick="mostrarPantalla('pantalla-analisis')">🔥 Análisis de Liquidación</button>
-    <button onclick="mostrarPantalla('pantalla-vacaciones')">🌊 Cálculo de Vacaciones</button>
-    <button onclick="mostrarPantalla('screen-finiquito')">👋 Cálculo de Finiquito</button>
-    <button onclick="mostrarPantalla('pantalla-horas')">⏳ Cálculo de Horas</button>
+    <button onclick="mostrarPantalla('pantalla-vacaciones')" class="btn-pro-lock">🔐 🌊 Cálculo de Vacaciones</button>
+    <button onclick="mostrarPantalla('screen-finiquito')" class="btn-pro-lock">🔐 👋 Cálculo de Finiquito</button>
+    <button onclick="mostrarPantalla('pantalla-horas')" class="btn-pro-lock">🔐 ⏳ Cálculo de Horas</button>
     <button onclick="mostrarPantalla('pantalla-recursos')">✅ Recursos Útiles</button>
     <button onclick="ingresarAlChat()" id="btnChatMenu" class="btn-chat" type="button">
       <span>📢 Chat Grupal y Privado</span>
-      <span id="badgeChat" class="badge-chat" aria-live="polite">0</span>
-    </button>
-    <button onclick="mostrarPantalla('pantalla-archivosindical')">📂 Archivo Sindical</button>
-
+      <span id="badgeChat" class="badge-chat" aria-live="polite">0</span></button>
+    <button onclick="mostrarPantalla('pantalla-archivosindical')" class="btn-pro-lock">🔐 📂 Archivo Sindical</button>
     <div id="bloqueUsuario" style="display:flex; flex-direction:column; gap:4px; margin-top:4px;">
         <button id="btnLogout">Cerrar: </button>
     </div>
 </div>
 
 <!-- boton PRO -->
-<div id="seccion-pro">
-    <button id="btnUpgradePro" type="button">⭐ Activar versión PRO</button>
-</div>
+<hr style="margin-top:15px; opacity:.3;">
+<button id="btnUpgradePro" class="btn-pro">⭐ Activar versión PRO </button>
 
   <!-------------- las otras funciones originales ----------------->
   <!-- Pantalla de Análisis de Liquidación -->

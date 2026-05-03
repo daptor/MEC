@@ -1693,7 +1693,7 @@ function mostrarPantalla(id) {
 function calcularHoras() {
 
     // 🔒 BLOQUEO FREEMIUM (Horas → SOLO PRO)
-    if (!PERMISSIONS.isPro()) {
+    if (!window.PERMISSIONS || !PERMISSIONS.isPro()) {
         alert("Esta función está disponible en MEC PRO");
         return;
     }
@@ -1704,7 +1704,7 @@ function calcularHoras() {
     const recargo = parseFloat(document.getElementById("horas-horasRecargoDomingo").value) || 0;
     const extraDomingo = parseFloat(document.getElementById("horas-horasExtrasDomingo").value) || 0;
 
-    // Validar que se hayan ingresado sueldo y jornada
+    // Validar datos
     if (isNaN(sueldo) || !jornada) {
         alert("Por favor, ingrese un sueldo válido y seleccione una jornada.");
         return;
@@ -1714,20 +1714,20 @@ function calcularHoras() {
     const valorHoraBase = (sueldo / 30) * (28 / (parseInt(jornada) * 4));
     document.getElementById("horas-valorHoraBase").textContent = valorHoraBase.toFixed(2);
 
-    // Buscar el factor correspondiente a la jornada
+    // Factor jornada
     const factorObj = listaHoraExtra.find(item => item.horas === jornada);
     const factor = factorObj ? factorObj.factor : 0;
     document.getElementById("horas-factor").textContent = factor.toFixed(7);
 
-    // Cálculo de Horas Extras
+    // Horas extras
     const valorHorasExtras = sueldo * factor * extra;
     document.getElementById("horas-valorHorasExtras").textContent = valorHorasExtras.toFixed(2);
 
-    // Recargo Domingo
+    // Recargo domingo
     const valorRecargoDomingo = valorHoraBase * 0.30 * recargo;
     document.getElementById("horas-valorRecargoDomingo").textContent = valorRecargoDomingo.toFixed(2);
 
-    // Horas Extras Domingo
+    // Horas extras domingo
     const valorHorasExtrasDomingo = valorHoraBase * 1.3 * 1.5 * extraDomingo;
     document.getElementById("horas-valorHorasExtrasDomingo").textContent = valorHorasExtrasDomingo.toFixed(2);
 }

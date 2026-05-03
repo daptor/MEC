@@ -74,13 +74,9 @@ button {
   transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
 }
 
-
-
-/* Inputs, selects y textarea (general y menú Tesorería) */
+/* Inputs, selects y textarea (general) */
 input, select, textarea,
-#pantalla-menu-tesoreria input,
-#pantalla-menu-tesoreria select,
-#pantalla-menu-tesoreria textarea {
+{
   width: 95%;
   padding: 10px;
   margin: 10px 0;
@@ -94,9 +90,7 @@ input, select, textarea,
 }
 
 input:focus, select:focus, textarea:focus,
-#pantalla-menu-tesoreria input:focus,
-#pantalla-menu-tesoreria select:focus,
-#pantalla-menu-tesoreria textarea:focus {
+{
   border-color: #218838;
   box-shadow: 0 0 8px rgba(33,136,56,0.8);
   outline: none;

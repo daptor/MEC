@@ -17,45 +17,108 @@
         Visitas MEC: <span id="contador">0</span> |
         Análisis: <span id="contador-analisis"></span>
     </p>
-    <button id="resetContador" class="hidden-reset" onclick="resetContador()">Resetear Contador</button>
+    <!--button id="resetContador" class="hidden-reset" onclick="resetContador()">Resetear Contador</button>-->
 </div>
 
-  <!-- Menú Principal -->
-  <div id="menu-principal" class="pantalla" style="display: block;">
-      <div class="logo-container">
-          <img src="logo1.png" alt="Logotipo de MEC">
-      </div>
-      <h1>Menú Principal</h1>
-      <button onclick="mostrarPantalla('pantalla-analisis')">🔥 Análisis de Liquidación</button>
-      <button onclick="mostrarPantalla('pantalla-vacaciones')">🌊 Cálculo de Vacaciones</button>
-      <button onclick="mostrarPantalla('screen-finiquito')">👋 Cálculo de Finiquito</button>
-      <button onclick="mostrarPantalla('pantalla-horas')">⏳ Cálculo de Horas</button>
-      <button onclick="mostrarPantalla('pantalla-recursos')">✅ Recursos Útiles</button>
-      <button onclick="ingresarAlChat()" id="btnChatMenu" class="btn-chat">📢 Chat Grupal y Privado
-        <span id="badgeChat" class="badge-chat">0</span></button>
-      <button onclick="mostrarPantalla('pantalla-archivosindical')">📂 Archivo Sindical</button>
-      <div id="bloqueUsuario" style="
-                    display:flex;
-                    flex-direction:column;
-                    gap:6px;
-                    margin-top:6px;
-                ">
+<!-- Estilos mínimos para arreglar el botón PRO y el badge del chat -->
+<style>
+  #menu-principal {
+    display: block;
+  }
 
-                    <button id="btnLogout">
-                        Cerrar sesión
-                    </button>
+  #btnChatMenu {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding-right: 42px; /* deja espacio para el badge */
+  }
 
-                </div>
-            </div>
-  </div>
+  .badge-chat {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 22px;
+    text-align: center;
+    display: none;
+    box-shadow: 0 4px 10px rgba(0,0,0,.18);
+  }
 
-  <!-- boton PRO -->
-    <div id="seccion-pro" style="margin-top:25px;">
-    <hr>
-    <button id="btnUpgradePro" style="background:#f59e0b;">
-        ⭐ Activar versión PRO
-    </button>
+  .badge-chat.visible {
+    display: inline-block;
+  }
+
+  #seccion-pro {
+    margin: 18px auto 0;
+    max-width: 340px;
+    padding: 0 12px;
+  }
+
+  #seccion-pro hr {
+    margin: 14px 0;
+    opacity: .25;
+  }
+
+  #btnUpgradePro {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 14px;
+    font-weight: 700;
+    box-shadow: 0 8px 18px rgba(245, 158, 11, .25);
+    cursor: pointer;
+  }
+
+  #btnUpgradePro:hover {
+    filter: brightness(0.97);
+    transform: translateY(-1px);
+  }
+</style>
+
+<!-- Menú Principal -->
+<div id="menu-principal" class="pantalla" style="display: block;">
+    <div class="logo-container">
+        <img src="logo1.png" alt="Logotipo de MEC">
     </div>
+
+    <h1>Menú Principal</h1>
+
+    <button onclick="mostrarPantalla('pantalla-analisis')">🔥 Análisis de Liquidación</button>
+    <button onclick="mostrarPantalla('pantalla-vacaciones')">🌊 Cálculo de Vacaciones</button>
+    <button onclick="mostrarPantalla('screen-finiquito')">👋 Cálculo de Finiquito</button>
+    <button onclick="mostrarPantalla('pantalla-horas')">⏳ Cálculo de Horas</button>
+    <button onclick="mostrarPantalla('pantalla-recursos')">✅ Recursos Útiles</button>
+
+    <button onclick="ingresarAlChat()" id="btnChatMenu" class="btn-chat" type="button">
+      <span>📢 Chat Grupal y Privado</span>
+      <span id="badgeChat" class="badge-chat" aria-live="polite">0</span>
+    </button>
+
+    <button onclick="mostrarPantalla('pantalla-archivosindical')">📂 Archivo Sindical</button>
+
+    <div id="bloqueUsuario" style="display:flex; flex-direction:column; gap:6px; margin-top:6px;">
+        <button id="btnLogout">Cerrar sesión</button>
+    </div>
+</div>
+
+<!-- boton PRO -->
+<div id="seccion-pro">
+    <hr>
+    <button id="btnUpgradePro" type="button">⭐ Activar versión PRO</button>
+</div>
 
   <!-------------- las otras funciones originales ----------------->
   <!-- Pantalla de Análisis de Liquidación -->

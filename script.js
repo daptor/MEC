@@ -3118,18 +3118,67 @@ function mostrarResultadoFreemium(htmlResultado) {
         return;
     }
 
+    const plan = window.userPlan;
+
     // 💎 PRO → todo normal
-    if (window.userPlan === "pro") {
+    if (plan === "pro") {
         console.log("💎 Usuario PRO → mostrando análisis completo");
         contenedor.innerHTML += htmlResultado;
         return;
     }
 
-    // 🆓 FREE → mostrar TODO mientras esté dentro del límite
-    console.log("🆓 Usuario FREE → mostrando análisis completo (dentro del límite)");
+    // ⏳ PRO_PENDING → igual que FREE pero controlado por contador
+    if (plan === "pro_pending") {
+        console.log("⏳ PRO_PENDING → mostrando análisis (limitado por contador)");
+        contenedor.innerHTML += htmlResultado;
+        return;
+    }
 
+    // 🆓 FREE
+    console.log("🆓 FREE → mostrando análisis (dentro del límite)");
     contenedor.innerHTML += htmlResultado;
 }
+
+
+// ========================================
+// 🔘 CONTROL VISUAL BOTÓN PRO
+// ========================================
+function actualizarBotonPro(plan) {
+    const seccion = document.getElementById("seccion-pro");
+
+    if (!seccion) return;
+
+    // 🆓 FREE → botón visible
+    if (plan === "free") {
+        seccion.innerHTML = `
+            <hr>
+            <button id="btnUpgradePro" style="background:#f59e0b;">
+                ⭐ Activar versión PRO
+            </button>
+        `;
+        seccion.style.display = "block";
+        return;
+    }
+
+    // ⏳ PRO_PENDING → mensaje de trial
+    if (plan === "pro_pending") {
+        seccion.innerHTML = `
+            <hr>
+            <p style="color:#f59e0b; font-weight:bold;">
+                ⏳ Trial PRO activo (acceso limitado)
+            </p>
+        `;
+        seccion.style.display = "block";
+        return;
+    }
+
+    // 💎 PRO → ocultar completamente
+    if (plan === "pro") {
+        seccion.style.display = "none";
+        return;
+    }
+}
+
 
 // ========================================
 // 🔄 CUANDO EL PLAN CAMBIA (upgrade / pago)
@@ -3179,6 +3228,9 @@ function actualizarUIsegunPlan() {
 
   console.log("🎨 Actualizando UI según plan:", plan);
 
+  // 🔥 NUEVO → controlar botón PRO
+  actualizarBotonPro(plan);
+
   const btnPro = document.getElementById("btnUpgradePro");
 
   // 🔒 BOTONES DEL MENÚ QUE SON SOLO PRO
@@ -3191,14 +3243,13 @@ function actualizarUIsegunPlan() {
   ];
 
   // ========================================
-  // 💎 USUARIO PRO (pagado)
+  // 💎 USUARIO PRO
   // ========================================
   if (plan === "pro") {
     console.log("💎 UI en modo PRO");
 
     if (btnPro) btnPro.style.display = "none";
 
-    // Mostrar todo
     botonesPro.forEach(btn => {
       if (btn) btn.style.display = "block";
     });
@@ -3208,16 +3259,13 @@ function actualizarUIsegunPlan() {
   }
 
   // ========================================
-  // ⏳ USUARIO PRO_PENDING (solicitó PRO)
-  // 👉 funciones PRO desaparecen del menú
+  // ⏳ PRO_PENDING
   // ========================================
   if (plan === "pro_pending") {
     console.log("⏳ UI en modo PRO_PENDING");
 
-    // Ocultar botón upgrade (ya lo pidió)
     if (btnPro) btnPro.style.display = "none";
 
-    // 🔥 OCULTAR FUNCIONES PRO DEL MENÚ
     botonesPro.forEach(btn => {
       if (btn) btn.style.display = "none";
     });
@@ -3227,7 +3275,7 @@ function actualizarUIsegunPlan() {
   }
 
   // ========================================
-  // 🆓 USUARIO FREE
+  // 🆓 FREE
   // ========================================
   console.log("🆓 UI en modo FREE");
 
@@ -3236,7 +3284,6 @@ function actualizarUIsegunPlan() {
     btnPro.innerText = "Activar PRO";
   }
 
-  // Mostrar funciones PRO (pero bloqueadas por paywall)
   botonesPro.forEach(btn => {
     if (btn) btn.style.display = "block";
   });

@@ -21,6 +21,7 @@ window.mostrarPantallaGastoReal = mostrarPantallaGastoReal;
 document.addEventListener("DOMContentLoaded", async () => {
 
   const { data: { user } } = await supabase.auth.getUser();
+  window.currentUser = user;
 
   // Mostrar email
   const emailSpan = document.getElementById("userEmail");
@@ -53,6 +54,7 @@ supabase.auth.onAuthStateChange((event) => {
 async function registrarUso(tipo) {
   try {
     const { data: { user } } = await supabase.auth.getUser();
+    window.currentUser = user;
 
     if (!user) {
       console.log("⚠️ No hay usuario logueado");

@@ -65,11 +65,23 @@ function canUse(feature) {
 }
 
 // Bloqueo simple
-function requireFeature(feature) {
+function requireFeature(feature, featureName = "esta función") {
+
+  // 👑 ADMIN pasa siempre
+  if (isAdmin()) return true;
+
   if (!canUse(feature)) {
-    alert("Esta función está disponible en MEC PRO");
+
+    // 👉 usar paywall en vez de alert
+    if (window.PAYWALL && PAYWALL.require) {
+      PAYWALL.require(feature, featureName);
+    } else {
+      console.warn("⚠ PAYWALL no disponible");
+    }
+
     return false;
   }
+
   return true;
 }
 

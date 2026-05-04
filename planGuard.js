@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const user = session.user;
 
-    // ⏰ Verificar expiración automática de PRO_PENDING (24h) en Supabase
+    // ⏰ Verificar expiración automática de PRO_PENDING (24h)
     try {
       await supabase.rpc("verificar_expiracion_pro_pending");
       console.log("⏰ Verificación de expiración PRO_PENDING ejecutada");
@@ -33,12 +33,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       console.warn("No se pudo verificar expiración PRO_PENDING", e);
     }
 
-    // 2️⃣ Obtener perfil desde Supabase (CORREGIDO)
+    // 2️⃣ Obtener perfil desde Supabase
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", user.id)
-      .maybeSingle(); // 🔥 CAMBIO CLAVE
+      .maybeSingle();
 
     if (profileError) {
       console.error("Error cargando perfil:", profileError);
@@ -88,6 +88,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     console.log("✅ Perfil cargado:", finalProfile.email);
     console.log("💰 Plan cargado:", window.userPlan);
+
+    // 🚀 AVISAR A TODA LA APP QUE EL PLAN YA ESTÁ LISTO
+    window.dispatchEvent(new Event("planReady"));
+    console.log("📢 Evento planReady enviado");
 
   } catch (err) {
     console.error("Error inesperado planGuard:", err);

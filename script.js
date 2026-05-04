@@ -227,7 +227,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     await personalizarBotonLogout();   // ⭐ NUEVO
 });
 
-
 // =========================================
 // 🔑 LOGIN POR CÓDIGO (SE MANTIENE)
 // =========================================
@@ -3336,3 +3335,36 @@ function actualizarUIsegunPlan() {
   window.bloquearContadorFree = false;
 }
 
+// =====================================
+  // IDEA DE FUNCIONAMIENTO DE LOS BOTONES QUE CAMBIAN
+// =====================================
+
+function actualizarCandadosUI() {
+
+    const botones = document.querySelectorAll(".btn-pro-lock");
+
+    if (!botones.length) return;
+
+    // Si es PRO → quitar candados
+    if (PERMISSIONS.isPro && PERMISSIONS.isPro()) {
+
+        botones.forEach(btn => {
+            btn.classList.remove("btn-pro-lock");
+
+            // elimina el emoji 🔐 solo si existe
+            btn.innerHTML = btn.innerHTML.replace("🔐", "").trim();
+        });
+
+        return;
+    }
+
+    // Si NO es PRO → asegurar que tengan 🔐
+    botones.forEach(btn => {
+
+        if (!btn.innerHTML.includes("🔐")) {
+            btn.innerHTML = "🔐 " + btn.innerHTML;
+        }
+
+        btn.classList.add("btn-pro-lock");
+    });
+}

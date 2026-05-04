@@ -33,26 +33,60 @@ document.addEventListener("DOMContentLoaded", async () => {
       console.warn("No se pudo verificar expiración PRO_PENDING", e);
     }
 
-    // 2️⃣ Obtener perfil desde Supabase (YA ACTUALIZADO)
+    // 2️⃣ Obtener perfil desde Supabase (CORREGIDO)
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", user.id)
-      .single();
+      .maybeSingle(); // 🔥 CAMBIO CLAVE
 
     if (profileError) {
       console.error("Error cargando perfil:", profileError);
       return;
     }
 
+    let finalProfile = profile;
+
+    // 🔥 SI NO EXISTE PERFIL → CREARLO AUTOMÁTICAMENTE
+    if (!profile) {
+      console.warn("⚠ Perfil no existe, creando automáticamente...");
+
+      const { error: insertError } = await supabase
+        .from("profiles")
+        .insert({
+          id: user.id,
+          plan: "free",
+          analisis_usados: 0
+        });
+
+      if (insertError) {
+        console.error("❌ Error creando perfil:", insertError);
+        return;
+      }
+
+      // 🔄 volver a cargar el perfil recién creado
+      const { data: newProfile, error: reloadError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (reloadError || !newProfile) {
+        console.error("❌ Error recargando perfil:", reloadError);
+        return;
+      }
+
+      finalProfile = newProfile;
+    }
+
     // 3️⃣ Guardar globalmente
-    window.userProfile = profile;
-    window.userPlan = profile.plan || "free";
+    window.userProfile = finalProfile;
+    window.userPlan = finalProfile.plan || "free";
 
     // 🔓 liberar transición si venía bloqueado por flujo externo
     window.planTransition = false;
 
-    console.log("✅ Perfil cargado:", profile.email);
+    console.log("✅ Perfil cargado:", finalProfile.email);
     console.log("💰 Plan cargado:", window.userPlan);
 
   } catch (err) {

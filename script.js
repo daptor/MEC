@@ -3184,19 +3184,25 @@ function mostrarResultadoFreemium(htmlResultado) {
 }
 
 
+
 // ========================================
-// 🔘 CONTROL VISUAL BOTÓN PRO
+// 🔘 CONTROL VISUAL BOTÓN PRO (FIX TOTAL)
 // ========================================
 function actualizarBotonPro(plan) {
     const seccion = document.getElementById("seccion-pro");
-
     if (!seccion) return;
 
-    // 🆓 FREE → botón visible
+    // 💎 PRO → ocultar completamente
+    if (plan === "pro") {
+        seccion.style.display = "none";
+        return;
+    }
+
+    // 🆓 FREE → botón activar PRO
     if (plan === "free") {
         seccion.innerHTML = `
             <hr>
-            <button id="btnUpgradePro" style="background:#f59e0b;">
+            <button id="btnUpgradePro" class="btn-pro-main">
                 ⭐ Activar versión PRO
             </button>
         `;
@@ -3204,24 +3210,19 @@ function actualizarBotonPro(plan) {
         return;
     }
 
-    // ⏳ PRO_PENDING → mensaje de trial
+    // ⏳ PRO_PENDING → botón pagar (NO desaparecer)
     if (plan === "pro_pending") {
         seccion.innerHTML = `
             <hr>
-            <p style="color:#f59e0b; font-weight:bold;">
-                ⏳ Trial PRO activo (acceso limitado)
-            </p>
+            <button id="btnUpgradePro" class="btn-pro-main">
+                ⏳ Trial 24 hrs activo — Ir a pagar
+            </button>
         `;
         seccion.style.display = "block";
         return;
     }
-
-    // 💎 PRO → ocultar completamente
-    if (plan === "pro") {
-        seccion.style.display = "none";
-        return;
-    }
 }
+
 
 
 // ========================================
@@ -3232,30 +3233,19 @@ document.addEventListener("planUpdated", async () => {
 
   try {
     const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
 
-    if (!user) {
-      console.warn("⚠ No hay usuario logeado");
-      return;
-    }
-
-    const { data: profile, error } = await supabase
+    const { data: profile } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", user.id)
       .single();
 
-    if (error || !profile) {
-      console.error("❌ Error recargando perfil:", error);
-      return;
-    }
-
-    // 🔥 ACTUALIZAR VARIABLES GLOBALES
     window.userProfile = profile;
     window.userPlan = profile.plan || "free";
 
     console.log("💰 Nuevo plan:", window.userPlan);
 
-    // 🔄 REFRESCAR UI COMPLETA
     actualizarUIsegunPlan();
 
   } catch (err) {
@@ -3264,20 +3254,23 @@ document.addEventListener("planUpdated", async () => {
 });
 
 
+
 // ========================================
-// 🎨 UI REACTIVA AL PLAN (FREE / PRO / PRO_PENDING)
+// 🎨 UI REACTIVA AL PLAN (FIX BOTÓN)
 // ========================================
 function actualizarUIsegunPlan() {
   const plan = window.userPlan || "free";
-
   console.log("🎨 Actualizando UI según plan:", plan);
 
-  // 🔥 NUEVO → controlar botón PRO
+  // 🔥 recrea botón dinámicamente según plan
   actualizarBotonPro(plan);
 
+  // 🔥 volver a buscar botón porque fue recreado
   const btnPro = document.getElementById("btnUpgradePro");
+  if (btnPro) {
+      btnPro.onclick = () => PAYWALL.mostrarUpgrade();
+  }
 
-  // 🔒 BOTONES DEL MENÚ QUE SON SOLO PRO
   const botonesPro = [
     document.getElementById("btnAnalisisCompleto"),
     document.getElementById("btnVacaciones"),
@@ -3286,85 +3279,53 @@ function actualizarUIsegunPlan() {
     document.getElementById("btnArchivoSindical")
   ];
 
-  // ========================================
-  // 💎 USUARIO PRO
-  // ========================================
+  // 💎 PRO
   if (plan === "pro") {
     console.log("💎 UI en modo PRO");
 
-    if (btnPro) btnPro.style.display = "none";
-
-    botonesPro.forEach(btn => {
-      if (btn) btn.style.display = "block";
-    });
-
+    botonesPro.forEach(btn => { if (btn) btn.style.display = "block"; });
     window.bloquearContadorFree = true;
     return;
   }
 
-  // ========================================
   // ⏳ PRO_PENDING
-  // ========================================
   if (plan === "pro_pending") {
     console.log("⏳ UI en modo PRO_PENDING");
 
-    if (btnPro) btnPro.style.display = "none";
-
-    botonesPro.forEach(btn => {
-      if (btn) btn.style.display = "none";
-    });
-
+    botonesPro.forEach(btn => { if (btn) btn.style.display = "none"; });
     window.bloquearContadorFree = true;
     return;
   }
 
-  // ========================================
   // 🆓 FREE
-  // ========================================
   console.log("🆓 UI en modo FREE");
 
-  if (btnPro) {
-    btnPro.style.display = "block";
-    btnPro.innerText = "Activar PRO";
-  }
-
-  botonesPro.forEach(btn => {
-    if (btn) btn.style.display = "block";
-  });
-
+  botonesPro.forEach(btn => { if (btn) btn.style.display = "block"; });
   window.bloquearContadorFree = false;
 }
 
-// =====================================
-  // IDEA DE FUNCIONAMIENTO DE LOS BOTONES QUE CAMBIAN
-// =====================================
 
+
+// =====================================
+// 🔐 ACTUALIZAR CANDADOS VISUALES
+// =====================================
 function actualizarCandadosUI() {
 
     const botones = document.querySelectorAll(".btn-pro-lock");
-
     if (!botones.length) return;
 
-    // Si es PRO → quitar candados
     if (PERMISSIONS.isPro && PERMISSIONS.isPro()) {
-
         botones.forEach(btn => {
             btn.classList.remove("btn-pro-lock");
-
-            // elimina el emoji 🔐 solo si existe
             btn.innerHTML = btn.innerHTML.replace("🔐", "").trim();
         });
-
         return;
     }
 
-    // Si NO es PRO → asegurar que tengan 🔐
     botones.forEach(btn => {
-
         if (!btn.innerHTML.includes("🔐")) {
             btn.innerHTML = "🔐 " + btn.innerHTML;
         }
-
         btn.classList.add("btn-pro-lock");
     });
 }

@@ -74,9 +74,23 @@ button {
   transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
 }
 
-/* Inputs, selects y textarea (general) */
+button:hover,
+#pantalla-menu-tesoreria button:hover {
+  background: linear-gradient(135deg, #218838, #1e7e34);
+  transform: scale(1.05);
+  box-shadow: 4px 4px 8px rgba(0,0,0,0.3);
+}
+
+button:disabled,
+#pantalla-menu-tesoreria button:disabled {
+  background-color: #ccc;
+}
+
+/* Inputs, selects y textarea (general y menú Tesorería) */
 input, select, textarea,
-{
+#pantalla-menu-tesoreria input,
+#pantalla-menu-tesoreria select,
+#pantalla-menu-tesoreria textarea {
   width: 95%;
   padding: 10px;
   margin: 10px 0;
@@ -90,7 +104,9 @@ input, select, textarea,
 }
 
 input:focus, select:focus, textarea:focus,
-{
+#pantalla-menu-tesoreria input:focus,
+#pantalla-menu-tesoreria select:focus,
+#pantalla-menu-tesoreria textarea:focus {
   border-color: #218838;
   box-shadow: 0 0 8px rgba(33,136,56,0.8);
   outline: none;

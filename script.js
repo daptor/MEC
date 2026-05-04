@@ -3181,47 +3181,9 @@ function mostrarResultadoFreemium(htmlResultado) {
 }
 
 
-// ========================================
-// 🔘 CONTROL VISUAL BOTÓN PRO (FINAL FINAL)
-// ========================================
-function actualizarBotonPro(plan) {
-    const seccion = document.getElementById("seccion-pro");
-    if (!seccion) return;
-
-    // 💎 PRO → ocultar completamente
-    if (plan === "pro") {
-        seccion.style.display = "none";
-        return;
-    }
-
-    // 🆓 FREE → botón activar PRO
-    if (plan === "free") {
-        seccion.innerHTML = `
-            <hr>
-            <button id="btnUpgradePro" class="btn-pro-main">
-                ⭐ Activar versión PRO
-            </button>
-        `;
-        seccion.style.display = "block";
-        return;
-    }
-
-    // ⏳ TRIAL → botón ir a pagar
-    if (plan === "pro_pending") {
-        seccion.innerHTML = `
-            <hr>
-            <button id="btnUpgradePro" class="btn-pro-main">
-                ⏳ Trial 24 hrs activo — Ir a pagar
-            </button>
-        `;
-        seccion.style.display = "block";
-        return;
-    }
-}
-
 
 // ========================================
-// 🔄 CUANDO EL PLAN CAMBIA (FIX CACHE BUG)
+// 🔄 CUANDO EL PLAN CAMBIA
 // ========================================
 document.addEventListener("planUpdated", () => {
   console.log("🔄 Plan actualizado en memoria → refrescando UI");
@@ -3229,25 +3191,30 @@ document.addEventListener("planUpdated", () => {
 });
 
 
+
 // ========================================
-// 🎨 ACTUALIZAR UI SEGÚN PLAN (FINAL REAL)
+// 🎨 ACTUALIZAR UI SEGÚN PLAN (BOTÓN REAL)
 // ========================================
 function actualizarUIsegunPlan() {
 
   const plan = window.userPlan || "free";
   console.log("🎨 Actualizando UI según plan:", plan);
 
-  // 🔥 recrea botón dinámicamente según plan
-  actualizarBotonPro(plan);
+  const btnMenu = document.getElementById("btnUpgradeMenu");
 
-  // 🔥 buscar botón recién creado
-  const btnPro = document.getElementById("btnUpgradePro");
+  if (btnMenu) {
 
-  if (btnPro) {
+    // 💎 PRO → ocultar botón
+    if (plan === "pro") {
+      btnMenu.style.display = "none";
+    }
 
-    // 🆓 FREE → abrir formulario
+    // 🆓 FREE → activar PRO
     if (plan === "free") {
-      btnPro.onclick = () => {
+      btnMenu.style.display = "block";
+      btnMenu.innerHTML = "⭐ Activar versión PRO";
+
+      btnMenu.onclick = () => {
         console.log("🚀 Botón Activar PRO (FREE)");
         PAYWALL.show();
       };
@@ -3255,12 +3222,19 @@ function actualizarUIsegunPlan() {
 
     // ⏳ TRIAL → ir a pago
     if (plan === "pro_pending") {
-      btnPro.onclick = () => {
+      btnMenu.style.display = "block";
+      btnMenu.innerHTML = "⏳ Trial 24 hrs activo — Ir a pagar";
+
+      btnMenu.onclick = () => {
         console.log("💳 Usuario en trial → ir a pago");
         PAYWALL.irAPago();
       };
     }
   }
+
+  // ===================================
+  // 🔐 BLOQUEO FUNCIONES PRO
+  // ===================================
 
   const botonesPro = [
     document.getElementById("btnAnalisisCompleto"),
@@ -3270,24 +3244,22 @@ function actualizarUIsegunPlan() {
     document.getElementById("btnArchivoSindical")
   ];
 
-  // 💎 PRO
   if (plan === "pro") {
     botonesPro.forEach(btn => { if (btn) btn.style.display = "block"; });
     window.bloquearContadorFree = true;
     return;
   }
 
-  // ⏳ PRO_PENDING
   if (plan === "pro_pending") {
     botonesPro.forEach(btn => { if (btn) btn.style.display = "none"; });
     window.bloquearContadorFree = true;
     return;
   }
 
-  // 🆓 FREE
   botonesPro.forEach(btn => { if (btn) btn.style.display = "block"; });
   window.bloquearContadorFree = false;
 }
+
 
 
 // =====================================

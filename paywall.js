@@ -174,8 +174,11 @@ function renderPasoExito() {
 // =====================================================
 // 💳 PASO EXTRA — PAYWALL REAL (MercadoPago)
 // =====================================================
-
 function renderPasoPagoReal() {
+
+  // 🔥 ESTA LÍNEA FALTABA
+  crearModalBase();
+
   PAYWALL_STATE = "payment";
 
   document.getElementById("paywall-content").innerHTML = `

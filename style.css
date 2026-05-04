@@ -75,14 +75,14 @@ button {
 }
 
 button:hover,
-#pantalla-menu-tesoreria button:hover {
+{
   background: linear-gradient(135deg, #218838, #1e7e34);
   transform: scale(1.05);
   box-shadow: 4px 4px 8px rgba(0,0,0,0.3);
 }
 
 button:disabled,
-#pantalla-menu-tesoreria button:disabled {
+{
   background-color: #ccc;
 }
 

@@ -74,7 +74,7 @@ button {
   transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
 }
 
-/* Inputs, selects y textarea (general y menú Tesorería) */
+/* Inputs, selects y textarea (general y menú Tesorería NO EXISTE) */
 input, select, textarea,
 #pantalla-menu-tesoreria input,
 #pantalla-menu-tesoreria select,
@@ -369,7 +369,7 @@ body.admin #resetContador {
     background: #d97706;
 }
 
-/* BOTONES BLOQUEADOS (CON CANDADO) */
+/* BOTONES BLOQUEADOS (CON CANDADO) 
 .btn-pro-lock {
     opacity: 0.75;
     position: relative;

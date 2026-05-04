@@ -232,3 +232,15 @@ window.PAYWALL = {
 };
 
 console.log("💳 Paywall UX V3 cargado");
+
+// ========================================
+// 💳 IR A PAGO REAL CUANDO ESTÁ EN TRIAL
+// ========================================
+window.PAYWALL.irAPago = function () {
+
+  console.log("💳 Usuario en trial → abrir pantalla de pago");
+
+  // reutiliza la pantalla de pago que YA existe
+  renderPasoPagoReal();
+
+};

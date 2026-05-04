@@ -124,7 +124,6 @@ async function guardarDatosPro() {
       p_rut: rut
     });
 
-    // 🚫 TRIAL YA USADO → PAYWALL REAL
     if (error && error.message?.includes("TRIAL_ALREADY_USED")) {
       console.warn("🚫 Trial ya usado → pago real");
       renderPasoPagoReal();
@@ -201,7 +200,7 @@ function renderPasoPagoReal() {
 }
 
 // =====================================================
-// 🔐 API GLOBAL
+// 🔐 API GLOBAL PAYWALL
 // =====================================================
 
 function showPaywall(featureName="esta función") {
@@ -218,6 +217,18 @@ function requireFeature(feature, featureName) {
   return true;
 }
 
-window.PAYWALL = { show: showPaywall, require: requireFeature };
+// ⭐⭐⭐ ESTA ES LA PIEZA QUE FALTABA ⭐⭐⭐
+// Botón del menú y botones globales usan esto
+function mostrarUpgradeGlobal() {
+  console.log("🚀 Botón Activar PRO presionado desde menú/app");
+
+  showPaywall("Activar versión PRO");
+}
+
+window.PAYWALL = {
+  show: showPaywall,
+  require: requireFeature,
+  mostrarUpgrade: mostrarUpgradeGlobal
+};
 
 console.log("💳 Paywall UX V3 cargado");

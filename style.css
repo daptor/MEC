@@ -88,9 +88,7 @@ button:disabled,
 
 /* Inputs, selects y textarea (general y menú Tesorería) */
 input, select, textarea,
-#pantalla-menu-tesoreria input,
-#pantalla-menu-tesoreria select,
-#pantalla-menu-tesoreria textarea {
+{
   width: 95%;
   padding: 10px;
   margin: 10px 0;

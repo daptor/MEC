@@ -74,18 +74,6 @@ button {
   transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
 }
 
-button:hover,
-{
-  background: linear-gradient(135deg, #218838, #1e7e34);
-  transform: scale(1.05);
-  box-shadow: 4px 4px 8px rgba(0,0,0,0.3);
-}
-
-button:disabled,
-{
-  background-color: #ccc;
-}
-
 /* Inputs, selects y textarea (general y menú Tesorería) */
 input, select, textarea,
 #pantalla-menu-tesoreria input,
@@ -344,9 +332,6 @@ body.admin #resetContador {
   color: red;
   font-weight: bold;
 }
-
-
-
 
 /* NOTIFICACION DEL BOTON chat */
 .btn-chat {

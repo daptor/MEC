@@ -45,10 +45,22 @@ const PLAN_PERMISSIONS = {
   pro: Object.values(FEATURES) // todo habilitado
 };
 
+function isAdmin() {
+  const user = window.currentUser;
+  if (!user) return false;
+
+  return user.email === "christorfu@gmail.com";
+}
+
 // Verificar acceso
 function canUse(feature) {
+
+  // 🟢 ADMIN → acceso total SIEMPRE
+  if (isAdmin()) return true;
+
   const plan = getUserPlan();
   const permissions = PLAN_PERMISSIONS[plan] || PLAN_PERMISSIONS.free;
+
   return permissions.includes(feature);
 }
 
@@ -67,6 +79,7 @@ window.PERMISSIONS = {
   isFree,
   isPro,
   isProPending,
+  isAdmin,
   canUse,
   requireFeature
 };

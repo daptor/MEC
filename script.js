@@ -2452,27 +2452,74 @@ async function ingresarAlChat() {
     localStorage.removeItem("rol");
     localStorage.removeItem("nick");
 
+    // 🔥 CAMBIO 1: maybeSingle en vez de single
     const { data: usuarioDB } = await supabase
         .from("usuarios")
         .select("nick, rol")
         .eq("user_id", user_id)
-        .single();
+        .maybeSingle();
 
-    if (usuarioDB) {
-        localStorage.setItem("user_id", user_id);
-        localStorage.setItem("nick", usuarioDB.nick);
-        localStorage.setItem("rol", usuarioDB.rol);
+    // 🔥 CAMBIO 2: si no existe → crear registro base
+    let usuarioFinal = usuarioDB;
+
+    if (!usuarioDB) {
+        console.warn("⚠ Usuario no existe en tabla usuarios, creando...");
+
+        const { error: insertError } = await supabase
+            .from("usuarios")
+            .insert({
+                user_id: user_id,
+                nick: null,
+                rol: "usuario"
+            });
+
+        if (insertError) {
+            console.error("❌ Error creando usuario:", insertError);
+            return;
+        }
+
+        // 🔄 volver a cargar
+        const { data: nuevo } = await supabase
+            .from("usuarios")
+            .select("nick, rol")
+            .eq("user_id", user_id)
+            .maybeSingle();
+
+        usuarioFinal = nuevo;
     }
 
-    if (!localStorage.getItem("nick") || localStorage.getItem("nick") === "usuario") {
+    if (usuarioFinal) {
+        localStorage.setItem("user_id", user_id);
+        localStorage.setItem("nick", usuarioFinal.nick);
+        localStorage.setItem("rol", usuarioFinal.rol);
+    }
+
+    // 🔥 CAMBIO 3: eliminar dependencia de función inexistente
+    if (!localStorage.getItem("nick")) {
+
         let nick = prompt("Por favor, ingresa tu Nick:");
+
         if (!nick || nick.trim() === "") {
             alert("Debes ingresar un Nick para acceder al chat.");
             return;
         }
-        await checkNickAvailability(nick.trim(), user_id);
+
+        // guardar directamente (SIN checkNickAvailability)
+        const { error } = await supabase
+            .from("usuarios")
+            .update({ nick: nick.trim() })
+            .eq("user_id", user_id);
+
+        if (error) {
+            console.error("Error guardando nick:", error);
+            return;
+        }
+
+        localStorage.setItem("nick", nick.trim());
+        await cargarMensajes();
+
     } else {
-        await cargarMensajes(); // 🔹 solo carga inicial
+        await cargarMensajes();
     }
 
     suscribirseChatGrupal();

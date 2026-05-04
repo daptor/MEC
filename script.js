@@ -2452,14 +2452,12 @@ async function ingresarAlChat() {
     localStorage.removeItem("rol");
     localStorage.removeItem("nick");
 
-    // 🔥 CAMBIO 1: maybeSingle en vez de single
     const { data: usuarioDB } = await supabase
         .from("usuarios")
         .select("nick, rol")
         .eq("user_id", user_id)
         .maybeSingle();
 
-    // 🔥 CAMBIO 2: si no existe → crear registro base
     let usuarioFinal = usuarioDB;
 
     if (!usuarioDB) {
@@ -2478,7 +2476,6 @@ async function ingresarAlChat() {
             return;
         }
 
-        // 🔄 volver a cargar
         const { data: nuevo } = await supabase
             .from("usuarios")
             .select("nick, rol")
@@ -2490,12 +2487,14 @@ async function ingresarAlChat() {
 
     if (usuarioFinal) {
         localStorage.setItem("user_id", user_id);
-        localStorage.setItem("nick", usuarioFinal.nick);
+        localStorage.setItem("nick", usuarioFinal.nick || ""); // 🔥 FIX
         localStorage.setItem("rol", usuarioFinal.rol);
     }
 
-    // 🔥 CAMBIO 3: eliminar dependencia de función inexistente
-    if (!localStorage.getItem("nick")) {
+    // 🔥 VALIDACIÓN CORREGIDA
+    const nickActual = localStorage.getItem("nick");
+
+    if (!nickActual || nickActual === "null" || nickActual.trim() === "") {
 
         let nick = prompt("Por favor, ingresa tu Nick:");
 
@@ -2504,7 +2503,6 @@ async function ingresarAlChat() {
             return;
         }
 
-        // guardar directamente (SIN checkNickAvailability)
         const { error } = await supabase
             .from("usuarios")
             .update({ nick: nick.trim() })

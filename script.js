@@ -3180,8 +3180,6 @@ function mostrarResultadoFreemium(htmlResultado) {
     contenedor.innerHTML += htmlResultado;
 }
 
-
-
 // ========================================
 // 🔄 CUANDO EL PLAN CAMBIA
 // ========================================
@@ -3189,8 +3187,6 @@ document.addEventListener("planUpdated", () => {
   console.log("🔄 Plan actualizado en memoria → refrescando UI");
   actualizarUIsegunPlan();
 });
-
-
 
 // ========================================
 // 🎨 ACTUALIZAR UI SEGÚN PLAN (BOTÓN REAL)
@@ -3247,19 +3243,21 @@ function actualizarUIsegunPlan() {
   if (plan === "pro") {
     botonesPro.forEach(btn => { if (btn) btn.style.display = "block"; });
     window.bloquearContadorFree = true;
-    return;
   }
 
-  if (plan === "pro_pending") {
+  else if (plan === "pro_pending") {
     botonesPro.forEach(btn => { if (btn) btn.style.display = "none"; });
     window.bloquearContadorFree = true;
-    return;
   }
 
-  botonesPro.forEach(btn => { if (btn) btn.style.display = "block"; });
-  window.bloquearContadorFree = false;
-}
+  else {
+    botonesPro.forEach(btn => { if (btn) btn.style.display = "block"; });
+    window.bloquearContadorFree = false;
+  }
 
+  // 🔥 SIEMPRE actualizar candados (clave)
+  actualizarCandadosUI();
+}
 
 
 // =====================================
@@ -3268,20 +3266,26 @@ function actualizarUIsegunPlan() {
 function actualizarCandadosUI() {
 
     const botones = document.querySelectorAll(".btn-pro-lock");
-    if (!botones.length) return;
-
-    if (PERMISSIONS.isPro && PERMISSIONS.isPro()) {
-        botones.forEach(btn => {
-            btn.classList.remove("btn-pro-lock");
-            btn.innerHTML = btn.innerHTML.replace("🔐", "").trim();
-        });
-        return;
-    }
 
     botones.forEach(btn => {
-        if (!btn.innerHTML.includes("🔐")) {
-            btn.innerHTML = "🔐 " + btn.innerHTML;
+
+        // Guardar texto original SOLO una vez
+        if (!btn.dataset.originalText) {
+            btn.dataset.originalText = btn.innerText.replace("🔐", "").trim();
         }
-        btn.classList.add("btn-pro-lock");
+
+        const esPro = PERMISSIONS.isPro && PERMISSIONS.isPro();
+        const esAdmin = PERMISSIONS.isAdmin && PERMISSIONS.isAdmin();
+
+        // 💎 PRO o 👑 ADMIN → desbloqueado visual
+        if (esPro || esAdmin) {
+            btn.innerText = btn.dataset.originalText;
+            btn.classList.remove("btn-pro-lock");
+        } else {
+            // 🆓 FREE / ⏳ PENDING → bloqueado visual
+            btn.innerText = "🔐 " + btn.dataset.originalText;
+            btn.classList.add("btn-pro-lock");
+        }
+
     });
 }

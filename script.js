@@ -3182,7 +3182,7 @@ function mostrarResultadoFreemium(htmlResultado) {
 
 
 // ========================================
-// 🔘 CONTROL VISUAL BOTÓN PRO (FINAL)
+// 🔘 CONTROL VISUAL BOTÓN PRO (FINAL FINAL)
 // ========================================
 function actualizarBotonPro(plan) {
     const seccion = document.getElementById("seccion-pro");
@@ -3221,31 +3221,11 @@ function actualizarBotonPro(plan) {
 
 
 // ========================================
-// 🔄 CUANDO EL PLAN CAMBIA
+// 🔄 CUANDO EL PLAN CAMBIA (FIX CACHE BUG)
 // ========================================
-document.addEventListener("planUpdated", async () => {
-  console.log("🔄 Plan actualizado → recargando perfil...");
-
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .single();
-
-    window.userProfile = profile;
-    window.userPlan = profile.plan || "free";
-
-    console.log("💰 Nuevo plan:", window.userPlan);
-
-    actualizarUIsegunPlan();
-
-  } catch (err) {
-    console.error("🔥 Error en planUpdated:", err);
-  }
+document.addEventListener("planUpdated", () => {
+  console.log("🔄 Plan actualizado en memoria → refrescando UI");
+  actualizarUIsegunPlan();
 });
 
 

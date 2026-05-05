@@ -466,9 +466,7 @@ async function analizarArchivo() {
     // ⏳ ESPERAR PLAN DEL USUARIO (MUY IMPORTANTE)
     await esperarPlanUsuario();
 
- 
-
-// 💰 CONTROL DE PLAN + LÍMITE TOTAL (FREEMIUM REAL)
+ // 💰 CONTROL DE PLAN + LÍMITE TOTAL (FREEMIUM REAL)
 
 // 💎 PRO → acceso ilimitado
 if (window.userPlan === "pro") {
@@ -488,7 +486,6 @@ if (window.userPlan === "pro") {
     // 🔥 SUMAR USO (solo FREE y solo si sí puede usar)
     await sumarUsoAnalisisTotal();
     await actualizarContadorAnalisisUI(); // 👈 ACTUALIZA EN TIEMPO REAL
-
 }
 
     const archivo = document.getElementById('fileInput').files[0];
@@ -521,7 +518,6 @@ for (let i = 1; i <= pdf.numPages; i++) {
     const texto = await pagina.getTextContent();
     texto.items.forEach(item => textoCompleto += item.str + ' ');
 }
-
 
 // Detectar premio en la nómina tempranamente para integrarlo en haberes si existe
 const regexPremioNomina_global = /(PREMIO\s*VENTA\s*TIENDA(?:\s*AUT\.?)?|PREMIO\s*VENTA\s*TIENDA|PREMIO\s*CUMPL\.?GRUPAL\s*VTAS|INCENTIVO\s*TIENDA|PREMIO\s*VENTA)[^\$]*\$\s*([\d\.,]+)/i;
@@ -3150,10 +3146,72 @@ async function cerrarConversacion() {
     await mostrarPantallaAdminChat();
 }
 
+// ======================================================
+// 🧠 GENERADOR RESUMEN INTELIGENTE MEC (Modo Asesor)
+// ======================================================
+function generarResumenMEC(htmlResultado) {
+
+    let alertas = [];
+    let aciertos = [];
+
+    const texto = htmlResultado.toLowerCase();
+
+    // 🔴 detectar diferencias
+    if (texto.includes("❌")) {
+        alertas.push("Se detectaron posibles diferencias en la liquidación.");
+    }
+
+    if (texto.includes("diferencia detectada")) {
+        alertas.push("Existen montos que podrían estar mal pagados.");
+    }
+
+    if (texto.includes("no se pagó comisión")) {
+        alertas.push("No se pagaron comisiones detectadas en el período.");
+    }
+
+    // 🟢 detectar pagos correctos
+    if (texto.includes("pago correcto")) {
+        aciertos.push("Algunos cálculos coinciden con la liquidación.");
+    }
+
+    if (texto.includes("coinciden")) {
+        aciertos.push("Existen conceptos correctamente pagados.");
+    }
+
+    // 🧾 construir mensaje final
+    let resumenHTML = `
+    <div class="mec-resumen">
+        <h2>🧾 Resumen del análisis MEC</h2>
+    `;
+
+    if (alertas.length === 0) {
+        resumenHTML += `<p style="color:green"><strong>✅ No se detectaron problemas evidentes en esta liquidación.</strong></p>`;
+    } else {
+        resumenHTML += `<p style="color:red"><strong>🚨 Se detectaron ${alertas.length} posible(s) problema(s):</strong></p><ul>`;
+        alertas.forEach(a => resumenHTML += `<li>${a}</li>`);
+        resumenHTML += `</ul>`;
+    }
+
+    if (aciertos.length > 0) {
+        resumenHTML += `<p style="color:green"><strong>✔ Aspectos correctos:</strong></p><ul>`;
+        aciertos.forEach(a => resumenHTML += `<li>${a}</li>`);
+        resumenHTML += `</ul>`;
+    }
+
+    resumenHTML += `<hr></div>`;
+
+    return resumenHTML;
+}
+
+
 // =========================================
 // 💰 FREEMIUM — MOSTRAR RESULTADO DEL ANÁLISIS
 // =========================================
 function mostrarResultadoFreemium(htmlResultado) {
+
+    // 🧠 NUEVO — insertar resumen inteligente MEC
+    const resumenMEC = generarResumenMEC(htmlResultado);
+    htmlResultado = resumenMEC + htmlResultado;
 
     const contenedor = document.getElementById('resultadoAnalisis');
 

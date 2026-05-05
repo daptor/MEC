@@ -1,51 +1,55 @@
-// planGuard.js (versión robusta)
+// planGuard.js
+// Carga el perfil y plan del usuario logeado (sin bloquear nada)
 
 document.addEventListener("DOMContentLoaded", async () => {
-  await cargarPlanUsuario();
-});
-
-async function cargarPlanUsuario() {
   try {
 
-    // 1️⃣ Obtener sesión
+    // 🔒 SI HAY TRANSICIÓN DE PLAN, NO INTERFERIR
+    if (window.planTransition) {
+      console.log("⏳ Transición de plan activa, planGuard en espera...");
+      return;
+    }
+
+    // 1️⃣ Obtener sesión actual
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
     if (sessionError) {
-      console.error("❌ Error sesión:", sessionError);
-      setPlanFallback();
+      console.error("Error obteniendo sesión:", sessionError);
       return;
     }
 
     if (!session) {
-      console.warn("⚠️ Sin sesión");
+      console.warn("No hay sesión activa");
       return;
     }
 
     const user = session.user;
 
-    // 2️⃣ Expiración automática (no bloquea flujo)
+    // ⏰ Verificar expiración automática de PRO_PENDING (24h)
     try {
       await supabase.rpc("verificar_expiracion_pro_pending");
+      console.log("⏰ Verificación de expiración PRO_PENDING ejecutada");
     } catch (e) {
-      console.warn("⚠ No se pudo verificar expiración", e);
+      console.warn("No se pudo verificar expiración PRO_PENDING", e);
     }
 
-    // 3️⃣ Obtener perfil
-    let { data: profile, error } = await supabase
+    // 2️⃣ Obtener perfil desde Supabase
+    const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", user.id)
       .maybeSingle();
 
-    if (error) {
-      console.error("❌ Error perfil:", error);
-      setPlanFallback();
+    if (profileError) {
+      console.error("Error cargando perfil:", profileError);
       return;
     }
 
-    // 4️⃣ Crear perfil si no existe
+    let finalProfile = profile;
+
+    // 🔥 SI NO EXISTE PERFIL → CREARLO AUTOMÁTICAMENTE
     if (!profile) {
-      console.warn("⚠ Perfil no existe → creando");
+      console.warn("⚠ Perfil no existe, creando automáticamente...");
 
       const { error: insertError } = await supabase
         .from("profiles")
@@ -57,42 +61,39 @@ async function cargarPlanUsuario() {
 
       if (insertError) {
         console.error("❌ Error creando perfil:", insertError);
-        setPlanFallback();
         return;
       }
 
-      const { data: newProfile } = await supabase
+      // 🔄 volver a cargar el perfil recién creado
+      const { data: newProfile, error: reloadError } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", user.id)
         .maybeSingle();
 
-      profile = newProfile;
+      if (reloadError || !newProfile) {
+        console.error("❌ Error recargando perfil:", reloadError);
+        return;
+      }
+
+      finalProfile = newProfile;
     }
 
-    // 5️⃣ Asignar SIEMPRE
-    const plan = profile?.plan || "free";
+    // 3️⃣ Guardar globalmente
+    window.userProfile = finalProfile;
+    window.userPlan = finalProfile.plan || "free";
 
-    window.userProfile = profile;
-    window.userPlan = plan;
+    // 🔓 liberar transición si venía bloqueado por flujo externo
+    window.planTransition = false;
 
-    console.log("✅ Plan cargado:", plan);
+    console.log("✅ Perfil cargado:", finalProfile.email);
+    console.log("💰 Plan cargado:", window.userPlan);
 
-    // 6️⃣ Notificar
+    // 🚀 AVISAR A TODA LA APP QUE EL PLAN YA ESTÁ LISTO
     window.dispatchEvent(new Event("planReady"));
+    console.log("📢 Evento planReady enviado");
 
   } catch (err) {
-    console.error("❌ Error inesperado:", err);
-    setPlanFallback();
+    console.error("Error inesperado planGuard:", err);
   }
-}
-
-// 🔻 fallback seguro
-function setPlanFallback() {
-  window.userPlan = "free";
-  window.userProfile = null;
-
-  console.warn("⚠ Plan fallback FREE activado");
-
-  window.dispatchEvent(new Event("planReady"));
-}
+});

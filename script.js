@@ -1172,8 +1172,8 @@ function calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada
         <h2>1. Sueldo</h2>
         <p><strong>Sueldo Base:</strong> ${sueldoBaseContractual ? formatCurrency(sueldoBaseContractual) : 'No encontrado'}.</p>
         <p><strong>Días Trabajados:</strong> ${diasTrabajados || 'No encontrados'}. <strong>Pagado:</strong> ${sueldoProporcional ? formatCurrency(sueldoProporcional) : 'No encontrado'}.</p>
-        <p><strong>Resultado Sueldo Base:</strong> ${resultadoProporcional}.</p>
-        <p><em>Cálculo:</em> ${sueldoBaseContractual ? formatCurrency(sueldoBaseContractual) : 'No encontrado'} ÷ 30 días × ${diasTrabajados} días = ${sueldoBaseContractual ? formatCurrency((sueldoBaseContractual / 30) * diasTrabajados) : 'No encontrado'}.</p>
+        <p><strong>Análisis:</strong> ${resultadoProporcional}.</p>
+        <p><em>Cálculo:</em> ${sueldoBaseContractual ? formatCurrency(sueldoBaseContractual) : 'No encontrado'} ÷ 30 días × ${diasTrabajados} días = ${sueldoBaseContractual ? formatCurrency((sueldoBaseContractual / 30) * diasTrabajados) : 'No encontrado'}.</p>        
         <p><strong>% Sueldo Base Contractual v/s IMM:</strong></p><p> ${mensajeVariacion}</p>
 <hr>
 <h2>2. Sobretiempo:</h2>
@@ -1211,7 +1211,7 @@ ${montoDiferenciaCaja !== 0 ? `<p><strong>Dif. Caja:</strong> ${formatCurrency(m
 <hr>
         <h2>5. Semana Corrida</h2>
         <p><strong>Domingos y Festivos:</strong> (${diasSemanaCorrida !== "No especificados" ? diasSemanaCorrida : 'No especificado'} días) <strong>Monto:</strong> ${formatCurrency(montoSemanaCorrida)}.</p>
-        <p><strong>Resultado:</strong> ${resultadoSemanaCorrida}</p>
+        <p><strong>Análisis:</strong> ${resultadoSemanaCorrida}</p>
         <p>${formatCurrency(totalComisiones)} ÷ Días Totales: (${diasParaSemanaCorrida}) × Dom. y Fest.: (${diasSemanaCorrida !== "No especificados" ? diasSemanaCorrida : 'No especificado'}) = ${formatCurrency(valorEsperadoSemanaCorrida)}.</p>
 <hr>
         <div class="container gratificacion-container" id="gratificacionMec" style="display: none;">

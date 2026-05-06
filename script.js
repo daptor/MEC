@@ -1160,129 +1160,34 @@ function calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada
     document.getElementById('resultadoGratificacion').innerHTML = resultadoHTML;
 }
 
-// ===== Mostrar resultados en HTML (VERSIÓN CORREGIDA + UX) =====
-
-// ---------------- RESUMEN AUTOMÁTICO ----------------
-let totalDiferencias = 0;
+// ================== RESUMEN EJECUTIVO ==================
+let diferencias = [];
 let impactoTotal = 0;
 
-function evaluarDiferencia(pagado, esperado) {
-    if (!pagado || !esperado) return null;
-    const diff = pagado - esperado;
-    if (Math.abs(diff) < 1) return null;
-    totalDiferencias++;
-    impactoTotal += diff;
-    return diff;
-}
-
-const diffHorasExtras = evaluarDiferencia(montoPagadoHorasExtras, montoEsperadoHorasExtras);
-const diffHorasDomingo = evaluarDiferencia(montoPagadoHorasExtrasDomingo, montoEsperadoHorasExtrasDomingo);
-const diffRecargoDomingo = evaluarDiferencia(montoPagadoRecargoDomingo, montoEsperadoRecargoDomingo);
-
-let estadoGeneral = "🟢 Sin problemas relevantes";
-if (totalDiferencias > 0) estadoGeneral = "🟡 Se detectaron diferencias";
-if (totalDiferencias >= 2) estadoGeneral = "🔴 Múltiples diferencias detectadas";
-
-let resumenHTML = `
-<div style="padding:15px;border:1px solid #ccc;border-radius:8px;margin-bottom:20px;">
-<h2>📊 Resumen de tu liquidación</h2>
-<p><strong>Estado:</strong> ${estadoGeneral}</p>
-<p><strong>Diferencias detectadas:</strong> ${totalDiferencias}</p>
-<p><strong>Impacto estimado:</strong> ${formatCurrency(impactoTotal)}</p>
-<p><strong>Recomendación:</strong> ${
-    totalDiferencias === 0 
-    ? 'No se detectan problemas relevantes.' 
-    : 'Revisar antes de aceptar el pago.'
-}</p>
-</div>
-`;
-
-// ---------------- FUNCIÓN INTERPRETACIÓN ----------------
-function interpretarItem(titulo, pagado, esperado, diff) {
-    if (diff === null) {
-        return `<p>🟢 <strong>${titulo}:</strong> Pago correcto.</p>`;
+// Horas extra
+if (typeof montoPagadoHorasExtras === "number" && typeof montoEsperadoHorasExtras === "number") {
+    let diff = montoPagadoHorasExtras - montoEsperadoHorasExtras;
+    if (Math.abs(diff) > 0) {
+        diferencias.push("Horas extra");
+        impactoTotal += diff;
     }
-
-    const gravedad = Math.abs(diff) > 50 ? "🔴" : "🟡";
-
-    return `
-    <p>${gravedad} <strong>${titulo}</strong><br>
-    Pagado: ${pagado ? formatCurrency(pagado) : 'No encontrado'}<br>
-    Esperado: ${esperado ? formatCurrency(esperado) : 'No encontrado'}<br>
-    Diferencia: ${formatCurrency(diff)}<br>
-    💡 Recomendación: revisar con RRHH o asistencia.
-    </p>
-    `;
 }
 
-// ---------------- HTML FINAL ----------------
-document.getElementById('resultadoAnalisis').innerHTML = `
-${resumenHTML}
-
-<hr>
-<p><strong>Mes y Año:</strong> ${mes} DE ${año}</p>
-<p><strong>Jornada:</strong> ${jornadaSeleccionada} horas</p>
-<p><strong>Cargo:</strong> ${cargo}</p>
-
-<hr>
-<h2>1. Sueldo</h2>
-<p><strong>Sueldo Base:</strong> ${sueldoBaseContractual ? formatCurrency(sueldoBaseContractual) : 'No encontrado'}</p>
-<p><strong>Días Trabajados:</strong> ${diasTrabajados || 'No encontrados'} | Pagado: ${sueldoProporcional ? formatCurrency(sueldoProporcional) : 'No encontrado'}</p>
-<p>${resultadoProporcional}</p>
-
-<hr>
-<h2>2. Sobretiempo</h2>
-${interpretarItem("Horas Extras", montoPagadoHorasExtras, montoEsperadoHorasExtras, diffHorasExtras)}
-${interpretarItem("Recargo Festivo", montoPagadoRecargoFestivo, montoEsperadoRecargoFestivo, null)}
-${interpretarItem("Horas Extras Domingo", montoPagadoHorasExtrasDomingo, montoEsperadoHorasExtrasDomingo, diffHorasDomingo)}
-${interpretarItem("Recargo Domingo", montoPagadoRecargoDomingo, montoEsperadoRecargoDomingo, diffRecargoDomingo)}
-
-<hr>
-<h2>3. Asignaciones</h2>
-<p><strong>Movilización:</strong> ${montoMovilizacion !== "Dato no encontrado" ? formatCurrency(montoMovilizacion) : 'Dato no encontrado'}</p>
-<p><strong>Colación:</strong> ${montoColacion !== "Dato no encontrado" ? formatCurrency(montoColacion) : 'Dato no encontrado'}</p>
-<p><strong>Caja:</strong> ${montoCaja !== "Dato no encontrado" ? formatCurrency(montoCaja) : 'Dato no encontrado'}</p>
-
-<hr>
-<h2>4. Comisiones</h2>
-<p>${detalleComisionesHTML}</p>
-<p><strong>Total:</strong> ${formatCurrency(totalComisiones)}</p>
-
-<hr>
-<h2>5. Semana Corrida</h2>
-<p>${resultadoSemanaCorrida}</p>
-
-<hr>
-<div class="container gratificacion-container" id="gratificacionMec" style="display: none;">
-<h2>6. Haberes Gratificables</h2>
-<p id="listaGratificables"></p>
-</div>
-
-<hr>
-<h2>🧾 Conclusión</h2>
-<p>
-${
-    totalDiferencias === 0
-    ? "Tu liquidación no presenta diferencias relevantes."
-    : `Se detectaron ${totalDiferencias} diferencias con un impacto aproximado de ${formatCurrency(impactoTotal)}.`
+// Horas extra domingo
+if (typeof montoPagadoHorasExtrasDomingo === "number" && typeof montoEsperadoHorasExtrasDomingo === "number") {
+    let diff = montoPagadoHorasExtrasDomingo - montoEsperadoHorasExtrasDomingo;
+    if (Math.abs(diff) > 0) {
+        diferencias.push("Horas extra domingo");
+        impactoTotal += diff;
+    }
 }
-</p>
-<p>
-💡 ${
-    totalDiferencias === 0
-    ? "No es necesario realizar acciones."
-    : "Recomendamos revisar con RRHH o validar tu asistencia."
-}
-</p>
 
-<hr>
-`;
+let estadoGeneral = "🟢 Sin diferencias relevantes";
+if (diferencias.length > 0) estadoGeneral = "🟡 Diferencias detectadas";
+if (diferencias.length > 1) estadoGeneral = "🔴 Múltiples diferencias detectadas";
 
-// Mantener tu lógica original
-mostrarGratificacionMec(gratificables);
-
-
-// ---------- INICIA: ANÁLISIS COMISIÓN GRUPAL ----------
+// ================== COMISIÓN GRUPAL ==================
+let pagosTxt = [];
 
 const regexPremioNomina = /PREMIO\s*VENTA\s*TIENDA\s*AUT\.?\s*\$?\s*([\d\.,]+)/i;
 const matchPremioNomina = textoCompleto.match(regexPremioNomina);
@@ -1295,30 +1200,110 @@ if (mHorasAsesor1) {
     horasAsesor = parseFloat(String(mHorasAsesor1[1]).replace(/\./g, '').replace(',', '.'));
 }
 
-async function extraerDatosReportePremio(archivo) {
-    if (!archivo) return null;
-    try {
-        const textoPremio = await extraerTextoDePDF(archivo);
-        const t = textoPremio.replace(/\s+/g, ' ');
-
-        const ventaTienda = t.match(/Venta\s+Tienda\s*\$?\s*([\d\.,]+)/i);
-        const ventaKiosco = t.match(/Venta\s+Kiosco\s+Tienda\s*\$?\s*([\d\.,]+)/i);
-        const ventaCambioDev = t.match(/Venta\s+Cambio\s+Devoluci[oó]n\s*\$?\s*([\d\.,]+)/i);
-
-        const total = 
-            (ventaTienda ? procesarMonto(ventaTienda[1]) : 0) +
-            (ventaKiosco ? procesarMonto(ventaKiosco[1]) : 0) +
-            (ventaCambioDev ? procesarMonto(ventaCambioDev[1]) : 0);
-
-        return { ventaTiendaTotal: total };
-
-    } catch (e) {
-        console.error('Error leyendo archivo premio:', e);
-        return null;
-    }
+let datosReporte = null;
+const inputPremioEl = document.getElementById('filePremio');
+if (inputPremioEl && inputPremioEl.files.length > 0) {
+    datosReporte = await extraerDatosReportePremio(inputPremioEl.files[0]);
 }
 
-// ---------- FIN (SIN ERRORES DE LLAVES) ----------
+let ventaTiendaTotal = datosReporte?.ventaTiendaTotal || 0;
+let horasTotalesDept = datosReporte?.horasDept || 0;
+let porcentajeDept = datosReporte?.pctDept || 0.0026;
+
+let comisionCalculada = 0;
+if (ventaTiendaTotal > 0 && horasTotalesDept > 0 && horasAsesor > 0) {
+    const valorHoraGrupal = (ventaTiendaTotal / horasTotalesDept) * porcentajeDept;
+    comisionCalculada = Math.round(valorHoraGrupal * horasAsesor);
+}
+
+pagosTxt.push(`<h2>Comisión Grupal</h2>`);
+pagosTxt.push(`<p><strong>Pagado:</strong> ${formatCurrency(comisionPagadaEnNomina)}</p>`);
+pagosTxt.push(`<p><strong>Esperado:</strong> ${formatCurrency(comisionCalculada)}</p>`);
+
+let diffComision = comisionPagadaEnNomina - comisionCalculada;
+
+if (Math.abs(diffComision) < 1) {
+    pagosTxt.push(`<p style="color:green">✅ Correcto</p>`);
+} else {
+    pagosTxt.push(`<p style="color:red">❌ Diferencia: ${formatCurrency(diffComision)}</p>`);
+    impactoTotal += diffComision;
+    diferencias.push("Comisión grupal");
+}
+
+// ================== HTML FINAL ==================
+document.getElementById('resultadoAnalisis').innerHTML = `
+
+<h2>📊 Resumen de tu liquidación</h2>
+<p><strong>Estado:</strong> ${estadoGeneral}</p>
+<p><strong>Diferencias:</strong> ${diferencias.length}</p>
+<p><strong>Impacto estimado:</strong> ${formatCurrency(impactoTotal)}</p>
+<p><strong>Recomendación:</strong> Revisar antes de aceptar el pago.</p>
+
+<hr>
+
+<p><strong>Mes y Año:</strong> ${mes} DE ${año}</p>
+<p><strong>Jornada:</strong> ${jornadaSeleccionada} horas</p>
+<p><strong>Cargo:</strong> ${cargo}</p>
+
+<hr>
+
+<h2>1. Sueldo</h2>
+<p><strong>Sueldo Base:</strong> ${formatCurrency(sueldoBaseContractual)}</p>
+<p><strong>Días:</strong> ${diasTrabajados} | <strong>Pagado:</strong> ${formatCurrency(sueldoProporcional)}</p>
+<p>${resultadoProporcional}</p>
+
+<hr>
+
+<h2>2. Sobretiempo</h2>
+
+<p><strong>Horas Extras</strong><br>
+Pagado: ${formatCurrency(montoPagadoHorasExtras)}<br>
+Esperado: ${formatCurrency(montoEsperadoHorasExtras)}<br>
+Diferencia: ${formatCurrency(montoPagadoHorasExtras - montoEsperadoHorasExtras)}</p>
+
+<p><strong>Horas Extras Domingo</strong><br>
+Pagado: ${formatCurrency(montoPagadoHorasExtrasDomingo)}<br>
+Esperado: ${formatCurrency(montoEsperadoHorasExtrasDomingo)}<br>
+Diferencia: ${formatCurrency(montoPagadoHorasExtrasDomingo - montoEsperadoHorasExtrasDomingo)}</p>
+
+<hr>
+
+<h2>3. Asignaciones</h2>
+<p>Movilización: ${formatCurrency(montoMovilizacion)}</p>
+<p>Colación: ${formatCurrency(montoColacion)}</p>
+<p>Caja: ${montoCaja}</p>
+
+<hr>
+
+<h2>4. Comisiones</h2>
+<p>${detalleComisionesHTML}</p>
+<p><strong>Total:</strong> ${formatCurrency(totalComisiones)}</p>
+
+<hr>
+
+<h2>5. Semana Corrida</h2>
+<p>${resultadoSemanaCorrida}</p>
+
+<hr>
+
+${pagosTxt.join('')}
+
+<hr>
+
+<div id="gratificacionMec">
+<h2>6. Gratificación</h2>
+<p id="listaGratificables"></p>
+</div>
+
+<hr>
+
+<h2>🧾 Conclusión</h2>
+<p>Se detectaron ${diferencias.length} diferencias con impacto de ${formatCurrency(impactoTotal)}.</p>
+<p>💡 Recomendación: validar con RRHH o asistencia.</p>
+
+`;
+
+mostrarGratificacionMec(gratificables);
 
 // ---------- FIN: ANÁLISIS COMISIÓN GRUPAL ----------
 // ********** Muestra parcial de resultados para plan free ***********

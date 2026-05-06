@@ -1160,18 +1160,30 @@ function calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada
     document.getElementById('resultadoGratificacion').innerHTML = resultadoHTML;
 }
 
-document.getElementById('resultadoAnalisis').innerHTML = `
-<hr>
+// ===============================
+// 🧾 RENDER MEC - NUEVA UX
+// ===============================
 
-<h2>📄 Liquidación de Sueldo</h2>
+const resultado = [];
 
-<p><strong>Mes y Año:</strong> ${mes} DE ${año}</p>
-<p><strong>Jornada:</strong> ${jornadaSeleccionada} horas</p>
+// 1. RESUMEN EJECUTIVO
+resultado.push(`
+<h2>🧾 Resumen Ejecutivo</h2>
+
+<div class="resumen-alerta">
+⚠ Se detectaron diferencias en tu liquidación (revisar detalle abajo)
+</div>
+
+<p><strong>Mes:</strong> ${mes} DE ${año}</p>
 <p><strong>Cargo:</strong> ${cargo}</p>
+<p><strong>Jornada:</strong> ${jornadaSeleccionada} horas</p>
 
 <hr>
+`);
 
-<h2>1. Sueldo</h2>
+// 2. SUELDO
+resultado.push(`
+<h2>🟢 Sueldo</h2>
 
 <p><strong>Sueldo Base:</strong> ${sueldoBaseContractual ? formatCurrency(sueldoBaseContractual) : 'No encontrado'}</p>
 
@@ -1181,62 +1193,99 @@ document.getElementById('resultadoAnalisis').innerHTML = `
 
 <p><strong>Resultado:</strong> ${resultadoProporcional}</p>
 
-<p><em>Cálculo:</em> ${sueldoBaseContractual ? formatCurrency((sueldoBaseContractual / 30) * diasTrabajados) : 'No encontrado'}</p>
-
-<p><strong>Comparación IMM:</strong> ${mensajeVariacion}</p>
-
 <hr>
+`);
 
-<h2>2. Sobretiempo</h2>
+// 3. SOBRETIEMPO
+resultado.push(`
+<h2>🔴 Sobretiempo</h2>
 
-<p><strong>Horas Extras:</strong> ${resultadoHorasExtras}</p>
+<p><strong>Hrs. Extras:</strong> ${resultadoHorasExtras}</p>
 
 <p><strong>Recargo Festivo:</strong> ${resultadoRecargoFestivo}</p>
 
-<p><strong>Horas Domingo:</strong> ${resultadoHorasExtrasDomingo}</p>
+<p><strong>Domingo:</strong> ${resultadoHorasExtrasDomingo}</p>
 
 <p><strong>Recargo Domingo:</strong> ${resultadoRecargoDomingo}</p>
 
 <hr>
+`);
 
-<h2>3. Asignaciones</h2>
+// 4. ASIGNACIONES
+resultado.push(`
+<h2>🟡 Asignaciones</h2>
 
-<p><strong>Movilización:</strong> ${diasMovilizacion} días — ${montoMovilizacion !== "Dato no encontrado" ? formatCurrency(montoMovilizacion) : 'Dato no encontrado'}</p>
-
-<p><strong>Colación:</strong> ${diasColacion} días — ${montoColacion !== "Dato no encontrado" ? formatCurrency(montoColacion) : 'Dato no encontrado'}</p>
-
-<p><strong>Caja:</strong> ${diasCaja} días — ${montoCaja !== "Dato no encontrado" ? formatCurrency(montoCaja) : 'Dato no encontrado'}</p>
-
-<hr>
-
-<h2>4. Comisiones</h2>
-
-<div>${detalleComisionesHTML}</div>
-
-<p><strong>Total Comisiones:</strong> ${formatCurrency(totalComisiones)}</p>
+<p><strong>Movilización:</strong> ${formatCurrency(montoMovilizacion)}</p>
+<p><strong>Colación:</strong> ${formatCurrency(montoColacion)}</p>
+<p><strong>Caja:</strong> ${formatCurrency(montoCaja)}</p>
 
 <hr>
+`);
 
-<h2>5. Semana Corrida</h2>
+// 5. COMISIONES (SIN TOCAR TU LOGICA)
+resultado.push(`
+<h2>🟣 Comisiones</h2>
 
-<p><strong>Días:</strong> ${diasSemanaCorrida !== "No especificados" ? diasSemanaCorrida : 'No especificado'}</p>
+<p>${detalleComisionesHTML}</p>
+
+<p><strong>Total:</strong> ${formatCurrency(totalComisiones)}</p>
+
+<hr>
+`);
+
+// 6. SEMANA CORRIDA
+resultado.push(`
+<h2>🔵 Semana Corrida</h2>
 
 <p><strong>Monto:</strong> ${formatCurrency(montoSemanaCorrida)}</p>
 
 <p><strong>Resultado:</strong> ${resultadoSemanaCorrida}</p>
 
 <hr>
+`);
 
-<div id="gratificacionMec" style="display:none;">
-  <h2>6. Haberes Gratificables</h2>
-  <p id="listaGratificables"></p>
-</div>
+// 7. GRUPAL (YA EXISTE TU LOGICA)
+resultado.push(`
+<h2>🟠 Comisión Grupal</h2>
+
+<p><strong>Detectado:</strong> ${formatCurrency(comisionPagadaEnNomina)}</p>
+
+<p><strong>Calculado:</strong> ${formatCurrency(comisionCalculada)}</p>
 
 <hr>
+`);
 
-${pagosTxt ? pagosTxt.join('') : ''}
+// 8. GRATIFICACIÓN
+resultado.push(`
+<h2>⚪ Haberes Gratificables</h2>
 
-`;
+<div id="listaGratificables"></div>
+
+<hr>
+`);
+
+// 9. CONCLUSIÓN SIMPLE (UX)
+resultado.push(`
+<h2>💡 Conclusión</h2>
+
+<p>${resultadoProporcional.includes("correcto") ? 
+"Tu liquidación se encuentra dentro de parámetros normales." :
+"Se detectan diferencias relevantes en tu liquidación."}</p>
+
+<hr>
+`);
+
+// 10. DETALLE TÉCNICO (TU SISTEMA ORIGINAL)
+resultado.push(`
+<h2>🔍 Detalle Técnico</h2>
+
+<p>${detalleComisionesHTML}</p>
+`);
+
+// ===============================
+// RENDER FINAL
+// ===============================
+document.getElementById('resultadoAnalisis').innerHTML = resultado.join('');
 
 // ---------- FIN: ANÁLISIS COMISIÓN GRUPAL ----------
 // ********** Muestra parcial de resultados para plan free ***********

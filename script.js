@@ -458,38 +458,100 @@ const listaGratificables = [
 ];
 
 // ==================== FUNCIÓN DE ANÁLISIS DEL PDF ====================
-const formatCurrency = (value) =>
-    new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(value);
-
 async function analizarArchivo() {
 
-    // ⏳ ESPERAR PLAN DEL USUARIO (MUY IMPORTANTE)
+    const formatCurrency = (value) =>
+        new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(value);
+
+    // ⏳ esperar plan listo
     await esperarPlanUsuario();
 
- 
+    // ==================== CONTROL FREEMIUM ====================
+    if (window.userPlan === "pro") {
+        console.log("💎 Usuario PRO → acceso ilimitado");
 
-// 💰 CONTROL DE PLAN + LÍMITE TOTAL (FREEMIUM REAL)
+    } else {
 
-// 💎 PRO → acceso ilimitado
-if (window.userPlan === "pro") {
-    console.log("💎 Usuario PRO → acceso ilimitado");
+        console.log("🆓 Usuario FREE / PRO_PENDING → verificando límite");
 
-} else {
+        const permitido = await puedeUsarAnalisisTotal();
 
-    console.log("🆓 Usuario FREE → verificando límite TOTAL");
+        if (!permitido) {
+            PAYWALL.show("Ya usaste tus 2 análisis gratuitos");
+            return;
+        }
 
-    const permitido = await puedeUsarAnalisisTotal();
+        await sumarUsoAnalisisTotal();
+        await actualizarContadorAnalisisUI();
+    }
 
-    if (!permitido) {
-        PAYWALL.show("Ya usaste tus 5 análisis gratuitos");
+    // ==================== ARCHIVO ====================
+    const archivo = document.getElementById('fileInput')?.files?.[0];
+    const jornadaSeleccionada = document.getElementById('jornada')?.value;
+
+    if (!archivo || !jornadaSeleccionada) {
+        alert('Por favor, selecciona una jornada y un archivo PDF.');
         return;
     }
 
-    // 🔥 SUMAR USO (solo FREE y solo si sí puede usar)
-    await sumarUsoAnalisisTotal();
-    await actualizarContadorAnalisisUI(); // 👈 ACTUALIZA EN TIEMPO REAL
+    // ==================== EXTRAER TEXTO ====================
+    const pdfData = await archivo.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
 
-}
+    let textoCompleto = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+        const pagina = await pdf.getPage(i);
+        const texto = await pagina.getTextContent();
+        texto.items.forEach(item => textoCompleto += item.str + ' ');
+    }
+
+    // ==================== DATOS DETECTADOS ====================
+    const regexFecha = /(\b(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\b) de (\d{4})/i;
+    const matchFecha = textoCompleto.match(regexFecha);
+
+    let mes = matchFecha ? matchFecha[1].toUpperCase() : "NO";
+    let año = matchFecha ? parseInt(matchFecha[2]) : 0;
+
+    const regexNombre = /NOMBRE\s*:\s*(.+)/i;
+    const regexRut = /RUT\s*:\s*([\d\.\-kK]+)/i;
+
+    const nombrePDF = (textoCompleto.match(regexNombre)?.[1] || "NO DETECTADO").trim();
+    const rutPDF = (textoCompleto.match(regexRut)?.[1] || "NO DETECTADO").trim();
+
+    const user = (await supabase.auth.getUser()).data.user;
+
+    // ==================== VALIDACIÓN SEGÚN PLAN ====================
+
+    if (window.userPlan === "pro" || window.userPlan === "pro_pending") {
+
+        const ok1 = confirm(`¿La liquidación corresponde a la fecha ${mes} ${año}?`);
+        if (!ok1) return;
+
+        const ok2 = confirm(`¿La liquidación pertenece a: ${nombrePDF}?`);
+        if (!ok2) return;
+
+        // verificación silenciosa RUT (control interno)
+        const { data: profile } = await supabase
+            .from("profiles")
+            .select("rut, nombre")
+            .eq("user_id", user.id)
+            .single();
+
+        if (profile?.rut && rutPDF !== profile.rut) {
+            alert("Documento no corresponde al usuario registrado.");
+            return;
+        }
+
+    } else {
+
+        const ok = confirm(`¿Es esta la liquidación correcta?\n\nFecha detectada: ${mes} ${año}`);
+        if (!ok) return;
+    }
+
+    // ==================== CONTINUAR PROCESO ====================
+    const resultado = await procesarLiquidacion(textoCompleto);
+    mostrarResultadoFreemium(resultado);
+
 
     const archivo = document.getElementById('fileInput').files[0];
     const jornadaSeleccionada = document.getElementById('jornada').value;

@@ -1160,132 +1160,126 @@ function calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada
     document.getElementById('resultadoGratificacion').innerHTML = resultadoHTML;
 }
 
-// ===============================
-// 🧾 RENDER MEC - NUEVA UX
-// ===============================
+// =============================
+// 🧠 ANÁLISIS COMISIÓN GRUPAL (SE MANTIENE)
+// =============================
 
-const resultado = [];
+// Detectar premio grupal en nómina
+const regexPremioNomina = /PREMIO\s*VENTA\s*TIENDA\s*AUT\.?\s*\$?\s*([\d\.,]+)/i;
+const matchPremioNomina = textoCompleto.match(regexPremioNomina);
+const comisionPagadaEnNomina = matchPremioNomina ? procesarMonto(matchPremioNomina[1]) : 0;
 
-// 1. RESUMEN EJECUTIVO
-resultado.push(`
-<h2>🧾 Resumen Ejecutivo</h2>
+// Extraer horas asesor
+let horasAsesor = 0;
+const regexHorasAsesorEnNomina = /Horas\s*Trabajadas\s*Asesor\s*[:\-]?\s*([\d\.,]+)/i;
+const mHorasAsesor1 = textoCompleto.match(regexHorasAsesorEnNomina);
+if (mHorasAsesor1) {
+    horasAsesor = parseFloat(String(mHorasAsesor1[1]).replace(/\./g, '').replace(',', '.'));
+}
 
-<div class="resumen-alerta">
-⚠ Se detectaron diferencias en tu liquidación (revisar detalle abajo)
-</div>
+// Procesar archivo premio
+let datosReporte = null;
+const inputPremioEl = document.getElementById('filePremio');
+if (inputPremioEl && inputPremioEl.files && inputPremioEl.files.length > 0) {
+    datosReporte = await extraerDatosReportePremio(inputPremioEl.files[0]);
+}
 
-<p><strong>Mes:</strong> ${mes} DE ${año}</p>
+let ventaTiendaTotal = datosReporte ? (datosReporte.ventaTiendaTotal || 0) : 0;
+let horasTotalesDept = datosReporte ? (datosReporte.horasDept || 0) : 0;
+let horasAsesorReporte = datosReporte ? (datosReporte.horasAs || 0) : 0;
+let porcentajeDept = datosReporte ? (datosReporte.pctDept || 0.0026) : 0.0026;
+
+// fallback horas
+if ((!horasAsesor || horasAsesor === 0) && horasAsesorReporte) {
+    horasAsesor = horasAsesorReporte;
+}
+
+// cálculo
+let comisionCalculada = 0;
+if (ventaTiendaTotal > 0 && horasTotalesDept > 0 && horasAsesor > 0) {
+    const valorHoraGrupal = (ventaTiendaTotal / horasTotalesDept) * porcentajeDept;
+    comisionCalculada = Math.round(valorHoraGrupal * horasAsesor);
+}
+
+// modo manual
+if (window.calculoManualMEC) {
+    comisionCalculada = Math.round(window.calculoManualMEC.comisionCalculada);
+    ventaTiendaTotal   = window.calculoManualMEC.ventaTienda;
+    horasTotalesDept   = window.calculoManualMEC.horasDepto;
+    horasAsesor        = window.calculoManualMEC.horasAsesor;
+    porcentajeDept     = window.calculoManualMEC.porcentaje;
+}
+
+
+// =============================
+// 🧾 RENDER NUEVO (REEMPLAZO REAL)
+// =============================
+
+document.getElementById('resultadoAnalisis').innerHTML = `
+<hr>
+
+<h2>🧾 1. RESUMEN GENERAL</h2>
+
+<p><strong>Periodo:</strong> ${mes} de ${año}</p>
 <p><strong>Cargo:</strong> ${cargo}</p>
 <p><strong>Jornada:</strong> ${jornadaSeleccionada} horas</p>
 
 <hr>
-`);
 
-// 2. SUELDO
-resultado.push(`
-<h2>🟢 Sueldo</h2>
+<h3>📌 Síntesis</h3>
+<ul>
+    <li>Sueldo base: ${sueldoBaseContractual ? formatCurrency(sueldoBaseContractual) : 'No encontrado'}</li>
+    <li>Sueldo pagado: ${sueldoProporcional ? formatCurrency(sueldoProporcional) : 'No encontrado'}</li>
+    <li>Total comisiones: ${formatCurrency(totalComisiones)}</li>
+    <li>Semana corrida: ${formatCurrency(montoSemanaCorrida)}</li>
+</ul>
 
-<p><strong>Sueldo Base:</strong> ${sueldoBaseContractual ? formatCurrency(sueldoBaseContractual) : 'No encontrado'}</p>
+<hr>
 
-<p><strong>Días Trabajados:</strong> ${diasTrabajados || 'No encontrados'}</p>
+<h2>📊 2. ANÁLISIS CUANTITATIVO</h2>
 
-<p><strong>Pagado:</strong> ${sueldoProporcional ? formatCurrency(sueldoProporcional) : 'No encontrado'}</p>
+<p>
+${sueldoBaseContractual ? formatCurrency(sueldoBaseContractual) : 'No encontrado'} ÷ 30 × ${diasTrabajados}
+= ${sueldoBaseContractual ? formatCurrency((sueldoBaseContractual / 30) * diasTrabajados) : 'No encontrado'}
+</p>
 
 <p><strong>Resultado:</strong> ${resultadoProporcional}</p>
 
-<hr>
-`);
+<p>${mensajeVariacion}</p>
 
-// 3. SOBRETIEMPO
-resultado.push(`
-<h2>🔴 Sobretiempo</h2>
+<ul>
+    <li>${resultadoHorasExtras}</li>
+    <li>${resultadoHorasExtrasDomingo}</li>
+    <li>${resultadoRecargoDomingo}</li>
+    <li>${resultadoRecargoFestivo}</li>
+</ul>
 
-<p><strong>Hrs. Extras:</strong> ${resultadoHorasExtras}</p>
+<p>
+${formatCurrency(totalComisiones)} ÷ ${diasParaSemanaCorrida} × ${diasSemanaCorrida}
+= ${formatCurrency(valorEsperadoSemanaCorrida)}
+</p>
 
-<p><strong>Recargo Festivo:</strong> ${resultadoRecargoFestivo}</p>
-
-<p><strong>Domingo:</strong> ${resultadoHorasExtrasDomingo}</p>
-
-<p><strong>Recargo Domingo:</strong> ${resultadoRecargoDomingo}</p>
-
-<hr>
-`);
-
-// 4. ASIGNACIONES
-resultado.push(`
-<h2>🟡 Asignaciones</h2>
-
-<p><strong>Movilización:</strong> ${formatCurrency(montoMovilizacion)}</p>
-<p><strong>Colación:</strong> ${formatCurrency(montoColacion)}</p>
-<p><strong>Caja:</strong> ${formatCurrency(montoCaja)}</p>
+<p><strong>${resultadoSemanaCorrida}</strong></p>
 
 <hr>
-`);
 
-// 5. COMISIONES (SIN TOCAR TU LOGICA)
-resultado.push(`
-<h2>🟣 Comisiones</h2>
+<h2>🧠 INTERPRETACIÓN</h2>
 
-<p>${detalleComisionesHTML}</p>
-
-<p><strong>Total:</strong> ${formatCurrency(totalComisiones)}</p>
+<p>${resultadoProporcional}</p>
+<p>${mensajeVariacion}</p>
 
 <hr>
-`);
 
-// 6. SEMANA CORRIDA
-resultado.push(`
-<h2>🔵 Semana Corrida</h2>
+<h2>🧾 COMISIÓN GRUPAL</h2>
 
-<p><strong>Monto:</strong> ${formatCurrency(montoSemanaCorrida)}</p>
-
-<p><strong>Resultado:</strong> ${resultadoSemanaCorrida}</p>
+<p><strong>Nómina:</strong> ${formatCurrency(comisionPagadaEnNomina)}</p>
+<p><strong>MEC:</strong> ${formatCurrency(comisionCalculada)}</p>
+<p><strong>Diferencia:</strong> ${formatCurrency(comisionPagadaEnNomina - comisionCalculada)}</p>
 
 <hr>
-`);
+`;
 
-// 7. GRUPAL (YA EXISTE TU LOGICA)
-resultado.push(`
-<h2>🟠 Comisión Grupal</h2>
-
-<p><strong>Detectado:</strong> ${formatCurrency(comisionPagadaEnNomina)}</p>
-
-<p><strong>Calculado:</strong> ${formatCurrency(comisionCalculada)}</p>
-
-<hr>
-`);
-
-// 8. GRATIFICACIÓN
-resultado.push(`
-<h2>⚪ Haberes Gratificables</h2>
-
-<div id="listaGratificables"></div>
-
-<hr>
-`);
-
-// 9. CONCLUSIÓN SIMPLE (UX)
-resultado.push(`
-<h2>💡 Conclusión</h2>
-
-<p>${resultadoProporcional.includes("correcto") ? 
-"Tu liquidación se encuentra dentro de parámetros normales." :
-"Se detectan diferencias relevantes en tu liquidación."}</p>
-
-<hr>
-`);
-
-// 10. DETALLE TÉCNICO (TU SISTEMA ORIGINAL)
-resultado.push(`
-<h2>🔍 Detalle Técnico</h2>
-
-<p>${detalleComisionesHTML}</p>
-`);
-
-// ===============================
-// RENDER FINAL
-// ===============================
-document.getElementById('resultadoAnalisis').innerHTML = resultado.join('');
+mostrarGratificacionMec(gratificables);
 
 // ---------- FIN: ANÁLISIS COMISIÓN GRUPAL ----------
 // ********** Muestra parcial de resultados para plan free ***********

@@ -1135,12 +1135,13 @@ function calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada
         <p><em>
             <p><strong>IMM utilizado:</strong> ${formatCurrency(inm)}</p>
             <p><strong>Jornada Máxima Vigente:</strong> ${jornadaMaxima} horas</p>
-            <p><strong>Tope Mensual (4.75 x IMM / 12):</strong> ${formatCurrency(Math.round(topeGratificacion))}</p>
+            <p><strong>¿Cómo se calcula la Gratificacion con Tope? 💡></p>
+            <p><strong>Tope Mensual {(4.75 x IMM) / 12}:</strong> ${formatCurrency(Math.round(topeGratificacion))}</p>
             <p><strong>Tope Proporcional:</strong> ${formatCurrency(Math.round(topeProporcional))}${notaProporcional}</p>
         </em></p>
-        <p><strong>Monto Calculado a Pagar:</strong> ${formatCurrency(valorAPagar)}</p>
-        <p><strong>Extraído del PDF:</strong> ${formatCurrency(gratificacionPDF)}</p>
-        <p><strong>Comparación:</strong> ${comparacionHTML}</p>
+        <p><strong>Cálculo de Gratificación:</strong> ${formatCurrency(valorAPagar)}</p>
+        <p><strong>Monto extarido de PDF:</strong> ${formatCurrency(gratificacionPDF)}</p>
+        <p><strong>Análisis:</strong> ${comparacionHTML}</p>
     `;
 
     document.getElementById('resultadoGratificacion').innerHTML = resultadoHTML;
@@ -1152,6 +1153,7 @@ function calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada
         <p><strong>Mes y Año: </strong> ${mes} DE ${año}. <strong>
         <p>Jornada: </strong> ${jornadaSeleccionada} horas.</p>
         <p><strong>Cargo:</strong> ${cargo}</p>
+        <p><strong>IMM Vigente </strong>${año}:</strong>${formatCurrency(inm)}</p>
 <hr>
         <h2>1. Sueldo</h2>
         <p><strong>Sueldo Base:</strong> ${sueldoBaseContractual ? formatCurrency(sueldoBaseContractual) : 'No encontrado'}.</p>

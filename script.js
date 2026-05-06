@@ -38,7 +38,6 @@ function esperarPlanUsuario() {
     });
 }
 
-
 // =========================================
 // 📈 VISITAS GLOBALES (1 sola ejecución)
 // =========================================
@@ -56,7 +55,6 @@ async function registrarVisitaGlobalUnaVez() {
         console.warn("⚠ Error visitas:", err);
     }
 }
-
 
 // =========================================
 // 🧮 ANÁLISIS FREEMIUM (CONTROL ÚNICO)
@@ -83,7 +81,6 @@ async function puedeUsarAnalisisTotal() {
     return usados < 2;
 }
 
-
 // =========================================
 // ➕ SUMAR ANÁLISIS (RPC BACKEND)
 // =========================================
@@ -100,7 +97,6 @@ async function sumarUsoAnalisisTotal() {
         console.warn("⚠ Límite alcanzado o error:", error.message);
     }
 }
-
 
 // =========================================
 // 🧮 UI CONTADOR ANÁLISIS
@@ -132,7 +128,6 @@ async function actualizarContadorAnalisisUI() {
     el.textContent = `${data.analisis_usados || 0} de 2`;
 }
 
-
 // =========================================
 // 📈 CONTADOR GLOBAL SUPABASE
 // =========================================
@@ -159,7 +154,6 @@ async function incrementarVisitas() {
     await mostrarContadorVisitas();
 }
 
-
 // 🔵 Mostrar contador visitas
 async function mostrarContadorVisitas() {
 
@@ -180,7 +174,6 @@ async function mostrarContadorVisitas() {
     el.textContent = data.visitas;
 }
 
-
 // 🕒 Fecha y hora
 function actualizarFechaHora() {
     const fechaElemento = document.getElementById("fecha");
@@ -190,7 +183,6 @@ function actualizarFechaHora() {
     if (fechaElemento) fechaElemento.textContent = ahora.toLocaleDateString();
     if (horaElemento) horaElemento.textContent = ahora.toLocaleTimeString();
 }
-
 
 // =========================================
 // 👤 PERSONALIZAR BOTÓN CERRAR SESIÓN
@@ -213,7 +205,6 @@ async function personalizarBotonLogout() {
         window.location.href = "/";
     };
 }
-
 
 // 🚀 INICIALIZACIÓN APP
 document.addEventListener("DOMContentLoaded", async () => {
@@ -263,7 +254,6 @@ if (btnIngresar) {
         }
     });
 }
-
 
 // =========================================
 // 🧭 NAVEGACIÓN PANTALLAS
@@ -463,71 +453,18 @@ const formatCurrency = (value) =>
 
 async function analizarArchivo() {
 
-// ⏳ ESPERAR PLAN
-await esperarPlanUsuario();
+    // ⏳ ESPERAR PLAN DEL USUARIO (MUY IMPORTANTE)
+    await esperarPlanUsuario();
 
-// 📄 EXTRAER PDF (NECESARIO PARA FECHA / RUT / NOMBRE)
-const archivo = document.getElementById('fileInput').files[0];
-const jornadaSeleccionada = document.getElementById('jornada').value;
+// 💰 CONTROL DE PLAN + LÍMITE TOTAL (FREEMIUM REAL)
 
-if (!archivo || !jornadaSeleccionada) {
-    alert('Por favor, selecciona una jornada y un archivo PDF.');
-    return;
-}
+// 💎 PRO → acceso ilimitado
+if (window.userPlan === "pro") {
+    console.log("💎 Usuario PRO → acceso ilimitado");
 
-const pdfData = await archivo.arrayBuffer();
-const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+} else {
 
-let textoCompleto = '';
-for (let i = 1; i <= pdf.numPages; i++) {
-    const pagina = await pdf.getPage(i);
-    const texto = await pagina.getTextContent();
-    texto.items.forEach(item => textoCompleto += item.str + ' ');
-}
-
-// 🔍 FECHA
-const regexFecha =
-/(\b(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\b) de (\d{4})/i;
-
-const matchFecha = textoCompleto.match(regexFecha);
-
-let mes = "No encontrado";
-let año = "No encontrado";
-
-if (matchFecha) {
-    mes = matchFecha[1].toUpperCase();
-    año = parseInt(matchFecha[2]);
-}
-
-// 👤 RUT
-const regexRut = /(\d{1,2}\.?\d{3}\.?\d{3}-[\dkK])/i;
-const matchRut = textoCompleto.match(regexRut);
-const rutPdf = matchRut ? matchRut[1] : null;
-
-// 👤 PERFIL USUARIO
-const { data: userData } = await supabase.auth.getUser();
-const user = userData.user;
-
-let profile = null;
-
-if (user) {
-    const { data } = await supabase
-        .from("profiles")
-        .select("nombre, rut")
-        .eq("id", user.id)
-        .single();
-
-    profile = data;
-}
-
-
-// ==========================
-// 🟢 FREE
-// ==========================
-if (window.userPlan === "free") {
-
-    const ok = confirm(`¿La liquidación es correcta?\nFecha detectada: ${mes} ${año}`);
-    if (!ok) return;
+    console.log("🆓 Usuario FREE → verificando límite TOTAL");
 
     const permitido = await puedeUsarAnalisisTotal();
 
@@ -536,37 +473,13 @@ if (window.userPlan === "free") {
         return;
     }
 
+    // 🔥 SUMAR USO (solo FREE y solo si sí puede usar)
     await sumarUsoAnalisisTotal();
-    await actualizarContadorAnalisisUI();
+    await actualizarContadorAnalisisUI(); // 👈 ACTUALIZA EN TIEMPO REAL
 }
 
-
-// ==========================
-// 🔵 PRO / PRO_PENDING
-// ==========================
-if (window.userPlan === "pro" || window.userPlan === "pro_pending") {
-
-    const ok = confirm(`¿La liquidación es correcta?\nFecha detectada: ${mes} ${año}`);
-    if (!ok) return;
-
-    const pertenece = confirm(`¿La liquidación pertenece a: ${profile?.nombre || "usuario"}?`);
-    if (!pertenece) return;
-
-    if (profile) {
-
-        if (profile.rut && rutPdf && profile.rut !== rutPdf) {
-            console.warn("⚠ RUT no coincide");
-        }
-
-        if (
-            profile.nombre &&
-            !textoCompleto.toUpperCase().includes(profile.nombre.toUpperCase())
-        ) {
-            console.warn("⚠ Nombre no coincide");
-        }
-    }
-}
-
+    const archivo = document.getElementById('fileInput').files[0];
+    const jornadaSeleccionada = document.getElementById('jornada').value;
     const regexMovilizacion = /MOVILIZACION\s*\((\d+)\)\s*\$\s*([\d.,]+)/i;
     const regexColacion = /COLACION\s*\((\d+)\)\s*\$\s*([\d.,]+)/i;
     const regexDiferenciaMovilizacion = /DIFERENCIA\s*MOVILIZACION\s*\$\s*([\d.,]+)/i;
@@ -595,7 +508,6 @@ for (let i = 1; i <= pdf.numPages; i++) {
     const texto = await pagina.getTextContent();
     texto.items.forEach(item => textoCompleto += item.str + ' ');
 }
-
 
 // Detectar premio en la nómina tempranamente para integrarlo en haberes si existe
 const regexPremioNomina_global = /(PREMIO\s*VENTA\s*TIENDA(?:\s*AUT\.?)?|PREMIO\s*VENTA\s*TIENDA|PREMIO\s*CUMPL\.?GRUPAL\s*VTAS|INCENTIVO\s*TIENDA|PREMIO\s*VENTA)[^\$]*\$\s*([\d\.,]+)/i;
@@ -1720,7 +1632,6 @@ document.getElementById('calcularVacacionesBtn').addEventListener('click', async
     }
 });
 
-
 // Función que realiza el cálculo usando la liquidación evaluada y las 3 para promedio
 function realizarCalculo(datos, pdfSeleccionado, seleccion) {
     const resultadoDiv = document.getElementById('resultadoVacaciones');
@@ -2493,7 +2404,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 
-
 //***************************** chat grupal ********************************
 
 let canalGrupal = null;
@@ -3064,7 +2974,6 @@ async function mostrarPantallaAdminChat() {
     }
 }
 
-
 // =========================
 // ADMIN - ABRIR CHAT (CORREGIDO)
 // =========================
@@ -3112,7 +3021,6 @@ async function abrirChatComoAdmin(idConversacion, userIdUsuario) {
         });
 }
 
-
 // =========================
 // ADMIN - CARGA INICIAL
 // =========================
@@ -3138,7 +3046,6 @@ async function cargarMensajesAdmin(idConversacion, userIdUsuario) {
         }
     }
 }
-
 
 // =========================
 // ADMIN - RENDER INCREMENTAL
@@ -3172,7 +3079,6 @@ async function agregarMensajeAdminAlDOM(msg, userIdUsuario, nickUsuarioCache = n
     contenedor.scrollTop = contenedor.scrollHeight;
 }
 
-
 // =========================
 // ADMIN - ENVIAR MENSAJE
 // =========================
@@ -3197,7 +3103,6 @@ async function enviarMensajePrivadoAdmin() {
     input.value = '';
 }
 
-
 // =========================
 // ADMIN - VOLVER
 // =========================
@@ -3205,7 +3110,6 @@ function mostrarListaConversaciones() {
     document.getElementById("chat-admin-panel").style.display = "none";
     mostrarPantallaAdminChat();
 }
-
 
 // =========================
 // ADMIN - CERRAR CHAT
@@ -3258,8 +3162,6 @@ function mostrarResultadoFreemium(htmlResultado) {
     contenedor.innerHTML += htmlResultado;
 }
 
-
-
 // ========================================
 // 🔄 CUANDO EL PLAN CAMBIA
 // ========================================
@@ -3267,8 +3169,6 @@ document.addEventListener("planUpdated", () => {
   console.log("🔄 Plan actualizado en memoria → refrescando UI");
   actualizarUIsegunPlan();
 });
-
-
 
 // ========================================
 // 🎨 ACTUALIZAR UI SEGÚN PLAN (BOTÓN REAL)
@@ -3337,8 +3237,6 @@ function actualizarUIsegunPlan() {
   botonesPro.forEach(btn => { if (btn) btn.style.display = "block"; });
   window.bloquearContadorFree = false;
 }
-
-
 
 // =====================================
 // 🔐 ACTUALIZAR CANDADOS VISUALES

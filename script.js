@@ -457,6 +457,11 @@ const listaGratificables = [
     "DIFERENCIA 70%","COMPENSACION PERMISO"
 ];
 
+// ======== ocultar pantalla de comision grupal asesores ============
+
+const contenedorResultadoInicial = document.getElementById("resultadoAnalisis");
+if (contenedorResultadoInicial) contenedorResultadoInicial.style.display = "none";
+
 // ==================== FUNCIÓN DE ANÁLISIS DEL PDF ====================
 const formatCurrency = (value) =>
     new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(value);
@@ -2060,6 +2065,10 @@ function salirAplicacion() {
  *  MODO MANUAL DE COMISIÓN GRUPAL (Opción 1)
  **********************************************/
 
+// 🔒 Ocultar contenedor de resultados al iniciar
+const contenedorResultadoInicial = document.getElementById("resultadoAnalisis");
+if (contenedorResultadoInicial) contenedorResultadoInicial.style.display = "none";
+
 // Botón para mostrar/ocultar el ingreso manual
 const btnIngresoManual = document.getElementById("btnIngresoManual");
 const formularioManual = document.getElementById("formularioManual");
@@ -2068,9 +2077,14 @@ const filePremio = document.getElementById("filePremio");
 // Mostrar u ocultar el formulario manual
 if (btnIngresoManual) {
     btnIngresoManual.addEventListener("click", () => {
+
+        // 🔴 Cada vez que cambia de modo → ocultar resultados
+        const contenedor = document.getElementById("resultadoAnalisis");
+        if (contenedor) contenedor.style.display = "none";
+
         if (formularioManual.style.display === "none") {
             formularioManual.style.display = "block";
-            filePremio.style.display = "none";   // Oculta la subida de PDF del premio
+            filePremio.style.display = "none";   
             btnIngresoManual.style.background = "#FF9800";
             btnIngresoManual.textContent = "Usar archivo PDF nuevamente";
         } else {
@@ -2086,7 +2100,6 @@ if (btnIngresoManual) {
  *  CÁLCULO MANUAL DE COMISIÓN GRUPAL
  **********************************************/
 
-// Función principal del cálculo manual
 function calcularComisionManual() {
 
     const horasAsesor = parseFloat(document.getElementById("manualHorasAsesor").value);
@@ -2104,7 +2117,6 @@ function calcularComisionManual() {
         return null;
     }
 
-    // Fórmula oficial
     const valorHora = (ventaTienda / horasDepto) * porcentaje;
     const comisionCalculada = valorHora * horasAsesor;
 
@@ -2128,10 +2140,16 @@ if (btnCalcularManual) {
     btnCalcularManual.addEventListener("click", () => {
 
         const datos = calcularComisionManual();
-        if (!datos) return;
-
-        // Mostrar resultado en pantalla (al mismo contenedor que usas hoy)
         const contenedor = document.getElementById("resultadoAnalisis");
+
+        // 🔴 Si NO hay datos válidos → ocultar contenedor
+        if (!datos) {
+            if (contenedor) contenedor.style.display = "none";
+            return;
+        }
+
+        // 🟢 Hay datos válidos → mostrar contenedor
+        contenedor.style.display = "block";
 
         contenedor.innerHTML = `
             <h3>Resultado Comisión Manual</h3>
@@ -2142,10 +2160,11 @@ if (btnCalcularManual) {
             <p><strong>Venta Tienda:</strong> $${datos.ventaTienda}</p>
             <p><strong>Porcentaje:</strong> ${datos.porcentaje}</p>
             <hr>
-            <p style="color: #0288D1;"><strong>Comparación con la liquidación aparecerá cuando termines el análisis completo.</strong></p>
+            <p style="color: #0288D1;">
+                <strong>Comparación con la liquidación aparecerá cuando termines el análisis completo.</strong>
+            </p>
         `;
 
-        // Guardamos el cálculo manual para integrarlo con analizarArchivo()
         window.calculoManualMEC = datos;
 
         alert("✔ Datos manuales listos. Ahora presiona CALCULAR para integrarlos con tu liquidación.");

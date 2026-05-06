@@ -1167,7 +1167,7 @@ function calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada
         <p><strong>Mes y Año: </strong> ${mes} DE ${año}. <strong>
         <p>Jornada: </strong> ${jornadaSeleccionada} horas.</p>
         <p><strong>Cargo:</strong> ${cargo}</p>
-        <p><strong>IMM Vigente:</strong> ${formatCurrency(inm)}</p>
+        <p><strong>IMM Vigente:</strong> ${año}</strong> ${formatCurrency(inm)}</p>
 <hr>
         <h2>1. Sueldo</h2>
         <p><strong>Sueldo Base:</strong> ${sueldoBaseContractual ? formatCurrency(sueldoBaseContractual) : 'No encontrado'}.</p>

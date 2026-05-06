@@ -38,6 +38,7 @@ function esperarPlanUsuario() {
     });
 }
 
+
 // =========================================
 // 📈 VISITAS GLOBALES (1 sola ejecución)
 // =========================================
@@ -55,6 +56,7 @@ async function registrarVisitaGlobalUnaVez() {
         console.warn("⚠ Error visitas:", err);
     }
 }
+
 
 // =========================================
 // 🧮 ANÁLISIS FREEMIUM (CONTROL ÚNICO)
@@ -81,6 +83,7 @@ async function puedeUsarAnalisisTotal() {
     return usados < 2;
 }
 
+
 // =========================================
 // ➕ SUMAR ANÁLISIS (RPC BACKEND)
 // =========================================
@@ -97,6 +100,7 @@ async function sumarUsoAnalisisTotal() {
         console.warn("⚠ Límite alcanzado o error:", error.message);
     }
 }
+
 
 // =========================================
 // 🧮 UI CONTADOR ANÁLISIS
@@ -128,6 +132,7 @@ async function actualizarContadorAnalisisUI() {
     el.textContent = `${data.analisis_usados || 0} de 2`;
 }
 
+
 // =========================================
 // 📈 CONTADOR GLOBAL SUPABASE
 // =========================================
@@ -154,6 +159,7 @@ async function incrementarVisitas() {
     await mostrarContadorVisitas();
 }
 
+
 // 🔵 Mostrar contador visitas
 async function mostrarContadorVisitas() {
 
@@ -174,6 +180,7 @@ async function mostrarContadorVisitas() {
     el.textContent = data.visitas;
 }
 
+
 // 🕒 Fecha y hora
 function actualizarFechaHora() {
     const fechaElemento = document.getElementById("fecha");
@@ -183,6 +190,7 @@ function actualizarFechaHora() {
     if (fechaElemento) fechaElemento.textContent = ahora.toLocaleDateString();
     if (horaElemento) horaElemento.textContent = ahora.toLocaleTimeString();
 }
+
 
 // =========================================
 // 👤 PERSONALIZAR BOTÓN CERRAR SESIÓN
@@ -205,6 +213,7 @@ async function personalizarBotonLogout() {
         window.location.href = "/";
     };
 }
+
 
 // 🚀 INICIALIZACIÓN APP
 document.addEventListener("DOMContentLoaded", async () => {
@@ -254,6 +263,7 @@ if (btnIngresar) {
         }
     });
 }
+
 
 // =========================================
 // 🧭 NAVEGACIÓN PANTALLAS
@@ -456,6 +466,8 @@ async function analizarArchivo() {
     // ⏳ ESPERAR PLAN DEL USUARIO (MUY IMPORTANTE)
     await esperarPlanUsuario();
 
+ 
+
 // 💰 CONTROL DE PLAN + LÍMITE TOTAL (FREEMIUM REAL)
 
 // 💎 PRO → acceso ilimitado
@@ -469,13 +481,14 @@ if (window.userPlan === "pro") {
     const permitido = await puedeUsarAnalisisTotal();
 
     if (!permitido) {
-        PAYWALL.show("Ya usaste tus 2 análisis gratuitos");
+        PAYWALL.show("Ya usaste tus 5 análisis gratuitos");
         return;
     }
 
     // 🔥 SUMAR USO (solo FREE y solo si sí puede usar)
     await sumarUsoAnalisisTotal();
     await actualizarContadorAnalisisUI(); // 👈 ACTUALIZA EN TIEMPO REAL
+
 }
 
     const archivo = document.getElementById('fileInput').files[0];
@@ -508,6 +521,7 @@ for (let i = 1; i <= pdf.numPages; i++) {
     const texto = await pagina.getTextContent();
     texto.items.forEach(item => textoCompleto += item.str + ' ');
 }
+
 
 // Detectar premio en la nómina tempranamente para integrarlo en haberes si existe
 const regexPremioNomina_global = /(PREMIO\s*VENTA\s*TIENDA(?:\s*AUT\.?)?|PREMIO\s*VENTA\s*TIENDA|PREMIO\s*CUMPL\.?GRUPAL\s*VTAS|INCENTIVO\s*TIENDA|PREMIO\s*VENTA)[^\$]*\$\s*([\d\.,]+)/i;
@@ -1135,12 +1149,12 @@ function calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada
         <p><em>
             <p><strong>IMM utilizado:</strong> ${formatCurrency(inm)}</p>
             <p><strong>Jornada Máxima Vigente:</strong> ${jornadaMaxima} horas</p>
-            <p><strong>¿Cómo se calcula la Gratificacion con Tope? 💡></p>
-            <p><strong>Tope Mensual {(4.75 x IMM) / 12}:</strong> ${formatCurrency(Math.round(topeGratificacion))}</p>
+            <p><strong>¿Cómose cálcula la Gratificación? 💡 </p>
+            <p><strong>Tope Mensual ((4.75 x IMM) / 12):</strong> ${formatCurrency(Math.round(topeGratificacion))}</p>
             <p><strong>Tope Proporcional:</strong> ${formatCurrency(Math.round(topeProporcional))}${notaProporcional}</p>
         </em></p>
-        <p><strong>Cálculo de Gratificación:</strong> ${formatCurrency(valorAPagar)}</p>
-        <p><strong>Monto extarido de PDF:</strong> ${formatCurrency(gratificacionPDF)}</p>
+        <p><strong>Cálculo de Gratificación a Pago:</strong> ${formatCurrency(valorAPagar)}</p>
+        <p><strong>Monto extraido del PDF:</strong> ${formatCurrency(gratificacionPDF)}</p>
         <p><strong>Análisis:</strong> ${comparacionHTML}</p>
     `;
 
@@ -1153,7 +1167,7 @@ function calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada
         <p><strong>Mes y Año: </strong> ${mes} DE ${año}. <strong>
         <p>Jornada: </strong> ${jornadaSeleccionada} horas.</p>
         <p><strong>Cargo:</strong> ${cargo}</p>
-        <p><strong>IMM Vigente </strong>${año}:</strong>${formatCurrency(inm)}</p>
+        <p><strong>IMM Vigente:</strong> ${formatCurrency(inm)}</p>
 <hr>
         <h2>1. Sueldo</h2>
         <p><strong>Sueldo Base:</strong> ${sueldoBaseContractual ? formatCurrency(sueldoBaseContractual) : 'No encontrado'}.</p>
@@ -1308,45 +1322,41 @@ if (window.calculoManualMEC) {
 }
 
 let pagosTxt = [];
+pagosTxt.push(`<h2>Comisión Grupal — análisis</h2>`);
+pagosTxt.push(`<p><strong>Comisión detectada en la nómina:</strong> ${formatCurrency(comisionPagadaEnNomina)}</p>`);
 
-// 👇 SOLO SI HAY DATOS REALES
-if (comisionPagadaEnNomina > 0 || comisionCalculada > 0 || datosReporte) {
+if (datosReporte) {
+    pagosTxt.push(`<p><strong>Venta Tienda Total:</strong> ${formatCurrency(ventaTiendaTotal)}</p>`);
+    pagosTxt.push(`<p><strong>Horas Totales Departamento:</strong> ${horasTotalesDept}</p>`);
+    pagosTxt.push(`<p><strong>Horas Asesor (reporte):</strong> ${horasAsesor}</p>`);
+    pagosTxt.push(`<p><strong>Porcentaje departamento:</strong> ${(porcentajeDept*100).toFixed(4)}%</p>`);
+    pagosTxt.push(`<p><strong>Monto bruto incentivo (reporte):</strong> ${montoBrutoIncentivo !== null ? formatCurrency(montoBrutoIncentivo) : 'No en reporte'}</p>`);
+}
 
-    pagosTxt.push(`<h2>Comisión Grupal — análisis</h2>`);
-    pagosTxt.push(`<p><strong>Comisión detectada en la nómina:</strong> ${formatCurrency(comisionPagadaEnNomina)}</p>`);
+pagosTxt.push(`<p><strong>Comisión calculada (esperada):</strong> ${formatCurrency(comisionCalculada)}</p>`);
 
-    if (datosReporte) {
-        pagosTxt.push(`<p><strong>Venta Tienda Total:</strong> ${formatCurrency(ventaTiendaTotal)}</p>`);
-        pagosTxt.push(`<p><strong>Horas Totales Departamento:</strong> ${horasTotalesDept}</p>`);
-        pagosTxt.push(`<p><strong>Horas Asesor:</strong> ${horasAsesor}</p>`);
-        pagosTxt.push(`<p><strong>Porcentaje:</strong> ${(porcentajeDept*100).toFixed(4)}%</p>`);
-    }
+// Comparación nómina vs cálculo
+const diffNominaCalc = comisionPagadaEnNomina - comisionCalculada;
 
-    pagosTxt.push(`<p><strong>Comisión calculada (esperada):</strong> ${formatCurrency(comisionCalculada)}</p>`);
+if (Math.abs(diffNominaCalc) < 1 && comisionPagadaEnNomina > 0) {
+    pagosTxt.push(`<p style="color:green"><strong>✅ Pago correcto según cálculo.</strong></p>`);
+} else if (comisionPagadaEnNomina === 0 && comisionCalculada > 0) {
+    pagosTxt.push(`<p style="color:red"><strong>❌ No se pagó comisión en la nómina.</strong></p>`);
+} else {
+    pagosTxt.push(`<p style="color:red"><strong>❌ Diferencia detectada: ${formatCurrency(diffNominaCalc)}</strong></p>`);
+}
 
-    const diffNominaCalc = comisionPagadaEnNomina - comisionCalculada;
-
-    if (Math.abs(diffNominaCalc) < 1 && comisionPagadaEnNomina > 0) {
-        pagosTxt.push(`<p style="color:green"><strong>✅ Pago correcto según cálculo.</strong></p>`);
-    } else if (comisionPagadaEnNomina === 0 && comisionCalculada > 0) {
-        pagosTxt.push(`<p style="color:red"><strong>❌ No se pagó comisión en la nómina.</strong></p>`);
+// Comparación reporte vs cálculo
+if (montoBrutoIncentivo !== null) {
+    const diffReporteCalc = montoBrutoIncentivo - comisionCalculada;
+    if (Math.abs(diffReporteCalc) < 1) {
+        pagosTxt.push(`<p style="color:green"><strong>✅ Reporte y cálculo coinciden.</strong></p>`);
     } else {
-        pagosTxt.push(`<p style="color:red"><strong>❌ Diferencia detectada: ${formatCurrency(diffNominaCalc)}</strong></p>`);
+        pagosTxt.push(`<p style="color:orange"><strong>⚠ Reporte vs cálculo dif.: ${formatCurrency(diffReporteCalc)}</strong></p>`);
     }
-
-    if (montoBrutoIncentivo !== null) {
-        const diffReporteCalc = montoBrutoIncentivo - comisionCalculada;
-        if (Math.abs(diffReporteCalc) < 1) {
-            pagosTxt.push(`<p style="color:green"><strong>✅ Reporte y cálculo coinciden.</strong></p>`);
-        } else {
-            pagosTxt.push(`<p style="color:orange"><strong>⚠ Diferencia con reporte: ${formatCurrency(diffReporteCalc)}</strong></p>`);
-        }
-    }
-
 }
 
 // ---------- FIN: ANÁLISIS COMISIÓN GRUPAL ----------
-
 // ********** Muestra parcial de resultados para plan free ***********
 
 mostrarResultadoFreemium(pagosTxt.join(''));
@@ -1633,6 +1643,7 @@ document.getElementById('calcularVacacionesBtn').addEventListener('click', async
         resultadoDiv.innerHTML = '<p style="color: red;">No se encontraron PDFs con "COMISIÓN VACACIONES".</p>';
     }
 });
+
 
 // Función que realiza el cálculo usando la liquidación evaluada y las 3 para promedio
 function realizarCalculo(datos, pdfSeleccionado, seleccion) {
@@ -2406,6 +2417,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 
+
 //***************************** chat grupal ********************************
 
 let canalGrupal = null;
@@ -2976,6 +2988,7 @@ async function mostrarPantallaAdminChat() {
     }
 }
 
+
 // =========================
 // ADMIN - ABRIR CHAT (CORREGIDO)
 // =========================
@@ -3023,6 +3036,7 @@ async function abrirChatComoAdmin(idConversacion, userIdUsuario) {
         });
 }
 
+
 // =========================
 // ADMIN - CARGA INICIAL
 // =========================
@@ -3048,6 +3062,7 @@ async function cargarMensajesAdmin(idConversacion, userIdUsuario) {
         }
     }
 }
+
 
 // =========================
 // ADMIN - RENDER INCREMENTAL
@@ -3081,6 +3096,7 @@ async function agregarMensajeAdminAlDOM(msg, userIdUsuario, nickUsuarioCache = n
     contenedor.scrollTop = contenedor.scrollHeight;
 }
 
+
 // =========================
 // ADMIN - ENVIAR MENSAJE
 // =========================
@@ -3105,6 +3121,7 @@ async function enviarMensajePrivadoAdmin() {
     input.value = '';
 }
 
+
 // =========================
 // ADMIN - VOLVER
 // =========================
@@ -3112,6 +3129,7 @@ function mostrarListaConversaciones() {
     document.getElementById("chat-admin-panel").style.display = "none";
     mostrarPantallaAdminChat();
 }
+
 
 // =========================
 // ADMIN - CERRAR CHAT
@@ -3227,18 +3245,22 @@ function actualizarUIsegunPlan() {
   if (plan === "pro") {
     botonesPro.forEach(btn => { if (btn) btn.style.display = "block"; });
     window.bloquearContadorFree = true;
-    return;
   }
 
-  if (plan === "pro_pending") {
+  else if (plan === "pro_pending") {
     botonesPro.forEach(btn => { if (btn) btn.style.display = "none"; });
     window.bloquearContadorFree = true;
-    return;
   }
 
-  botonesPro.forEach(btn => { if (btn) btn.style.display = "block"; });
-  window.bloquearContadorFree = false;
+  else {
+    botonesPro.forEach(btn => { if (btn) btn.style.display = "block"; });
+    window.bloquearContadorFree = false;
+  }
+
+  // 🔥 SIEMPRE actualizar candados (clave)
+  actualizarCandadosUI();
 }
+
 
 // =====================================
 // 🔐 ACTUALIZAR CANDADOS VISUALES
@@ -3246,20 +3268,26 @@ function actualizarUIsegunPlan() {
 function actualizarCandadosUI() {
 
     const botones = document.querySelectorAll(".btn-pro-lock");
-    if (!botones.length) return;
-
-    if (PERMISSIONS.isPro && PERMISSIONS.isPro()) {
-        botones.forEach(btn => {
-            btn.classList.remove("btn-pro-lock");
-            btn.innerHTML = btn.innerHTML.replace("🔐", "").trim();
-        });
-        return;
-    }
 
     botones.forEach(btn => {
-        if (!btn.innerHTML.includes("🔐")) {
-            btn.innerHTML = "🔐 " + btn.innerHTML;
+
+        // Guardar texto original SOLO una vez
+        if (!btn.dataset.originalText) {
+            btn.dataset.originalText = btn.innerText.replace("🔐", "").trim();
         }
-        btn.classList.add("btn-pro-lock");
+
+        const esPro = PERMISSIONS.isPro && PERMISSIONS.isPro();
+        const esAdmin = PERMISSIONS.isAdmin && PERMISSIONS.isAdmin();
+
+        // 💎 PRO o 👑 ADMIN → desbloqueado visual
+        if (esPro || esAdmin) {
+            btn.innerText = btn.dataset.originalText;
+            btn.classList.remove("btn-pro-lock");
+        } else {
+            // 🆓 FREE / ⏳ PENDING → bloqueado visual
+            btn.innerText = "🔐 " + btn.dataset.originalText;
+            btn.classList.add("btn-pro-lock");
+        }
+
     });
 }

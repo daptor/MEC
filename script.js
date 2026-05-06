@@ -1161,92 +1161,111 @@ function calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada
 }
 
 // =============================
-// 🧠 ANÁLISIS COMISIÓN GRUPAL (SE MANTIENE)
+// 🧠 CÁLCULO COMISIÓN GRUPAL
 // =============================
 
-// Detectar premio grupal en nómina
+// Detectar premio en nómina
 const regexPremioNomina = /PREMIO\s*VENTA\s*TIENDA\s*AUT\.?\s*\$?\s*([\d\.,]+)/i;
 const matchPremioNomina = textoCompleto.match(regexPremioNomina);
 const comisionPagadaEnNomina = matchPremioNomina ? procesarMonto(matchPremioNomina[1]) : 0;
 
-// Extraer horas asesor
+// Horas asesor desde nómina
 let horasAsesor = 0;
-const regexHorasAsesorEnNomina = /Horas\s*Trabajadas\s*Asesor\s*[:\-]?\s*([\d\.,]+)/i;
-const mHorasAsesor1 = textoCompleto.match(regexHorasAsesorEnNomina);
-if (mHorasAsesor1) {
-    horasAsesor = parseFloat(String(mHorasAsesor1[1]).replace(/\./g, '').replace(',', '.'));
+const regexHorasAsesor = /Horas\s*Trabajadas\s*Asesor\s*[:\-]?\s*([\d\.,]+)/i;
+const matchHoras = textoCompleto.match(regexHorasAsesor);
+
+if (matchHoras) {
+    horasAsesor = parseFloat(matchHoras[1].replace(/\./g, '').replace(',', '.'));
 }
 
-// Procesar archivo premio
+// Función lectura reporte premio
+async function extraerDatosReportePremio(archivo) {
+    if (!archivo) return null;
+
+    try {
+        const texto = await extraerTextoDePDF(archivo);
+        const t = texto.replace(/\s+/g, ' ');
+
+        const venta = (t.match(/Venta\s+Tienda\s*\$?\s*([\d\.,]+)/i) || [])[1];
+        const horasDept = (t.match(/Horas\s+Trabajadas\s+Departamento\s+Asistido\s*[:\-]?\s*([\d\.,]+)/i) || [])[1];
+        const horasAs = (t.match(/Horas\s+Trabajadas\s+Asesor\s*[:\-]?\s*([\d\.,]+)/i) || [])[1];
+        const pct = (t.match(/Departamento\s+Asistido[:\s]*([\d\.,]+)%/i) || [])[1];
+
+        return {
+            ventaTiendaTotal: venta ? procesarMonto(venta) : 0,
+            horasDept: horasDept ? procesarMonto(horasDept) : 0,
+            horasAs: horasAs ? procesarMonto(horasAs) : 0,
+            pctDept: pct ? parseFloat(pct.replace(',', '.')) / 100 : 0.0026
+        };
+
+    } catch (e) {
+        console.error('Error premio:', e);
+        return null;
+    }
+}
+
+// Procesar archivo
 let datosReporte = null;
-const inputPremioEl = document.getElementById('filePremio');
-if (inputPremioEl && inputPremioEl.files && inputPremioEl.files.length > 0) {
-    datosReporte = await extraerDatosReportePremio(inputPremioEl.files[0]);
+const inputPremio = document.getElementById('filePremio');
+
+if (inputPremio?.files?.length > 0) {
+    datosReporte = await extraerDatosReportePremio(inputPremio.files[0]);
 }
 
-let ventaTiendaTotal = datosReporte ? (datosReporte.ventaTiendaTotal || 0) : 0;
-let horasTotalesDept = datosReporte ? (datosReporte.horasDept || 0) : 0;
-let horasAsesorReporte = datosReporte ? (datosReporte.horasAs || 0) : 0;
-let porcentajeDept = datosReporte ? (datosReporte.pctDept || 0.0026) : 0.0026;
+let ventaTiendaTotal = datosReporte?.ventaTiendaTotal || 0;
+let horasTotalesDept = datosReporte?.horasDept || 0;
+let porcentajeDept = datosReporte?.pctDept || 0.0026;
 
 // fallback horas
-if ((!horasAsesor || horasAsesor === 0) && horasAsesorReporte) {
-    horasAsesor = horasAsesorReporte;
+if (!horasAsesor && datosReporte?.horasAs) {
+    horasAsesor = datosReporte.horasAs;
 }
 
-// cálculo
+// cálculo final
 let comisionCalculada = 0;
+
 if (ventaTiendaTotal > 0 && horasTotalesDept > 0 && horasAsesor > 0) {
-    const valorHoraGrupal = (ventaTiendaTotal / horasTotalesDept) * porcentajeDept;
-    comisionCalculada = Math.round(valorHoraGrupal * horasAsesor);
+    const valorHora = (ventaTiendaTotal / horasTotalesDept) * porcentajeDept;
+    comisionCalculada = Math.round(valorHora * horasAsesor);
 }
-
-// modo manual
-if (window.calculoManualMEC) {
-    comisionCalculada = Math.round(window.calculoManualMEC.comisionCalculada);
-    ventaTiendaTotal   = window.calculoManualMEC.ventaTienda;
-    horasTotalesDept   = window.calculoManualMEC.horasDepto;
-    horasAsesor        = window.calculoManualMEC.horasAsesor;
-    porcentajeDept     = window.calculoManualMEC.porcentaje;
-}
-
 
 // =============================
-// 🧾 RENDER NUEVO (REEMPLAZO REAL)
+// 🧾 RENDER FINAL MEC
 // =============================
 
 document.getElementById('resultadoAnalisis').innerHTML = `
 <hr>
 
-<h2>🧾 1. RESUMEN GENERAL</h2>
+<h2>🧾 RESUMEN</h2>
+<p><strong>${mes} de ${año}</strong> — ${cargo}</p>
 
-<p><strong>Periodo:</strong> ${mes} de ${año}</p>
-<p><strong>Cargo:</strong> ${cargo}</p>
-<p><strong>Jornada:</strong> ${jornadaSeleccionada} horas</p>
-
-<hr>
-
-<h3>📌 Síntesis</h3>
 <ul>
-    <li>Sueldo base: ${sueldoBaseContractual ? formatCurrency(sueldoBaseContractual) : 'No encontrado'}</li>
-    <li>Sueldo pagado: ${sueldoProporcional ? formatCurrency(sueldoProporcional) : 'No encontrado'}</li>
-    <li>Total comisiones: ${formatCurrency(totalComisiones)}</li>
+    <li>Sueldo: ${formatCurrency(sueldoProporcional)}</li>
+    <li>Comisiones: ${formatCurrency(totalComisiones)}</li>
     <li>Semana corrida: ${formatCurrency(montoSemanaCorrida)}</li>
 </ul>
 
 <hr>
 
-<h2>📊 2. ANÁLISIS CUANTITATIVO</h2>
+<h2>📊 VALIDACIONES</h2>
 
-<p>
-${sueldoBaseContractual ? formatCurrency(sueldoBaseContractual) : 'No encontrado'} ÷ 30 × ${diasTrabajados}
-= ${sueldoBaseContractual ? formatCurrency((sueldoBaseContractual / 30) * diasTrabajados) : 'No encontrado'}
+<p><strong>Sueldo base</strong><br>
+Esperado: ${formatCurrency((sueldoBaseContractual / 30) * diasTrabajados)}<br>
+Pagado: ${formatCurrency(sueldoProporcional)}<br>
+${resultadoProporcional}
 </p>
 
-<p><strong>Resultado:</strong> ${resultadoProporcional}</p>
+<p><strong>IMM:</strong> ${mensajeVariacion}</p>
 
-<p>${mensajeVariacion}</p>
+<p><strong>Semana corrida</strong><br>
+Esperado: ${formatCurrency(valorEsperadoSemanaCorrida)}<br>
+Pagado: ${formatCurrency(montoSemanaCorrida)}<br>
+${resultadoSemanaCorrida}
+</p>
 
+<hr>
+
+<h2>⏱ SOBRETIEMPO</h2>
 <ul>
     <li>${resultadoHorasExtras}</li>
     <li>${resultadoHorasExtrasDomingo}</li>
@@ -1254,27 +1273,13 @@ ${sueldoBaseContractual ? formatCurrency(sueldoBaseContractual) : 'No encontrado
     <li>${resultadoRecargoFestivo}</li>
 </ul>
 
-<p>
-${formatCurrency(totalComisiones)} ÷ ${diasParaSemanaCorrida} × ${diasSemanaCorrida}
-= ${formatCurrency(valorEsperadoSemanaCorrida)}
-</p>
-
-<p><strong>${resultadoSemanaCorrida}</strong></p>
-
+${(comisionPagadaEnNomina > 0 || comisionCalculada > 0) ? `
 <hr>
-
-<h2>🧠 INTERPRETACIÓN</h2>
-
-<p>${resultadoProporcional}</p>
-<p>${mensajeVariacion}</p>
-
-<hr>
-
 <h2>🧾 COMISIÓN GRUPAL</h2>
-
-<p><strong>Nómina:</strong> ${formatCurrency(comisionPagadaEnNomina)}</p>
-<p><strong>MEC:</strong> ${formatCurrency(comisionCalculada)}</p>
-<p><strong>Diferencia:</strong> ${formatCurrency(comisionPagadaEnNomina - comisionCalculada)}</p>
+<p>Pagado: ${formatCurrency(comisionPagadaEnNomina)}</p>
+<p>Esperado: ${formatCurrency(comisionCalculada)}</p>
+<p>Diferencia: ${formatCurrency(comisionPagadaEnNomina - comisionCalculada)}</p>
+` : ''}
 
 <hr>
 `;

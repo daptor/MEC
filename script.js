@@ -1291,6 +1291,7 @@ if (comisionPagadaEnNomina > 0 || comisionCalculada > 0) {
 
     document.getElementById('resultadoAnalisis').innerHTML += bloqueComision;
 }
+}
 
 // ---------- FIN: ANÁLISIS COMISIÓN GRUPAL ----------
 // ********** Muestra parcial de resultados para plan free ***********

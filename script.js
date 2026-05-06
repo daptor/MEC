@@ -458,32 +458,114 @@ const listaGratificables = [
 ];
 
 // ==================== FUNCIÓN DE ANÁLISIS DEL PDF ====================
+const formatCurrency = (value) =>
+    new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(value);
+
 async function analizarArchivo() {
 
-    await esperarPlanUsuario();
+// ⏳ ESPERAR PLAN
+await esperarPlanUsuario();
 
-    if (window.userPlan !== "pro") {
+// 📄 EXTRAER PDF (NECESARIO PARA FECHA / RUT / NOMBRE)
+const archivo = document.getElementById('fileInput').files[0];
+const jornadaSeleccionada = document.getElementById('jornada').value;
 
-        const permitido = await puedeUsarAnalisisTotal();
+if (!archivo || !jornadaSeleccionada) {
+    alert('Por favor, selecciona una jornada y un archivo PDF.');
+    return;
+}
 
-        if (!permitido) {
-            PAYWALL.show("Ya usaste tus 2 análisis gratuitos");
-            return;
-        }
+const pdfData = await archivo.arrayBuffer();
+const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
 
-        await sumarUsoAnalisisTotal();
-        await actualizarContadorAnalisisUI();
-    }
+let textoCompleto = '';
+for (let i = 1; i <= pdf.numPages; i++) {
+    const pagina = await pdf.getPage(i);
+    const texto = await pagina.getTextContent();
+    texto.items.forEach(item => textoCompleto += item.str + ' ');
+}
 
-    const fileInput = document.getElementById('fileInput');
-    const archivoPdf = fileInput?.files?.[0];
+// 🔍 FECHA
+const regexFecha =
+/(\b(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\b) de (\d{4})/i;
 
-    const jornadaSeleccionada = document.getElementById('jornada').value;
+const matchFecha = textoCompleto.match(regexFecha);
 
-    if (!archivoPdf || !jornadaSeleccionada) {
-        alert('Por favor, selecciona una jornada y un archivo PDF.');
+let mes = "No encontrado";
+let año = "No encontrado";
+
+if (matchFecha) {
+    mes = matchFecha[1].toUpperCase();
+    año = parseInt(matchFecha[2]);
+}
+
+// 👤 RUT
+const regexRut = /(\d{1,2}\.?\d{3}\.?\d{3}-[\dkK])/i;
+const matchRut = textoCompleto.match(regexRut);
+const rutPdf = matchRut ? matchRut[1] : null;
+
+// 👤 PERFIL USUARIO
+const { data: userData } = await supabase.auth.getUser();
+const user = userData.user;
+
+let profile = null;
+
+if (user) {
+    const { data } = await supabase
+        .from("profiles")
+        .select("nombre, rut")
+        .eq("id", user.id)
+        .single();
+
+    profile = data;
+}
+
+
+// ==========================
+// 🟢 FREE
+// ==========================
+if (window.userPlan === "free") {
+
+    const ok = confirm(`¿La liquidación es correcta?\nFecha detectada: ${mes} ${año}`);
+    if (!ok) return;
+
+    const permitido = await puedeUsarAnalisisTotal();
+
+    if (!permitido) {
+        PAYWALL.show("Ya usaste tus 2 análisis gratuitos");
         return;
     }
+
+    await sumarUsoAnalisisTotal();
+    await actualizarContadorAnalisisUI();
+}
+
+
+// ==========================
+// 🔵 PRO / PRO_PENDING
+// ==========================
+if (window.userPlan === "pro" || window.userPlan === "pro_pending") {
+
+    const ok = confirm(`¿La liquidación es correcta?\nFecha detectada: ${mes} ${año}`);
+    if (!ok) return;
+
+    const pertenece = confirm(`¿La liquidación pertenece a: ${profile?.nombre || "usuario"}?`);
+    if (!pertenece) return;
+
+    if (profile) {
+
+        if (profile.rut && rutPdf && profile.rut !== rutPdf) {
+            console.warn("⚠ RUT no coincide");
+        }
+
+        if (
+            profile.nombre &&
+            !textoCompleto.toUpperCase().includes(profile.nombre.toUpperCase())
+        ) {
+            console.warn("⚠ Nombre no coincide");
+        }
+    }
+}
 
     const archivo = document.getElementById('fileInput').files[0];
     const jornadaSeleccionada = document.getElementById('jornada').value;

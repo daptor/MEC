@@ -38,7 +38,6 @@ function esperarPlanUsuario() {
     });
 }
 
-
 // =========================================
 // 📈 VISITAS GLOBALES (1 sola ejecución)
 // =========================================
@@ -56,7 +55,6 @@ async function registrarVisitaGlobalUnaVez() {
         console.warn("⚠ Error visitas:", err);
     }
 }
-
 
 // =========================================
 // 🧮 ANÁLISIS FREEMIUM (CONTROL ÚNICO)
@@ -83,7 +81,6 @@ async function puedeUsarAnalisisTotal() {
     return usados < 2;
 }
 
-
 // =========================================
 // ➕ SUMAR ANÁLISIS (RPC BACKEND)
 // =========================================
@@ -100,7 +97,6 @@ async function sumarUsoAnalisisTotal() {
         console.warn("⚠ Límite alcanzado o error:", error.message);
     }
 }
-
 
 // =========================================
 // 🧮 UI CONTADOR ANÁLISIS
@@ -132,7 +128,6 @@ async function actualizarContadorAnalisisUI() {
     el.textContent = `${data.analisis_usados || 0} de 2`;
 }
 
-
 // =========================================
 // 📈 CONTADOR GLOBAL SUPABASE
 // =========================================
@@ -159,7 +154,6 @@ async function incrementarVisitas() {
     await mostrarContadorVisitas();
 }
 
-
 // 🔵 Mostrar contador visitas
 async function mostrarContadorVisitas() {
 
@@ -180,7 +174,6 @@ async function mostrarContadorVisitas() {
     el.textContent = data.visitas;
 }
 
-
 // 🕒 Fecha y hora
 function actualizarFechaHora() {
     const fechaElemento = document.getElementById("fecha");
@@ -190,7 +183,6 @@ function actualizarFechaHora() {
     if (fechaElemento) fechaElemento.textContent = ahora.toLocaleDateString();
     if (horaElemento) horaElemento.textContent = ahora.toLocaleTimeString();
 }
-
 
 // =========================================
 // 👤 PERSONALIZAR BOTÓN CERRAR SESIÓN
@@ -213,7 +205,6 @@ async function personalizarBotonLogout() {
         window.location.href = "/";
     };
 }
-
 
 // 🚀 INICIALIZACIÓN APP
 document.addEventListener("DOMContentLoaded", async () => {
@@ -263,7 +254,6 @@ if (btnIngresar) {
         }
     });
 }
-
 
 // =========================================
 // 🧭 NAVEGACIÓN PANTALLAS
@@ -457,11 +447,6 @@ const listaGratificables = [
     "DIFERENCIA 70%","COMPENSACION PERMISO"
 ];
 
-// ======== ocultar pantalla de comision grupal asesores ============
-
-const contenedorResultadoInicial = document.getElementById("resultadoAnalisis");
-if (contenedorResultadoInicial) contenedorResultadoInicial.style.display = "none";
-
 // ==================== FUNCIÓN DE ANÁLISIS DEL PDF ====================
 const formatCurrency = (value) =>
     new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(value);
@@ -470,8 +455,6 @@ async function analizarArchivo() {
 
     // ⏳ ESPERAR PLAN DEL USUARIO (MUY IMPORTANTE)
     await esperarPlanUsuario();
-
- 
 
 // 💰 CONTROL DE PLAN + LÍMITE TOTAL (FREEMIUM REAL)
 
@@ -493,7 +476,6 @@ if (window.userPlan === "pro") {
     // 🔥 SUMAR USO (solo FREE y solo si sí puede usar)
     await sumarUsoAnalisisTotal();
     await actualizarContadorAnalisisUI(); // 👈 ACTUALIZA EN TIEMPO REAL
-
 }
 
     const archivo = document.getElementById('fileInput').files[0];
@@ -526,7 +508,6 @@ for (let i = 1; i <= pdf.numPages; i++) {
     const texto = await pagina.getTextContent();
     texto.items.forEach(item => textoCompleto += item.str + ' ');
 }
-
 
 // Detectar premio en la nómina tempranamente para integrarlo en haberes si existe
 const regexPremioNomina_global = /(PREMIO\s*VENTA\s*TIENDA(?:\s*AUT\.?)?|PREMIO\s*VENTA\s*TIENDA|PREMIO\s*CUMPL\.?GRUPAL\s*VTAS|INCENTIVO\s*TIENDA|PREMIO\s*VENTA)[^\$]*\$\s*([\d\.,]+)/i;
@@ -1306,7 +1287,6 @@ if ((!horasAsesor || horasAsesor === 0) && horasAsesorReporte) {
 }
 
 // Cálculo de la comisión correcta
-// ---------------- Cálculo comisión grupal --------------
 let comisionCalculada = 0;
 if (ventaTiendaTotal > 0 && horasTotalesDept > 0 && horasAsesor > 0) {
     const valorHoraGrupal = (ventaTiendaTotal / horasTotalesDept) * porcentajeDept;
@@ -1315,50 +1295,60 @@ if (ventaTiendaTotal > 0 && horasTotalesDept > 0 && horasAsesor > 0) {
 
 // ⭐ INTEGRACIÓN MODO MANUAL
 if (window.calculoManualMEC) {
-
     comisionCalculada = Math.round(window.calculoManualMEC.comisionCalculada);
-
-    // Reemplazar valores del PDF por los manuales
-    ventaTiendaTotal   = window.calculoManualMEC.ventaTienda;
-    horasTotalesDept   = window.calculoManualMEC.horasDepto;
-    horasAsesor        = window.calculoManualMEC.horasAsesor;
-    porcentajeDept     = window.calculoManualMEC.porcentaje;
+    ventaTiendaTotal = window.calculoManualMEC.ventaTienda;
+    horasTotalesDept = window.calculoManualMEC.horasDepto;
+    horasAsesor = window.calculoManualMEC.horasAsesor;
+    porcentajeDept = window.calculoManualMEC.porcentaje;
 }
 
-let pagosTxt = [];
-pagosTxt.push(`<h2>Comisión Grupal — análisis</h2>`);
-pagosTxt.push(`<p><strong>Comisión detectada en la nómina:</strong> ${formatCurrency(comisionPagadaEnNomina)}</p>`);
+// =====================================================
+// 🚫 MOSTRAR BLOQUE SOLO SI EXISTEN DATOS REALES
+// =====================================================
 
-if (datosReporte) {
-    pagosTxt.push(`<p><strong>Venta Tienda Total:</strong> ${formatCurrency(ventaTiendaTotal)}</p>`);
-    pagosTxt.push(`<p><strong>Horas Totales Departamento:</strong> ${horasTotalesDept}</p>`);
-    pagosTxt.push(`<p><strong>Horas Asesor (reporte):</strong> ${horasAsesor}</p>`);
-    pagosTxt.push(`<p><strong>Porcentaje departamento:</strong> ${(porcentajeDept*100).toFixed(4)}%</p>`);
-    pagosTxt.push(`<p><strong>Monto bruto incentivo (reporte):</strong> ${montoBrutoIncentivo !== null ? formatCurrency(montoBrutoIncentivo) : 'No en reporte'}</p>`);
-}
+const existeComisionNomina = comisionPagadaEnNomina > 0;
+const existeDatosReporte = datosReporte && ventaTiendaTotal > 0 && horasTotalesDept > 0;
+const existeCalculoManual = window.calculoManualMEC && window.calculoManualMEC.comisionCalculada > 0;
 
-pagosTxt.push(`<p><strong>Comisión calculada (esperada):</strong> ${formatCurrency(comisionCalculada)}</p>`);
+if (existeComisionNomina || existeDatosReporte || existeCalculoManual) {
 
-// Comparación nómina vs cálculo
-const diffNominaCalc = comisionPagadaEnNomina - comisionCalculada;
+    let pagosTxt = [];
+    pagosTxt.push(`<h2>Comisión Grupal — análisis</h2>`);
+    pagosTxt.push(`<p><strong>Comisión detectada en la nómina:</strong> ${formatCurrency(comisionPagadaEnNomina)}</p>`);
 
-if (Math.abs(diffNominaCalc) < 1 && comisionPagadaEnNomina > 0) {
-    pagosTxt.push(`<p style="color:green"><strong>✅ Pago correcto según cálculo.</strong></p>`);
-} else if (comisionPagadaEnNomina === 0 && comisionCalculada > 0) {
-    pagosTxt.push(`<p style="color:red"><strong>❌ No se pagó comisión en la nómina.</strong></p>`);
-} else {
-    pagosTxt.push(`<p style="color:red"><strong>❌ Diferencia detectada: ${formatCurrency(diffNominaCalc)}</strong></p>`);
-}
-
-// Comparación reporte vs cálculo
-if (montoBrutoIncentivo !== null) {
-    const diffReporteCalc = montoBrutoIncentivo - comisionCalculada;
-    if (Math.abs(diffReporteCalc) < 1) {
-        pagosTxt.push(`<p style="color:green"><strong>✅ Reporte y cálculo coinciden.</strong></p>`);
-    } else {
-        pagosTxt.push(`<p style="color:orange"><strong>⚠ Reporte vs cálculo dif.: ${formatCurrency(diffReporteCalc)}</strong></p>`);
+    if (datosReporte) {
+        pagosTxt.push(`<p><strong>Venta Tienda Total:</strong> ${formatCurrency(ventaTiendaTotal)}</p>`);
+        pagosTxt.push(`<p><strong>Horas Totales Departamento:</strong> ${horasTotalesDept}</p>`);
+        pagosTxt.push(`<p><strong>Horas Asesor:</strong> ${horasAsesor}</p>`);
+        pagosTxt.push(`<p><strong>Porcentaje departamento:</strong> ${(porcentajeDept*100).toFixed(4)}%</p>`);
+        pagosTxt.push(`<p><strong>Monto bruto incentivo (reporte):</strong> ${montoBrutoIncentivo !== null ? formatCurrency(montoBrutoIncentivo) : 'No en reporte'}</p>`);
     }
+
+    pagosTxt.push(`<p><strong>Comisión calculada (esperada):</strong> ${formatCurrency(comisionCalculada)}</p>`);
+
+    const diffNominaCalc = comisionPagadaEnNomina - comisionCalculada;
+
+    if (Math.abs(diffNominaCalc) < 1 && comisionPagadaEnNomina > 0) {
+        pagosTxt.push(`<p style="color:green"><strong>✅ Pago correcto según cálculo.</strong></p>`);
+    } else if (comisionPagadaEnNomina === 0 && comisionCalculada > 0) {
+        pagosTxt.push(`<p style="color:red"><strong>❌ No se pagó comisión en la nómina.</strong></p>`);
+    } else {
+        pagosTxt.push(`<p style="color:red"><strong>❌ Diferencia detectada: ${formatCurrency(diffNominaCalc)}</strong></p>`);
+    }
+
+    if (montoBrutoIncentivo !== null) {
+        const diffReporteCalc = montoBrutoIncentivo - comisionCalculada;
+        if (Math.abs(diffReporteCalc) < 1) {
+            pagosTxt.push(`<p style="color:green"><strong>✅ Reporte y cálculo coinciden.</strong></p>`);
+        } else {
+            pagosTxt.push(`<p style="color:orange"><strong>⚠ Reporte vs cálculo dif.: ${formatCurrency(diffReporteCalc)}</strong></p>`);
+        }
+    }
+
+    mostrarResultadoFreemium(pagosTxt.join(''));
 }
+
+// ---------- FIN: ANÁLISIS COMISIÓN GRUPAL ----------
 
 // ---------- FIN: ANÁLISIS COMISIÓN GRUPAL ----------
 // ********** Muestra parcial de resultados para plan free ***********
@@ -1647,7 +1637,6 @@ document.getElementById('calcularVacacionesBtn').addEventListener('click', async
         resultadoDiv.innerHTML = '<p style="color: red;">No se encontraron PDFs con "COMISIÓN VACACIONES".</p>';
     }
 });
-
 
 // Función que realiza el cálculo usando la liquidación evaluada y las 3 para promedio
 function realizarCalculo(datos, pdfSeleccionado, seleccion) {
@@ -2065,10 +2054,6 @@ function salirAplicacion() {
  *  MODO MANUAL DE COMISIÓN GRUPAL (Opción 1)
  **********************************************/
 
-// 🔒 Ocultar contenedor de resultados al iniciar
-const contenedorResultadoInicial = document.getElementById("resultadoAnalisis");
-if (contenedorResultadoInicial) contenedorResultadoInicial.style.display = "none";
-
 // Botón para mostrar/ocultar el ingreso manual
 const btnIngresoManual = document.getElementById("btnIngresoManual");
 const formularioManual = document.getElementById("formularioManual");
@@ -2077,14 +2062,9 @@ const filePremio = document.getElementById("filePremio");
 // Mostrar u ocultar el formulario manual
 if (btnIngresoManual) {
     btnIngresoManual.addEventListener("click", () => {
-
-        // 🔴 Cada vez que cambia de modo → ocultar resultados
-        const contenedor = document.getElementById("resultadoAnalisis");
-        if (contenedor) contenedor.style.display = "none";
-
         if (formularioManual.style.display === "none") {
             formularioManual.style.display = "block";
-            filePremio.style.display = "none";   
+            filePremio.style.display = "none";   // Oculta la subida de PDF del premio
             btnIngresoManual.style.background = "#FF9800";
             btnIngresoManual.textContent = "Usar archivo PDF nuevamente";
         } else {
@@ -2100,6 +2080,7 @@ if (btnIngresoManual) {
  *  CÁLCULO MANUAL DE COMISIÓN GRUPAL
  **********************************************/
 
+// Función principal del cálculo manual
 function calcularComisionManual() {
 
     const horasAsesor = parseFloat(document.getElementById("manualHorasAsesor").value);
@@ -2117,6 +2098,7 @@ function calcularComisionManual() {
         return null;
     }
 
+    // Fórmula oficial
     const valorHora = (ventaTienda / horasDepto) * porcentaje;
     const comisionCalculada = valorHora * horasAsesor;
 
@@ -2140,16 +2122,10 @@ if (btnCalcularManual) {
     btnCalcularManual.addEventListener("click", () => {
 
         const datos = calcularComisionManual();
+        if (!datos) return;
+
+        // Mostrar resultado en pantalla (al mismo contenedor que usas hoy)
         const contenedor = document.getElementById("resultadoAnalisis");
-
-        // 🔴 Si NO hay datos válidos → ocultar contenedor
-        if (!datos) {
-            if (contenedor) contenedor.style.display = "none";
-            return;
-        }
-
-        // 🟢 Hay datos válidos → mostrar contenedor
-        contenedor.style.display = "block";
 
         contenedor.innerHTML = `
             <h3>Resultado Comisión Manual</h3>
@@ -2160,11 +2136,10 @@ if (btnCalcularManual) {
             <p><strong>Venta Tienda:</strong> $${datos.ventaTienda}</p>
             <p><strong>Porcentaje:</strong> ${datos.porcentaje}</p>
             <hr>
-            <p style="color: #0288D1;">
-                <strong>Comparación con la liquidación aparecerá cuando termines el análisis completo.</strong>
-            </p>
+            <p style="color: #0288D1;"><strong>Comparación con la liquidación aparecerá cuando termines el análisis completo.</strong></p>
         `;
 
+        // Guardamos el cálculo manual para integrarlo con analizarArchivo()
         window.calculoManualMEC = datos;
 
         alert("✔ Datos manuales listos. Ahora presiona CALCULAR para integrarlos con tu liquidación.");
@@ -2434,7 +2409,6 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 });
-
 
 //***************************** chat grupal ********************************
 
@@ -3006,7 +2980,6 @@ async function mostrarPantallaAdminChat() {
     }
 }
 
-
 // =========================
 // ADMIN - ABRIR CHAT (CORREGIDO)
 // =========================
@@ -3054,7 +3027,6 @@ async function abrirChatComoAdmin(idConversacion, userIdUsuario) {
         });
 }
 
-
 // =========================
 // ADMIN - CARGA INICIAL
 // =========================
@@ -3080,7 +3052,6 @@ async function cargarMensajesAdmin(idConversacion, userIdUsuario) {
         }
     }
 }
-
 
 // =========================
 // ADMIN - RENDER INCREMENTAL
@@ -3114,7 +3085,6 @@ async function agregarMensajeAdminAlDOM(msg, userIdUsuario, nickUsuarioCache = n
     contenedor.scrollTop = contenedor.scrollHeight;
 }
 
-
 // =========================
 // ADMIN - ENVIAR MENSAJE
 // =========================
@@ -3139,7 +3109,6 @@ async function enviarMensajePrivadoAdmin() {
     input.value = '';
 }
 
-
 // =========================
 // ADMIN - VOLVER
 // =========================
@@ -3147,7 +3116,6 @@ function mostrarListaConversaciones() {
     document.getElementById("chat-admin-panel").style.display = "none";
     mostrarPantallaAdminChat();
 }
-
 
 // =========================
 // ADMIN - CERRAR CHAT
@@ -3278,7 +3246,6 @@ function actualizarUIsegunPlan() {
   // 🔥 SIEMPRE actualizar candados (clave)
   actualizarCandadosUI();
 }
-
 
 // =====================================
 // 🔐 ACTUALIZAR CANDADOS VISUALES

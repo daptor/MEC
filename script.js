@@ -1172,8 +1172,7 @@ function calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada
         <h2>1. Sueldo</h2>
         <p><strong>Sueldo Base:</strong> ${sueldoBaseContractual ? formatCurrency(sueldoBaseContractual) : 'No encontrado'}.</p>
         <p><strong>Días Trabajados:</strong> ${diasTrabajados || 'No encontrados'}. <strong>Pagado:</strong> ${sueldoProporcional ? formatCurrency(sueldoProporcional) : 'No encontrado'}.</p>
-        <p><strong>Análisis:</strong> ${resultadoProporcional}.</p>
-        <p><em>Cálculo:</em> ${sueldoBaseContractual ? formatCurrency(sueldoBaseContractual) : 'No encontrado'} ÷ 30 días × ${diasTrabajados} días = ${sueldoBaseContractual ? formatCurrency((sueldoBaseContractual / 30) * diasTrabajados) : 'No encontrado'}.</p>        
+        <p><strong>Análisis:</strong> ${resultadoProporcional}.</p>  
         <p><strong>% Sueldo Base Contractual v/s IMM:</strong></p><p> ${mensajeVariacion}</p>
 <hr>
 <h2>2. Sobretiempo:</h2>

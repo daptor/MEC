@@ -1160,147 +1160,151 @@ function calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada
     document.getElementById('resultadoGratificacion').innerHTML = resultadoHTML;
 }
 
-// ================== RESUMEN EJECUTIVO ==================
-let diferencias = [];
-let impactoTotal = 0;
-
-// Horas extra
-if (typeof montoPagadoHorasExtras === "number" && typeof montoEsperadoHorasExtras === "number") {
-    let diff = montoPagadoHorasExtras - montoEsperadoHorasExtras;
-    if (Math.abs(diff) > 0) {
-        diferencias.push("Horas extra");
-        impactoTotal += diff;
-    }
-}
-
-// Horas extra domingo
-if (typeof montoPagadoHorasExtrasDomingo === "number" && typeof montoEsperadoHorasExtrasDomingo === "number") {
-    let diff = montoPagadoHorasExtrasDomingo - montoEsperadoHorasExtrasDomingo;
-    if (Math.abs(diff) > 0) {
-        diferencias.push("Horas extra domingo");
-        impactoTotal += diff;
-    }
-}
-
-let estadoGeneral = "🟢 Sin diferencias relevantes";
-if (diferencias.length > 0) estadoGeneral = "🟡 Diferencias detectadas";
-if (diferencias.length > 1) estadoGeneral = "🔴 Múltiples diferencias detectadas";
-
-// ================== COMISIÓN GRUPAL ==================
-let pagosTxt = [];
-
-const regexPremioNomina = /PREMIO\s*VENTA\s*TIENDA\s*AUT\.?\s*\$?\s*([\d\.,]+)/i;
-const matchPremioNomina = textoCompleto.match(regexPremioNomina);
-const comisionPagadaEnNomina = matchPremioNomina ? procesarMonto(matchPremioNomina[1]) : 0;
-
-let horasAsesor = 0;
-const regexHorasAsesorEnNomina = /Horas\s*Trabajadas\s*Asesor\s*[:\-]?\s*([\d\.,]+)/i;
-const mHorasAsesor1 = textoCompleto.match(regexHorasAsesorEnNomina);
-if (mHorasAsesor1) {
-    horasAsesor = parseFloat(String(mHorasAsesor1[1]).replace(/\./g, '').replace(',', '.'));
-}
-
-let datosReporte = null;
-const inputPremioEl = document.getElementById('filePremio');
-if (inputPremioEl && inputPremioEl.files.length > 0) {
-    datosReporte = await extraerDatosReportePremio(inputPremioEl.files[0]);
-}
-
-let ventaTiendaTotal = datosReporte?.ventaTiendaTotal || 0;
-let horasTotalesDept = datosReporte?.horasDept || 0;
-let porcentajeDept = datosReporte?.pctDept || 0.0026;
-
-let comisionCalculada = 0;
-if (ventaTiendaTotal > 0 && horasTotalesDept > 0 && horasAsesor > 0) {
-    const valorHoraGrupal = (ventaTiendaTotal / horasTotalesDept) * porcentajeDept;
-    comisionCalculada = Math.round(valorHoraGrupal * horasAsesor);
-}
-
-pagosTxt.push(`<h2>Comisión Grupal</h2>`);
-pagosTxt.push(`<p><strong>Pagado:</strong> ${formatCurrency(comisionPagadaEnNomina)}</p>`);
-pagosTxt.push(`<p><strong>Esperado:</strong> ${formatCurrency(comisionCalculada)}</p>`);
-
-let diffComision = comisionPagadaEnNomina - comisionCalculada;
-
-if (Math.abs(diffComision) < 1) {
-    pagosTxt.push(`<p style="color:green">✅ Correcto</p>`);
-} else {
-    pagosTxt.push(`<p style="color:red">❌ Diferencia: ${formatCurrency(diffComision)}</p>`);
-    impactoTotal += diffComision;
-    diferencias.push("Comisión grupal");
-}
-
-// ================== HTML FINAL ==================
+// ===== Mostrar resultados en HTML =====
 document.getElementById('resultadoAnalisis').innerHTML = `
-
-<h2>📊 Resumen de tu liquidación</h2>
-<p><strong>Estado:</strong> ${estadoGeneral}</p>
-<p><strong>Diferencias:</strong> ${diferencias.length}</p>
-<p><strong>Impacto estimado:</strong> ${formatCurrency(impactoTotal)}</p>
-<p><strong>Recomendación:</strong> Revisar antes de aceptar el pago.</p>
 
 <hr>
 
+<h2>🧠 RESUMEN EJECUTIVO MEC</h2>
+<p><strong>Estado general:</strong> ${estadoGeneral}</p>
+<p><strong>Tipo de resultado:</strong> 
+${diferencias.length === 0 
+    ? "Liquidación consistente sin diferencias relevantes." 
+    : diferencias.length === 1 
+        ? "Se detecta una diferencia puntual que requiere revisión." 
+        : "Existen múltiples inconsistencias en la liquidación."}
+</p>
+
+<p><strong>Impacto económico total:</strong> ${formatCurrency(impactoTotal)}</p>
+
+<p><strong>Interpretación MEC:</strong>
+${impactoTotal === 0 
+    ? "El pago coincide con los cálculos esperados del sistema." 
+    : impactoTotal > 0 
+        ? "El empleador estaría pagando por encima del cálculo estimado." 
+        : "Existe un posible pago menor al esperado en la liquidación."}
+</p>
+
+<hr>
+
+<h2>📊 INFORMACIÓN GENERAL</h2>
 <p><strong>Mes y Año:</strong> ${mes} DE ${año}</p>
 <p><strong>Jornada:</strong> ${jornadaSeleccionada} horas</p>
 <p><strong>Cargo:</strong> ${cargo}</p>
 
 <hr>
 
+<h2>📊 ANÁLISIS CUANTITATIVO (CÁLCULOS MEC)</h2>
+<p><strong>Sueldo Base:</strong> ${sueldoBaseContractual ? formatCurrency(sueldoBaseContractual) : 'No encontrado'}</p>
+<p><strong>Días trabajados:</strong> ${diasTrabajados}</p>
+<p><strong>Fórmula aplicada:</strong> sueldo base ÷ 30 × días trabajados</p>
+<p><strong>Resultado esperado:</strong> ${sueldoBaseContractual ? formatCurrency((sueldoBaseContractual / 30) * diasTrabajados) : 'No encontrado'}</p>
+
+<p><strong>Horas extras:</strong> ${montoPagadoHorasExtras !== "No encontrado" ? formatCurrency(montoPagadoHorasExtras) : 'No encontrado'} vs esperado ${horasExtrasRealizadas !== "No especificadas" ? formatCurrency(montoEsperadoHorasExtras) : 'No encontrado'}</p>
+
+<p><strong>Comisión grupal:</strong></p>
+<p>Pagado: ${formatCurrency(comisionPagadaEnNomina)}</p>
+<p>Esperado: ${formatCurrency(comisionCalculada)}</p>
+<p>Diferencia: ${formatCurrency(comisionPagadaEnNomina - comisionCalculada)}</p>
+
+<hr>
+
+<h2>🧾 ANÁLISIS CUALITATIVO</h2>
+
+<p><strong>Interpretación de sueldo:</strong>
+El cálculo del sueldo depende directamente de los días efectivamente trabajados y el sueldo base contractual.
+</p>
+
+<p><strong>Interpretación de sobretiempo:</strong>
+Las horas extras representan ajustes variables que impactan directamente la remuneración final.
+</p>
+
+<p><strong>Interpretación de comisiones:</strong>
+Las comisiones dependen del rendimiento y pueden variar según ventas, horas y porcentaje de participación.
+</p>
+
+<hr>
+
+<h2>🎓 ANÁLISIS EDUCATIVO (CÓMO LO CALCULA MEC)</h2>
+
+<ul>
+<li>✔ El sueldo base se prorratea en base a 30 días.</li>
+<li>✔ Las horas extras se calculan según registros de asistencia.</li>
+<li>✔ La comisión grupal depende de ventas + horas del departamento.</li>
+<li>✔ Las asignaciones dependen de días efectivos trabajados.</li>
+</ul>
+
+<hr>
+
+<h2>📌 DETALLE COMPLETO DEL CÁLCULO</h2>
+
+<hr>
+
+<p><strong>Mes y Año:</strong> ${mes} DE ${año}. <strong>
+<p>Jornada:</strong> ${jornadaSeleccionada} horas.</p>
+<p><strong>Cargo:</strong> ${cargo}</p>
+
+<hr>
+
 <h2>1. Sueldo</h2>
-<p><strong>Sueldo Base:</strong> ${formatCurrency(sueldoBaseContractual)}</p>
-<p><strong>Días:</strong> ${diasTrabajados} | <strong>Pagado:</strong> ${formatCurrency(sueldoProporcional)}</p>
-<p>${resultadoProporcional}</p>
+<p><strong>Sueldo Base:</strong> ${sueldoBaseContractual ? formatCurrency(sueldoBaseContractual) : 'No encontrado'}.</p>
+<p><strong>Días Trabajados:</strong> ${diasTrabajados || 'No encontrados'}. <strong>Pagado:</strong> ${sueldoProporcional ? formatCurrency(sueldoProporcional) : 'No encontrado'}.</p>
+<p><strong>Resultado Sueldo Base:</strong> ${resultadoProporcional}.</p>
+<p><em>Cálculo:</em> ${sueldoBaseContractual ? formatCurrency(sueldoBaseContractual) : 'No encontrado'} ÷ 30 días × ${diasTrabajados} días = ${sueldoBaseContractual ? formatCurrency((sueldoBaseContractual / 30) * diasTrabajados) : 'No encontrado'}.</p>
+<p><strong>% Sueldo Base Contractual v/s IMM:</strong></p><p> ${mensajeVariacion}</p>
 
 <hr>
 
 <h2>2. Sobretiempo</h2>
 
-<p><strong>Horas Extras</strong><br>
-Pagado: ${formatCurrency(montoPagadoHorasExtras)}<br>
-Esperado: ${formatCurrency(montoEsperadoHorasExtras)}<br>
-Diferencia: ${formatCurrency(montoPagadoHorasExtras - montoEsperadoHorasExtras)}</p>
+<p><strong>Hrs. Extras:</strong> ${resultadoHorasExtras}</p>
+${resultadoHorasExtras.indexOf("No se realizaron") !== -1 ? '' :
+    `<p><em>Pagado:</em> ${montoPagadoHorasExtras !== "No encontrado" ? formatCurrency(montoPagadoHorasExtras) : 'No encontrado'}, Calculado: ${horasExtrasRealizadas !== "No especificadas" ? formatCurrency(montoEsperadoHorasExtras) : 'No encontrado'}.</p>`
+}
 
-<p><strong>Horas Extras Domingo</strong><br>
-Pagado: ${formatCurrency(montoPagadoHorasExtrasDomingo)}<br>
-Esperado: ${formatCurrency(montoEsperadoHorasExtrasDomingo)}<br>
-Diferencia: ${formatCurrency(montoPagadoHorasExtrasDomingo - montoEsperadoHorasExtrasDomingo)}</p>
+<p><strong>Recargo 50% Festivo:</strong> ${resultadoRecargoFestivo}</p>
+${resultadoRecargoFestivo.indexOf("No se realizaron") !== -1 ? '' :
+    `<p><em>Pagado:</em> ${montoPagadoRecargoFestivo !== "No encontrado" ? formatCurrency(montoPagadoRecargoFestivo) : 'No encontrado'}, Calculado: ${horasRecargoFestivoRealizadas !== "No especificadas" ? formatCurrency(montoEsperadoRecargoFestivo) : 'No encontrado'}.</p>`
+}
+
+<p><strong>Hrs. Extras Domingo:</strong> ${resultadoHorasExtrasDomingo}</p>
+${resultadoHorasExtrasDomingo.indexOf("No se realizaron") !== -1 ? '' :
+    `<p><em>Pagado:</em> ${montoPagadoHorasExtrasDomingo !== "No encontrado" ? formatCurrency(montoPagadoHorasExtrasDomingo) : 'No encontrado'}, Calculado: ${horasExtrasDomingoRealizadas !== "No especificadas" ? formatCurrency(montoEsperadoHorasExtrasDomingo) : 'No encontrado'}.</p>`
+}
+
+<p><strong>Hrs. Recargo Domingo:</strong> ${resultadoRecargoDomingo}</p>
+${resultadoRecargoDomingo.indexOf("No se realizaron") !== -1 ? '' :
+    `<p><em>Pagado:</em> ${montoPagadoRecargoDomingo !== "No encontrado" ? formatCurrency(montoPagadoRecargoDomingo) : 'No encontrado'}, Calculado: ${horasRecargoDomingo !== "No especificadas" ? formatCurrency(montoEsperadoRecargoDomingo) : 'No encontrado'}.</p>`
+}
 
 <hr>
 
-<h2>3. Asignaciones</h2>
-<p>Movilización: ${formatCurrency(montoMovilizacion)}</p>
-<p>Colación: ${formatCurrency(montoColacion)}</p>
-<p>Caja: ${montoCaja}</p>
+<h2>3. Asignación</h2>
+<p><strong>Movilización:</strong> Días: ${diasMovilizacion}, Monto: ${montoMovilizacion !== "Dato no encontrado" ? formatCurrency(montoMovilizacion) : 'Dato no encontrado'}.</p>
+
+<p><strong>Colación:</strong> Días: ${diasColacion}, Monto: ${montoColacion !== "Dato no encontrado" ? formatCurrency(montoColacion) : 'Dato no encontrado'}.</p>
+
+<p><strong>Caja:</strong> Días: ${diasCaja}, Monto: ${montoCaja !== "Dato no encontrado" ? formatCurrency(montoCaja) : 'Dato no encontrado'}.</p>
 
 <hr>
 
 <h2>4. Comisiones</h2>
 <p>${detalleComisionesHTML}</p>
-<p><strong>Total:</strong> ${formatCurrency(totalComisiones)}</p>
+<p><strong>Total Comisiones:</strong> ${formatCurrency(totalComisiones)}</p>
 
 <hr>
 
 <h2>5. Semana Corrida</h2>
-<p>${resultadoSemanaCorrida}</p>
+<p><strong>Resultado:</strong> ${resultadoSemanaCorrida}</p>
 
 <hr>
 
-${pagosTxt.join('')}
-
-<hr>
-
-<div id="gratificacionMec">
-<h2>6. Gratificación</h2>
+<div class="container gratificacion-container" id="gratificacionMec" style="display: none;">
+<h2>6. Haberes Gratificables</h2>
 <p id="listaGratificables"></p>
 </div>
 
 <hr>
-
-<h2>🧾 Conclusión</h2>
-<p>Se detectaron ${diferencias.length} diferencias con impacto de ${formatCurrency(impactoTotal)}.</p>
-<p>💡 Recomendación: validar con RRHH o asistencia.</p>
-
 `;
 
 mostrarGratificacionMec(gratificables);

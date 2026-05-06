@@ -1160,129 +1160,66 @@ function calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada
     document.getElementById('resultadoGratificacion').innerHTML = resultadoHTML;
 }
 
-// ===== Mostrar resultados en HTML (RENDER ANALÍTICO MEC) =====
+// ===== PROTECCIÓN DE VARIABLES CRÍTICAS =====
+const safe = (v) => (typeof v !== "undefined" && v !== null ? v : "");
+const safeDetalleGratificablesHTML = safe(detalleGratificablesHTML);
 
-const estado = (ok, msgOK, msgBAD) =>
-    ok ? `🟢 OK - ${msgOK}` : `🔴 ALERTA - ${msgBAD}`;
-
+// ===== Mostrar resultados en HTML =====
 document.getElementById('resultadoAnalisis').innerHTML = `
-
 <hr>
-<h3>Resumen General</h3>
-<p><strong>Periodo:</strong> ${mes} de ${año}</p>
+<p><strong>Mes y Año:</strong> ${mes} DE ${año}</p>
 <p><strong>Jornada:</strong> ${jornadaSeleccionada} horas</p>
 <p><strong>Cargo:</strong> ${cargo}</p>
 
 <hr>
-<h2>1. Sueldo Base</h2>
+<h2>1. Sueldo</h2>
+<p><strong>Sueldo Base:</strong> ${sueldoBaseContractual ? formatCurrency(sueldoBaseContractual) : 'No encontrado'}</p>
+<p><strong>Días Trabajados:</strong> ${diasTrabajados || 'No encontrados'} | <strong>Pagado:</strong> ${sueldoProporcional ? formatCurrency(sueldoProporcional) : 'No encontrado'}</p>
 
-<p><strong>Resumen:</strong> Se analiza proporcionalidad del sueldo según días trabajados.</p>
-
-<p><strong>Datos:</strong>
-Base: ${formatCurrency(sueldoBaseContractual)} |
-Días: ${diasTrabajados} |
-Pagado: ${formatCurrency(sueldoProporcional)}
+<p><em>Cálculo:</em>
+${sueldoBaseContractual ? formatCurrency(sueldoBaseContractual) : 'No encontrado'} ÷ 30 × ${diasTrabajados}
+= ${sueldoBaseContractual ? formatCurrency((sueldoBaseContractual / 30) * diasTrabajados) : 'No encontrado'}
 </p>
 
-<p><strong>Cálculo:</strong><br>
-${formatCurrency(sueldoBaseContractual)} ÷ 30 × ${diasTrabajados}
-= ${formatCurrency((sueldoBaseContractual / 30) * diasTrabajados)}
-</p>
-
-<p><strong>Interpretación:</strong> ${mensajeVariacion}</p>
-
-<p><strong>Estado:</strong>
-${estado(
-    Math.abs(sueldoProporcional - (sueldoBaseContractual / 30) * diasTrabajados) < 1,
-    "Pago proporcional correcto",
-    "Diferencia en cálculo de sueldo base"
-)}
-</p>
+<p><strong>Resultado:</strong> ${resultadoProporcional}</p>
+<p><strong>% IMM:</strong> ${mensajeVariacion}</p>
 
 <hr>
 <h2>2. Sobretiempo</h2>
-
-<p><strong>Resumen:</strong> Validación de horas extras y recargos vs lo pagado.</p>
-
-<p><strong>Extras:</strong> ${resultadoHorasExtras}</p>
+<p><strong>Horas Extras:</strong> ${resultadoHorasExtras}</p>
 <p><strong>Festivo 50%:</strong> ${resultadoRecargoFestivo}</p>
-<p><strong>Domingo extras:</strong> ${resultadoHorasExtrasDomingo}</p>
-<p><strong>Recargo domingo:</strong> ${resultadoRecargoDomingo}</p>
-
-<p><strong>Interpretación:</strong> Se comparan horas declaradas vs montos pagados.</p>
-
-<p><strong>Estado:</strong>
-${estado(
-    resultadoHorasExtras.indexOf("No se realizaron") !== -1 &&
-    resultadoRecargoFestivo.indexOf("No se realizaron") !== -1 &&
-    resultadoHorasExtrasDomingo.indexOf("No se realizaron") !== -1 &&
-    resultadoRecargoDomingo.indexOf("No se realizaron") !== -1,
-    "Sin sobretiempo detectado",
-    "Posibles diferencias en pago de sobretiempo"
-)}
-</p>
+<p><strong>Domingo Extras:</strong> ${resultadoHorasExtrasDomingo}</p>
+<p><strong>Recargo Domingo:</strong> ${resultadoRecargoDomingo}</p>
 
 <hr>
 <h2>3. Asignaciones</h2>
-
-<p><strong>Resumen:</strong> Validación de beneficios proporcionales por asistencia.</p>
-
-<p>Movilización: ${diasMovilizacion} días - ${formatCurrency(montoMovilizacion)}</p>
-<p>Colación: ${diasColacion} días - ${formatCurrency(montoColacion)}</p>
-<p>Caja: ${diasCaja} días - ${formatCurrency(montoCaja)}</p>
-
-<p><strong>Interpretación:</strong> Se revisa proporcionalidad de asignaciones.</p>
-
-<p><strong>Estado:</strong>
-${estado(
-    montoDiferenciaMovilizacion === 0 &&
-    montoDiferenciaColacion === 0 &&
-    montoDiferenciaCaja === 0,
-    "Asignaciones correctas",
-    "Diferencias detectadas en asignaciones"
-)}
-</p>
+<p>Movilización: ${diasMovilizacion} | ${formatCurrency(montoMovilizacion)}</p>
+<p>Colación: ${diasColacion} | ${formatCurrency(montoColacion)}</p>
+<p>Caja: ${diasCaja} | ${formatCurrency(montoCaja)}</p>
 
 <hr>
 <h2>4. Comisiones</h2>
-
-<p><strong>Resumen:</strong> Validación de comisiones calculadas vs registradas.</p>
-
 <p>${detalleComisionesHTML}</p>
-
 <p><strong>Total:</strong> ${formatCurrency(totalComisiones)}</p>
-
-<p><strong>Interpretación:</strong> Se evalúa consistencia de cálculo mensual.</p>
 
 <hr>
 <h2>5. Semana Corrida</h2>
+<p>${diasSemanaCorrida} días | ${formatCurrency(montoSemanaCorrida)}</p>
 
-<p><strong>Resumen:</strong> Cálculo de remuneración por domingos y festivos.</p>
-
-<p>${diasSemanaCorrida} días - ${formatCurrency(montoSemanaCorrida)}</p>
-
-<p><strong>Cálculo:</strong><br>
+<p>
+Cálculo:
 ${formatCurrency(totalComisiones)} ÷ ${diasParaSemanaCorrida} × ${diasSemanaCorrida}
 = ${formatCurrency(valorEsperadoSemanaCorrida)}
 </p>
 
-<p><strong>Estado:</strong>
-${estado(
-    Math.abs(montoSemanaCorrida - valorEsperadoSemanaCorrida) < 1,
-    "Semana corrida correcta",
-    "Diferencia en semana corrida"
-)}
-</p>
-
 <hr>
 <h2>6. Haberes Gratificables</h2>
-
-<p><strong>Resumen:</strong> Componentes que afectan gratificación legal.</p>
-
-<div>${detalleGratificablesHTML || ""}</div>
+<div>${safeDetalleGratificablesHTML}</div>
 
 <hr>
 `;
+
+mostrarGratificacionMec(gratificables);
 
 // ---------- FIN: ANÁLISIS COMISIÓN GRUPAL ----------
 // ********** Muestra parcial de resultados para plan free ***********

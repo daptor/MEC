@@ -1320,41 +1320,45 @@ if (window.calculoManualMEC) {
 }
 
 let pagosTxt = [];
-pagosTxt.push(`<h2>Comisión Grupal — análisis</h2>`);
-pagosTxt.push(`<p><strong>Comisión detectada en la nómina:</strong> ${formatCurrency(comisionPagadaEnNomina)}</p>`);
 
-if (datosReporte) {
-    pagosTxt.push(`<p><strong>Venta Tienda Total:</strong> ${formatCurrency(ventaTiendaTotal)}</p>`);
-    pagosTxt.push(`<p><strong>Horas Totales Departamento:</strong> ${horasTotalesDept}</p>`);
-    pagosTxt.push(`<p><strong>Horas Asesor (reporte):</strong> ${horasAsesor}</p>`);
-    pagosTxt.push(`<p><strong>Porcentaje departamento:</strong> ${(porcentajeDept*100).toFixed(4)}%</p>`);
-    pagosTxt.push(`<p><strong>Monto bruto incentivo (reporte):</strong> ${montoBrutoIncentivo !== null ? formatCurrency(montoBrutoIncentivo) : 'No en reporte'}</p>`);
-}
+// 👇 SOLO SI HAY DATOS REALES
+if (comisionPagadaEnNomina > 0 || comisionCalculada > 0 || datosReporte) {
 
-pagosTxt.push(`<p><strong>Comisión calculada (esperada):</strong> ${formatCurrency(comisionCalculada)}</p>`);
+    pagosTxt.push(`<h2>Comisión Grupal — análisis</h2>`);
+    pagosTxt.push(`<p><strong>Comisión detectada en la nómina:</strong> ${formatCurrency(comisionPagadaEnNomina)}</p>`);
 
-// Comparación nómina vs cálculo
-const diffNominaCalc = comisionPagadaEnNomina - comisionCalculada;
-
-if (Math.abs(diffNominaCalc) < 1 && comisionPagadaEnNomina > 0) {
-    pagosTxt.push(`<p style="color:green"><strong>✅ Pago correcto según cálculo.</strong></p>`);
-} else if (comisionPagadaEnNomina === 0 && comisionCalculada > 0) {
-    pagosTxt.push(`<p style="color:red"><strong>❌ No se pagó comisión en la nómina.</strong></p>`);
-} else {
-    pagosTxt.push(`<p style="color:red"><strong>❌ Diferencia detectada: ${formatCurrency(diffNominaCalc)}</strong></p>`);
-}
-
-// Comparación reporte vs cálculo
-if (montoBrutoIncentivo !== null) {
-    const diffReporteCalc = montoBrutoIncentivo - comisionCalculada;
-    if (Math.abs(diffReporteCalc) < 1) {
-        pagosTxt.push(`<p style="color:green"><strong>✅ Reporte y cálculo coinciden.</strong></p>`);
-    } else {
-        pagosTxt.push(`<p style="color:orange"><strong>⚠ Reporte vs cálculo dif.: ${formatCurrency(diffReporteCalc)}</strong></p>`);
+    if (datosReporte) {
+        pagosTxt.push(`<p><strong>Venta Tienda Total:</strong> ${formatCurrency(ventaTiendaTotal)}</p>`);
+        pagosTxt.push(`<p><strong>Horas Totales Departamento:</strong> ${horasTotalesDept}</p>`);
+        pagosTxt.push(`<p><strong>Horas Asesor:</strong> ${horasAsesor}</p>`);
+        pagosTxt.push(`<p><strong>Porcentaje:</strong> ${(porcentajeDept*100).toFixed(4)}%</p>`);
     }
+
+    pagosTxt.push(`<p><strong>Comisión calculada (esperada):</strong> ${formatCurrency(comisionCalculada)}</p>`);
+
+    const diffNominaCalc = comisionPagadaEnNomina - comisionCalculada;
+
+    if (Math.abs(diffNominaCalc) < 1 && comisionPagadaEnNomina > 0) {
+        pagosTxt.push(`<p style="color:green"><strong>✅ Pago correcto según cálculo.</strong></p>`);
+    } else if (comisionPagadaEnNomina === 0 && comisionCalculada > 0) {
+        pagosTxt.push(`<p style="color:red"><strong>❌ No se pagó comisión en la nómina.</strong></p>`);
+    } else {
+        pagosTxt.push(`<p style="color:red"><strong>❌ Diferencia detectada: ${formatCurrency(diffNominaCalc)}</strong></p>`);
+    }
+
+    if (montoBrutoIncentivo !== null) {
+        const diffReporteCalc = montoBrutoIncentivo - comisionCalculada;
+        if (Math.abs(diffReporteCalc) < 1) {
+            pagosTxt.push(`<p style="color:green"><strong>✅ Reporte y cálculo coinciden.</strong></p>`);
+        } else {
+            pagosTxt.push(`<p style="color:orange"><strong>⚠ Diferencia con reporte: ${formatCurrency(diffReporteCalc)}</strong></p>`);
+        }
+    }
+
 }
 
 // ---------- FIN: ANÁLISIS COMISIÓN GRUPAL ----------
+
 // ********** Muestra parcial de resultados para plan free ***********
 
 mostrarResultadoFreemium(pagosTxt.join(''));

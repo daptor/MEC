@@ -567,8 +567,6 @@ if (window.userPlan === "pro" || window.userPlan === "pro_pending") {
     }
 }
 
-    const archivo = document.getElementById('fileInput').files[0];
-    const jornadaSeleccionada = document.getElementById('jornada').value;
     const regexMovilizacion = /MOVILIZACION\s*\((\d+)\)\s*\$\s*([\d.,]+)/i;
     const regexColacion = /COLACION\s*\((\d+)\)\s*\$\s*([\d.,]+)/i;
     const regexDiferenciaMovilizacion = /DIFERENCIA\s*MOVILIZACION\s*\$\s*([\d.,]+)/i;

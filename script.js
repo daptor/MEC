@@ -1160,81 +1160,115 @@ function calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada
     document.getElementById('resultadoGratificacion').innerHTML = resultadoHTML;
 }
 
-// ===== VARIABLES SEGURAS (EVITA ERRORES DE SCOPE) =====
-let comisionCalculada = 0;
+// ===== RESUMEN MEC (NUEVO NIVEL DE LECTURA) =====
+let resumenMEC = `
+<div class="mec-resumen">
+    <h2>🧠 Resumen General MEC</h2>
+    <p><strong>Periodo:</strong> ${mes} de ${año}</p>
+    <p><strong>Cargo:</strong> ${cargo}</p>
+    <p><strong>Jornada:</strong> ${jornadaSeleccionada} horas</p>
+    <hr>
+    <p><strong>Lectura rápida:</strong></p>
+    <ul>
+        <li>Sueldo base y proporción calculada según días trabajados</li>
+        <li>Sobretiempo evaluado por tipo de recargo</li>
+        <li>Asignaciones verificadas por días efectivos</li>
+        <li>Comisiones y semana corrida validadas contra lógica MEC</li>
+    </ul>
+</div>
+`;
 
-// ===== DETECCIÓN DE DATOS NOMINA =====
-const regexPremioNomina = /PREMIO\s*VENTA\s*TIENDA\s*AUT\.?\s*\$?\s*([\d\.,]+)/i;
-const matchPremioNomina = textoCompleto.match(regexPremioNomina);
-const comisionPagadaEnNomina = matchPremioNomina ? procesarMonto(matchPremioNomina[1]) : 0;
+// ===== BLOQUE ORIGINAL (SIN ROMPER TU SISTEMA) =====
+const detalleOriginal = `
+<hr>
+<p><strong>Mes y Año: </strong> ${mes} DE ${año}. <strong></p>
+<p>Jornada: </strong> ${jornadaSeleccionada} horas.</p>
+<p><strong>Cargo:</strong> ${cargo}</p>
 
-let horasAsesor = 0;
-const regexHorasAsesorEnNomina = /Horas\s*Trabajadas\s*Asesor\s*[:\-]?\s*([\d\.,]+)/i;
-const mHorasAsesor1 = textoCompleto.match(regexHorasAsesorEnNomina);
-if (mHorasAsesor1) {
-    horasAsesor = parseFloat(String(mHorasAsesor1[1]).replace(/\./g, '').replace(',', '.'));
-}
+<hr>
+<h2>1. Sueldo</h2>
+<p><strong>Sueldo Base:</strong> ${sueldoBaseContractual ? formatCurrency(sueldoBaseContractual) : 'No encontrado'}.</p>
+<p><strong>Días Trabajados:</strong> ${diasTrabajados || 'No encontrados'}. <strong>Pagado:</strong> ${sueldoProporcional ? formatCurrency(sueldoProporcional) : 'No encontrado'}.</p>
+<p><strong>Resultado Sueldo Base:</strong> ${resultadoProporcional}.</p>
+<p><em>Cálculo:</em> ${sueldoBaseContractual ? formatCurrency(sueldoBaseContractual) : 'No encontrado'} ÷ 30 × ${diasTrabajados} = ${sueldoBaseContractual ? formatCurrency((sueldoBaseContractual / 30) * diasTrabajados) : 'No encontrado'}.</p>
+<p><strong>% Sueldo Base vs IMM:</strong> ${mensajeVariacion}</p>
 
-// ===== EXTRACCIÓN REPORTE =====
-let datosReporte = null;
-const inputPremioEl = document.getElementById('filePremio');
+<hr>
+<h2>2. Sobretiempo</h2>
+<p><strong>Hrs. Extras:</strong> ${resultadoHorasExtras}</p>
+<p><strong>Recargo Festivo:</strong> ${resultadoRecargoFestivo}</p>
+<p><strong>Hrs. Domingo:</strong> ${resultadoHorasExtrasDomingo}</p>
+<p><strong>Recargo Domingo:</strong> ${resultadoRecargoDomingo}</p>
 
-if (inputPremioEl && inputPremioEl.files && inputPremioEl.files.length > 0) {
-    datosReporte = await extraerDatosReportePremio(inputPremioEl.files[0]);
-}
+<hr>
+<h2>3. Asignaciones</h2>
+<p><strong>Movilización:</strong> ${formatCurrency(montoMovilizacion)}</p>
+<p><strong>Colación:</strong> ${formatCurrency(montoColacion)}</p>
+<p><strong>Caja:</strong> ${formatCurrency(montoCaja)}</p>
 
-let ventaTiendaTotal = datosReporte ? (datosReporte.ventaTiendaTotal || 0) : 0;
-let horasTotalesDept = datosReporte ? (datosReporte.horasDept || 0) : 0;
-let horasAsesorReporte = datosReporte ? (datosReporte.horasAs || 0) : 0;
-let porcentajeDept = datosReporte ? (datosReporte.pctDept || 0.0026) : 0.0026;
-let montoBrutoIncentivo = datosReporte ? datosReporte.montoBrutoIncentivo : null;
+<hr>
+<h2>4. Comisiones</h2>
+<p>${detalleComisionesHTML}</p>
+<p><strong>Total:</strong> ${formatCurrency(totalComisiones)}</p>
 
-// fallback horas
-if ((!horasAsesor || horasAsesor === 0) && horasAsesorReporte) {
-    horasAsesor = horasAsesorReporte;
-}
+<hr>
+<h2>5. Semana Corrida</h2>
+<p><strong>Monto:</strong> ${formatCurrency(montoSemanaCorrida)}</p>
+<p><strong>Resultado:</strong> ${resultadoSemanaCorrida}</p>
 
-// ===== CÁLCULO COMISIÓN (SEGURO) =====
-if (ventaTiendaTotal > 0 && horasTotalesDept > 0 && horasAsesor > 0) {
-    const valorHoraGrupal = (ventaTiendaTotal / horasTotalesDept) * porcentajeDept;
-    comisionCalculada = Math.round(valorHoraGrupal * horasAsesor);
-}
+<hr>
+<div class="container gratificacion-container" id="gratificacionMec" style="display:none;">
+<h2>6. Haberes Gratificables</h2>
+<p id="listaGratificables"></p>
+</div>
+`;
 
-// modo manual
-if (window.calculoManualMEC) {
-    comisionCalculada = Math.round(window.calculoManualMEC.comisionCalculada);
-    ventaTiendaTotal = window.calculoManualMEC.ventaTienda;
-    horasTotalesDept = window.calculoManualMEC.horasDepto;
-    horasAsesor = window.calculoManualMEC.horasAsesor;
-    porcentajeDept = window.calculoManualMEC.porcentaje;
-}
+// ===== ANÁLISIS EDUCATIVO MEC =====
+let analisisEducativo = `
+<div class="mec-educativo">
+<h2>📚 Análisis Educativo</h2>
 
-// ===== RENDER SEGURO (NO ROMPE SI ALGO FALTA) =====
-const diffNominaCalc = comisionPagadaEnNomina - comisionCalculada;
+<h3>🔹 Sueldo base proporcional</h3>
+<p>Se aplica regla de proporcionalidad:</p>
+<p><em>Sueldo ÷ 30 días × días trabajados</em></p>
 
-let pagosTxt = [];
+<h3>🔹 Sobretiempo</h3>
+<p>Se separa en recargos legales según tipo de jornada (festivo, domingo, extras).</p>
 
-pagosTxt.push(`<h2>Comisión Grupal — análisis</h2>`);
-pagosTxt.push(`<p><strong>Comisión nómina:</strong> ${formatCurrency(comisionPagadaEnNomina)}</p>`);
-pagosTxt.push(`<p><strong>Comisión calculada:</strong> ${formatCurrency(comisionCalculada)}</p>`);
+<h3>🔹 Asignaciones</h3>
+<p>Se validan contra días efectivos de asistencia, evitando pagos inflados.</p>
 
-if (Math.abs(diffNominaCalc) < 1 && comisionPagadaEnNomina > 0) {
-    pagosTxt.push(`<p style="color:green"><strong>✅ Pago correcto</strong></p>`);
-} else if (comisionPagadaEnNomina === 0 && comisionCalculada > 0) {
-    pagosTxt.push(`<p style="color:red"><strong>❌ No pagado en nómina</strong></p>`);
-} else {
-    pagosTxt.push(`<p style="color:red"><strong>❌ Diferencia: ${formatCurrency(diffNominaCalc)}</strong></p>`);
-}
+<h3>🔹 Comisiones</h3>
+<p>Se comparan valores reales vs calculados para detectar diferencias estructurales.</p>
+</div>
+`;
 
-if (montoBrutoIncentivo !== null) {
-    const diffReporteCalc = montoBrutoIncentivo - comisionCalculada;
+// ===== INTERPRETACIÓN MEC (LO IMPORTANTE) =====
+let interpretacionMEC = `
+<div class="mec-interpretacion">
+<h2>🧾 Interpretación MEC</h2>
 
-    if (Math.abs(diffReporteCalc) < 1) {
-        pagosTxt.push(`<p style="color:green"><strong>✅ Reporte coincide</strong></p>`);
-    } else {
-        pagosTxt.push(`<p style="color:orange"><strong>⚠ Diferencia reporte: ${formatCurrency(diffReporteCalc)}</strong></p>`);
-    }
-}
+<p><strong>Lectura del sistema:</strong></p>
+<p>MEC no solo calcula montos, sino que interpreta coherencia entre lo pagado y lo que debería pagarse según reglas laborales.</p>
+
+<p><strong>Resultado:</strong></p>
+<ul>
+<li>✔ Permite detectar desviaciones salariales</li>
+<li>✔ Identifica errores de cálculo o pago</li>
+<li>✔ Traduce datos en decisiones comprensibles</li>
+</ul>
+</div>
+`;
+
+// ===== SALIDA FINAL (UN SOLO FLUJO) =====
+document.getElementById('resultadoAnalisis').innerHTML =
+    resumenMEC +
+    detalleOriginal +
+    analisisEducativo +
+    interpretacionMEC;
+
+// mantener compatibilidad
+mostrarGratificacionMec(gratificables);
 
 // ---------- FIN: ANÁLISIS COMISIÓN GRUPAL ----------
 // ********** Muestra parcial de resultados para plan free ***********

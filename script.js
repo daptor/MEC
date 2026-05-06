@@ -463,7 +463,7 @@ async function analizarArchivo() {
     const formatCurrency = (value) =>
         new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(value);
 
-    // ⏳ esperar plan listo
+    // ⏳ Esperar plan cargado
     await esperarPlanUsuario();
 
     // ==================== CONTROL FREEMIUM ====================
@@ -472,7 +472,7 @@ async function analizarArchivo() {
 
     } else {
 
-        console.log("🆓 Usuario FREE / PRO_PENDING → verificando límite");
+        console.log("🆓 Usuario FREE / PRO_PENDING → validando límite");
 
         const permitido = await puedeUsarAnalisisTotal();
 
@@ -485,16 +485,16 @@ async function analizarArchivo() {
         await actualizarContadorAnalisisUI();
     }
 
-    // ==================== ARCHIVO ====================
+    // ==================== ARCHIVO (ÚNICA DECLARACIÓN) ====================
     const archivo = document.getElementById('fileInput')?.files?.[0];
     const jornadaSeleccionada = document.getElementById('jornada')?.value;
 
     if (!archivo || !jornadaSeleccionada) {
-        alert('Por favor, selecciona una jornada y un archivo PDF.');
+        alert('Por favor selecciona jornada y PDF');
         return;
     }
 
-    // ==================== EXTRAER TEXTO ====================
+    // ==================== LECTURA PDF ====================
     const pdfData = await archivo.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
 
@@ -505,18 +505,15 @@ async function analizarArchivo() {
         texto.items.forEach(item => textoCompleto += item.str + ' ');
     }
 
-    // ==================== DATOS DETECTADOS ====================
+    // ==================== DATOS BÁSICOS ====================
     const regexFecha = /(\b(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\b) de (\d{4})/i;
     const matchFecha = textoCompleto.match(regexFecha);
 
-    let mes = matchFecha ? matchFecha[1].toUpperCase() : "NO";
-    let año = matchFecha ? parseInt(matchFecha[2]) : 0;
+    const mes = matchFecha ? matchFecha[1].toUpperCase() : "NO DETECTADO";
+    const año = matchFecha ? parseInt(matchFecha[2]) : 0;
 
-    const regexNombre = /NOMBRE\s*:\s*(.+)/i;
-    const regexRut = /RUT\s*:\s*([\d\.\-kK]+)/i;
-
-    const nombrePDF = (textoCompleto.match(regexNombre)?.[1] || "NO DETECTADO").trim();
-    const rutPDF = (textoCompleto.match(regexRut)?.[1] || "NO DETECTADO").trim();
+    const nombrePDF = (textoCompleto.match(/NOMBRE\s*:\s*(.+)/i)?.[1] || "NO DETECTADO").trim();
+    const rutPDF = (textoCompleto.match(/RUT\s*:\s*([\d\.\-kK]+)/i)?.[1] || "NO DETECTADO").trim();
 
     const user = (await supabase.auth.getUser()).data.user;
 
@@ -524,13 +521,13 @@ async function analizarArchivo() {
 
     if (window.userPlan === "pro" || window.userPlan === "pro_pending") {
 
-        const ok1 = confirm(`¿La liquidación corresponde a la fecha ${mes} ${año}?`);
-        if (!ok1) return;
+        const okFecha = confirm(`¿La liquidación corresponde a ${mes} ${año}?`);
+        if (!okFecha) return;
 
-        const ok2 = confirm(`¿La liquidación pertenece a: ${nombrePDF}?`);
-        if (!ok2) return;
+        const okNombre = confirm(`¿La liquidación pertenece a: ${nombrePDF}?`);
+        if (!okNombre) return;
 
-        // verificación silenciosa RUT (control interno)
+        // 🔒 verificación silenciosa de identidad (RUT)
         const { data: profile } = await supabase
             .from("profiles")
             .select("rut, nombre")
@@ -538,17 +535,17 @@ async function analizarArchivo() {
             .single();
 
         if (profile?.rut && rutPDF !== profile.rut) {
-            alert("Documento no corresponde al usuario registrado.");
+            alert("⚠ Documento no corresponde al usuario registrado");
             return;
         }
 
     } else {
 
-        const ok = confirm(`¿Es esta la liquidación correcta?\n\nFecha detectada: ${mes} ${año}`);
+        const ok = confirm(`¿Es esta la liquidación correcta?\n\nFecha: ${mes} ${año}`);
         if (!ok) return;
     }
 
-    // ==================== CONTINUAR PROCESO ====================
+    // ==================== PROCESO FINAL ====================
     const resultado = await procesarLiquidacion(textoCompleto);
     mostrarResultadoFreemium(resultado);
 

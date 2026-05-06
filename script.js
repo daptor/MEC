@@ -460,19 +460,9 @@ const listaGratificables = [
 // ==================== FUNCIÓN DE ANÁLISIS DEL PDF ====================
 async function analizarArchivo() {
 
-    const formatCurrency = (value) =>
-        new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(value);
-
-    // ⏳ Esperar plan cargado
     await esperarPlanUsuario();
 
-    // ==================== CONTROL FREEMIUM ====================
-    if (window.userPlan === "pro") {
-        console.log("💎 Usuario PRO → acceso ilimitado");
-
-    } else {
-
-        console.log("🆓 Usuario FREE / PRO_PENDING → validando límite");
+    if (window.userPlan !== "pro") {
 
         const permitido = await puedeUsarAnalisisTotal();
 
@@ -485,70 +475,15 @@ async function analizarArchivo() {
         await actualizarContadorAnalisisUI();
     }
 
-    // ==================== ARCHIVO (ÚNICA DECLARACIÓN) ====================
-    const archivo = document.getElementById('fileInput')?.files?.[0];
-    const jornadaSeleccionada = document.getElementById('jornada')?.value;
+    const fileInput = document.getElementById('fileInput');
+    const archivoPdf = fileInput?.files?.[0];
 
-    if (!archivo || !jornadaSeleccionada) {
-        alert('Por favor selecciona jornada y PDF');
+    const jornadaSeleccionada = document.getElementById('jornada').value;
+
+    if (!archivoPdf || !jornadaSeleccionada) {
+        alert('Por favor, selecciona una jornada y un archivo PDF.');
         return;
     }
-
-    // ==================== LECTURA PDF ====================
-    const pdfData = await archivo.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
-
-    let textoCompleto = '';
-    for (let i = 1; i <= pdf.numPages; i++) {
-        const pagina = await pdf.getPage(i);
-        const texto = await pagina.getTextContent();
-        texto.items.forEach(item => textoCompleto += item.str + ' ');
-    }
-
-    // ==================== DATOS BÁSICOS ====================
-    const regexFecha = /(\b(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\b) de (\d{4})/i;
-    const matchFecha = textoCompleto.match(regexFecha);
-
-    const mes = matchFecha ? matchFecha[1].toUpperCase() : "NO DETECTADO";
-    const año = matchFecha ? parseInt(matchFecha[2]) : 0;
-
-    const nombrePDF = (textoCompleto.match(/NOMBRE\s*:\s*(.+)/i)?.[1] || "NO DETECTADO").trim();
-    const rutPDF = (textoCompleto.match(/RUT\s*:\s*([\d\.\-kK]+)/i)?.[1] || "NO DETECTADO").trim();
-
-    const user = (await supabase.auth.getUser()).data.user;
-
-    // ==================== VALIDACIÓN SEGÚN PLAN ====================
-
-    if (window.userPlan === "pro" || window.userPlan === "pro_pending") {
-
-        const okFecha = confirm(`¿La liquidación corresponde a ${mes} ${año}?`);
-        if (!okFecha) return;
-
-        const okNombre = confirm(`¿La liquidación pertenece a: ${nombrePDF}?`);
-        if (!okNombre) return;
-
-        // 🔒 verificación silenciosa de identidad (RUT)
-        const { data: profile } = await supabase
-            .from("profiles")
-            .select("rut, nombre")
-            .eq("user_id", user.id)
-            .single();
-
-        if (profile?.rut && rutPDF !== profile.rut) {
-            alert("⚠ Documento no corresponde al usuario registrado");
-            return;
-        }
-
-    } else {
-
-        const ok = confirm(`¿Es esta la liquidación correcta?\n\nFecha: ${mes} ${año}`);
-        if (!ok) return;
-    }
-
-    // ==================== PROCESO FINAL ====================
-    const resultado = await procesarLiquidacion(textoCompleto);
-    mostrarResultadoFreemium(resultado);
-
 
     const archivo = document.getElementById('fileInput').files[0];
     const jornadaSeleccionada = document.getElementById('jornada').value;

@@ -447,6 +447,366 @@ const listaGratificables = [
     "DIFERENCIA 70%","COMPENSACION PERMISO"
 ];
 
+// ======================================================
+// 🔎 PREVALIDACIÓN DE DOCUMENTO ANTES DEL ANÁLISIS
+// ======================================================
+
+async function preValidarAntesDeAnalizar() {
+
+    try {
+
+        const archivoInput = document.getElementById('archivoPDF');
+
+        if (!archivoInput || !archivoInput.files.length) {
+            alert("⚠️ Debes seleccionar una liquidación.");
+            return;
+        }
+
+        const archivo = archivoInput.files[0];
+
+        const arrayBuffer = await archivo.arrayBuffer();
+
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+        let textoCompleto = "";
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+
+            const page = await pdf.getPage(i);
+
+            const content = await page.getTextContent();
+
+            const strings = content.items.map(item => item.str);
+
+            textoCompleto += strings.join(" ") + "\n";
+        }
+
+        // ======================================================
+        // 📅 EXTRAER FECHA
+        // ======================================================
+
+        let fechaDetectada = "Fecha no detectada";
+
+        const matchFecha = textoCompleto.match(
+            /(ENERO|FEBRERO|MARZO|ABRIL|MAYO|JUNIO|JULIO|AGOSTO|SEPTIEMBRE|OCTUBRE|NOVIEMBRE|DICIEMBRE)\s+DE\s+\d{4}/i
+        );
+
+        if (matchFecha) {
+            fechaDetectada = matchFecha[0];
+        }
+
+        // ======================================================
+        // 👤 EXTRAER NOMBRE (básico inicial)
+        // ======================================================
+
+        let nombreDetectado = "Trabajador no identificado";
+
+        const matchNombre = textoCompleto.match(
+            /Nombre\s*:?[\s\-]*([A-ZÁÉÍÓÚÑ\s]+)/i
+        );
+
+        if (matchNombre && matchNombre[1]) {
+
+            nombreDetectado = matchNombre[1]
+                .trim()
+                .replace(/\s+/g, " ");
+        }
+
+        // ======================================================
+        // 🧠 PLAN ACTUAL
+        // ======================================================
+
+        const plan = window.userPlan || "free";
+
+        // ======================================================
+        // 📦 MODAL
+        // ======================================================
+
+        const confirmado = await mostrarModalValidacion({
+            fecha: fechaDetectada,
+            nombre: nombreDetectado,
+            mostrarNombre: (
+                plan === "pro" ||
+                plan === "pro_pending"
+            )
+        });
+
+        if (!confirmado) {
+
+            console.log("⛔ Usuario canceló validación previa");
+
+            return;
+        }
+
+        // ======================================================
+        // ✅ CONTINUAR ANÁLISIS ORIGINAL
+        // ======================================================
+
+        analizarArchivo();
+
+    } catch (error) {
+
+        console.error("❌ Error prevalidando documento:", error);
+
+        alert("❌ Error verificando el documento.");
+    }
+}
+
+// ======================================================
+// 🔎 PREVALIDACIÓN DE DOCUMENTO ANTES DEL ANÁLISIS
+// ======================================================
+
+async function preValidarAntesDeAnalizar() {
+
+    try {
+
+        const archivoInput = document.getElementById('archivoPDF');
+
+        if (!archivoInput || !archivoInput.files.length) {
+            alert("⚠️ Debes seleccionar una liquidación.");
+            return;
+        }
+
+        const archivo = archivoInput.files[0];
+
+        const arrayBuffer = await archivo.arrayBuffer();
+
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+        let textoCompleto = "";
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+
+            const page = await pdf.getPage(i);
+
+            const content = await page.getTextContent();
+
+            const strings = content.items.map(item => item.str);
+
+            textoCompleto += strings.join(" ") + "\n";
+        }
+
+        let fechaDetectada = "Fecha no detectada";
+
+        const matchFecha = textoCompleto.match(
+            /(ENERO|FEBRERO|MARZO|ABRIL|MAYO|JUNIO|JULIO|AGOSTO|SEPTIEMBRE|OCTUBRE|NOVIEMBRE|DICIEMBRE)\s+DE\s+\d{4}/i
+        );
+
+        if (matchFecha) {
+            fechaDetectada = matchFecha[0];
+        }
+
+        let nombreDetectado = "Trabajador no identificado";
+
+        const matchNombre = textoCompleto.match(
+            /Nombre\s*:?[\s\-]*([A-ZÁÉÍÓÚÑ\s]+)/i
+        );
+
+        if (matchNombre && matchNombre[1]) {
+
+            nombreDetectado = matchNombre[1]
+                .trim()
+                .replace(/\s+/g, " ");
+        }
+
+        const plan = window.userPlan || "free";
+
+        const confirmado = await mostrarModalValidacion({
+            fecha: fechaDetectada,
+            nombre: nombreDetectado,
+            mostrarNombre: (
+                plan === "pro" ||
+                plan === "pro_pending"
+            )
+        });
+
+        if (!confirmado) {
+            return;
+        }
+
+        analizarArchivo();
+
+    } catch (error) {
+
+        console.error("❌ Error prevalidando documento:", error);
+
+        alert("❌ Error verificando el documento.");
+    }
+}
+
+// ======================================================
+// 🎨 MODAL VISUAL VALIDACIÓN
+// ======================================================
+
+function mostrarModalValidacion({
+    fecha,
+    nombre,
+    mostrarNombre
+}) {
+
+    return new Promise((resolve) => {
+
+        const anterior = document.getElementById('modalValidacionMEC');
+
+        if (anterior) {
+            anterior.remove();
+        }
+
+        const overlay = document.createElement('div');
+
+        overlay.id = 'modalValidacionMEC';
+
+        overlay.style.cssText = `
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.65);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            padding: 20px;
+        `;
+
+        const modal = document.createElement('div');
+
+        modal.style.cssText = `
+            background: #fff;
+            border-radius: 18px;
+            max-width: 460px;
+            width: 100%;
+            padding: 28px;
+            font-family: Arial;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+        `;
+
+        modal.innerHTML = `
+            <h2 style="
+                margin-top:0;
+                margin-bottom:18px;
+                color:#111827;
+                font-size:22px;
+            ">
+                🔎 Verificación del documento
+            </h2>
+
+            <div style="
+                background:#f3f4f6;
+                border-radius:12px;
+                padding:14px;
+                margin-bottom:16px;
+            ">
+                <div style="
+                    font-size:14px;
+                    color:#6b7280;
+                    margin-bottom:6px;
+                ">
+                    Fecha detectada
+                </div>
+
+                <div style="
+                    font-size:18px;
+                    font-weight:bold;
+                    color:#111827;
+                ">
+                    ${fecha}
+                </div>
+            </div>
+
+            ${
+                mostrarNombre
+                ? `
+                <div style="
+                    background:#f9fafb;
+                    border-radius:12px;
+                    padding:14px;
+                    margin-bottom:18px;
+                ">
+                    <div style="
+                        font-size:14px;
+                        color:#6b7280;
+                        margin-bottom:6px;
+                    ">
+                        Trabajador detectado
+                    </div>
+
+                    <div style="
+                        font-size:18px;
+                        font-weight:bold;
+                        color:#111827;
+                    ">
+                        ${nombre}
+                    </div>
+                </div>
+                `
+                : ''
+            }
+
+            <p style="
+                color:#374151;
+                line-height:1.5;
+                margin-bottom:22px;
+            ">
+                ¿Deseas continuar con el análisis de esta liquidación?
+            </p>
+
+            <div style="
+                display:flex;
+                gap:12px;
+            ">
+                <button id="cancelarValidacionMEC"
+                    style="
+                        flex:1;
+                        border:none;
+                        background:#e5e7eb;
+                        color:#111827;
+                        padding:14px;
+                        border-radius:12px;
+                        cursor:pointer;
+                        font-weight:bold;
+                    ">
+                    ❌ Cancelar
+                </button>
+
+                <button id="confirmarValidacionMEC"
+                    style="
+                        flex:1;
+                        border:none;
+                        background:#111827;
+                        color:white;
+                        padding:14px;
+                        border-radius:12px;
+                        cursor:pointer;
+                        font-weight:bold;
+                    ">
+                    ✅ Continuar
+                </button>
+            </div>
+        `;
+
+        overlay.appendChild(modal);
+
+        document.body.appendChild(overlay);
+
+        document
+            .getElementById('cancelarValidacionMEC')
+            .onclick = () => {
+
+                overlay.remove();
+
+                resolve(false);
+            };
+
+        document
+            .getElementById('confirmarValidacionMEC')
+            .onclick = () => {
+
+                overlay.remove();
+
+                resolve(true);
+            };
+    });
+}
+
 // ==================== FUNCIÓN DE ANÁLISIS DEL PDF ====================
 const formatCurrency = (value) =>
     new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(value);
@@ -1324,10 +1684,8 @@ if (!(hayDatosPDF || hayDatosManual || hayComisionNomina)) {
 
     pagosTxt.push(`<p><strong>Comisión calculada:</strong> ${formatCurrency(comisionCalculada)}</p>`);
 
-    mostrarResultadoFreemium(pagosTxt.join(''));
+    mostrarResultadoFreemium(pagosTxt.join('')); }
 }
-}
-
 
 // ---------- FIN: ANÁLISIS COMISIÓN GRUPAL ----------
 

@@ -455,7 +455,7 @@ async function preValidarAntesDeAnalizar() {
 
     try {
 
-        const archivoInput = document.getElementById('archivoPDF');
+        const archivoInput = document.getElementById('fileInput');
 
         if (!archivoInput || !archivoInput.files.length) {
             alert("⚠️ Debes seleccionar una liquidación.");
@@ -560,7 +560,7 @@ async function preValidarAntesDeAnalizar() {
 
     try {
 
-        const archivoInput = document.getElementById('archivoPDF');
+        const archivoInput = document.getElementById('fileInput');
 
         if (!archivoInput || !archivoInput.files.length) {
             alert("⚠️ Debes seleccionar una liquidación.");

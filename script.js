@@ -756,22 +756,10 @@ function mostrarModalValidacion({
                     color:#7c2d12;
                     line-height:1.5;
                 ">
-                    Verifica que esta jornada corresponda a tu contrato laboral.
                     Una jornada incorrecta puede afectar el análisis.
                 </div>
 
             </div>
-
-            <!-- MENSAJE FINAL -->
-
-            <p style="
-                color:#374151;
-                line-height:1.5;
-                margin-bottom:22px;
-                font-size:14px;
-            ">
-                ¿Deseas continuar con el análisis de esta liquidación?
-            </p>
 
             <!-- BOTONES -->
 

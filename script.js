@@ -506,16 +506,24 @@ async function preValidarAntesDeAnalizar() {
 
         let nombreDetectado = "Trabajador no identificado";
 
-        const matchNombre = textoCompleto.match(
-            /Nombre\s*:?[\s\-]*([A-ZÁÉÍÓÚÑ\s]+)/i
+        let rutDetectado = "RUT no detectado";
+
+        const matchTrabajador = textoCompleto.match(
+            /NOMBRE\s+RUT\s+SUELDO\s+BASE\s+([A-ZÁÉÍÓÚÑ\s]+?)\s+(\d{1,2}\.\d{3}\.\d{3}-[\dkK])/i
         );
 
-        if (matchNombre && matchNombre[1]) {
+        if (matchTrabajador) {
 
-            nombreDetectado = matchNombre[1]
+            nombreDetectado = matchTrabajador[1]
                 .trim()
                 .replace(/\s+/g, " ");
+
+            rutDetectado = matchTrabajador[2]
+                .trim();
         }
+
+        console.log(nombreDetectado);
+        console.log(rutDetectado);
 
         // ======================================================
         // 🧠 PLAN ACTUAL

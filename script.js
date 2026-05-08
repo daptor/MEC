@@ -1108,7 +1108,7 @@ if (matchFecha) {
         diasMovilizacion = parseInt(matchMovilizacion[1]);
         montoMovilizacion = parseFloat(matchMovilizacion[2].replace('.', '').replace(',', '.'));
         if (diasMovilizacion > 0) {
-            valorDiaMovilizacion = montoMovilizacion / diasMovilizacion;
+            valorDiaMovilizacion = Math.round(montoMovilizacion / diasMovilizacion);
         }
     }
 
@@ -1120,7 +1120,7 @@ if (matchFecha) {
     if (matchDiferenciaMovilizacion) {
         montoDiferenciaMovilizacion = parseFloat(matchDiferenciaMovilizacion[1].replace('.', '').replace(',', '.'));
           if (valorDiaMovilizacion > 0) {
-            diasDiferenciaMovilizacion = montoDiferenciaMovilizacion / valorDiaMovilizacion;
+            diasDiferenciaMovilizacion = Math.round(montoDiferenciaMovilizacion / valorDiaMovilizacion);
             diasTotalesMovilizacion += diasDiferenciaMovilizacion;
         }
     }
@@ -1135,7 +1135,7 @@ if (matchFecha) {
         diasColacion = parseInt(matchColacion[1]);
         montoColacion = parseFloat(matchColacion[2].replace('.', '').replace(',', '.'));
         if (diasColacion > 0) {
-            valorDiaColacion = montoColacion / diasColacion;
+            valorDiaColacion = Math.round(montoColacion / diasColacion);
         }
     }
 
@@ -1146,7 +1146,7 @@ if (matchFecha) {
     if (matchDiferenciaColacion) {
         montoDiferenciaColacion = parseFloat(matchDiferenciaColacion[1].replace('.', '').replace(',', '.'));
               if (valorDiaColacion > 0) {
-            diasDiferenciaColacion = montoDiferenciaColacion / valorDiaColacion;
+            diasDiferenciaColacion = Math.round(montoDiferenciaColacion / valorDiaColacion);
             diasTotalesColacion += diasDiferenciaColacion;
         }
     }
@@ -1160,7 +1160,7 @@ if (matchFecha) {
         diasCaja = parseInt(matchCaja[1]);
         montoCaja = parseFloat(matchCaja[2].replace('.', '').replace(',', '.'));
         if (diasCaja > 0) {
-            valorDiaCaja = montoCaja / diasCaja;
+            valorDiaCaja = Math.round(montoCaja / diasCaja);
         }
     }
 
@@ -1171,7 +1171,7 @@ if (matchFecha) {
     if (matchDiferenciaCaja) {
         montoDiferenciaCaja = parseFloat(matchDiferenciaCaja[1].replace('.', '').replace(',', '.'));
               if (valorDiaCaja > 0) {
-            diasDiferenciaCaja = montoDiferenciaCaja / valorDiaCaja;
+            diasDiferenciaCaja = Math.round(montoDiferenciaCaja / valorDiaCaja);
             diasTotalesCaja += diasDiferenciaCaja;
         }
     }
@@ -1243,11 +1243,11 @@ if (detallesComisiones.length === 0) {
         let mejorValor = 21;
         let menorDiscrepancia = Infinity;
 
-        const valorEsperado21 = (totalComisiones / 21) * diasSemanaCorrida;
+        const valorEsperado21 = Math.round((totalComisiones / 21) * diasSemanaCorrida);
         const discrepancia21 = Math.abs(valorEsperado21 - montoSemanaCorrida);
-        const valorEsperado22 = (totalComisiones / 22) * diasSemanaCorrida;
+        const valorEsperado22 = Math.round((totalComisiones / 22) * diasSemanaCorrida);
         const discrepancia22 = Math.abs(valorEsperado22 - montoSemanaCorrida);
-        const valorEsperado23 = (totalComisiones / 23) * diasSemanaCorrida;
+        const valorEsperado23 = Math.round((totalComisiones / 23) * diasSemanaCorrida);
         const discrepancia23 = Math.abs(valorEsperado23 - montoSemanaCorrida);
 
         if (discrepancia22 < discrepancia21 && discrepancia22 < discrepancia23) {
@@ -1260,7 +1260,7 @@ if (detallesComisiones.length === 0) {
     }
 
     if (diasSemanaCorrida !== "No especificados" && diasParaSemanaCorrida > 0 && totalComisiones > 0) {
-        const valorDiarioComisiones = totalComisiones / diasParaSemanaCorrida;
+        const valorDiarioComisiones = Math.round(totalComisiones / diasParaSemanaCorrida);
         valorEsperadoSemanaCorrida = Math.round(valorDiarioComisiones * diasSemanaCorrida);;
         const diferenciaSemanaCorrida = valorEsperadoSemanaCorrida - montoSemanaCorrida;
         resultadoSemanaCorrida = Math.abs(diferenciaSemanaCorrida) < 1
@@ -1652,8 +1652,7 @@ function calcularGratificacion(
     // 25% HABERES
     // =====================================================
 
-    const resultadoCalculado =
-        valorTotalGratificacion * 0.25;
+    const resultadoCalculado = Math.round(valorTotalGratificacion * 0.25);
 
     // =====================================================
     // GRATIFICACIÓN CON TOPE
@@ -1668,17 +1667,14 @@ function calcularGratificacion(
 
     if (jornadaSeleccionada > 30) {
 
-        topeProporcional =
-            topeGratificacion;
+        topeProporcional = topeGratificacion;
 
         notaProporcional =
             " (no aplica proporcionalidad)";
 
     } else {
 
-        topeProporcional =
-            (topeGratificacion / jornadaMaxima)
-            * jornadaSeleccionada;
+        topeProporcional = Math.round((topeGratificacion / jornadaMaxima) * jornadaSeleccionada);
     }
 
     let valorConTope;
@@ -1757,11 +1753,9 @@ function calcularGratificacion(
     // COMPARACIONES
     // =====================================================
 
-    const diferenciaConTope =
-        gratificacionPDF - valorConTope;
+    const diferenciaConTope = Math.round(gratificacionPDF - valorConTope);
 
-    const diferenciaSinTope =
-        gratificacionPDF - valorSinTope;
+    const diferenciaSinTope = Math.round(gratificacionPDF - valorSinTope);
 
     let comparacionHTML = "";
 
@@ -2000,7 +1994,7 @@ async function extraerDatosReportePremio(archivo) {
             ventaTiendaTotal,
             horasDept: horasDept ? procesarMonto(horasDept[1]) : 0,
             horasAs: horasAs ? procesarMonto(horasAs[1]) : 0,
-            pctDept: pct ? parseFloat(String(pct[1]).replace(',', '.')) / 100 : 0.0026,
+            pctDept: pct ? Math.round(parseFloat(String(pct[1]).replace(',', '.')) ) / 100 : 0.0026,
             montoBrutoIncentivo: montoBruto ? procesarMonto(montoBruto[1]) : null
         };
 
@@ -2070,7 +2064,7 @@ if (!(hayDatosPDF || hayDatosManual || hayComisionNomina)) {
         pagosTxt.push(`<p><strong>Venta Tienda Total:</strong> ${formatCurrency(ventaTiendaTotal)}</p>`);
         pagosTxt.push(`<p><strong>Horas Totales Departamento:</strong> ${horasTotalesDept}</p>`);
         pagosTxt.push(`<p><strong>Horas Asesor:</strong> ${horasAsesor}</p>`);
-        pagosTxt.push(`<p><strong>Porcentaje departamento:</strong> ${(porcentajeDept*100).toFixed(4)}%</p>`);
+        pagosTxt.push(`<p><strong>Porcentaje departamento:</strong> ${Math.round(porcentajeDept*100)}%</p>`);
     }
 
     pagosTxt.push(`<p><strong>Comisión calculada:</strong> ${formatCurrency(comisionCalculada)}</p>`);
@@ -2377,8 +2371,8 @@ function realizarCalculo(datos, pdfSeleccionado, seleccion) {
     , 0);
 
     // Calcular el promedio diario
-    const promedioVacaciones = (totalItems / 3) / 30 * pdfSeleccionado.comisionVacaciones.dias;
-    const diferencia = promedioVacaciones - pdfSeleccionado.comisionVacaciones.monto;
+    const promedioVacaciones = Math.round((totalItems / 3) / 30 * pdfSeleccionado.comisionVacaciones.dias);
+    const diferencia = Math.round(promedioVacaciones - pdfSeleccionado.comisionVacaciones.monto);
 
     resultadoDiv.innerHTML +=
         `<h3>Cálculo de Vacaciones:</h3>
@@ -2429,24 +2423,24 @@ function calcularHoras() {
 
     // Cálculo del valor de la hora base
     const valorHoraBase = (sueldo / 30) * (28 / (parseInt(jornada) * 4));
-    document.getElementById("horas-valorHoraBase").textContent = valorHoraBase.toFixed(2);
+    document.getElementById("horas-valorHoraBase").textContent = Math.round(valorHoraBase);
 
     // Factor jornada
     const factorObj = listaHoraExtra.find(item => item.horas === jornada);
     const factor = factorObj ? factorObj.factor : 0;
-    document.getElementById("horas-factor").textContent = factor.toFixed(7);
+    document.getElementById("horas-factor").textContent = Math.round(factor);
 
     // Horas extras
     const valorHorasExtras = sueldo * factor * extra;
-    document.getElementById("horas-valorHorasExtras").textContent = valorHorasExtras.toFixed(2);
+    document.getElementById("horas-valorHorasExtras").textContent = Math.round(valorHorasExtras);
 
     // Recargo domingo
     const valorRecargoDomingo = valorHoraBase * 0.30 * recargo;
-    document.getElementById("horas-valorRecargoDomingo").textContent = valorRecargoDomingo.toFixed(2);
+    document.getElementById("horas-valorRecargoDomingo").textContent = Math.round(valorRecargoDomingo);
 
     // Horas extras domingo
     const valorHorasExtrasDomingo = valorHoraBase * 1.3 * 1.5 * extraDomingo;
-    document.getElementById("horas-valorHorasExtrasDomingo").textContent = valorHorasExtrasDomingo.toFixed(2);
+    document.getElementById("horas-valorHorasExtrasDomingo").textContent = Math.round(valorHorasExtrasDomingo);
 }
 
 function refrescarHoras() {
@@ -2822,8 +2816,8 @@ function calcularComisionManual() {
     }
 
     // Fórmula oficial
-    const valorHora = (ventaTienda / horasDepto) * porcentaje;
-    const comisionCalculada = valorHora * horasAsesor;
+    const valorHora = Math.round((ventaTienda / horasDepto) * porcentaje);
+    const comisionCalculada = Math.round(valorHora * horasAsesor);
 
     return {
         valorHora,
@@ -2852,8 +2846,8 @@ if (btnCalcularManual) {
 
         contenedor.innerHTML = `
             <h3>Resultado Comisión Manual</h3>
-            <p><strong>Valor por hora:</strong> $${datos.valorHora.toFixed(2)}</p>
-            <p><strong>Comisión Calculada:</strong> $${datos.comisionCalculada.toFixed(2)}</p>
+            <p><strong>Valor por hora:</strong> $${Math.round(datos.valorHora)}</p>
+            <p><strong>Comisión Calculada:</strong> $${Math.round(datos.comisionCalculada)}</p>
             <p><strong>Horas Asesor:</strong> ${datos.horasAsesor}</p>
             <p><strong>Horas Depto:</strong> ${datos.horasDepto}</p>
             <p><strong>Venta Tienda:</strong> $${datos.ventaTienda}</p>

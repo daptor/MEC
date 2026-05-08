@@ -458,9 +458,7 @@ async function preValidarAntesDeAnalizar() {
         const archivoInput = document.getElementById('fileInput');
 
         if (!archivoInput || !archivoInput.files.length) {
-
             alert("⚠️ Debes seleccionar una liquidación.");
-
             return;
         }
 
@@ -468,9 +466,7 @@ async function preValidarAntesDeAnalizar() {
 
         const arrayBuffer = await archivo.arrayBuffer();
 
-        const pdf = await pdfjsLib.getDocument({
-            data: arrayBuffer
-        }).promise;
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
         let textoCompleto = "";
 
@@ -496,7 +492,6 @@ async function preValidarAntesDeAnalizar() {
         );
 
         if (matchFecha) {
-
             fechaDetectada = matchFecha[0];
         }
 
@@ -506,20 +501,15 @@ async function preValidarAntesDeAnalizar() {
 
         let nombreDetectado = "Trabajador no identificado";
 
-        let rutDetectado = "RUT no detectado";
-
-        const matchTrabajador = textoCompleto.match(
-            /NOMBRE\s+RUT\s+SUELDO\s+BASE\s+([A-ZÁÉÍÓÚÑ\s]+?)\s+(\d{1,2}\.\d{3}\.\d{3}-[\dkK])/i
+        const matchNombre = textoCompleto.match(
+            /Nombre\s*:?[\s\-]*([A-ZÁÉÍÓÚÑ\s]+)/i
         );
 
-        if (matchTrabajador) {
+        if (matchNombre && matchNombre[1]) {
 
-            nombreDetectado = matchTrabajador[1]
+            nombreDetectado = matchNombre[1]
                 .trim()
                 .replace(/\s+/g, " ");
-
-            rutDetectado = matchTrabajador[2]
-                .trim();
         }
 
         // ======================================================
@@ -529,31 +519,24 @@ async function preValidarAntesDeAnalizar() {
         const plan = window.userPlan || "free";
 
         // ======================================================
-        // ⏰ JORNADA SELECCIONADA
-        // ======================================================
-
-        const selectJornada =
-            document.getElementById('jornada');
-
-        const jornadaTexto =
-            selectJornada.options[
-                selectJornada.selectedIndex
-            ].text;
-
-        // ======================================================
-        // 📦 MODAL VALIDACIÓN
+        // 📦 MODAL
         // ======================================================
 
         const confirmado = await mostrarModalValidacion({
             fecha: fechaDetectada,
             nombre: nombreDetectado,
-            rut: rutDetectado,
             mostrarNombre: (
                 plan === "pro" ||
                 plan === "pro_pending"
-            ),
-            jornada: jornadaTexto
+            )
         });
+
+        if (!confirmado) {
+
+            console.log("⛔ Usuario canceló validación previa");
+
+            return;
+        }
 
         // ======================================================
         // ✅ CONTINUAR ANÁLISIS ORIGINAL
@@ -563,10 +546,89 @@ async function preValidarAntesDeAnalizar() {
 
     } catch (error) {
 
-        console.error(
-            "❌ Error prevalidando documento:",
-            error
+        console.error("❌ Error prevalidando documento:", error);
+
+        alert("❌ Error verificando el documento.");
+    }
+}
+
+// ======================================================
+// 🔎 PREVALIDACIÓN DE DOCUMENTO ANTES DEL ANÁLISIS
+// ======================================================
+
+async function preValidarAntesDeAnalizar() {
+
+    try {
+
+        const archivoInput = document.getElementById('fileInput');
+
+        if (!archivoInput || !archivoInput.files.length) {
+            alert("⚠️ Debes seleccionar una liquidación.");
+            return;
+        }
+
+        const archivo = archivoInput.files[0];
+
+        const arrayBuffer = await archivo.arrayBuffer();
+
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+        let textoCompleto = "";
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+
+            const page = await pdf.getPage(i);
+
+            const content = await page.getTextContent();
+
+            const strings = content.items.map(item => item.str);
+
+            textoCompleto += strings.join(" ") + "\n";
+        }
+
+        let fechaDetectada = "Fecha no detectada";
+
+        const matchFecha = textoCompleto.match(
+            /(ENERO|FEBRERO|MARZO|ABRIL|MAYO|JUNIO|JULIO|AGOSTO|SEPTIEMBRE|OCTUBRE|NOVIEMBRE|DICIEMBRE)\s+DE\s+\d{4}/i
         );
+
+        if (matchFecha) {
+            fechaDetectada = matchFecha[0];
+        }
+
+        let nombreDetectado = "Trabajador no identificado";
+
+        const matchNombre = textoCompleto.match(
+            /Nombre\s*:?[\s\-]*([A-ZÁÉÍÓÚÑ\s]+)/i
+        );
+
+        if (matchNombre && matchNombre[1]) {
+
+            nombreDetectado = matchNombre[1]
+                .trim()
+                .replace(/\s+/g, " ");
+        }
+
+        const plan = window.userPlan || "free";
+
+        const confirmado = await mostrarModalValidacion({
+            fecha: fechaDetectada,
+            nombre: nombreDetectado,
+            mostrarNombre: (
+                plan === "pro" ||
+                plan === "pro_pending"
+            )
+        });
+
+        if (!confirmado) {
+            return;
+        }
+
+        analizarArchivo();
+
+    } catch (error) {
+
+        console.error("❌ Error prevalidando documento:", error);
 
         alert("❌ Error verificando el documento.");
     }
@@ -579,18 +641,14 @@ async function preValidarAntesDeAnalizar() {
 function mostrarModalValidacion({
     fecha,
     nombre,
-    rut,
-    mostrarNombre,
-    jornada
+    mostrarNombre
 }) {
 
     return new Promise((resolve) => {
 
-        const anterior =
-            document.getElementById('modalValidacionMEC');
+        const anterior = document.getElementById('modalValidacionMEC');
 
         if (anterior) {
-
             anterior.remove();
         }
 
@@ -622,7 +680,6 @@ function mostrarModalValidacion({
         `;
 
         modal.innerHTML = `
-
             <h2 style="
                 margin-top:0;
                 margin-bottom:18px;
@@ -632,35 +689,28 @@ function mostrarModalValidacion({
                 🔎 Verificación del documento
             </h2>
 
-            <!-- FECHA -->
-
             <div style="
                 background:#f3f4f6;
                 border-radius:12px;
                 padding:14px;
                 margin-bottom:16px;
             ">
-
                 <div style="
-                    font-size:13px;
+                    font-size:14px;
                     color:#6b7280;
                     margin-bottom:6px;
-                    font-weight:bold;
                 ">
                     Fecha detectada
                 </div>
 
                 <div style="
-                    font-size:16px;
-                    font-weight:600;
+                    font-size:18px;
+                    font-weight:bold;
                     color:#111827;
                 ">
                     ${fecha}
                 </div>
-
             </div>
-
-            <!-- TRABAJADOR -->
 
             ${
                 mostrarNombre
@@ -671,102 +721,39 @@ function mostrarModalValidacion({
                     padding:14px;
                     margin-bottom:18px;
                 ">
-
                     <div style="
-                        font-size:13px;
+                        font-size:14px;
                         color:#6b7280;
-                        margin-bottom:12px;
-                        font-weight:bold;
+                        margin-bottom:6px;
                     ">
                         Trabajador detectado
                     </div>
 
                     <div style="
-                        font-size:12px;
-                        color:#6b7280;
-                        margin-bottom:4px;
-                    ">
-                        Nombre
-                    </div>
-
-                    <div style="
-                        font-size:16px;
-                        font-weight:600;
+                        font-size:18px;
+                        font-weight:bold;
                         color:#111827;
-                        margin-bottom:12px;
-                        line-height:1.4;
                     ">
                         ${nombre}
                     </div>
-
-                    <div style="
-                        font-size:12px;
-                        color:#6b7280;
-                        margin-bottom:4px;
-                    ">
-                        RUT
-                    </div>
-
-                    <div style="
-                        font-size:15px;
-                        font-weight:600;
-                        color:#111827;
-                    ">
-                        ${rut}
-                    </div>
-
                 </div>
                 `
                 : ''
             }
 
-            <!-- JORNADA -->
-
-            <div style="
-                background:#fff7ed;
-                border:1px solid #fdba74;
-                border-radius:12px;
-                padding:14px;
-                margin-bottom:18px;
+            <p style="
+                color:#374151;
+                line-height:1.5;
+                margin-bottom:22px;
             ">
-
-                <div style="
-                    font-size:13px;
-                    color:#9a3412;
-                    margin-bottom:6px;
-                    font-weight:bold;
-                ">
-                    ⚠ Verifica la jornada seleccionada
-                </div>
-
-                <div style="
-                    font-size:16px;
-                    font-weight:600;
-                    color:#111827;
-                    margin-bottom:8px;
-                ">
-                    ${jornada}
-                </div>
-
-                <div style="
-                    font-size:13px;
-                    color:#7c2d12;
-                    line-height:1.5;
-                ">
-                    Una jornada incorrecta puede afectar el análisis.
-                </div>
-
-            </div>
-
-            <!-- BOTONES -->
+                ¿Deseas continuar con el análisis de esta liquidación?
+            </p>
 
             <div style="
                 display:flex;
                 gap:12px;
             ">
-
-                <button
-                    id="cancelarValidacionMEC"
+                <button id="cancelarValidacionMEC"
                     style="
                         flex:1;
                         border:none;
@@ -776,14 +763,11 @@ function mostrarModalValidacion({
                         border-radius:12px;
                         cursor:pointer;
                         font-weight:bold;
-                        font-size:14px;
-                    "
-                >
+                    ">
                     ❌ Cancelar
                 </button>
 
-                <button
-                    id="confirmarValidacionMEC"
+                <button id="confirmarValidacionMEC"
                     style="
                         flex:1;
                         border:none;
@@ -793,12 +777,9 @@ function mostrarModalValidacion({
                         border-radius:12px;
                         cursor:pointer;
                         font-weight:bold;
-                        font-size:14px;
-                    "
-                >
+                    ">
                     ✅ Continuar
                 </button>
-
             </div>
         `;
 
@@ -1274,45 +1255,25 @@ if (detallesComisiones.length === 0) {
         return parseFloat(montoTexto.replace(/\./g, '').replace(',', '.'));
     }
 
-//*************************** GRATIFICACIÓN ***************************
+//*************************** gratificacion ***************************
 
 function identificarGratificables(texto) {
-
     let gratificablesEncontrados = [];
+    let textoRestante = texto.replace(/\s+/g, ' ').trim();
 
-    let textoRestante = texto
-        .replace(/\s+/g, ' ')
-        .trim();
-
-    textoRestante = textoRestante
-        .replace(/[^\x20-\x7E]/g, ' ');
+    textoRestante = textoRestante.replace(/[^\x20-\x7E]/g, ' ');
 
     listaGratificables.forEach(item => {
-
-        const regex = new RegExp(
-            `${item.replace(/\s+/g, '\\s*')}\\s*(?:\\(\\d+\\))?\\s*\\$\\s*([\\d.,]+)`,
-            'i'
-        );
-
+        const regex = new RegExp(`${item.replace(/\s+/g, '\\s*')}\\s*(?:\\(\\d+\\))?\\s*\\$\\s*([\\d.,]+)`, 'i');
         const match = textoRestante.match(regex);
 
         if (match) {
-
             gratificablesEncontrados.push({
                 item: item,
                 monto: procesarMonto(match[1])
             });
 
-            textoRestante = textoRestante.replace(
-                new RegExp(
-                    match[0].replace(
-                        /[-\/\\^$*+?.()|[\]{}]/g,
-                        '\\$&'
-                    ),
-                    'i'
-                ),
-                ''
-            ).trim();
+            textoRestante = textoRestante.replace(new RegExp(match[0].replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i'), '').trim();
         }
     });
 
@@ -1320,180 +1281,52 @@ function identificarGratificables(texto) {
 }
 
 function calcularTotalGratificacion(gratificables) {
-
-    return gratificables.reduce(
-        (total, item) => total + item.monto,
-        0
-    );
-}
-
-function mostrarValor(valor) {
-
-    return isNaN(valor) || valor === null
-        ? '$0'
-        : new Intl.NumberFormat(
-            'es-CL',
-            {
-                style: 'currency',
-                currency: 'CLP'
-            }
-        ).format(valor);
-}
-
-const gratificables = identificarGratificables(textoCompleto);
-
-function obtenerJornadaMaxima(mes, año) {
-
-    const meses = {
-        ENERO: 1,
-        FEBRERO: 2,
-        MARZO: 3,
-        ABRIL: 4,
-        MAYO: 5,
-        JUNIO: 6,
-        JULIO: 7,
-        AGOSTO: 8,
-        SEPTIEMBRE: 9,
-        OCTUBRE: 10,
-        NOVIEMBRE: 11,
-        DICIEMBRE: 12
-    };
-
-    const mesIndex =
-        meses[mes.toUpperCase()] || 0;
-
-    // 44 horas desde mayo 2024
-    if (
-        año > 2024 ||
-        (año === 2024 && mesIndex >= 5)
-    ) {
-        return 44;
-    }
-
-    // 42 horas desde abril 2026
-    if (
-        año > 2026 ||
-        (año === 2026 && mesIndex >= 4)
-    ) {
-        return 42;
-    }
-
-    return 45;
+    return gratificables.reduce((total, item) => total + item.monto, 0);
 }
 
 function mostrarGratificacionMec(gratificables) {
+    const gratificacionContainer = document.getElementById('gratificacionMec');
 
-    const gratificacionContainer =
-        document.getElementById('gratificacionMec');
-
-    if (
-        gratificacionContainer.style.display === 'block'
-    ) {
+    if (gratificacionContainer.style.display === 'block') {
         return;
     }
 
     const listaGratificablesHTML = gratificables
         .filter(gratificable => gratificable.monto > 0)
         .map(gratificable => {
+            return `<li><strong>${gratificable.item}:</strong> ${mostrarValor(gratificable.monto)}</li>`;
+        }).join('');
 
-            return `
-                <li>
-                    <strong>${gratificable.item}:</strong>
-                    ${mostrarValor(gratificable.monto)}
-                </li>
-            `;
-        })
-        .join('');
-
-    const totalGratificacion =
-        calcularTotalGratificacion(gratificables);
-
+    const totalGratificacion = calcularTotalGratificacion(gratificables);
     const valoresConsolidados = [
-
         sueldoProporcional || 0,
-
         montoPagadoHorasExtras || 0,
-
         montoPagadoHorasExtrasDomingo || 0,
-
         montoPagadoRecargoDomingo || 0,
-
         montoPagadoRecargoFestivo || 0,
-
         totalComisiones || 0,
-
         valorEsperadoSemanaCorrida || 0
     ];
 
-    const valorTotalGratificacion =
-        valoresConsolidados.reduce(
-            (total, valor) =>
-                total + (parseFloat(valor) || 0),
-            totalGratificacion
-        );
+    const valorTotalGratificacion = valoresConsolidados.reduce((total, valor) => total + (parseFloat(valor) || 0), totalGratificacion);
 
-    calcularGratificacion(
-        gratificables,
-        textoCompleto,
-        jornadaSeleccionada,
-        mes,
-        año,
-        valorTotalGratificacion
-    );
+    calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada, mes, año, valorTotalGratificacion);
 
     const datosCalculadosHTML = `
         <ul>
-
             ${
                 [
-                    {
-                        label: 'Sueldo Base',
-                        value: sueldoProporcional
-                    },
-
-                    {
-                        label: 'Hrs. Extras',
-                        value: montoPagadoHorasExtras
-                    },
-
-                    {
-                        label: 'Hrs. Extras Domingo',
-                        value: montoPagadoHorasExtrasDomingo
-                    },
-
-                    {
-                        label: 'Hrs. Recargo Domingo',
-                        value: montoPagadoRecargoDomingo
-                    },
-
-                    {
-                        label: 'Recargo 50% Festivo',
-                        value: montoPagadoRecargoFestivo
-                    },
-
-                    {
-                        label: 'Suma Comisiones',
-                        value: totalComisiones
-                    },
-
-                    {
-                        label: 'Semana Corrida',
-                        value: valorEsperadoSemanaCorrida > 0
-                            ? valorEsperadoSemanaCorrida
-                            : 0
-                    }
-
+                    { label: 'Sueldo Base', value: sueldoProporcional },
+                    { label: 'Hrs. Extras', value: montoPagadoHorasExtras },
+                    { label: 'Hrs. Extras Domingo', value: montoPagadoHorasExtrasDomingo },
+                    { label: 'Hrs. Recargo Domingo', value: montoPagadoRecargoDomingo },
+                    { label: 'Recargo 50% Festivo', value: montoPagadoRecargoFestivo },
+                    { label: 'Suma Comisiones', value: totalComisiones },
+                    { label: 'Semana Corrida', value: valorEsperadoSemanaCorrida > 0 ? valorEsperadoSemanaCorrida : 'No disponible' }
                 ]
                 .filter(item => item.value > 0)
-                .map(item => `
-                    <li>
-                        <strong>${item.label}:</strong>
-                        ${mostrarValor(item.value)}
-                    </li>
-                `)
-                .join('')
+                .map(item => `<li><strong>${item.label}:</strong> ${mostrarValor(item.value)}</li>`).join('')
             }
-
         </ul>
     `;
 
@@ -1504,399 +1337,175 @@ function mostrarGratificacionMec(gratificables) {
     `;
 
     const valorTotalHTML = `
-        <p>
-            <strong>
-                SUMA TOTAL HABERES:
-                ${mostrarValor(valorTotalGratificacion)}
-            </strong>
-        </p>
+        <p><strong>SUMA TOTAL HABERES: ${mostrarValor(valorTotalGratificacion)}</strong></p>
     `;
 
-    const gratificacionHTML =
-        datosCalculadosHTML +
-        gratificablesHTML +
-        valorTotalHTML;
-
-    if (
-        document.getElementById('listaGratificables').innerHTML
-        !== gratificacionHTML
-    ) {
-
-        document.getElementById(
-            'listaGratificables'
-        ).innerHTML = gratificacionHTML;
+    const gratificacionHTML = datosCalculadosHTML + gratificablesHTML + valorTotalHTML;
+    if (document.getElementById('listaGratificables').innerHTML !== gratificacionHTML) {
+        document.getElementById('listaGratificables').innerHTML = gratificacionHTML;
     }
 
-    gratificacionContainer.style.display = 'block';
+    document.getElementById('gratificacionMec').style.display = 'block';
 }
 
-function calcularGratificacion(
-    gratificables,
-    textoCompleto,
-    jornadaSeleccionada,
-    mes,
-    año,
-    valorTotalGratificacion
-) {
+function mostrarValor(valor) {
+    return isNaN(valor) || valor === null ? '$0' : new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(valor);
+}
 
-    jornadaSeleccionada =
-        Number(jornadaSeleccionada) || 0;
+const gratificables = identificarGratificables(textoCompleto);
 
+function obtenerJornadaMaxima(mes, año) {
     const meses = {
+        ENERO: 1, FEBRERO: 2, MARZO: 3, ABRIL: 4, MAYO: 5, JUNIO: 6,
+        JULIO: 7, AGOSTO: 8, SEPTIEMBRE: 9, OCTUBRE: 10, NOVIEMBRE: 11, DICIEMBRE: 12
+    };
+    const mesIndex = meses[mes.toUpperCase()] || 0;
 
-        ENERO: 1,
-        FEBRERO: 2,
-        MARZO: 3,
-        ABRIL: 4,
-        MAYO: 5,
-        JUNIO: 6,
-        JULIO: 7,
-        AGOSTO: 8,
-        SEPTIEMBRE: 9,
-        OCTUBRE: 10,
-        NOVIEMBRE: 11,
-        DICIEMBRE: 12
+    if (año > 2024 || (año === 2024 && mesIndex >= 5)) {
+        return 44;
+    }
+    return 45;
+}
+
+function calcularGratificacion(gratificables, textoCompleto, jornadaSeleccionada, mes, año, valorTotalGratificacion) {
+
+    // Asegurar que jornada sea número
+    jornadaSeleccionada = Number(jornadaSeleccionada) || 0;
+
+    // -------------------------------
+    // TABLA DE MESES
+    // -------------------------------
+    const meses = {
+        ENERO: 1, FEBRERO: 2, MARZO: 3, ABRIL: 4, MAYO: 5, JUNIO: 6,
+        JULIO: 7, AGOSTO: 8, SEPTIEMBRE: 9, OCTUBRE: 10, NOVIEMBRE: 11, DICIEMBRE: 12
     };
 
     const mesesOrden = [
-
-        "ENERO",
-        "FEBRERO",
-        "MARZO",
-        "ABRIL",
-        "MAYO",
-        "JUNIO",
-        "JULIO",
-        "AGOSTO",
-        "SEPTIEMBRE",
-        "OCTUBRE",
-        "NOVIEMBRE",
-        "DICIEMBRE"
+        "ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE",
+        "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"
     ];
 
-    const mesActual =
-        mes.toUpperCase();
+    const mesActual = mes.toUpperCase();
 
-    // =====================================================
-    // IMM
-    // =====================================================
-
-    let inm =
-        ingresosMinimos[año]?.[mesActual] || 0;
+    // -------------------------------
+    // OBTENER IMM SEGURO
+    // -------------------------------
+    let inm = ingresosMinimos[año]?.[mesActual] || 0;
 
     if (!inm || inm < 300000) {
-
-        const idx =
-            mesesOrden.indexOf(mesActual);
-
+        const idx = mesesOrden.indexOf(mesActual);
         if (idx > 0) {
-
-            const mesAnterior =
-                mesesOrden[idx - 1];
-
-            const inmAnterior =
-                ingresosMinimos[año]?.[mesAnterior] || 0;
+            const mesAnterior = mesesOrden[idx - 1];
+            const inmAnterior = ingresosMinimos[año]?.[mesAnterior] || 0;
 
             if (inmAnterior > 0) {
-
                 inm = inmAnterior;
             }
         }
     }
 
     if (!inm) {
-
-        console.error(
-            "IMM no disponible para este mes."
-        );
-
+        console.error("IMM no disponible para este mes ni el anterior.");
         return;
     }
 
-    // =====================================================
+    // -------------------------------
     // VALIDAR MES
-    // =====================================================
-
+    // -------------------------------
     const mesIndex = meses[mesActual];
-
     if (!mesIndex) {
-
         console.error("Mes inválido.");
-
         return;
     }
 
-    // =====================================================
-    // JORNADA MÁXIMA
-    // =====================================================
-
+    // -------------------------------
+    // JORNADA MÁXIMA VIGENTE
+    // -------------------------------
     let jornadaMaxima = 45;
 
-    if (
-        año > 2024 ||
-        (año === 2024 && mesIndex >= 5)
-    ) {
-
+    // Reducción a 44 horas (mayo 2024)
+    if (año > 2024 || (año === 2024 && mesIndex >= 5)) {
         jornadaMaxima = 44;
     }
 
-    if (
-        año > 2026 ||
-        (año === 2026 && mesIndex >= 4)
-    ) {
-
+    // Nueva reducción a 42 horas (abril 2026)
+    if (año > 2026 || (año === 2026 && mesIndex >= 4)) {
         jornadaMaxima = 42;
     }
 
-    // =====================================================
+    // -------------------------------
     // 25% HABERES
-    // =====================================================
+    // -------------------------------
+    const resultadoCalculado = valorTotalGratificacion * 0.25;
 
-    const resultadoCalculado =
-        valorTotalGratificacion * 0.25;
+    // -------------------------------
+    // TOPE MENSUAL
+    // -------------------------------
+    const topeGratificacion = (4.75 * inm) / 12;
 
-    // =====================================================
-    // GRATIFICACIÓN CON TOPE
-    // =====================================================
-
-    const topeGratificacion =
-        (4.75 * inm) / 12;
-
+    // -------------------------------
+    // TOPE PROPORCIONAL — CORREGIDO
+    // -------------------------------
     let topeProporcional;
-
     let notaProporcional = "";
 
     if (jornadaSeleccionada > 30) {
-
-        topeProporcional =
-            topeGratificacion;
-
-        notaProporcional =
-            " (no aplica proporcionalidad)";
-
+        topeProporcional = topeGratificacion;
+        notaProporcional = " (no aplica proporcionalidad — jornada > 30)";
     } else {
-
-        topeProporcional =
-            (topeGratificacion / jornadaMaxima)
-            * jornadaSeleccionada;
+        topeProporcional = (topeGratificacion / jornadaMaxima) * jornadaSeleccionada;
     }
 
-    let valorConTope;
+    // -------------------------------
+    // MONTO A PAGAR
+    // -------------------------------
+    let valorAPagar;
 
     if (jornadaSeleccionada > 30) {
-
-        valorConTope = Math.round(
-            Math.min(
-                resultadoCalculado,
-                topeGratificacion
-            )
-        );
-
+        valorAPagar = Math.round(Math.min(resultadoCalculado, topeGratificacion));
     } else {
-
-        valorConTope = Math.round(
-            Math.min(
-                resultadoCalculado,
-                topeProporcional
-            )
-        );
+        valorAPagar = Math.round(Math.min(resultadoCalculado, topeProporcional));
     }
 
-    // =====================================================
-    // GRATIFICACIÓN SIN TOPE
-    // =====================================================
+    // -------------------------------
+    // COMPARAR CON PDF
+    // -------------------------------
+    const regexGratificacionPDF = /GRATIFICACION\s*25%\s*C\.T\.\s*\$\s*([\d.,]+)/i;
+    const matchGratificacionPDF = textoCompleto.match(regexGratificacionPDF);
 
-    const valorSinTope =
-        Math.round(resultadoCalculado);
+    const gratificacionPDF = matchGratificacionPDF
+        ? parseFloat(matchGratificacionPDF[1].replace(/\./g, '').replace(',', '.'))
+        : 0;
 
-    // =====================================================
-    // EXTRAER PDF
-    // =====================================================
-
-    const regexGratificacionPDF =
-        /GRATIFICACION\s*25\s*%\s*(?:\(?C\.?T\.?\)?|\(?S\.?T\.?\)?)\s*\$\s*([\d.,]+)/i;
-
-    const matchGratificacionPDF =
-        textoCompleto.match(regexGratificacionPDF);
-
-    const gratificacionPDF =
-        matchGratificacionPDF
-            ? parseFloat(
-                matchGratificacionPDF[1]
-                    .replace(/\./g, '')
-                    .replace(',', '.')
-            )
-            : 0;
-
-    // =====================================================
-    // DETECTAR TIPO PDF
-    // =====================================================
-
-    const esST =
-        /GRATIFICACION\s*25\s*%\s*\(?S\.?T\.?\)?/i
-            .test(textoCompleto);
-
-    const esCT =
-        /GRATIFICACION\s*25\s*%\s*\(?C\.?T\.?\)?/i
-            .test(textoCompleto);
-
-    let tipoDetectado = "No identificado";
-
-    if (esST) {
-
-        tipoDetectado =
-            "Gratificación Sin Tope (S.T.)";
-
-    } else if (esCT) {
-
-        tipoDetectado =
-            "Gratificación Con Tope (C.T.)";
-    }
-
-    // =====================================================
-    // COMPARACIONES
-    // =====================================================
-
-    const diferenciaConTope =
-        gratificacionPDF - valorConTope;
-
-    const diferenciaSinTope =
-        gratificacionPDF - valorSinTope;
+    const diferencia = gratificacionPDF - valorAPagar;
 
     let comparacionHTML = "";
-
-    if (
-        Math.abs(diferenciaConTope) < 1
-    ) {
-
-        comparacionHTML = `
-            <span style="color:green;">
-                ✅ Coincide con Gratificación CON TOPE
-            </span>
-        `;
-
-    } else if (
-        Math.abs(diferenciaSinTope) < 1
-    ) {
-
-        comparacionHTML = `
-            <span style="color:green;">
-                ✅ Coincide con Gratificación SIN TOPE
-            </span>
-        `;
-
+    if (Math.abs(diferencia) < 0.001) {
+        comparacionHTML = `<span style="color: green;">✅ Pago Correcto: ${formatCurrency(valorAPagar)}</span>`;
     } else {
-
-        comparacionHTML = `
-            <span style="color:red;">
-                ❌ El monto pagado no coincide
-                con ningún cálculo esperado
-            </span>
-        `;
+        comparacionHTML = `<span style="color: red;">❌ Discrepancia de ${formatCurrency(diferencia)}</span>`;
     }
 
-    // =====================================================
-    // RESULTADO HTML
-    // =====================================================
-
+    // -------------------------------
+    // MOSTRAR RESULTADO
+    // -------------------------------
     const resultadoHTML = `
-
-        <h2>7. Cálculo Gratificación</h2>
-
-        <p>
-            <strong>
-                Tipo detectado:
-            </strong>
-
-            ${tipoDetectado}
-        </p>
-
-        <hr>
-
-        <p>
-            <strong>
-                25% Suma Total Haberes:
-            </strong>
-
-            ${formatCurrency(resultadoCalculado)}
-        </p>
-
-        <hr>
-
-        <p>
-            <strong>
-                Gratificación CON TOPE:
-            </strong>
-        </p>
-
-        <p>
-            IMM utilizado:
-            ${formatCurrency(inm)}
-        </p>
-
-        <p>
-            Jornada máxima:
-            ${jornadaMaxima} horas
-        </p>
-
-        <p>
-            Tope mensual:
-            ${formatCurrency(
-                Math.round(topeGratificacion)
-            )}
-        </p>
-
-        <p>
-            Tope proporcional:
-            ${formatCurrency(
-                Math.round(topeProporcional)
-            )}
-
-            ${notaProporcional}
-        </p>
-
-        <p>
-            <strong>
-                Resultado CON TOPE:
-            </strong>
-
-            ${formatCurrency(valorConTope)}
-        </p>
-
-        <hr>
-
-        <p>
-            <strong>
-                Gratificación SIN TOPE:
-            </strong>
-
-            ${formatCurrency(valorSinTope)}
-        </p>
-
-        <hr>
-
-        <p>
-            <strong>
-                Monto extraído PDF:
-            </strong>
-
-            ${formatCurrency(gratificacionPDF)}
-        </p>
-
-        <p>
-            <strong>
-                Análisis:
-            </strong>
-
-            ${comparacionHTML}
-        </p>
+        <h2>7. Cálculo de Gratificación</h2>
+        <p><strong>25% de la Suma Total Haberes:</strong> ${formatCurrency(resultadoCalculado)}</p>
+        <p><em>
+            <p><strong>IMM utilizado:</strong> ${formatCurrency(inm)}</p>
+            <p><strong>Jornada Máxima Vigente:</strong> ${jornadaMaxima} horas</p>
+            <p><strong>¿Cómose cálcula la Gratificación? 💡 </p>
+            <p><strong>Tope Mensual ((4.75 x IMM) / 12):</strong> ${formatCurrency(Math.round(topeGratificacion))}</p>
+            <p><strong>Tope Proporcional:</strong> ${formatCurrency(Math.round(topeProporcional))}${notaProporcional}</p>
+        </em></p>
+        <p><strong>Cálculo de Gratificación a Pago:</strong> ${formatCurrency(valorAPagar)}</p>
+        <p><strong>Monto extraido del PDF:</strong> ${formatCurrency(gratificacionPDF)}</p>
+        <p><strong>Análisis:</strong> ${comparacionHTML}</p>
     `;
 
-    document.getElementById(
-        'resultadoGratificacion'
-    ).innerHTML = resultadoHTML;
+    document.getElementById('resultadoGratificacion').innerHTML = resultadoHTML;
 }
-
 
     // ===== Mostrar resultados en HTML =====
     document.getElementById('resultadoAnalisis').innerHTML = `

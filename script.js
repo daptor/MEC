@@ -2201,8 +2201,8 @@ function calcularGratificacion(
 // 🚦 RESUMEN GRATIFICACIÓN
 // =====================================================
 
-let estadoGratificacion = "ok";
-let diferenciaResumenGratificacion = 0;
+var estadoGratificacion = "ok";
+var diferenciaResumenGratificacion = 0;
 
 if (
     Math.abs(diferenciaConTope) < 1 ||

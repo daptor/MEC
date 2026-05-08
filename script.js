@@ -1202,20 +1202,41 @@ const diferenciaSueldo = sueldoProporcional - sueldoEsperado;
 
     let variacionPorcentual = 0;
     let mensajeVariacion = '';
-    if (sueldoBaseContractual > inmProporcional) {
+
+    let estadoSueldoIMM = "ok";
+    let diferenciaIMM = 0;
+
+if (sueldoBaseContractual > inmProporcional) {
 
     variacionPorcentual = ((sueldoBaseContractual - inmProporcional) / inmProporcional) * 100;
-    mensajeVariacion = `✅ Es un ${Math.round(variacionPorcentual * 10) / 10}% mayor que el IMM `;
-    } else if (sueldoBaseContractual === inmProporcional) {
+    mensajeVariacion = `✅ Es un ${Math.round(variacionPorcentual * 10) / 10}% mayor que el IMM`;
+    estadoSueldoIMM = "ok";
+}
 
-      mensajeVariacion = `Es igual al IMM `;
-    } else {
+else if (sueldoBaseContractual === inmProporcional) {mensajeVariacion = `Es igual al IMM`; estadoSueldoIMM = "ok";}
 
-      variacionPorcentual = ((inmProporcional - sueldoBaseContractual) / inmProporcional) * 100;
-      mensajeVariacion = `❌ Es ${Math.round(variacionPorcentual * 10) / 10}% inferior al IMM `;
-    }
+else {
 
+    variacionPorcentual = ((inmProporcional - sueldoBaseContractual) / inmProporcional) * 100;
+
+    diferenciaIMM = inmProporcional - sueldoBaseContractual;
+
+    mensajeVariacion = `❌ Es ${Math.round(variacionPorcentual * 10) / 10}% inferior al IMM`;
+
+    estadoSueldoIMM = "error";}
+
+// =============================
+// 🚦 RESUMEN IMM
+// =============================
+
+agregarResultadoResumen(
+    "Validación IMM",
+    estadoSueldoIMM,
+    diferenciaIMM
+);
+// ========================================
     // ----- HORAS EXTRAS 50% -----
+// ========================================
     let resultadoHorasExtras = '';
     const regexHorasExtras = /HORAS\s*EXTRAS\s*50\s*%\s*\(([\d.,]+)\)\s*\$\s*([\d.,]+)/i;
     const matchHorasExtras = textoCompleto.match(regexHorasExtras);

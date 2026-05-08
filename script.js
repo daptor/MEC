@@ -458,7 +458,9 @@ async function preValidarAntesDeAnalizar() {
         const archivoInput = document.getElementById('fileInput');
 
         if (!archivoInput || !archivoInput.files.length) {
+
             alert("⚠️ Debes seleccionar una liquidación.");
+
             return;
         }
 
@@ -466,7 +468,9 @@ async function preValidarAntesDeAnalizar() {
 
         const arrayBuffer = await archivo.arrayBuffer();
 
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const pdf = await pdfjsLib.getDocument({
+            data: arrayBuffer
+        }).promise;
 
         let textoCompleto = "";
 
@@ -492,6 +496,7 @@ async function preValidarAntesDeAnalizar() {
         );
 
         if (matchFecha) {
+
             fechaDetectada = matchFecha[0];
         }
 
@@ -519,19 +524,33 @@ async function preValidarAntesDeAnalizar() {
         const plan = window.userPlan || "free";
 
         // ======================================================
-        // 📦 MODAL
+        // ⏰ JORNADA SELECCIONADA
         // ======================================================
 
-        const jornadaSeleccionada = 
-            document.getElementById('jornada').value;
+        const selectJornada =
+            document.getElementById('jornada');
+
+        const jornadaTexto =
+            selectJornada.options[
+                selectJornada.selectedIndex
+            ].text;
+
+        // ======================================================
+        // 📦 MODAL VALIDACIÓN
+        // ======================================================
 
         const confirmado = await mostrarModalValidacion({
+
             fecha: fechaDetectada,
+
             nombre: nombreDetectado,
+
             mostrarNombre: (
                 plan === "pro" ||
                 plan === "pro_pending"
-            )
+            ),
+
+            jornada: jornadaTexto
         });
 
         if (!confirmado) {
@@ -549,89 +568,10 @@ async function preValidarAntesDeAnalizar() {
 
     } catch (error) {
 
-        console.error("❌ Error prevalidando documento:", error);
-
-        alert("❌ Error verificando el documento.");
-    }
-}
-
-// ======================================================
-// 🔎 PREVALIDACIÓN DE DOCUMENTO ANTES DEL ANÁLISIS
-// ======================================================
-
-async function preValidarAntesDeAnalizar() {
-
-    try {
-
-        const archivoInput = document.getElementById('fileInput');
-
-        if (!archivoInput || !archivoInput.files.length) {
-            alert("⚠️ Debes seleccionar una liquidación.");
-            return;
-        }
-
-        const archivo = archivoInput.files[0];
-
-        const arrayBuffer = await archivo.arrayBuffer();
-
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-
-        let textoCompleto = "";
-
-        for (let i = 1; i <= pdf.numPages; i++) {
-
-            const page = await pdf.getPage(i);
-
-            const content = await page.getTextContent();
-
-            const strings = content.items.map(item => item.str);
-
-            textoCompleto += strings.join(" ") + "\n";
-        }
-
-        let fechaDetectada = "Fecha no detectada";
-
-        const matchFecha = textoCompleto.match(
-            /(ENERO|FEBRERO|MARZO|ABRIL|MAYO|JUNIO|JULIO|AGOSTO|SEPTIEMBRE|OCTUBRE|NOVIEMBRE|DICIEMBRE)\s+DE\s+\d{4}/i
+        console.error(
+            "❌ Error prevalidando documento:",
+            error
         );
-
-        if (matchFecha) {
-            fechaDetectada = matchFecha[0];
-        }
-
-        let nombreDetectado = "Trabajador no identificado";
-
-        const matchNombre = textoCompleto.match(
-            /Nombre\s*:?[\s\-]*([A-ZÁÉÍÓÚÑ\s]+)/i
-        );
-
-        if (matchNombre && matchNombre[1]) {
-
-            nombreDetectado = matchNombre[1]
-                .trim()
-                .replace(/\s+/g, " ");
-        }
-
-        const plan = window.userPlan || "free";
-
-        const confirmado = await mostrarModalValidacion({
-            fecha: fechaDetectada,
-            nombre: nombreDetectado,
-            mostrarNombre: (
-                plan === "pro" ||
-                plan === "pro_pending"
-            )
-        });
-
-        if (!confirmado) {
-            return;
-        }
-
-        analizarArchivo();
-
-    } catch (error) {
-
-        console.error("❌ Error prevalidando documento:", error);
 
         alert("❌ Error verificando el documento.");
     }
@@ -650,9 +590,11 @@ function mostrarModalValidacion({
 
     return new Promise((resolve) => {
 
-        const anterior = document.getElementById('modalValidacionMEC');
+        const anterior =
+            document.getElementById('modalValidacionMEC');
 
         if (anterior) {
+
             anterior.remove();
         }
 
@@ -684,6 +626,7 @@ function mostrarModalValidacion({
         `;
 
         modal.innerHTML = `
+
             <h2 style="
                 margin-top:0;
                 margin-bottom:18px;
@@ -699,6 +642,7 @@ function mostrarModalValidacion({
                 padding:14px;
                 margin-bottom:16px;
             ">
+
                 <div style="
                     font-size:14px;
                     color:#6b7280;
@@ -714,6 +658,7 @@ function mostrarModalValidacion({
                 ">
                     ${fecha}
                 </div>
+
             </div>
 
             ${
@@ -725,6 +670,7 @@ function mostrarModalValidacion({
                     padding:14px;
                     margin-bottom:18px;
                 ">
+
                     <div style="
                         font-size:14px;
                         color:#6b7280;
@@ -740,24 +686,20 @@ function mostrarModalValidacion({
                     ">
                         ${nombre}
                     </div>
+
                 </div>
                 `
                 : ''
             }
 
-            <p style="
-                color:#374151;
-                line-height:1.5;
-                margin-bottom:22px;
-            ">
-
-                        <div style="
+            <div style="
                 background:#fff7ed;
                 border:1px solid #fdba74;
                 border-radius:12px;
                 padding:14px;
                 margin-bottom:18px;
             ">
+
                 <div style="
                     font-size:14px;
                     color:#9a3412;
@@ -784,8 +726,14 @@ function mostrarModalValidacion({
                     Verifica que esta jornada corresponda a tu contrato laboral.
                     Una jornada incorrecta puede afectar el análisis.
                 </div>
+
             </div>
 
+            <p style="
+                color:#374151;
+                line-height:1.5;
+                margin-bottom:22px;
+            ">
                 ¿Deseas continuar con el análisis de esta liquidación?
             </p>
 
@@ -793,7 +741,9 @@ function mostrarModalValidacion({
                 display:flex;
                 gap:12px;
             ">
-                <button id="cancelarValidacionMEC"
+
+                <button
+                    id="cancelarValidacionMEC"
                     style="
                         flex:1;
                         border:none;
@@ -803,11 +753,13 @@ function mostrarModalValidacion({
                         border-radius:12px;
                         cursor:pointer;
                         font-weight:bold;
-                    ">
+                    "
+                >
                     ❌ Cancelar
                 </button>
 
-                <button id="confirmarValidacionMEC"
+                <button
+                    id="confirmarValidacionMEC"
                     style="
                         flex:1;
                         border:none;
@@ -817,9 +769,11 @@ function mostrarModalValidacion({
                         border-radius:12px;
                         cursor:pointer;
                         font-weight:bold;
-                    ">
+                    "
+                >
                     ✅ Continuar
                 </button>
+
             </div>
         `;
 

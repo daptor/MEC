@@ -834,6 +834,131 @@ function formatearCLP(valor) {
     return "$" + Math.round(valor).toLocaleString("es-CL");
 }
 
+// =====================================================
+// 🚦 RECOLECTOR GLOBAL RESUMEN DE ANÁLISIS
+// =====================================================
+
+let resumenAnalisis = [];
+
+function limpiarResumenAnalisis() {
+    resumenAnalisis = [];
+}
+
+function agregarResultadoResumen(modulo, estado, diferencia = 0) {
+    resumenAnalisis.push({
+        modulo: modulo,
+        estado: estado, // "ok" | "warning" | "error" | "info"
+        diferencia: diferencia || 0
+    });
+}
+
+function generarResumenAnalisisHTML() {
+
+    if (!resumenAnalisis || resumenAnalisis.length === 0) {
+        return '';
+    }
+
+    const prioridadEstados = {
+        error: 1,
+        warning: 2,
+        ok: 3,
+        info: 4
+    };
+
+    const iconosEstados = {
+        error: '🔴',
+        warning: '🟠',
+        ok: '🟢',
+        info: '⚪'
+    };
+
+    const textosEstados = {
+        error: 'Discrepancia detectada',
+        warning: 'Revisar información',
+        ok: 'Correcto',
+        info: 'Sin información relevante'
+    };
+
+    const resumenOrdenado = [...resumenAnalisis]
+        .sort((a, b) => {
+
+            const prioridadA = prioridadEstados[a.estado] || 99;
+            const prioridadB = prioridadEstados[b.estado] || 99;
+
+            // primero por severidad
+            if (prioridadA !== prioridadB) {
+                return prioridadA - prioridadB;
+            }
+
+            // luego por diferencia monetaria
+            return Math.abs(b.diferencia || 0) - Math.abs(a.diferencia || 0);
+        });
+
+    const resumenHTML = resumenOrdenado.map(item => {
+
+        const icono = iconosEstados[item.estado] || '⚪';
+
+        let detalle = textosEstados[item.estado];
+
+        if (
+            item.diferencia &&
+            Math.abs(item.diferencia) > 0
+        ) {
+            detalle += ` → Diferencia ${formatCurrency(Math.abs(item.diferencia))}`;
+        }
+
+        return `
+            <div style="
+                padding:10px;
+                margin-bottom:8px;
+                border-radius:8px;
+                background:#f5f5f5;
+                border-left:6px solid ${
+                    item.estado === 'error'
+                        ? '#d32f2f'
+                        : item.estado === 'warning'
+                        ? '#f57c00'
+                        : item.estado === 'ok'
+                        ? '#388e3c'
+                        : '#9e9e9e'
+                };
+            ">
+                <strong>
+                    ${icono} ${item.modulo}
+                </strong>
+
+                <div style="
+                    margin-top:4px;
+                    font-size:14px;
+                ">
+                    ${detalle}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    return `
+
+        <div style="
+            border:2px solid #ddd;
+            border-radius:12px;
+            padding:15px;
+            margin-bottom:20px;
+            background:#fafafa;
+        ">
+
+            <h2 style="
+                margin-top:0;
+                margin-bottom:15px;
+            ">
+                🚦 Resumen Ejecutivo del Análisis
+            </h2>
+
+            ${resumenHTML}
+
+        </div>
+    `;
+}
 
 // ==================== FUNCIÓN DE ANÁLISIS DEL PDF ====================
 const formatCurrency = (value) =>
@@ -841,8 +966,11 @@ const formatCurrency = (value) =>
 
 async function analizarArchivo() {
 
-    // ⏳ ESPERAR PLAN DEL USUARIO (MUY IMPORTANTE)
-    await esperarPlanUsuario();
+// ⏳ ESPERAR PLAN DEL USUARIO (MUY IMPORTANTE)
+await esperarPlanUsuario();
+
+// 🚦 limpiar resumen antes de iniciar nuevo análisis
+limpiarResumenAnalisis();
 
 // 💰 CONTROL DE PLAN + LÍMITE TOTAL (FREEMIUM REAL)
 
@@ -945,10 +1073,21 @@ if (matchFecha) {
         const diasDelMes = 30;
         const sueldoEsperado = (sueldoBaseContractual / diasDelMes) * diasTrabajados;
 
-        if (Math.abs(sueldoEsperado - sueldoProporcional) < 1) {
+const diferenciaSueldo = sueldoProporcional - sueldoEsperado;
+
+        if (Math.abs(diferenciaSueldo) < 1) {
+
             resultadoProporcional = `<span style="color: green;">✅ Cálculo correcto</span>`;
+
+            // 🚦 guardar en resumen
+            agregarResultadoResumen("Sueldo Base", "ok", 0);
+
         } else {
+
             resultadoProporcional = `<span style="color: red;">❌ Discrepancia detectada: Se esperaba ${formatearCLP(sueldoEsperado)}</span>`;
+
+            // 🚦 guardar en resumen
+            agregarResultadoResumen("Sueldo Base", "error", diferenciaSueldo);
         }
     }
 
@@ -1106,7 +1245,33 @@ if (matchFecha) {
             : `<span style="color: red;">❌ Discrepancia detectada: ${formatearCLP(diferenciaRecargoFestivo)}</span>`;
     }
 
-    // *********** calculo diferencia de movilizacion ***********
+// =====================================================
+// 🚦 RESUMEN SOBRETIEMPO (HORAS EXTRAS + RECARGOS)
+// =====================================================
+
+const resultadosSobretiempo = [
+    resultadoHorasExtras,
+    resultadoHorasExtrasDomingo,
+    resultadoRecargoDomingo,
+    resultadoRecargoFestivo
+];
+
+let estadoSobretiempo = "ok";
+
+const hayError = resultadosSobretiempo.some(r => r.includes("❌"));
+const hayWarning = resultadosSobretiempo.some(r => r.includes("⛔"));
+
+if (hayError) {
+    estadoSobretiempo = "error";
+} else if (hayWarning) {
+    estadoSobretiempo = "warning";
+}
+
+// guardar en resumen global
+agregarResultadoResumen("Sobretiempo", estadoSobretiempo, 0);
+
+    
+// *********** calculo diferencia de movilizacion ***********
 
     const matchMovilizacion = textoCompleto.match(regexMovilizacion);
     let diasMovilizacion = 21;
@@ -1185,6 +1350,23 @@ if (matchFecha) {
         }
     }
 
+// =====================================================
+// 🚦 RESUMEN ASIGNACIONES (MOVILIZACIÓN + COLACIÓN + CAJA)
+// =====================================================
+
+let estadoAsignaciones = "ok";
+
+if (
+    montoDiferenciaMovilizacion > 0 ||
+    montoDiferenciaColacion > 0 ||
+    montoDiferenciaCaja > 0
+) {
+    estadoAsignaciones = "warning";
+}
+
+// guardar en resumen global
+agregarResultadoResumen("Asignaciones", estadoAsignaciones, 0);
+
 // ***************** calculo semana corrida **************
 
 let totalComisiones = 0;
@@ -1232,6 +1414,23 @@ if (detallesComisiones.length === 0) {
     detalleComisionesHTML = '<li>⛔ No tiene comisiones individuales.</li>';
 }
 
+// =====================================================
+// 🚦 RESUMEN COMISIONES INDIVIDUALES
+// =====================================================
+
+let estadoComisiones = "ok";
+
+if (detallesComisiones.length === 0 && totalComisiones === 0) {
+    estadoComisiones = "info"; // no tiene comisiones
+}
+
+else if (detallesComisiones.length > 0 && totalComisiones === 0) {
+    estadoComisiones = "warning"; // detectó ítems pero total quedó 0 → raro
+}
+
+// guardar en resumen global
+agregarResultadoResumen("Comisiones", estadoComisiones, 0);
+
     const regexSemanaCorrida = /SEMANA\s*CORRIDA\s*\((\d+)\)\s*\$\s*([\d.,]+)/i;
     const matchSemanaCorrida = textoCompleto.match(regexSemanaCorrida);
 
@@ -1270,13 +1469,21 @@ if (detallesComisiones.length === 0) {
 
     if (diasSemanaCorrida !== "No especificados" && diasParaSemanaCorrida > 0 && totalComisiones > 0) {
         const valorDiarioComisiones = totalComisiones / diasParaSemanaCorrida;
-        valorEsperadoSemanaCorrida = formatearCLP(valorDiarioComisiones * diasSemanaCorrida);
-        const diferenciaSemanaCorrida = valorEsperadoSemanaCorrida - montoSemanaCorrida;
-        resultadoSemanaCorrida = Math.abs(diferenciaSemanaCorrida) < 1
-            ? `<span style="color: green;">✅ Cálculo correcto</span>`
-            : `<span style="color: red;">❌ Discrepancia detectada: Se esperaba ${formatCurrency(valorEsperadoSemanaCorrida)}. Diferencia: ${formatCurrency(diferenciaSemanaCorrida)}.</span>`;
+        valorEsperadoSemanaCorrida = valorDiarioComisiones * diasSemanaCorrida;
+ const diferenciaSemanaCorrida = montoSemanaCorrida - valorEsperadoSemanaCorrida;
+
+if (Math.abs(diferenciaSemanaCorrida) < 1) {resultadoSemanaCorrida = `<span style="color: green;">✅ Cálculo correcto</span>`;
+
+    // 🚦 guardar en resumen global
+    agregarResultadoResumen("Semana Corrida", "ok", 0);
+} else {
+    resultadoSemanaCorrida = `<span style="color: red;">❌ Discrepancia detectada: Se esperaba ${formatearCLP(valorEsperadoSemanaCorrida)}. Diferencia: ${formatearCLP(diferenciaSemanaCorrida)}.</span>`;
+    // 🚦 guardar en resumen global
+    agregarResultadoResumen("Semana Corrida", "error", diferenciaSemanaCorrida);
+}
     } else {
-        resultadoSemanaCorrida = `<span style="color: orange;">⛔ Datos insuficientes para calcular la semana corrida.</span>`;
+       resultadoSemanaCorrida = `<span style="color: orange;">⛔ Datos insuficientes para calcular la semana corrida.</span>`;
+agregarResultadoResumen("Semana Corrida", "warning", 0);
     }
 
     function procesarMonto(montoTexto) {
@@ -1350,6 +1557,19 @@ function mostrarValor(valor) {
 }
 
 const gratificables = identificarGratificables(textoCompleto);
+
+// =====================================================
+// 🚦 RESUMEN HABERES GRATIFICABLES
+// =====================================================
+
+let estadoGratificables = "ok";
+
+if (!gratificables || gratificables.length === 0) {
+    estadoGratificables = "warning"; // gratificación se calculará con datos incompletos
+}
+
+// guardar en resumen global
+agregarResultadoResumen("Haberes Gratificables", estadoGratificables, 0);
 
 function obtenerJornadaMaxima(mes, año) {
 
@@ -1911,9 +2131,9 @@ function calcularGratificacion(
     ).innerHTML = resultadoHTML;
 }
 
-
     // ===== Mostrar resultados en HTML =====
     document.getElementById('resultadoAnalisis').innerHTML = `
+    ${generarResumenAnalisisHTML()}
 <hr>
         <p><strong>Mes y Año: </strong> ${mes} DE ${año}. <strong>
         <p>Jornada: </strong> ${jornadaSeleccionada} horas.</p>

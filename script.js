@@ -840,102 +840,198 @@ function formatearCLP(valor) {
 
 let resumenAnalisis = [];
 
+// =====================================================
+// 🧹 LIMPIAR RESUMEN
+// =====================================================
+
 function limpiarResumenAnalisis() {
     resumenAnalisis = [];
 }
 
-function agregarResultadoResumen(modulo, estado, diferencia = 0) {
+// =====================================================
+// ➕ AGREGAR RESULTADO
+// =====================================================
+
+function agregarResultadoResumen(
+    modulo,
+    estado,
+    diferencia = 0
+) {
+
     resumenAnalisis.push({
+
         modulo: modulo,
-        estado: estado, // "ok" | "warning" | "error" | "info"
-        diferencia: diferencia || 0
+
+        // "ok" | "warning" | "error" | "info"
+        estado: estado,
+
+        // 🚨 diferencia monetaria REAL
+        diferencia: Math.abs(
+            Number(diferencia) || 0
+        )
     });
 }
 
+// =====================================================
+// 🚦 GENERAR RESUMEN EJECUTIVO
+// =====================================================
+
 function generarResumenAnalisisHTML() {
 
-    if (!resumenAnalisis || resumenAnalisis.length === 0) {
+    if (
+        !resumenAnalisis ||
+        resumenAnalisis.length === 0
+    ) {
         return '';
     }
 
-    const prioridadEstados = {
-        error: 1,
-        warning: 2,
-        ok: 3,
-        info: 4
-    };
+    // =====================================================
+    // 🎨 ICONOS
+    // =====================================================
 
     const iconosEstados = {
+
         error: '🔴',
+
         warning: '🟠',
+
         ok: '🟢',
+
         info: '⚪'
     };
 
+    // =====================================================
+    // 📝 TEXTOS
+    // =====================================================
+
     const textosEstados = {
+
         error: 'Discrepancia detectada',
+
         warning: 'Revisar información',
+
         ok: 'Correcto',
+
         info: 'Sin información relevante'
     };
 
-    const resumenOrdenado = [...resumenAnalisis]
+    // =====================================================
+    // 🚨 ORDENAMIENTO REAL
+    // PRIORIDAD = MAYOR PERJUICIO ECONÓMICO
+    // =====================================================
+
+    const resumenOrdenado =
+        [...resumenAnalisis]
+
         .sort((a, b) => {
 
+            const diferenciaA =
+                Math.abs(a.diferencia || 0);
+
+            const diferenciaB =
+                Math.abs(b.diferencia || 0);
+
+            // =====================================================
+            // 🚨 PRIORIDAD PRINCIPAL
+            // MAYOR DIFERENCIA MONETARIA PRIMERO
+            // =====================================================
+
+            if (diferenciaA !== diferenciaB) {return diferenciaB - diferenciaA;}
+
+            // =====================================================
+            // 🟡 DESEMPATE SECUNDARIO
+            // SOLO SI EL MONTO ES IGUAL
+            // =====================================================
+
+            const prioridadEstados = {
+
+                error: 1,
+                warning: 2,
+                ok: 3,
+                info: 4
+            };
+
             const prioridadA = prioridadEstados[a.estado] || 99;
+
             const prioridadB = prioridadEstados[b.estado] || 99;
 
-            // primero por severidad
-            if (prioridadA !== prioridadB) {
-                return prioridadA - prioridadB;
-            }
-
-            // luego por diferencia monetaria
-            return Math.abs(b.diferencia || 0) - Math.abs(a.diferencia || 0);
+            return prioridadA - prioridadB;
         });
 
-    const resumenHTML = resumenOrdenado.map(item => {
+    // =====================================================
+    // 🧱 GENERAR HTML
+    // =====================================================
 
-        const icono = iconosEstados[item.estado] || '⚪';
+    const resumenHTML =
+        resumenOrdenado.map(item => {
 
-        let detalle = textosEstados[item.estado];
+            const icono = iconosEstados[item.estado] || '⚪';
 
-        if (
-            item.diferencia &&
-            Math.abs(item.diferencia) > 0
-        ) {
-            detalle += ` → Diferencia ${formatCurrency(Math.abs(item.diferencia))}`;
-        }
+            let detalle = textosEstados[item.estado];
 
-        return `
-            <div style="
-                padding:10px;
-                margin-bottom:8px;
-                border-radius:8px;
-                background:#f5f5f5;
-                border-left:6px solid ${
-                    item.estado === 'error'
-                        ? '#d32f2f'
-                        : item.estado === 'warning'
-                        ? '#f57c00'
-                        : item.estado === 'ok'
-                        ? '#388e3c'
-                        : '#9e9e9e'
-                };
-            ">
-                <strong>
-                    ${icono} ${item.modulo}
-                </strong>
+            // =====================================================
+            // 💰 MOSTRAR DIFERENCIA
+            // =====================================================
+
+            if (
+                item.diferencia &&
+                Math.abs(item.diferencia) > 0
+            ) {
+
+                detalle += `
+                    → Diferencia: ${formatCurrency(Math.abs(item.diferencia))}
+                `;
+            }
+
+            // =====================================================
+            // 🎨 COLOR LATERAL
+            // =====================================================
+
+            let colorBorde = '#9e9e9e';
+
+            if (item.estado === 'error') {colorBorde = '#d32f2f';} 
+            else 
+            if (item.estado === 'warning') {colorBorde = '#f57c00';} 
+            else 
+            if (item.estado === 'ok') {colorBorde = '#388e3c';}
+
+            // =====================================================
+            // 📦 CARD
+            // =====================================================
+
+            return `
 
                 <div style="
-                    margin-top:4px;
-                    font-size:14px;
+                    padding:12px;
+                    margin-bottom:10px;
+                    border-radius:10px;
+                    background:#f5f5f5;
+                    border-left:6px solid ${colorBorde};
                 ">
-                    ${detalle}
+
+                    <strong style="
+                        font-size:15px;
+                    ">
+                        ${icono} ${item.modulo}
+                    </strong>
+
+                    <div style="
+                        margin-top:6px;
+                        font-size:14px;
+                        line-height:1.4;
+                    ">
+                        ${detalle}
+                    </div>
+
                 </div>
-            </div>
-        `;
-    }).join('');
+            `;
+        })
+
+        .join('');
+
+    // =====================================================
+    // 📋 CONTENEDOR FINAL
+    // =====================================================
 
     return `
 
@@ -1127,6 +1223,7 @@ const diferenciaSueldo = sueldoProporcional - sueldoEsperado;
     let horasExtrasRealizadas = "No especificadas";
     let montoPagadoHorasExtras = "No encontrado";
     let montoEsperadoHorasExtras = null;
+    let diferenciaHorasExtras = 0;
 
     if (matchHorasExtras) {
         horasExtrasRealizadas = matchHorasExtras[1].replace(',', '.'); // Extrae las horas (con coma decimal)
@@ -1139,7 +1236,7 @@ const diferenciaSueldo = sueldoProporcional - sueldoEsperado;
         resultadoHorasExtras = `<span style="color: orange;">⛔ No se realizaron.</span>`;
     } else {
         montoEsperadoHorasExtras = sueldoBaseContractual * factor * parseFloat(horasExtrasRealizadas);
-        const diferenciaHorasExtras = montoPagadoHorasExtras - montoEsperadoHorasExtras;
+        diferenciaHorasExtras = montoPagadoHorasExtras - montoEsperadoHorasExtras;
         resultadoHorasExtras = Math.abs(diferenciaHorasExtras) < 1
             ? `<span style="color: green;">✅ Cálculo correcto</span>`
             : `<span style="color: red;">❌ Discrepancia detectada: ${formatearCLP(diferenciaHorasExtras)}</span>`;
@@ -1153,6 +1250,7 @@ const diferenciaSueldo = sueldoProporcional - sueldoEsperado;
     let horasExtrasDomingoRealizadas = "No especificadas";
     let montoPagadoHorasExtrasDomingo = "No encontrado";
     let montoEsperadoHorasExtrasDomingo = null;
+    let diferenciaHorasExtrasDomingo = 0;
 
     if (matchHorasExtrasDomingo) {
         // Convertimos las horas a número (ya con punto decimal)
@@ -1169,7 +1267,7 @@ const diferenciaSueldo = sueldoProporcional - sueldoEsperado;
         const valorHoraRecargoDomingo = valorHoraNormal * 1.3;
         const horaExtraDomingo = valorHoraRecargoDomingo * 1.5;
         montoEsperadoHorasExtrasDomingo = horaExtraDomingo * horasExtrasDomingoRealizadas;
-        const diferenciaHorasExtrasDomingo = montoPagadoHorasExtrasDomingo - montoEsperadoHorasExtrasDomingo;
+        diferenciaHorasExtrasDomingo = montoPagadoHorasExtrasDomingo - montoEsperadoHorasExtrasDomingo;
         resultadoHorasExtrasDomingo = Math.abs(diferenciaHorasExtrasDomingo) < 1
             ? `<span style="color: green;">✅ Cálculo correcto</span>`
             : `<span style="color: red;">❌ Discrepancia detectada: ${formatearCLP(diferenciaHorasExtrasDomingo)}</span>`;
@@ -1183,6 +1281,7 @@ const diferenciaSueldo = sueldoProporcional - sueldoEsperado;
     let horasRecargoDomingo = "No especificadas";
     let montoPagadoRecargoDomingo = "No encontrado";
     let montoEsperadoRecargoDomingo = null;
+    let diferenciaRecargoDomingo = 0;
 
     if (matchRecargoDomingo) {
         horasRecargoDomingo = matchRecargoDomingo[1].replace(',', '.');
@@ -1211,7 +1310,7 @@ const diferenciaSueldo = sueldoProporcional - sueldoEsperado;
         const valorHoraNormal = (sueldoBaseContractual / 30) * 28 / (4 * jornadaSeleccionada);
         const valorHoraRecargoDomingo = valorHoraNormal * 0.3;
         montoEsperadoRecargoDomingo = valorHoraRecargoDomingo * parseFloat(horasRecargoDomingo);
-        const diferenciaRecargoDomingo = montoPagadoRecargoDomingo - montoEsperadoRecargoDomingo;
+        diferenciaRecargoDomingo = montoPagadoRecargoDomingo - montoEsperadoRecargoDomingo;
         resultadoRecargoDomingo = Math.abs(diferenciaRecargoDomingo) < 1
             ? `<span style="color: green;">✅ Cálculo correcto</span>`
             : `<span style="color: red;">❌ Discrepancia detectada: ${formatearCLP(diferenciaRecargoDomingo)}</span>`;
@@ -1225,6 +1324,7 @@ const diferenciaSueldo = sueldoProporcional - sueldoEsperado;
     let horasRecargoFestivoRealizadas = "No especificadas";
     let montoPagadoRecargoFestivo = "No encontrado";
     let montoEsperadoRecargoFestivo = null;
+    let diferenciaRecargoFestivo = 0;
 
     if (matchRecargoFestivo) {
         horasRecargoFestivoRealizadas = matchRecargoFestivo[1].replace(',', '.');
@@ -1239,7 +1339,7 @@ const diferenciaSueldo = sueldoProporcional - sueldoEsperado;
         const valorHoraNormal = (sueldoBaseContractual / 30) * 28 / (4 * jornadaSeleccionada);
         const valorHoraRecargoFestivo = valorHoraNormal * 1.5;
         montoEsperadoRecargoFestivo = valorHoraRecargoFestivo * parseFloat(horasRecargoFestivoRealizadas);
-        const diferenciaRecargoFestivo = montoPagadoRecargoFestivo - montoEsperadoRecargoFestivo;
+        diferenciaRecargoFestivo = montoPagadoRecargoFestivo - montoEsperadoRecargoFestivo;
         resultadoRecargoFestivo = Math.abs(diferenciaRecargoFestivo) < 1
             ? `<span style="color: green;">✅ Cálculo correcto</span>`
             : `<span style="color: red;">❌ Discrepancia detectada: ${formatearCLP(diferenciaRecargoFestivo)}</span>`;
@@ -1267,11 +1367,29 @@ if (hayError) {
     estadoSobretiempo = "warning";
 }
 
-// guardar en resumen global
-agregarResultadoResumen("Sobretiempo", estadoSobretiempo, 0);
+// =====================================================
+// 💰 TOTAL DIFERENCIA SOBRETIEMPO
+// =====================================================
 
-    
-// *********** calculo diferencia de movilizacion ***********
+const totalDiferenciaSobretiempo =
+
+    Math.abs(diferenciaHorasExtras || 0)
+    +
+    Math.abs(diferenciaHorasExtrasDomingo || 0)
+    +
+    Math.abs(diferenciaRecargoDomingo || 0)
+    +
+    Math.abs(diferenciaRecargoFestivo || 0);
+
+// =====================================================
+// 🚦 RESUMEN GLOBAL
+// =====================================================
+
+agregarResultadoResumen( "Sobretiempo", estadoSobretiempo, totalDiferenciaSobretiempo);
+
+//==========================================================
+//          calculo diferencia de movilizacion     
+//==========================================================
 
     const matchMovilizacion = textoCompleto.match(regexMovilizacion);
     let diasMovilizacion = 21;
@@ -1364,8 +1482,27 @@ if (
     estadoAsignaciones = "warning";
 }
 
-// guardar en resumen global
-agregarResultadoResumen("Asignaciones", estadoAsignaciones, 0);
+// =====================================================
+// 💰 DIFERENCIA TOTAL ASIGNACIONES
+// =====================================================
+
+const totalDiferenciaAsignaciones =
+
+    Math.abs(montoDiferenciaMovilizacion || 0)
+    +
+    Math.abs(montoDiferenciaColacion || 0)
+    +
+    Math.abs(montoDiferenciaCaja || 0);
+
+// =====================================================
+// 🚦 RESUMEN GLOBAL
+// =====================================================
+
+agregarResultadoResumen(
+    "Asignaciones",
+    estadoAsignaciones,
+    totalDiferenciaAsignaciones
+);
 
 // ***************** calculo semana corrida **************
 
@@ -2314,7 +2451,9 @@ if (!(hayDatosPDF || hayDatosManual || hayComisionNomina)) {
 
 // ---------- FIN: ANÁLISIS COMISIÓN GRUPAL ----------
 
-// **************** Función de cálculo de vacaciones ****************
+// =================================================================
+//              FUNCION DE CALCULO DE VACACIONES
+// =================================================================
 document.addEventListener("DOMContentLoaded", function () {
     const vacacionesBtn = document.getElementById("vacacionesBtn");
     const volverBtn = document.getElementById("volverBtn");

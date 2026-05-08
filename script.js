@@ -522,9 +522,6 @@ async function preValidarAntesDeAnalizar() {
                 .trim();
         }
 
-        console.log(nombreDetectado);
-        console.log(rutDetectado);
-
         // ======================================================
         // 🧠 PLAN ACTUAL
         // ======================================================

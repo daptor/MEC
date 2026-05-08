@@ -522,6 +522,9 @@ async function preValidarAntesDeAnalizar() {
         // 📦 MODAL
         // ======================================================
 
+        const jornadaSeleccionada = 
+            document.getElementById('jornada').value;
+
         const confirmado = await mostrarModalValidacion({
             fecha: fechaDetectada,
             nombre: nombreDetectado,
@@ -641,7 +644,8 @@ async function preValidarAntesDeAnalizar() {
 function mostrarModalValidacion({
     fecha,
     nombre,
-    mostrarNombre
+    mostrarNombre,
+    jornada
 }) {
 
     return new Promise((resolve) => {
@@ -746,6 +750,42 @@ function mostrarModalValidacion({
                 line-height:1.5;
                 margin-bottom:22px;
             ">
+
+                        <div style="
+                background:#fff7ed;
+                border:1px solid #fdba74;
+                border-radius:12px;
+                padding:14px;
+                margin-bottom:18px;
+            ">
+                <div style="
+                    font-size:14px;
+                    color:#9a3412;
+                    margin-bottom:6px;
+                    font-weight:bold;
+                ">
+                    ⚠ Verifica la jornada seleccionada
+                </div>
+
+                <div style="
+                    font-size:18px;
+                    font-weight:bold;
+                    color:#111827;
+                    margin-bottom:8px;
+                ">
+                    ${jornada}
+                </div>
+
+                <div style="
+                    font-size:14px;
+                    color:#7c2d12;
+                    line-height:1.5;
+                ">
+                    Verifica que esta jornada corresponda a tu contrato laboral.
+                    Una jornada incorrecta puede afectar el análisis.
+                </div>
+            </div>
+
                 ¿Deseas continuar con el análisis de esta liquidación?
             </p>
 
@@ -3004,7 +3044,7 @@ if (btnEnviar) {
     });
 }
 
-// *************************** CHAT PRIVADO FINAL ****************************
+// *************************** CHAT PRIVADO  ****************************
 
 let canalPrivadoActivo = null;
 let canalAdminActivo = null;

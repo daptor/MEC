@@ -1749,20 +1749,20 @@ function obtenerJornadaMaxima(mes, año) {
     const mesIndex =
         meses[mes.toUpperCase()] || 0;
 
-    // 44 horas desde mayo 2024
-    if (
-        año > 2024 ||
-        (año === 2024 && mesIndex >= 5)
-    ) {
-        return 44;
-    }
-
     // 42 horas desde abril 2026
     if (
         año > 2026 ||
         (año === 2026 && mesIndex >= 4)
     ) {
         return 42;
+    }
+
+    // 44 horas desde mayo 2024
+    if (
+        año > 2024 ||
+        (año === 2024 && mesIndex >= 5)
+    ) {
+        return 44;
     }
 
     return 45;
@@ -1798,17 +1798,11 @@ function mostrarGratificacionMec(gratificables) {
     const valoresConsolidados = [
 
         sueldoProporcional || 0,
-
         montoPagadoHorasExtras || 0,
-
         montoPagadoHorasExtrasDomingo || 0,
-
         montoPagadoRecargoDomingo || 0,
-
         montoPagadoRecargoFestivo || 0,
-
         totalComisiones || 0,
-
         valorEsperadoSemanaCorrida || 0
     ];
 
@@ -2017,23 +2011,8 @@ function calcularGratificacion(
     // JORNADA MÁXIMA
     // =====================================================
 
-    let jornadaMaxima = 45;
-
-    if (
-        año > 2024 ||
-        (año === 2024 && mesIndex >= 5)
-    ) {
-
-        jornadaMaxima = 44;
-    }
-
-    if (
-        año > 2026 ||
-        (año === 2026 && mesIndex >= 4)
-    ) {
-
-        jornadaMaxima = 42;
-    }
+    const jornadaMaxima =
+        obtenerJornadaMaxima(mes, año);
 
     // =====================================================
     // 25% HABERES
@@ -2150,6 +2129,15 @@ function calcularGratificacion(
     const diferenciaSinTope =
         gratificacionPDF - valorSinTope;
 
+    // 🚨 IMPORTANTE:
+    // diferenciaMinima debe existir SIEMPRE
+    // para evitar romper agregarResultadoResumen()
+
+    const diferenciaMinima = Math.min(
+        Math.abs(diferenciaConTope),
+        Math.abs(diferenciaSinTope)
+    );
+
     let comparacionHTML = "";
 
     if (
@@ -2172,20 +2160,69 @@ function calcularGratificacion(
             </span>
         `;
 
-} else {
+    } else {
 
-    const diferenciaMinima = Math.min(
-        Math.abs(diferenciaConTope),
-        Math.abs(diferenciaSinTope)
+        comparacionHTML = `
+            <span style="color:red;">
+                ❌ El monto pagado en la liquidación NO coincide con el cálculo esperado.<br>
+                Diferencia detectada:
+                <b>${formatCurrency(diferenciaMinima)}</b>
+            </span>
+        `;
+    }
+
+    // =====================================================
+    // 🚦 RESUMEN GRATIFICACIÓN
+    // =====================================================
+
+    let estadoGratificacion = "ok";
+    let diferenciaResumenGratificacion = 0;
+
+    if (
+        Math.abs(diferenciaConTope) < 1 ||
+        Math.abs(diferenciaSinTope) < 1
+    ) {
+
+        estadoGratificacion = "ok";
+
+    } else {
+
+        estadoGratificacion = "error";
+        diferenciaResumenGratificacion = diferenciaMinima;
+    }
+
+    agregarResultadoResumen(
+        "Gratificación",
+        estadoGratificacion,
+        diferenciaResumenGratificacion
     );
 
-    comparacionHTML = `
-        <span style="color:red;">
-            ❌ El monto pagado en la liquidación NO coincide con el cálculo esperado.<br>
-            Diferencia detectada: <b>${formatCurrency(diferenciaMinima)}</b>
-        </span>
-    `;
+// =====================================================
+// 🚦 RESUMEN GRATIFICACIÓN
+// =====================================================
+
+let estadoGratificacion = "ok";
+let diferenciaResumenGratificacion = 0;
+
+if (
+    Math.abs(diferenciaConTope) < 1 ||
+    Math.abs(diferenciaSinTope) < 1
+) {
+
+    estadoGratificacion = "ok";
+
+} else {
+
+    estadoGratificacion = "error";
+    diferenciaResumenGratificacion = diferenciaMinima;
 }
+
+agregarResultadoResumen(
+    "Gratificación",
+    estadoGratificacion,
+    diferenciaResumenGratificacion
+);
+
 
     // =====================================================
     // RESULTADO HTML

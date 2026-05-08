@@ -548,25 +548,15 @@ async function preValidarAntesDeAnalizar() {
         // ======================================================
 
         const confirmado = await mostrarModalValidacion({
-
             fecha: fechaDetectada,
-
             nombre: nombreDetectado,
-
+            rut: rutDetectado,
             mostrarNombre: (
                 plan === "pro" ||
                 plan === "pro_pending"
             ),
-
             jornada: jornadaTexto
         });
-
-        if (!confirmado) {
-
-            console.log("⛔ Usuario canceló validación previa");
-
-            return;
-        }
 
         // ======================================================
         // ✅ CONTINUAR ANÁLISIS ORIGINAL
@@ -592,6 +582,7 @@ async function preValidarAntesDeAnalizar() {
 function mostrarModalValidacion({
     fecha,
     nombre,
+    rut,
     mostrarNombre,
     jornada
 }) {
@@ -644,6 +635,8 @@ function mostrarModalValidacion({
                 🔎 Verificación del documento
             </h2>
 
+            <!-- FECHA -->
+
             <div style="
                 background:#f3f4f6;
                 border-radius:12px;
@@ -652,22 +645,25 @@ function mostrarModalValidacion({
             ">
 
                 <div style="
-                    font-size:14px;
+                    font-size:13px;
                     color:#6b7280;
                     margin-bottom:6px;
+                    font-weight:bold;
                 ">
                     Fecha detectada
                 </div>
 
                 <div style="
-                    font-size:18px;
-                    font-weight:bold;
+                    font-size:16px;
+                    font-weight:600;
                     color:#111827;
                 ">
                     ${fecha}
                 </div>
 
             </div>
+
+            <!-- TRABAJADOR -->
 
             ${
                 mostrarNombre
@@ -680,25 +676,54 @@ function mostrarModalValidacion({
                 ">
 
                     <div style="
-                        font-size:14px;
+                        font-size:13px;
                         color:#6b7280;
-                        margin-bottom:6px;
+                        margin-bottom:12px;
+                        font-weight:bold;
                     ">
                         Trabajador detectado
                     </div>
 
                     <div style="
-                        font-size:18px;
-                        font-weight:bold;
+                        font-size:12px;
+                        color:#6b7280;
+                        margin-bottom:4px;
+                    ">
+                        Nombre
+                    </div>
+
+                    <div style="
+                        font-size:16px;
+                        font-weight:600;
                         color:#111827;
+                        margin-bottom:12px;
+                        line-height:1.4;
                     ">
                         ${nombre}
+                    </div>
+
+                    <div style="
+                        font-size:12px;
+                        color:#6b7280;
+                        margin-bottom:4px;
+                    ">
+                        RUT
+                    </div>
+
+                    <div style="
+                        font-size:15px;
+                        font-weight:600;
+                        color:#111827;
+                    ">
+                        ${rut}
                     </div>
 
                 </div>
                 `
                 : ''
             }
+
+            <!-- JORNADA -->
 
             <div style="
                 background:#fff7ed;
@@ -709,7 +734,7 @@ function mostrarModalValidacion({
             ">
 
                 <div style="
-                    font-size:14px;
+                    font-size:13px;
                     color:#9a3412;
                     margin-bottom:6px;
                     font-weight:bold;
@@ -718,8 +743,8 @@ function mostrarModalValidacion({
                 </div>
 
                 <div style="
-                    font-size:18px;
-                    font-weight:bold;
+                    font-size:16px;
+                    font-weight:600;
                     color:#111827;
                     margin-bottom:8px;
                 ">
@@ -727,7 +752,7 @@ function mostrarModalValidacion({
                 </div>
 
                 <div style="
-                    font-size:14px;
+                    font-size:13px;
                     color:#7c2d12;
                     line-height:1.5;
                 ">
@@ -737,13 +762,18 @@ function mostrarModalValidacion({
 
             </div>
 
+            <!-- MENSAJE FINAL -->
+
             <p style="
                 color:#374151;
                 line-height:1.5;
                 margin-bottom:22px;
+                font-size:14px;
             ">
                 ¿Deseas continuar con el análisis de esta liquidación?
             </p>
+
+            <!-- BOTONES -->
 
             <div style="
                 display:flex;
@@ -761,6 +791,7 @@ function mostrarModalValidacion({
                         border-radius:12px;
                         cursor:pointer;
                         font-weight:bold;
+                        font-size:14px;
                     "
                 >
                     ❌ Cancelar
@@ -777,6 +808,7 @@ function mostrarModalValidacion({
                         border-radius:12px;
                         cursor:pointer;
                         font-weight:bold;
+                        font-size:14px;
                     "
                 >
                     ✅ Continuar

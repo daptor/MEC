@@ -934,12 +934,12 @@ if (matchFecha) {
         sueldoProporcional = parseFloat(matchSueldoBaseProporcional[2].replace('.', '').replace(',', '.'));
 
         const diasDelMes = 30;
-        const sueldoEsperado = (sueldoBaseContractual / diasDelMes) * diasTrabajados;
+        const sueldoEsperado = Math.round((sueldoBaseContractual / diasDelMes) * diasTrabajados);
 
         if (Math.abs(sueldoEsperado - sueldoProporcional) < 1) {
             resultadoProporcional = `<span style="color: green;">✅ Cálculo correcto</span>`;
         } else {
-            resultadoProporcional = `<span style="color: red;">❌ Discrepancia detectada: Se esperaba $${sueldoEsperado.toFixed(2)}</span>`;
+            resultadoProporcional = `<span style="color: red;">❌ Discrepancia detectada: Se esperaba ${formatCurrency(Math.round(sueldoEsperado))}</span>`;
         }
     }
 
@@ -961,14 +961,14 @@ if (matchFecha) {
     if (sueldoBaseContractual > inmProporcional) {
 
     variacionPorcentual = ((sueldoBaseContractual - inmProporcional) / inmProporcional) * 100;
-    mensajeVariacion = `✅ Es un ${variacionPorcentual.toFixed(2)}% mayor que el IMM `;
+    mensajeVariacion = `✅ Es un ${Math.round(variacionPorcentual)}% mayor que el IMM `;
     } else if (sueldoBaseContractual === inmProporcional) {
 
       mensajeVariacion = `Es igual al IMM `;
     } else {
 
       variacionPorcentual = ((inmProporcional - sueldoBaseContractual) / inmProporcional) * 100;
-      mensajeVariacion = `❌ Es ${variacionPorcentual.toFixed(2)}% inferior al IMM `;
+      mensajeVariacion = `❌ Es ${Math.round(variacionPorcentual)}% inferior al IMM `;
     }
 
     // ----- HORAS EXTRAS 50% -----
@@ -981,7 +981,7 @@ if (matchFecha) {
     let montoEsperadoHorasExtras = null;
 
     if (matchHorasExtras) {
-        horasExtrasRealizadas = matchHorasExtras[1].replace(',', '.'); // Extrae las horas (con coma decimal)
+        horasExtrasRealizadas = Math.round(parseFloat(matchHorasExtras[1].replace(',', '.'))); // Extrae las horas (con coma decimal)
         montoPagadoHorasExtras = parseFloat(
             matchHorasExtras[2].replace('.', '').replace(',', '.')
         ); // Extrae el monto
@@ -994,7 +994,7 @@ if (matchFecha) {
         const diferenciaHorasExtras = montoPagadoHorasExtras - montoEsperadoHorasExtras;
         resultadoHorasExtras = Math.abs(diferenciaHorasExtras) < 1
             ? `<span style="color: green;">✅ Cálculo correcto</span>`
-            : `<span style="color: red;">❌ Discrepancia detectada: $${diferenciaHorasExtras.toFixed(2)}</span>`;
+            : `<span style="color: red;">❌ Discrepancia detectada: ${formatCurrency(Math.round(diferenciaHorasExtras))}</span>`;
     }
 
     // ----- HORAS EXTRAS DOMINGO -----
@@ -1020,11 +1020,11 @@ if (matchFecha) {
         const valorHoraNormal = (sueldoBaseContractual / 30) * 28 / (4 * jornadaSeleccionada);
         const valorHoraRecargoDomingo = valorHoraNormal * 1.3;
         const horaExtraDomingo = valorHoraRecargoDomingo * 1.5;
-        montoEsperadoHorasExtrasDomingo = horaExtraDomingo * horasExtrasDomingoRealizadas;
+        montoEsperadoHorasExtrasDomingo = Math.round(horaExtraDomingo * horasExtrasDomingoRealizadas);
         const diferenciaHorasExtrasDomingo = montoPagadoHorasExtrasDomingo - montoEsperadoHorasExtrasDomingo;
         resultadoHorasExtrasDomingo = Math.abs(diferenciaHorasExtrasDomingo) < 1
             ? `<span style="color: green;">✅ Cálculo correcto</span>`
-            : `<span style="color: red;">❌ Discrepancia detectada: $${diferenciaHorasExtrasDomingo.toFixed(2)}</span>`;
+            : `<span style="color: red;">❌ Discrepancia detectada: $${formatCurrency(Math.round(diferenciaHorasExtrasDomingo))}</span>`;
     }
 
     // ----- RECARGO DOMINGO -----
@@ -1062,11 +1062,11 @@ if (matchFecha) {
     } else {
         const valorHoraNormal = (sueldoBaseContractual / 30) * 28 / (4 * jornadaSeleccionada);
         const valorHoraRecargoDomingo = valorHoraNormal * 0.3;
-        montoEsperadoRecargoDomingo = valorHoraRecargoDomingo * parseFloat(horasRecargoDomingo);
+        montoEsperadoRecargoDomingo = Math.round(valorHoraRecargoDomingo * parseFloat(horasRecargoDomingo));
         const diferenciaRecargoDomingo = montoPagadoRecargoDomingo - montoEsperadoRecargoDomingo;
         resultadoRecargoDomingo = Math.abs(diferenciaRecargoDomingo) < 1
             ? `<span style="color: green;">✅ Cálculo correcto</span>`
-            : `<span style="color: red;">❌ Discrepancia detectada: $${diferenciaRecargoDomingo.toFixed(2)}</span>`;
+            : `<span style="color: red;">❌ Discrepancia detectada: $${formatCurrency(Math.round(diferenciaRecargoDomingo))}</span>`;
     }
 
     // ----- RECARGO FESTIVO 50% -----
@@ -1094,7 +1094,7 @@ if (matchFecha) {
         const diferenciaRecargoFestivo = montoPagadoRecargoFestivo - montoEsperadoRecargoFestivo;
         resultadoRecargoFestivo = Math.abs(diferenciaRecargoFestivo) < 1
             ? `<span style="color: green;">✅ Cálculo correcto</span>`
-            : `<span style="color: red;">❌ Discrepancia detectada: $${diferenciaRecargoFestivo.toFixed(2)}</span>`;
+            : `<span style="color: red;">❌ Discrepancia detectada: $${formatCurrency(Math.round(diferenciaRecargoFestivo))}</span>`;
     }
 
     // *********** calculo diferencia de movilizacion ***********
@@ -1261,7 +1261,7 @@ if (detallesComisiones.length === 0) {
 
     if (diasSemanaCorrida !== "No especificados" && diasParaSemanaCorrida > 0 && totalComisiones > 0) {
         const valorDiarioComisiones = totalComisiones / diasParaSemanaCorrida;
-        valorEsperadoSemanaCorrida = (valorDiarioComisiones * diasSemanaCorrida).toFixed(2);
+        valorEsperadoSemanaCorrida = Math.round(valorDiarioComisiones * diasSemanaCorrida);;
         const diferenciaSemanaCorrida = valorEsperadoSemanaCorrida - montoSemanaCorrida;
         resultadoSemanaCorrida = Math.abs(diferenciaSemanaCorrida) < 1
             ? `<span style="color: green;">✅ Cálculo correcto</span>`
@@ -1933,13 +1933,13 @@ ${resultadoRecargoDomingo.indexOf("No se realizaron") !== -1 ? '' :
 <h2>3. Asignación:</h2>
 <p><strong>Movilización:</strong> Días: ${diasMovilizacion}, Monto: ${montoMovilizacion !== "Dato no encontrado" ? formatCurrency(montoMovilizacion) : 'Dato no encontrado'}.</p>
 ${montoDiferenciaMovilizacion !== 0 ? `<p><strong>Dif. Movilización:</strong> ${formatCurrency(montoDiferenciaMovilizacion)}.</p>` : ''}
-<p><strong>Días Totales:</strong> ${diasTotalesMovilizacion.toFixed(2)}</p>
+<p><strong>Días Totales:</strong> ${Math.round(diasTotalesMovilizacion)}</p>
 <p><strong>Colación:</strong> Días: ${diasColacion}, Monto: ${montoColacion !== "Dato no encontrado" ? formatCurrency(montoColacion) : 'Dato no encontrado'}.</p>
 ${montoDiferenciaColacion !== 0 ? `<p><strong>Dif. Colación:</strong> ${formatCurrency(montoDiferenciaColacion)}.</p>` : ''}
-<p><strong>Días Totales:</strong> ${diasTotalesColacion.toFixed(2)}</p>
+<p><strong>Días Totales:</strong> ${Math.round(diasTotalesColacion)}</p>
 <p><strong>Caja:</strong> Días: ${diasCaja}, Monto: ${montoCaja !== "Dato no encontrado" ? formatCurrency(montoCaja) : 'Dato no encontrado'}.</p>
 ${montoDiferenciaCaja !== 0 ? `<p><strong>Dif. Caja:</strong> ${formatCurrency(montoDiferenciaCaja)}.</p>` : ''}
-<p><strong>Días Totales:</strong> ${diasTotalesCaja.toFixed(2)}</p>
+<p><strong>Días Totales:</strong> ${Math.round(diasTotalesCaja)}</p>
 <hr>
         <h2>4. Comisiones</h2>
         <p>${detalleComisionesHTML}</p>

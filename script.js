@@ -840,198 +840,102 @@ function formatearCLP(valor) {
 
 let resumenAnalisis = [];
 
-// =====================================================
-// 🧹 LIMPIAR RESUMEN
-// =====================================================
-
 function limpiarResumenAnalisis() {
     resumenAnalisis = [];
 }
 
-// =====================================================
-// ➕ AGREGAR RESULTADO
-// =====================================================
-
-function agregarResultadoResumen(
-    modulo,
-    estado,
-    diferencia = 0
-) {
-
+function agregarResultadoResumen(modulo, estado, diferencia = 0) {
     resumenAnalisis.push({
-
         modulo: modulo,
-
-        // "ok" | "warning" | "error" | "info"
-        estado: estado,
-
-        // 🚨 diferencia monetaria REAL
-        diferencia: Math.abs(
-            Number(diferencia) || 0
-        )
+        estado: estado, // "ok" | "warning" | "error" | "info"
+        diferencia: diferencia || 0
     });
 }
 
-// =====================================================
-// 🚦 GENERAR RESUMEN EJECUTIVO
-// =====================================================
-
 function generarResumenAnalisisHTML() {
 
-    if (
-        !resumenAnalisis ||
-        resumenAnalisis.length === 0
-    ) {
+    if (!resumenAnalisis || resumenAnalisis.length === 0) {
         return '';
     }
 
-    // =====================================================
-    // 🎨 ICONOS
-    // =====================================================
+    const prioridadEstados = {
+        error: 1,
+        warning: 2,
+        ok: 3,
+        info: 4
+    };
 
     const iconosEstados = {
-
         error: '🔴',
-
         warning: '🟠',
-
         ok: '🟢',
-
         info: '⚪'
     };
 
-    // =====================================================
-    // 📝 TEXTOS
-    // =====================================================
-
     const textosEstados = {
-
         error: 'Discrepancia detectada',
-
         warning: 'Revisar información',
-
         ok: 'Correcto',
-
         info: 'Sin información relevante'
     };
 
-    // =====================================================
-    // 🚨 ORDENAMIENTO REAL
-    // PRIORIDAD = MAYOR PERJUICIO ECONÓMICO
-    // =====================================================
-
-    const resumenOrdenado =
-        [...resumenAnalisis]
-
+    const resumenOrdenado = [...resumenAnalisis]
         .sort((a, b) => {
 
-            const diferenciaA =
-                Math.abs(a.diferencia || 0);
-
-            const diferenciaB =
-                Math.abs(b.diferencia || 0);
-
-            // =====================================================
-            // 🚨 PRIORIDAD PRINCIPAL
-            // MAYOR DIFERENCIA MONETARIA PRIMERO
-            // =====================================================
-
-            if (diferenciaA !== diferenciaB) {return diferenciaB - diferenciaA;}
-
-            // =====================================================
-            // 🟡 DESEMPATE SECUNDARIO
-            // SOLO SI EL MONTO ES IGUAL
-            // =====================================================
-
-            const prioridadEstados = {
-
-                error: 1,
-                warning: 2,
-                ok: 3,
-                info: 4
-            };
-
             const prioridadA = prioridadEstados[a.estado] || 99;
-
             const prioridadB = prioridadEstados[b.estado] || 99;
 
-            return prioridadA - prioridadB;
-        });
-
-    // =====================================================
-    // 🧱 GENERAR HTML
-    // =====================================================
-
-    const resumenHTML =
-        resumenOrdenado.map(item => {
-
-            const icono = iconosEstados[item.estado] || '⚪';
-
-            let detalle = textosEstados[item.estado];
-
-            // =====================================================
-            // 💰 MOSTRAR DIFERENCIA
-            // =====================================================
-
-            if (
-                item.diferencia &&
-                Math.abs(item.diferencia) > 0
-            ) {
-
-                detalle += `
-                    → Diferencia: ${formatCurrency(Math.abs(item.diferencia))}
-                `;
+            // primero por severidad
+            if (prioridadA !== prioridadB) {
+                return prioridadA - prioridadB;
             }
 
-            // =====================================================
-            // 🎨 COLOR LATERAL
-            // =====================================================
+            // luego por diferencia monetaria
+            return Math.abs(b.diferencia || 0) - Math.abs(a.diferencia || 0);
+        });
 
-            let colorBorde = '#9e9e9e';
+    const resumenHTML = resumenOrdenado.map(item => {
 
-            if (item.estado === 'error') {colorBorde = '#d32f2f';} 
-            else 
-            if (item.estado === 'warning') {colorBorde = '#f57c00';} 
-            else 
-            if (item.estado === 'ok') {colorBorde = '#388e3c';}
+        const icono = iconosEstados[item.estado] || '⚪';
 
-            // =====================================================
-            // 📦 CARD
-            // =====================================================
+        let detalle = textosEstados[item.estado];
 
-            return `
+        if (
+            item.diferencia &&
+            Math.abs(item.diferencia) > 0
+        ) {
+            detalle += ` → Diferencia ${formatCurrency(Math.abs(item.diferencia))}`;
+        }
+
+        return `
+            <div style="
+                padding:10px;
+                margin-bottom:8px;
+                border-radius:8px;
+                background:#f5f5f5;
+                border-left:6px solid ${
+                    item.estado === 'error'
+                        ? '#d32f2f'
+                        : item.estado === 'warning'
+                        ? '#f57c00'
+                        : item.estado === 'ok'
+                        ? '#388e3c'
+                        : '#9e9e9e'
+                };
+            ">
+                <strong>
+                    ${icono} ${item.modulo}
+                </strong>
 
                 <div style="
-                    padding:12px;
-                    margin-bottom:10px;
-                    border-radius:10px;
-                    background:#f5f5f5;
-                    border-left:6px solid ${colorBorde};
+                    margin-top:4px;
+                    font-size:14px;
                 ">
-
-                    <strong style="
-                        font-size:15px;
-                    ">
-                        ${icono} ${item.modulo}
-                    </strong>
-
-                    <div style="
-                        margin-top:6px;
-                        font-size:14px;
-                        line-height:1.4;
-                    ">
-                        ${detalle}
-                    </div>
-
+                    ${detalle}
                 </div>
-            `;
-        })
-
-        .join('');
-
-    // =====================================================
-    // 📋 CONTENEDOR FINAL
-    // =====================================================
+            </div>
+        `;
+    }).join('');
 
     return `
 
@@ -1202,41 +1106,20 @@ const diferenciaSueldo = sueldoProporcional - sueldoEsperado;
 
     let variacionPorcentual = 0;
     let mensajeVariacion = '';
-
-    let estadoSueldoIMM = "ok";
-    let diferenciaIMM = 0;
-
-if (sueldoBaseContractual > inmProporcional) {
+    if (sueldoBaseContractual > inmProporcional) {
 
     variacionPorcentual = ((sueldoBaseContractual - inmProporcional) / inmProporcional) * 100;
-    mensajeVariacion = `✅ Es un ${Math.round(variacionPorcentual * 10) / 10}% mayor que el IMM`;
-    estadoSueldoIMM = "ok";
-}
+    mensajeVariacion = `✅ Es un ${Math.round(variacionPorcentual * 10) / 10}% mayor que el IMM `;
+    } else if (sueldoBaseContractual === inmProporcional) {
 
-else if (sueldoBaseContractual === inmProporcional) {mensajeVariacion = `Es igual al IMM`; estadoSueldoIMM = "ok";}
+      mensajeVariacion = `Es igual al IMM `;
+    } else {
 
-else {
+      variacionPorcentual = ((inmProporcional - sueldoBaseContractual) / inmProporcional) * 100;
+      mensajeVariacion = `❌ Es ${Math.round(variacionPorcentual * 10) / 10}% inferior al IMM `;
+    }
 
-    variacionPorcentual = ((inmProporcional - sueldoBaseContractual) / inmProporcional) * 100;
-
-    diferenciaIMM = inmProporcional - sueldoBaseContractual;
-
-    mensajeVariacion = `❌ Es ${Math.round(variacionPorcentual * 10) / 10}% inferior al IMM`;
-
-    estadoSueldoIMM = "error";}
-
-// =============================
-// 🚦 RESUMEN IMM
-// =============================
-
-agregarResultadoResumen(
-    "Validación IMM",
-    estadoSueldoIMM,
-    diferenciaIMM
-);
-// ========================================
     // ----- HORAS EXTRAS 50% -----
-// ========================================
     let resultadoHorasExtras = '';
     const regexHorasExtras = /HORAS\s*EXTRAS\s*50\s*%\s*\(([\d.,]+)\)\s*\$\s*([\d.,]+)/i;
     const matchHorasExtras = textoCompleto.match(regexHorasExtras);
@@ -1244,7 +1127,6 @@ agregarResultadoResumen(
     let horasExtrasRealizadas = "No especificadas";
     let montoPagadoHorasExtras = "No encontrado";
     let montoEsperadoHorasExtras = null;
-    let diferenciaHorasExtras = 0;
 
     if (matchHorasExtras) {
         horasExtrasRealizadas = matchHorasExtras[1].replace(',', '.'); // Extrae las horas (con coma decimal)
@@ -1257,7 +1139,7 @@ agregarResultadoResumen(
         resultadoHorasExtras = `<span style="color: orange;">⛔ No se realizaron.</span>`;
     } else {
         montoEsperadoHorasExtras = sueldoBaseContractual * factor * parseFloat(horasExtrasRealizadas);
-        diferenciaHorasExtras = montoPagadoHorasExtras - montoEsperadoHorasExtras;
+        const diferenciaHorasExtras = montoPagadoHorasExtras - montoEsperadoHorasExtras;
         resultadoHorasExtras = Math.abs(diferenciaHorasExtras) < 1
             ? `<span style="color: green;">✅ Cálculo correcto</span>`
             : `<span style="color: red;">❌ Discrepancia detectada: ${formatearCLP(diferenciaHorasExtras)}</span>`;
@@ -1271,7 +1153,6 @@ agregarResultadoResumen(
     let horasExtrasDomingoRealizadas = "No especificadas";
     let montoPagadoHorasExtrasDomingo = "No encontrado";
     let montoEsperadoHorasExtrasDomingo = null;
-    let diferenciaHorasExtrasDomingo = 0;
 
     if (matchHorasExtrasDomingo) {
         // Convertimos las horas a número (ya con punto decimal)
@@ -1288,7 +1169,7 @@ agregarResultadoResumen(
         const valorHoraRecargoDomingo = valorHoraNormal * 1.3;
         const horaExtraDomingo = valorHoraRecargoDomingo * 1.5;
         montoEsperadoHorasExtrasDomingo = horaExtraDomingo * horasExtrasDomingoRealizadas;
-        diferenciaHorasExtrasDomingo = montoPagadoHorasExtrasDomingo - montoEsperadoHorasExtrasDomingo;
+        const diferenciaHorasExtrasDomingo = montoPagadoHorasExtrasDomingo - montoEsperadoHorasExtrasDomingo;
         resultadoHorasExtrasDomingo = Math.abs(diferenciaHorasExtrasDomingo) < 1
             ? `<span style="color: green;">✅ Cálculo correcto</span>`
             : `<span style="color: red;">❌ Discrepancia detectada: ${formatearCLP(diferenciaHorasExtrasDomingo)}</span>`;
@@ -1302,7 +1183,6 @@ agregarResultadoResumen(
     let horasRecargoDomingo = "No especificadas";
     let montoPagadoRecargoDomingo = "No encontrado";
     let montoEsperadoRecargoDomingo = null;
-    let diferenciaRecargoDomingo = 0;
 
     if (matchRecargoDomingo) {
         horasRecargoDomingo = matchRecargoDomingo[1].replace(',', '.');
@@ -1331,7 +1211,7 @@ agregarResultadoResumen(
         const valorHoraNormal = (sueldoBaseContractual / 30) * 28 / (4 * jornadaSeleccionada);
         const valorHoraRecargoDomingo = valorHoraNormal * 0.3;
         montoEsperadoRecargoDomingo = valorHoraRecargoDomingo * parseFloat(horasRecargoDomingo);
-        diferenciaRecargoDomingo = montoPagadoRecargoDomingo - montoEsperadoRecargoDomingo;
+        const diferenciaRecargoDomingo = montoPagadoRecargoDomingo - montoEsperadoRecargoDomingo;
         resultadoRecargoDomingo = Math.abs(diferenciaRecargoDomingo) < 1
             ? `<span style="color: green;">✅ Cálculo correcto</span>`
             : `<span style="color: red;">❌ Discrepancia detectada: ${formatearCLP(diferenciaRecargoDomingo)}</span>`;
@@ -1345,7 +1225,6 @@ agregarResultadoResumen(
     let horasRecargoFestivoRealizadas = "No especificadas";
     let montoPagadoRecargoFestivo = "No encontrado";
     let montoEsperadoRecargoFestivo = null;
-    let diferenciaRecargoFestivo = 0;
 
     if (matchRecargoFestivo) {
         horasRecargoFestivoRealizadas = matchRecargoFestivo[1].replace(',', '.');
@@ -1360,7 +1239,7 @@ agregarResultadoResumen(
         const valorHoraNormal = (sueldoBaseContractual / 30) * 28 / (4 * jornadaSeleccionada);
         const valorHoraRecargoFestivo = valorHoraNormal * 1.5;
         montoEsperadoRecargoFestivo = valorHoraRecargoFestivo * parseFloat(horasRecargoFestivoRealizadas);
-        diferenciaRecargoFestivo = montoPagadoRecargoFestivo - montoEsperadoRecargoFestivo;
+        const diferenciaRecargoFestivo = montoPagadoRecargoFestivo - montoEsperadoRecargoFestivo;
         resultadoRecargoFestivo = Math.abs(diferenciaRecargoFestivo) < 1
             ? `<span style="color: green;">✅ Cálculo correcto</span>`
             : `<span style="color: red;">❌ Discrepancia detectada: ${formatearCLP(diferenciaRecargoFestivo)}</span>`;
@@ -1388,29 +1267,11 @@ if (hayError) {
     estadoSobretiempo = "warning";
 }
 
-// =====================================================
-// 💰 TOTAL DIFERENCIA SOBRETIEMPO
-// =====================================================
+// guardar en resumen global
+agregarResultadoResumen("Sobretiempo", estadoSobretiempo, 0);
 
-const totalDiferenciaSobretiempo =
-
-    Math.abs(diferenciaHorasExtras || 0)
-    +
-    Math.abs(diferenciaHorasExtrasDomingo || 0)
-    +
-    Math.abs(diferenciaRecargoDomingo || 0)
-    +
-    Math.abs(diferenciaRecargoFestivo || 0);
-
-// =====================================================
-// 🚦 RESUMEN GLOBAL
-// =====================================================
-
-agregarResultadoResumen( "Sobretiempo", estadoSobretiempo, totalDiferenciaSobretiempo);
-
-//==========================================================
-//          calculo diferencia de movilizacion     
-//==========================================================
+    
+// *********** calculo diferencia de movilizacion ***********
 
     const matchMovilizacion = textoCompleto.match(regexMovilizacion);
     let diasMovilizacion = 21;
@@ -1503,27 +1364,8 @@ if (
     estadoAsignaciones = "warning";
 }
 
-// =====================================================
-// 💰 DIFERENCIA TOTAL ASIGNACIONES
-// =====================================================
-
-const totalDiferenciaAsignaciones =
-
-    Math.abs(montoDiferenciaMovilizacion || 0)
-    +
-    Math.abs(montoDiferenciaColacion || 0)
-    +
-    Math.abs(montoDiferenciaCaja || 0);
-
-// =====================================================
-// 🚦 RESUMEN GLOBAL
-// =====================================================
-
-agregarResultadoResumen(
-    "Asignaciones",
-    estadoAsignaciones,
-    totalDiferenciaAsignaciones
-);
+// guardar en resumen global
+agregarResultadoResumen("Asignaciones", estadoAsignaciones, 0);
 
 // ***************** calculo semana corrida **************
 
@@ -1749,20 +1591,20 @@ function obtenerJornadaMaxima(mes, año) {
     const mesIndex =
         meses[mes.toUpperCase()] || 0;
 
-    // 42 horas desde abril 2026
-    if (
-        año > 2026 ||
-        (año === 2026 && mesIndex >= 4)
-    ) {
-        return 42;
-    }
-
     // 44 horas desde mayo 2024
     if (
         año > 2024 ||
         (año === 2024 && mesIndex >= 5)
     ) {
         return 44;
+    }
+
+    // 42 horas desde abril 2026
+    if (
+        año > 2026 ||
+        (año === 2026 && mesIndex >= 4)
+    ) {
+        return 42;
     }
 
     return 45;
@@ -1798,11 +1640,17 @@ function mostrarGratificacionMec(gratificables) {
     const valoresConsolidados = [
 
         sueldoProporcional || 0,
+
         montoPagadoHorasExtras || 0,
+
         montoPagadoHorasExtrasDomingo || 0,
+
         montoPagadoRecargoDomingo || 0,
+
         montoPagadoRecargoFestivo || 0,
+
         totalComisiones || 0,
+
         valorEsperadoSemanaCorrida || 0
     ];
 
@@ -2011,8 +1859,23 @@ function calcularGratificacion(
     // JORNADA MÁXIMA
     // =====================================================
 
-    const jornadaMaxima =
-        obtenerJornadaMaxima(mes, año);
+    let jornadaMaxima = 45;
+
+    if (
+        año > 2024 ||
+        (año === 2024 && mesIndex >= 5)
+    ) {
+
+        jornadaMaxima = 44;
+    }
+
+    if (
+        año > 2026 ||
+        (año === 2026 && mesIndex >= 4)
+    ) {
+
+        jornadaMaxima = 42;
+    }
 
     // =====================================================
     // 25% HABERES
@@ -2129,15 +1992,6 @@ function calcularGratificacion(
     const diferenciaSinTope =
         gratificacionPDF - valorSinTope;
 
-    // 🚨 IMPORTANTE:
-    // diferenciaMinima debe existir SIEMPRE
-    // para evitar romper agregarResultadoResumen()
-
-    const diferenciaMinima = Math.min(
-        Math.abs(diferenciaConTope),
-        Math.abs(diferenciaSinTope)
-    );
-
     let comparacionHTML = "";
 
     if (
@@ -2160,69 +2014,20 @@ function calcularGratificacion(
             </span>
         `;
 
-    } else {
-
-        comparacionHTML = `
-            <span style="color:red;">
-                ❌ El monto pagado en la liquidación NO coincide con el cálculo esperado.<br>
-                Diferencia detectada:
-                <b>${formatCurrency(diferenciaMinima)}</b>
-            </span>
-        `;
-    }
-
-    // =====================================================
-    // 🚦 RESUMEN GRATIFICACIÓN
-    // =====================================================
-
-    let estadoGratificacion = "ok";
-    let diferenciaResumenGratificacion = 0;
-
-    if (
-        Math.abs(diferenciaConTope) < 1 ||
-        Math.abs(diferenciaSinTope) < 1
-    ) {
-
-        estadoGratificacion = "ok";
-
-    } else {
-
-        estadoGratificacion = "error";
-        diferenciaResumenGratificacion = diferenciaMinima;
-    }
-
-    agregarResultadoResumen(
-        "Gratificación",
-        estadoGratificacion,
-        diferenciaResumenGratificacion
-    );
-
-// =====================================================
-// 🚦 RESUMEN GRATIFICACIÓN
-// =====================================================
-
-estadoGratificacion = "ok";
-diferenciaResumenGratificacion = 0;
-
-if (
-    Math.abs(diferenciaConTope) < 1 ||
-    Math.abs(diferenciaSinTope) < 1
-) {
-
-    estadoGratificacion = "ok";
-
 } else {
 
-    estadoGratificacion = "error";
-    diferenciaResumenGratificacion = diferenciaMinima;
+    const diferenciaMinima = Math.min(
+        Math.abs(diferenciaConTope),
+        Math.abs(diferenciaSinTope)
+    );
+
+    comparacionHTML = `
+        <span style="color:red;">
+            ❌ El monto pagado en la liquidación NO coincide con el cálculo esperado.<br>
+            Diferencia detectada: <b>${formatCurrency(diferenciaMinima)}</b>
+        </span>
+    `;
 }
-
-agregarResultadoResumen(
-    "Gratificación",
-    estadoGratificacion,
-    diferenciaResumenGratificacion
-);
-
 
     // =====================================================
     // RESULTADO HTML
@@ -2509,9 +2314,7 @@ if (!(hayDatosPDF || hayDatosManual || hayComisionNomina)) {
 
 // ---------- FIN: ANÁLISIS COMISIÓN GRUPAL ----------
 
-// =================================================================
-//              FUNCION DE CALCULO DE VACACIONES
-// =================================================================
+// **************** Función de cálculo de vacaciones ****************
 document.addEventListener("DOMContentLoaded", function () {
     const vacacionesBtn = document.getElementById("vacacionesBtn");
     const volverBtn = document.getElementById("volverBtn");

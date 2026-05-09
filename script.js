@@ -867,29 +867,26 @@ function generarResumenAnalisisHTML() {
         info: 'Sin información relevante'
     };
 
-const resumenOrdenado = [...resumenAnalisis]
-    .sort((a, b) => {
+    // =====================================================
+    // ORDEN INTELIGENTE
+    // =====================================================
+    const resumenOrdenado = [...resumenAnalisis]
+        .sort((a, b) => {
 
-        const prioridadEstados = {
-            error: 1,
-            warning: 2,
-            ok: 3
-        };
+            const prioridadA = prioridadEstados[a.estado] || 99;
+            const prioridadB = prioridadEstados[b.estado] || 99;
 
-        const prioridadA = prioridadEstados[a.estado] || 99;
-        const prioridadB = prioridadEstados[b.estado] || 99;
+            // 1° criterio: severidad
+            if (prioridadA !== prioridadB) {
+                return prioridadA - prioridadB;
+            }
 
-        // 1° criterio: severidad (error > warning > ok)
-        if (prioridadA !== prioridadB) {
-            return prioridadA - prioridadB;
-        }
+            // 2° criterio: impacto económico
+            const diffA = Math.abs(a.diferencia || 0);
+            const diffB = Math.abs(b.diferencia || 0);
 
-        // 2° criterio: impacto económico dentro del mismo estado
-        const diffA = Math.abs(a.diferencia || 0);
-        const diffB = Math.abs(b.diferencia || 0);
-
-        return diffB - diffA;
-    });
+            return diffB - diffA;
+        });
 
     const resumenHTML = resumenOrdenado.map(item => {
 
@@ -897,10 +894,7 @@ const resumenOrdenado = [...resumenAnalisis]
 
         let detalle = textosEstados[item.estado];
 
-        if (
-            item.diferencia &&
-            Math.abs(item.diferencia) > 0
-        ) {
+        if (item.diferencia && Math.abs(item.diferencia) > 0) {
             detalle += ` → Diferencia ${formatCurrency(Math.abs(item.diferencia))}`;
         }
 
@@ -911,16 +905,23 @@ const resumenOrdenado = [...resumenAnalisis]
                 border-radius:8px;
                 background:#f5f5f5;
                 border-left:6px solid ${
-                    item.estado === 'error'
-                        ? '#d32f2f'
-                        : item.estado === 'warning'
-                        ? '#f57c00'
-                        : item.estado === 'ok'
-                        ? '#388e3c'
-                        : '#9e9e9e'
+                    item.modulo === 'Gratificación'
+                        ? '#1e88e5'   /* 🔵 destaque especial */
+                        : item.estado === 'error'
+                            ? '#d32f2f'
+                            : item.estado === 'warning'
+                                ? '#f57c00'
+                                : item.estado === 'ok'
+                                    ? '#388e3c'
+                                    : '#9e9e9e'
                 };
             ">
-                <strong>
+
+                <strong style="${
+                    item.modulo === 'Gratificación'
+                        ? 'color:#1e88e5; font-size:15px;'
+                        : ''
+                }">
                     ${icono} ${item.modulo}
                 </strong>
 
@@ -930,12 +931,12 @@ const resumenOrdenado = [...resumenAnalisis]
                 ">
                     ${detalle}
                 </div>
+
             </div>
         `;
     }).join('');
 
     return `
-
         <div style="
             border:2px solid #ddd;
             border-radius:12px;

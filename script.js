@@ -867,25 +867,19 @@ function generarResumenAnalisisHTML() {
         info: 'Sin información relevante'
     };
 
-    // =====================================================
-    // ORDEN INTELIGENTE
-    // =====================================================
     const resumenOrdenado = [...resumenAnalisis]
         .sort((a, b) => {
 
             const prioridadA = prioridadEstados[a.estado] || 99;
             const prioridadB = prioridadEstados[b.estado] || 99;
 
-            // 1° criterio: severidad
+            // primero por severidad
             if (prioridadA !== prioridadB) {
                 return prioridadA - prioridadB;
             }
 
-            // 2° criterio: impacto económico
-            const diffA = Math.abs(a.diferencia || 0);
-            const diffB = Math.abs(b.diferencia || 0);
-
-            return diffB - diffA;
+            // luego por diferencia monetaria
+            return Math.abs(b.diferencia || 0) - Math.abs(a.diferencia || 0);
         });
 
     const resumenHTML = resumenOrdenado.map(item => {
@@ -894,7 +888,10 @@ function generarResumenAnalisisHTML() {
 
         let detalle = textosEstados[item.estado];
 
-        if (item.diferencia && Math.abs(item.diferencia) > 0) {
+        if (
+            item.diferencia &&
+            Math.abs(item.diferencia) > 0
+        ) {
             detalle += ` → Diferencia ${formatCurrency(Math.abs(item.diferencia))}`;
         }
 
@@ -905,23 +902,16 @@ function generarResumenAnalisisHTML() {
                 border-radius:8px;
                 background:#f5f5f5;
                 border-left:6px solid ${
-                    item.modulo === 'Gratificación'
-                        ? '#1e88e5'   /* 🔵 destaque especial */
-                        : item.estado === 'error'
-                            ? '#d32f2f'
-                            : item.estado === 'warning'
-                                ? '#f57c00'
-                                : item.estado === 'ok'
-                                    ? '#388e3c'
-                                    : '#9e9e9e'
+                    item.estado === 'error'
+                        ? '#d32f2f'
+                        : item.estado === 'warning'
+                        ? '#f57c00'
+                        : item.estado === 'ok'
+                        ? '#388e3c'
+                        : '#9e9e9e'
                 };
             ">
-
-                <strong style="${
-                    item.modulo === 'Gratificación'
-                        ? 'color:#1e88e5; font-size:15px;'
-                        : ''
-                }">
+                <strong>
                     ${icono} ${item.modulo}
                 </strong>
 
@@ -931,12 +921,12 @@ function generarResumenAnalisisHTML() {
                 ">
                     ${detalle}
                 </div>
-
             </div>
         `;
     }).join('');
 
     return `
+
         <div style="
             border:2px solid #ddd;
             border-radius:12px;
@@ -1409,7 +1399,7 @@ let detalleComisionesHTML = detallesComisiones.map(comision =>
 
 
 if (detallesComisiones.length === 0) {
-    detalleComisionesHTML = '<li>⛔ No tiene comisiones individuales.</li>';
+    detalleComisionesHTML = '⛔ No tiene comisiones individuales.';
 }
 
 // =====================================================
@@ -1890,12 +1880,14 @@ function calcularGratificacion(
         (4.75 * inm) / 12;
 
     let topeProporcional;
+
     let notaProporcional = "";
 
     if (jornadaSeleccionada > 30) {
 
         topeProporcional =
             topeGratificacion;
+
         notaProporcional =
             " (no aplica proporcionalidad)";
 
@@ -1978,55 +1970,44 @@ function calcularGratificacion(
             "Gratificación Con Tope (C.T.)";
     }
 
-// =====================================================
-// COMPARACIONES
-// =====================================================
+    // =====================================================
+    // COMPARACIONES
+    // =====================================================
 
-const diferenciaConTope =
-    gratificacionPDF - valorConTope;
+    const diferenciaConTope =
+        gratificacionPDF - valorConTope;
 
-const diferenciaSinTope =
-    gratificacionPDF - valorSinTope;
+    const diferenciaSinTope =
+        gratificacionPDF - valorSinTope;
 
-let comparacionHTML = "";
+    let comparacionHTML = "";
 
-// prioridad: detectar cuál modelo calza
-const calzaTope = Math.abs(diferenciaConTope) < 1;
-const calzaSinTope = Math.abs(diferenciaSinTope) < 1;
+    if (
+        Math.abs(diferenciaConTope) < 1
+    ) {
 
-// valor de impacto real (siempre el mayor error posible)
-const diferenciaMinima = Math.min(
-    Math.abs(diferenciaConTope),
-    Math.abs(diferenciaSinTope)
-);
+        comparacionHTML = `
+            <span style="color:green;">
+                ✅ Coincide con Gratificación CON TOPE
+            </span>
+        `;
 
-// estado único para resumen
-let estadoGratificacion = "ok";
+    } else if (
+        Math.abs(diferenciaSinTope) < 1
+    ) {
 
-if (diferenciaMinima > 1000) {
-    estadoGratificacion = "error";
-} else if (diferenciaMinima > 1) {
-    estadoGratificacion = "warning";
-}
-
-// mensaje visual
-if (calzaTope) {
-
-    comparacionHTML = `
-        <span style="color:green;">
-            ✅ Coincide con Gratificación CON TOPE
-        </span>
-    `;
-
-} else if (calzaSinTope) {
-
-    comparacionHTML = `
-        <span style="color:green;">
-            ✅ Coincide con Gratificación SIN TOPE
-        </span>
-    `;
+        comparacionHTML = `
+            <span style="color:green;">
+                ✅ Coincide con Gratificación SIN TOPE
+            </span>
+        `;
 
 } else {
+
+    const diferenciaMinima = Math.min(
+        Math.abs(diferenciaConTope),
+        Math.abs(diferenciaSinTope)
+    );
 
     comparacionHTML = `
         <span style="color:red;">
@@ -2035,14 +2016,6 @@ if (calzaTope) {
         </span>
     `;
 }
-
-// 👉 AQUÍ SE REGISTRA EN EL RESUMEN (IMPORTANTE)
-agregarResultadoResumen(
-    "Gratificación",
-    estadoGratificacion,
-    diferenciaMinima
-);
-
 
     // =====================================================
     // RESULTADO HTML
@@ -2146,7 +2119,6 @@ agregarResultadoResumen(
     ).innerHTML = resultadoHTML;
 }
 
-
     // ===== Mostrar resultados en HTML =====
     document.getElementById('resultadoAnalisis').innerHTML = `
     ${generarResumenAnalisisHTML()}
@@ -2206,7 +2178,7 @@ ${montoDiferenciaCaja !== 0 ? `<p><strong>Dif. Caja:</strong> ${formatCurrency(m
         </div>
 <hr>
   `;
-
+  mostrarGratificacionMec(gratificables);
 
 // ---------- INICIA: ANÁLISIS COMISIÓN GRUPAL (ASESOR DE COMPRAS) ----------
 

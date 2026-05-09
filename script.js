@@ -833,6 +833,7 @@ function limpiarResumenAnalisis() {
 }
 
 function agregarResultadoResumen(modulo, estado, diferencia = 0) {
+
     resumenAnalisis.push({
         modulo: modulo,
         estado: estado, // "ok" | "warning" | "error" | "info"
@@ -846,12 +847,43 @@ function generarResumenAnalisisHTML() {
         return '';
     }
 
+    // ======================================
+    // PRIORIDAD BASE
+    // ======================================
+
     const prioridadEstados = {
         error: 1,
         warning: 2,
         ok: 3,
         info: 4
     };
+
+    // ======================================
+    // PESO REAL DEL ESTADO
+    // ======================================
+
+    function obtenerPesoEstado(estado) {
+
+        switch (estado) {
+
+            case "error":
+                return 3000000;
+
+            case "warning":
+                return 1000000;
+
+            case "ok":
+                return 1000;
+
+            case "info":
+            default:
+                return 0;
+        }
+    }
+
+    // ======================================
+    // ICONOS
+    // ======================================
 
     const iconosEstados = {
         error: '🔴',
@@ -860,6 +892,10 @@ function generarResumenAnalisisHTML() {
         info: '⚪'
     };
 
+    // ======================================
+    // TEXTOS
+    // ======================================
+
     const textosEstados = {
         error: 'Discrepancia detectada',
         warning: 'Revisar información',
@@ -867,35 +903,51 @@ function generarResumenAnalisisHTML() {
         info: 'Sin información relevante'
     };
 
+    // ======================================
+    // ORDENAMIENTO INTELIGENTE
+    // ======================================
+
     const resumenOrdenado = [...resumenAnalisis]
+
         .sort((a, b) => {
 
-            const prioridadA = prioridadEstados[a.estado] || 99;
-            const prioridadB = prioridadEstados[b.estado] || 99;
+            const pesoA =
+                obtenerPesoEstado(a.estado) +
+                Math.abs(a.diferencia || 0);
 
-            // primero por severidad
-            if (prioridadA !== prioridadB) {
-                return prioridadA - prioridadB;
-            }
+            const pesoB =
+                obtenerPesoEstado(b.estado) +
+                Math.abs(b.diferencia || 0);
 
-            // luego por diferencia monetaria
-            return Math.abs(b.diferencia || 0) - Math.abs(a.diferencia || 0);
+            return pesoB - pesoA;
         });
+
+    // ======================================
+    // GENERAR HTML
+    // ======================================
 
     const resumenHTML = resumenOrdenado.map(item => {
 
-        const icono = iconosEstados[item.estado] || '⚪';
+        const icono =
+            iconosEstados[item.estado] || '⚪';
 
-        let detalle = textosEstados[item.estado];
+        let detalle =
+            textosEstados[item.estado];
 
         if (
             item.diferencia &&
             Math.abs(item.diferencia) > 0
         ) {
-            detalle += ` → Diferencia ${formatCurrency(Math.abs(item.diferencia))}`;
+
+            detalle += `
+                → Diferencia ${formatCurrency(
+                    Math.abs(item.diferencia)
+                )}
+            `;
         }
 
         return `
+
             <div style="
                 padding:10px;
                 margin-bottom:8px;
@@ -911,6 +963,7 @@ function generarResumenAnalisisHTML() {
                         : '#9e9e9e'
                 };
             ">
+
                 <strong>
                     ${icono} ${item.modulo}
                 </strong>
@@ -919,11 +972,19 @@ function generarResumenAnalisisHTML() {
                     margin-top:4px;
                     font-size:14px;
                 ">
+
                     ${detalle}
+
                 </div>
+
             </div>
         `;
+
     }).join('');
+
+    // ======================================
+    // CONTENEDOR FINAL
+    // ======================================
 
     return `
 
@@ -1109,6 +1170,9 @@ const diferenciaSueldo = sueldoProporcional - sueldoEsperado;
 
     // ----- HORAS EXTRAS 50% -----
     let resultadoHorasExtras = '';
+    let estadoHorasExtras = "info";
+    let diferenciaHorasExtras = 0;
+
     const regexHorasExtras = /HORAS\s*EXTRAS\s*50\s*%\s*\(([\d.,]+)\)\s*\$\s*([\d.,]+)/i;
     const matchHorasExtras = textoCompleto.match(regexHorasExtras);
 
@@ -1123,18 +1187,48 @@ const diferenciaSueldo = sueldoProporcional - sueldoEsperado;
         ); // Extrae el monto
     }
 
-    if (horasExtrasRealizadas === "No especificadas" || montoPagadoHorasExtras === "No encontrado") {
-        resultadoHorasExtras = `<span style="color: orange;">⛔ No se realizaron.</span>`;
+if (
+    horasExtrasRealizadas === "No especificadas" ||
+    montoPagadoHorasExtras === "No encontrado"
+) {
+
+    estadoHorasExtras = "info";
+
+    resultadoHorasExtras =
+        `<span style="color: orange;">⛔ No se realizaron.</span>`;
+
+} else {
+
+    montoEsperadoHorasExtras =
+        sueldoBaseContractual *
+        factor *
+        parseFloat(horasExtrasRealizadas);
+
+    diferenciaHorasExtras =
+        montoPagadoHorasExtras -
+        montoEsperadoHorasExtras;
+
+    if (Math.abs(diferenciaHorasExtras) < 1) {
+
+        estadoHorasExtras = "ok";
+
+        resultadoHorasExtras =
+            `<span style="color: green;">✅ Cálculo correcto</span>`;
+
     } else {
-        montoEsperadoHorasExtras = sueldoBaseContractual * factor * parseFloat(horasExtrasRealizadas);
-        const diferenciaHorasExtras = montoPagadoHorasExtras - montoEsperadoHorasExtras;
-        resultadoHorasExtras = Math.abs(diferenciaHorasExtras) < 1
-            ? `<span style="color: green;">✅ Cálculo correcto</span>`
-            : `<span style="color: red;">❌ Discrepancia detectada: ${formatearCLP(diferenciaHorasExtras)}</span>`;
+
+        estadoHorasExtras = "error";
+
+        resultadoHorasExtras =
+            `<span style="color: red;">❌ Discrepancia detectada: ${formatearCLP(diferenciaHorasExtras)}</span>`;
     }
+}
 
     // ----- HORAS EXTRAS DOMINGO -----
     let resultadoHorasExtrasDomingo = '';
+    let estadoHorasExtrasDomingo = "info";
+    let diferenciaHorasExtrasDomingo = 0;
+
     const regexHorasExtrasDomingo = /HORAS\s*EXTRAS\s*DOMINGO\s*\(([\d.,]+)\)\s*\$\s*([\d.,]+)/i;
     const matchHorasExtrasDomingo = textoCompleto.match(regexHorasExtrasDomingo);
 
@@ -1150,21 +1244,57 @@ const diferenciaSueldo = sueldoProporcional - sueldoEsperado;
         );
     }
 
-    if (horasExtrasDomingoRealizadas === "No especificadas" || montoPagadoHorasExtrasDomingo === "No encontrado") {
-        resultadoHorasExtrasDomingo = `<span style="color: orange;">⛔ No se realizaron.</span>`;
+if (
+    horasExtrasDomingoRealizadas === "No especificadas" ||
+    montoPagadoHorasExtrasDomingo === "No encontrado"
+) {
+
+    estadoHorasExtrasDomingo = "info";
+
+    resultadoHorasExtrasDomingo =
+        `<span style="color: orange;">⛔ No se realizaron.</span>`;
+
+} else {
+
+    const valorHoraNormal =
+        (sueldoBaseContractual / 30) *
+        28 /
+        (4 * jornadaSeleccionada);
+
+    const valorHoraRecargoDomingo =
+        valorHoraNormal * 1.3;
+
+    const horaExtraDomingo =
+        valorHoraRecargoDomingo * 1.5;
+
+    montoEsperadoHorasExtrasDomingo =
+        horaExtraDomingo *
+        horasExtrasDomingoRealizadas;
+
+    diferenciaHorasExtrasDomingo =
+        montoPagadoHorasExtrasDomingo -
+        montoEsperadoHorasExtrasDomingo;
+
+    if (Math.abs(diferenciaHorasExtrasDomingo) < 1) {
+
+        estadoHorasExtrasDomingo = "ok";
+
+        resultadoHorasExtrasDomingo =
+            `<span style="color: green;">✅ Cálculo correcto</span>`;
+
     } else {
-        const valorHoraNormal = (sueldoBaseContractual / 30) * 28 / (4 * jornadaSeleccionada);
-        const valorHoraRecargoDomingo = valorHoraNormal * 1.3;
-        const horaExtraDomingo = valorHoraRecargoDomingo * 1.5;
-        montoEsperadoHorasExtrasDomingo = horaExtraDomingo * horasExtrasDomingoRealizadas;
-        const diferenciaHorasExtrasDomingo = montoPagadoHorasExtrasDomingo - montoEsperadoHorasExtrasDomingo;
-        resultadoHorasExtrasDomingo = Math.abs(diferenciaHorasExtrasDomingo) < 1
-            ? `<span style="color: green;">✅ Cálculo correcto</span>`
-            : `<span style="color: red;">❌ Discrepancia detectada: ${formatearCLP(diferenciaHorasExtrasDomingo)}</span>`;
+
+        estadoHorasExtrasDomingo = "error";
+
+        resultadoHorasExtrasDomingo =
+            `<span style="color: red;">❌ Discrepancia detectada: ${formatearCLP(diferenciaHorasExtrasDomingo)}</span>`;
     }
+}
 
     // ----- RECARGO DOMINGO -----
     let resultadoRecargoDomingo = '';
+    let estadoRecargoDomingo = "info";
+    let diferenciaRecargoDomingo = 0;
     const regexRecargoDomingo = /HORAS\s*RECARGO\s*DOMINGO\s*\((\d+[\.,]?\d*)\)\s*\$\s*([\d.,]+)/i;
     const matchRecargoDomingo = textoCompleto.match(regexRecargoDomingo);
 
@@ -1190,23 +1320,65 @@ const diferenciaSueldo = sueldoProporcional - sueldoEsperado;
     }
 
     // Se decide el mensaje a mostrar para el recargo domingo:
-    if (montoPagadoRecargoDomingo === "No encontrado" && horasRecargoDomingo === "No especificadas") {
-        resultadoRecargoDomingo = `<span style="color: orange;">⛔ No se realizaron.</span>`;
-    } else if (horasRecargoDomingo === "⛔ No tiene el tiempo realizado") {
-        // Si falta el tiempo realizado, se muestra solo el mensaje sin detalles adicionales.
-        resultadoRecargoDomingo = `<span style="color: red;">❌ Falta el tiempo realizado.</span>`;
+if (
+    montoPagadoRecargoDomingo === "No encontrado" &&
+    horasRecargoDomingo === "No especificadas"
+) {
+
+    estadoRecargoDomingo = "info";
+
+    resultadoRecargoDomingo =
+        `<span style="color: orange;">⛔ No se realizaron.</span>`;
+
+} else if (
+    horasRecargoDomingo === "⛔ No tiene el tiempo realizado"
+) {
+
+    // ⚠ NO ES ERROR MONETARIO
+    estadoRecargoDomingo = "warning";
+
+    resultadoRecargoDomingo =
+        `<span style="color: orange;">⚠ Falta el tiempo realizado.</span>`;
+
+} else {
+
+    const valorHoraNormal =
+        (sueldoBaseContractual / 30) *
+        28 /
+        (4 * jornadaSeleccionada);
+
+    const valorHoraRecargoDomingo =
+        valorHoraNormal * 0.3;
+
+    montoEsperadoRecargoDomingo =
+        valorHoraRecargoDomingo *
+        parseFloat(horasRecargoDomingo);
+
+    diferenciaRecargoDomingo =
+        montoPagadoRecargoDomingo -
+        montoEsperadoRecargoDomingo;
+
+    if (Math.abs(diferenciaRecargoDomingo) < 1) {
+
+        estadoRecargoDomingo = "ok";
+
+        resultadoRecargoDomingo =
+            `<span style="color: green;">✅ Cálculo correcto</span>`;
+
     } else {
-        const valorHoraNormal = (sueldoBaseContractual / 30) * 28 / (4 * jornadaSeleccionada);
-        const valorHoraRecargoDomingo = valorHoraNormal * 0.3;
-        montoEsperadoRecargoDomingo = valorHoraRecargoDomingo * parseFloat(horasRecargoDomingo);
-        const diferenciaRecargoDomingo = montoPagadoRecargoDomingo - montoEsperadoRecargoDomingo;
-        resultadoRecargoDomingo = Math.abs(diferenciaRecargoDomingo) < 1
-            ? `<span style="color: green;">✅ Cálculo correcto</span>`
-            : `<span style="color: red;">❌ Discrepancia detectada: ${formatearCLP(diferenciaRecargoDomingo)}</span>`;
+
+        estadoRecargoDomingo = "error";
+
+        resultadoRecargoDomingo =
+            `<span style="color: red;">❌ Discrepancia detectada: ${formatearCLP(diferenciaRecargoDomingo)}</span>`;
     }
+}
 
     // ----- RECARGO FESTIVO 50% -----
     let resultadoRecargoFestivo = '';
+    let estadoRecargoFestivo = "info";
+    let diferenciaRecargoFestivo = 0;
+
     const regexRecargoFestivo = /RECARGO\s*50%\s*FESTIVO\s*\(([\d.,]+)\)\s*\$\s*([\d.,]+)/i;
     const matchRecargoFestivo = textoCompleto.match(regexRecargoFestivo);
 
@@ -1221,42 +1393,101 @@ const diferenciaSueldo = sueldoProporcional - sueldoEsperado;
         );
     }
 
-    if (horasRecargoFestivoRealizadas === "No especificadas" || montoPagadoRecargoFestivo === "No encontrado") {
-        resultadoRecargoFestivo = `<span style="color: orange;">⛔ No se realizaron.</span>`;
+if (
+    horasRecargoFestivoRealizadas === "No especificadas" ||
+    montoPagadoRecargoFestivo === "No encontrado"
+) {
+
+    estadoRecargoFestivo = "info";
+
+    resultadoRecargoFestivo =
+        `<span style="color: orange;">⛔ No se realizaron.</span>`;
+
+} else {
+
+    const valorHoraNormal =
+        (sueldoBaseContractual / 30) *
+        28 /
+        (4 * jornadaSeleccionada);
+
+    const valorHoraRecargoFestivo =
+        valorHoraNormal * 1.5;
+
+    montoEsperadoRecargoFestivo =
+        valorHoraRecargoFestivo *
+        parseFloat(horasRecargoFestivoRealizadas);
+
+    diferenciaRecargoFestivo =
+        montoPagadoRecargoFestivo -
+        montoEsperadoRecargoFestivo;
+
+    if (Math.abs(diferenciaRecargoFestivo) < 1) {
+
+        estadoRecargoFestivo = "ok";
+
+        resultadoRecargoFestivo =
+            `<span style="color: green;">✅ Cálculo correcto</span>`;
+
     } else {
-        const valorHoraNormal = (sueldoBaseContractual / 30) * 28 / (4 * jornadaSeleccionada);
-        const valorHoraRecargoFestivo = valorHoraNormal * 1.5;
-        montoEsperadoRecargoFestivo = valorHoraRecargoFestivo * parseFloat(horasRecargoFestivoRealizadas);
-        const diferenciaRecargoFestivo = montoPagadoRecargoFestivo - montoEsperadoRecargoFestivo;
-        resultadoRecargoFestivo = Math.abs(diferenciaRecargoFestivo) < 1
-            ? `<span style="color: green;">✅ Cálculo correcto</span>`
-            : `<span style="color: red;">❌ Discrepancia detectada: ${formatearCLP(diferenciaRecargoFestivo)}</span>`;
+
+        estadoRecargoFestivo = "error";
+
+        resultadoRecargoFestivo =
+            `<span style="color: red;">❌ Discrepancia detectada: ${formatearCLP(diferenciaRecargoFestivo)}</span>`;
     }
+}
 
 // =====================================================
 // 🚦 RESUMEN SOBRETIEMPO (HORAS EXTRAS + RECARGOS)
 // =====================================================
 
-const resultadosSobretiempo = [
-    resultadoHorasExtras,
-    resultadoHorasExtrasDomingo,
-    resultadoRecargoDomingo,
-    resultadoRecargoFestivo
+const estadosSobretiempo = [
+    estadoHorasExtras,
+    estadoHorasExtrasDomingo,
+    estadoRecargoDomingo,
+    estadoRecargoFestivo
 ];
 
 let estadoSobretiempo = "ok";
 
-const hayError = resultadosSobretiempo.some(r => r.includes("❌"));
-const hayWarning = resultadosSobretiempo.some(r => r.includes("⛔"));
+if (estadosSobretiempo.includes("error")) {
 
-if (hayError) {
     estadoSobretiempo = "error";
-} else if (hayWarning) {
+
+} else if (estadosSobretiempo.includes("warning")) {
+
     estadoSobretiempo = "warning";
+
+} else if (
+    estadosSobretiempo.every(e => e === "info")
+) {
+
+    estadoSobretiempo = "info";
 }
 
-// guardar en resumen global
-agregarResultadoResumen("Sobretiempo", estadoSobretiempo, 0);
+// ======================================
+// DIFERENCIA MONETARIA REAL
+// ======================================
+
+const diferenciaTotalSobretiempo = [
+
+    diferenciaHorasExtras,
+    diferenciaHorasExtrasDomingo,
+    diferenciaRecargoDomingo,
+    diferenciaRecargoFestivo
+
+].reduce((acc, val) => {
+
+    return acc + Math.abs(val || 0);
+
+}, 0);
+
+// guardar resumen real
+agregarResultadoResumen(
+    "Sobretiempo",
+    estadoSobretiempo,
+    diferenciaTotalSobretiempo
+);
 
     
 // *********** calculo diferencia de movilizacion ***********

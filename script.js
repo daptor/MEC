@@ -1977,7 +1977,7 @@ function calcularGratificacion(
             "Gratificación Con Tope (C.T.)";
     }
 
-    // =====================================================
+// =====================================================
 // COMPARACIONES
 // =====================================================
 
@@ -1989,7 +1989,27 @@ const diferenciaSinTope =
 
 let comparacionHTML = "";
 
-if (Math.abs(diferenciaConTope) < 1) {
+// prioridad: detectar cuál modelo calza
+const calzaTope = Math.abs(diferenciaConTope) < 1;
+const calzaSinTope = Math.abs(diferenciaSinTope) < 1;
+
+// valor de impacto real (siempre el mayor error posible)
+const diferenciaMinima = Math.min(
+    Math.abs(diferenciaConTope),
+    Math.abs(diferenciaSinTope)
+);
+
+// estado único para resumen
+let estadoGratificacion = "ok";
+
+if (diferenciaMinima > 1000) {
+    estadoGratificacion = "error";
+} else if (diferenciaMinima > 1) {
+    estadoGratificacion = "warning";
+}
+
+// mensaje visual
+if (calzaTope) {
 
     comparacionHTML = `
         <span style="color:green;">
@@ -1997,13 +2017,7 @@ if (Math.abs(diferenciaConTope) < 1) {
         </span>
     `;
 
-    agregarResultadoResumen(
-        "Gratificación",
-        "ok",
-        Math.abs(diferenciaConTope)
-    );
-
-} else if (Math.abs(diferenciaSinTope) < 1) {
+} else if (calzaSinTope) {
 
     comparacionHTML = `
         <span style="color:green;">
@@ -2011,26 +2025,7 @@ if (Math.abs(diferenciaConTope) < 1) {
         </span>
     `;
 
-    agregarResultadoResumen(
-        "Gratificación",
-        "ok",
-        Math.abs(diferenciaSinTope)
-    );
-
 } else {
-
-    const diferenciaMinima = Math.min(
-        Math.abs(diferenciaConTope),
-        Math.abs(diferenciaSinTope)
-    );
-
-    let estadoGratificacion = "ok";
-
-    if (diferenciaMinima > 1000) {
-        estadoGratificacion = "error";
-    } else if (diferenciaMinima > 1) {
-        estadoGratificacion = "warning";
-    }
 
     comparacionHTML = `
         <span style="color:red;">
@@ -2038,13 +2033,15 @@ if (Math.abs(diferenciaConTope) < 1) {
             Diferencia detectada: <b>${formatCurrency(diferenciaMinima)}</b>
         </span>
     `;
-
-    agregarResultadoResumen(
-        "Gratificación",
-        estadoGratificacion,
-        diferenciaMinima
-    );
 }
+
+// 👉 AQUÍ SE VE EN EL RESUMEN
+agregarResultadoResumen(
+    "Gratificación",
+    estadoGratificacion,
+    diferenciaMinima
+);
+
 
     // =====================================================
     // RESULTADO HTML

@@ -2036,7 +2036,7 @@ if (calzaTope) {
     `;
 }
 
-// 👉 AQUÍ SE VE EN EL RESUMEN
+// 👉 AQUÍ SE REGISTRA EN EL RESUMEN (IMPORTANTE)
 agregarResultadoResumen(
     "Gratificación",
     estadoGratificacion,
@@ -2146,6 +2146,8 @@ agregarResultadoResumen(
     ).innerHTML = resultadoHTML;
 }
 
+  mostrarGratificacionMec(gratificables);
+
     // ===== Mostrar resultados en HTML =====
     document.getElementById('resultadoAnalisis').innerHTML = `
     ${generarResumenAnalisisHTML()}
@@ -2205,7 +2207,7 @@ ${montoDiferenciaCaja !== 0 ? `<p><strong>Dif. Caja:</strong> ${formatCurrency(m
         </div>
 <hr>
   `;
-  mostrarGratificacionMec(gratificables);
+
 
 // ---------- INICIA: ANÁLISIS COMISIÓN GRUPAL (ASESOR DE COMPRAS) ----------
 

@@ -1579,20 +1579,20 @@ function obtenerJornadaMaxima(mes, año) {
     const mesIndex =
         meses[mes.toUpperCase()] || 0;
 
-    // 44 horas desde mayo 2024
-    if (
-        año > 2024 ||
-        (año === 2024 && mesIndex >= 5)
-    ) {
-        return 44;
-    }
-
     // 42 horas desde abril 2026
     if (
         año > 2026 ||
         (año === 2026 && mesIndex >= 4)
     ) {
         return 42;
+    }
+
+    // 44 horas desde mayo 2024
+    if (
+        año > 2024 ||
+        (año === 2024 && mesIndex >= 5)
+    ) {
+        return 44;
     }
 
     return 45;
@@ -1850,19 +1850,19 @@ function calcularGratificacion(
     let jornadaMaxima = 45;
 
     if (
-        año > 2024 ||
-        (año === 2024 && mesIndex >= 5)
-    ) {
-
-        jornadaMaxima = 44;
-    }
-
-    if (
         año > 2026 ||
         (año === 2026 && mesIndex >= 4)
     ) {
 
         jornadaMaxima = 42;
+    }
+
+    if (
+        año > 2024 ||
+        (año === 2024 && mesIndex >= 5)
+    ) {
+
+        jornadaMaxima = 44;
     }
 
     // =====================================================

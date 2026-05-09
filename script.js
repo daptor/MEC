@@ -1367,7 +1367,7 @@ if (
 // guardar en resumen global
 agregarResultadoResumen("Asignaciones", estadoAsignaciones, 0);
 
-// ***************** calculo semana corrida **************
+// ***************** CALCULO SEMANA CORRIDA **************
 
 let totalComisiones = 0;
 const detallesComisiones = [];
@@ -2182,7 +2182,7 @@ ${montoDiferenciaCaja !== 0 ? `<p><strong>Dif. Caja:</strong> ${formatCurrency(m
         <h2>5. Semana Corrida</h2>
         <p><strong>Domingos y Festivos:</strong> (${diasSemanaCorrida !== "No especificados" ? diasSemanaCorrida : 'No especificado'} días) <strong>Monto:</strong> ${formatCurrency(montoSemanaCorrida)}.</p>
         <p><strong>Análisis:</strong> ${resultadoSemanaCorrida}</p>
-        <p>${formatCurrency(totalComisiones)} ÷ Días Totales: (${diasParaSemanaCorrida}) × Dom. y Fest.: (${diasSemanaCorrida !== "No especificados" ? diasSemanaCorrida : 'No especificado'}) = ${formatCurrency(valorEsperadoSemanaCorrida)}.</p>
+        <p>${formatCurrency(totalComisiones)} ÷ Días Totales: (${Math.round(diasParaSemanaCorrida)}) × Dom. y Fest.: (${diasSemanaCorrida !== "No especificados" ? diasSemanaCorrida : 'No especificado'}) = ${formatCurrency(valorEsperadoSemanaCorrida)}.</p>
 <hr>
         <div class="container gratificacion-container" id="gratificacionMec" style="display: none;">
         <h2>6. Haberes Gratificables</h2>

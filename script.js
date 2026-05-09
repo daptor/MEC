@@ -1978,36 +1978,44 @@ function calcularGratificacion(
     }
 
     // =====================================================
-    // COMPARACIONES
-    // =====================================================
+// COMPARACIONES
+// =====================================================
 
-    const diferenciaConTope =
-        gratificacionPDF - valorConTope;
+const diferenciaConTope =
+    gratificacionPDF - valorConTope;
 
-    const diferenciaSinTope =
-        gratificacionPDF - valorSinTope;
+const diferenciaSinTope =
+    gratificacionPDF - valorSinTope;
 
-    let comparacionHTML = "";
+let comparacionHTML = "";
 
-    if (
-        Math.abs(diferenciaConTope) < 1
-    ) {
+if (Math.abs(diferenciaConTope) < 1) {
 
-        comparacionHTML = `
-            <span style="color:green;">
-                ✅ Coincide con Gratificación CON TOPE
-            </span>
-        `;
+    comparacionHTML = `
+        <span style="color:green;">
+            ✅ Coincide con Gratificación CON TOPE
+        </span>
+    `;
 
-    } else if (
-        Math.abs(diferenciaSinTope) < 1
-    ) {
+    agregarResultadoResumen(
+        "Gratificación",
+        "ok",
+        Math.abs(diferenciaConTope)
+    );
 
-        comparacionHTML = `
-            <span style="color:green;">
-                ✅ Coincide con Gratificación SIN TOPE
-            </span>
-        `;
+} else if (Math.abs(diferenciaSinTope) < 1) {
+
+    comparacionHTML = `
+        <span style="color:green;">
+            ✅ Coincide con Gratificación SIN TOPE
+        </span>
+    `;
+
+    agregarResultadoResumen(
+        "Gratificación",
+        "ok",
+        Math.abs(diferenciaSinTope)
+    );
 
 } else {
 
@@ -2016,12 +2024,26 @@ function calcularGratificacion(
         Math.abs(diferenciaSinTope)
     );
 
+    let estadoGratificacion = "ok";
+
+    if (diferenciaMinima > 1000) {
+        estadoGratificacion = "error";
+    } else if (diferenciaMinima > 1) {
+        estadoGratificacion = "warning";
+    }
+
     comparacionHTML = `
         <span style="color:red;">
             ❌ El monto pagado en la liquidación NO coincide con el cálculo esperado.<br>
             Diferencia detectada: <b>${formatCurrency(diferenciaMinima)}</b>
         </span>
     `;
+
+    agregarResultadoResumen(
+        "Gratificación",
+        estadoGratificacion,
+        diferenciaMinima
+    );
 }
 
     // =====================================================

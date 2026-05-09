@@ -867,20 +867,29 @@ function generarResumenAnalisisHTML() {
         info: 'Sin información relevante'
     };
 
-    const resumenOrdenado = [...resumenAnalisis]
-        .sort((a, b) => {
+const resumenOrdenado = [...resumenAnalisis]
+    .sort((a, b) => {
 
-            const prioridadA = prioridadEstados[a.estado] || 99;
-            const prioridadB = prioridadEstados[b.estado] || 99;
+        const prioridadEstados = {
+            error: 1,
+            warning: 2,
+            ok: 3
+        };
 
-            // primero por severidad
-            if (prioridadA !== prioridadB) {
-                return prioridadA - prioridadB;
-            }
+        const prioridadA = prioridadEstados[a.estado] || 99;
+        const prioridadB = prioridadEstados[b.estado] || 99;
 
-            // luego por diferencia monetaria
-            return Math.abs(b.diferencia || 0) - Math.abs(a.diferencia || 0);
-        });
+        // 1° criterio: severidad (error > warning > ok)
+        if (prioridadA !== prioridadB) {
+            return prioridadA - prioridadB;
+        }
+
+        // 2° criterio: impacto económico dentro del mismo estado
+        const diffA = Math.abs(a.diferencia || 0);
+        const diffB = Math.abs(b.diferencia || 0);
+
+        return diffB - diffA;
+    });
 
     const resumenHTML = resumenOrdenado.map(item => {
 
@@ -1880,14 +1889,12 @@ function calcularGratificacion(
         (4.75 * inm) / 12;
 
     let topeProporcional;
-
     let notaProporcional = "";
 
     if (jornadaSeleccionada > 30) {
 
         topeProporcional =
             topeGratificacion;
-
         notaProporcional =
             " (no aplica proporcionalidad)";
 

@@ -456,32 +456,22 @@ async function preValidarAntesDeAnalizar() {
     try {
 
         const archivoInput = document.getElementById('fileInput');
-
         if (!archivoInput || !archivoInput.files.length) {
-
             alert("⚠️ Debes seleccionar una liquidación.");
-
             return;
         }
 
         const archivo = archivoInput.files[0];
-
         const arrayBuffer = await archivo.arrayBuffer();
-
         const pdf = await pdfjsLib.getDocument({
             data: arrayBuffer
         }).promise;
 
         let textoCompleto = "";
-
         for (let i = 1; i <= pdf.numPages; i++) {
-
             const page = await pdf.getPage(i);
-
             const content = await page.getTextContent();
-
             const strings = content.items.map(item => item.str);
-
             textoCompleto += strings.join(" ") + "\n";
         }
 
@@ -505,9 +495,7 @@ async function preValidarAntesDeAnalizar() {
         // ======================================================
 
         let nombreDetectado = "Trabajador no identificado";
-
         let rutDetectado = "RUT no detectado";
-
         const matchTrabajador = textoCompleto.match(
             /NOMBRE\s+RUT\s+SUELDO\s+BASE\s+([A-ZÁÉÍÓÚÑ\s]+?)\s+(\d{1,2}\.\d{3}\.\d{3}-[\dkK])/i
         );
@@ -951,7 +939,7 @@ function generarResumenAnalisisHTML() {
                 margin-top:0;
                 margin-bottom:15px;
             ">
-                🚦 Resumen Ejecutivo del Análisis
+                🚦 Resumen: Análisis MEC
             </h2>
 
             ${resumenHTML}

@@ -2146,7 +2146,6 @@ agregarResultadoResumen(
     ).innerHTML = resultadoHTML;
 }
 
-  mostrarGratificacionMec(gratificables);
 
     // ===== Mostrar resultados en HTML =====
     document.getElementById('resultadoAnalisis').innerHTML = `

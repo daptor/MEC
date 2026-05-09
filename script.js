@@ -1686,24 +1686,66 @@ agregarResultadoResumen("Comisiones", estadoComisiones, 0);
         }
     }
 
-    if (diasSemanaCorrida !== "No especificados" && diasParaSemanaCorrida > 0 && totalComisiones > 0) {
-        const valorDiarioComisiones = totalComisiones / diasParaSemanaCorrida;
-        valorEsperadoSemanaCorrida = valorDiarioComisiones * diasSemanaCorrida;
- const diferenciaSemanaCorrida = montoSemanaCorrida - valorEsperadoSemanaCorrida;
+if (totalComisiones <= 0) {
 
-if (Math.abs(diferenciaSemanaCorrida) < 1) {resultadoSemanaCorrida = `<span style="color: green;">✅ Cálculo correcto</span>`;
+    resultadoSemanaCorrida =
+        `<span style="color: gray;">⚪ No aplica: no existen comisiones.</span>`;
 
-    // 🚦 guardar en resumen global
-    agregarResultadoResumen("Semana Corrida", "ok", 0);
-} else {
-    resultadoSemanaCorrida = `<span style="color: red;">❌ Discrepancia detectada: Se esperaba ${formatearCLP(valorEsperadoSemanaCorrida)}. Diferencia: ${formatearCLP(diferenciaSemanaCorrida)}.</span>`;
-    // 🚦 guardar en resumen global
-    agregarResultadoResumen("Semana Corrida", "error", diferenciaSemanaCorrida);
-}
+    agregarResultadoResumen(
+        "Semana Corrida",
+        "info",
+        0
+    );
+
+} else if (
+    diasSemanaCorrida !== "No especificados" &&
+    diasParaSemanaCorrida > 0
+) {
+
+    const valorDiarioComisiones =
+        totalComisiones / diasParaSemanaCorrida;
+
+    valorEsperadoSemanaCorrida =
+        valorDiarioComisiones * diasSemanaCorrida;
+
+    const diferenciaSemanaCorrida =
+        montoSemanaCorrida -
+        valorEsperadoSemanaCorrida;
+
+    if (Math.abs(diferenciaSemanaCorrida) < 1) {
+
+        resultadoSemanaCorrida =
+            `<span style="color: green;">✅ Cálculo correcto</span>`;
+
+        agregarResultadoResumen(
+            "Semana Corrida",
+            "ok",
+            0
+        );
+
     } else {
-       resultadoSemanaCorrida = `<span style="color: orange;">⛔ Datos insuficientes para calcular la semana corrida.</span>`;
-agregarResultadoResumen("Semana Corrida", "warning", 0);
+
+        resultadoSemanaCorrida =
+            `<span style="color: red;">❌ Discrepancia detectada: Se esperaba ${formatearCLP(valorEsperadoSemanaCorrida)}. Diferencia: ${formatearCLP(diferenciaSemanaCorrida)}.</span>`;
+
+        agregarResultadoResumen(
+            "Semana Corrida",
+            "error",
+            diferenciaSemanaCorrida
+        );
     }
+
+} else {
+
+    resultadoSemanaCorrida =
+        `<span style="color: orange;">⚠ Información insuficiente para calcular semana corrida.</span>`;
+
+    agregarResultadoResumen(
+        "Semana Corrida",
+        "warning",
+        0
+    );
+}
 
     function procesarMonto(montoTexto) {
         return parseFloat(montoTexto.replace(/\./g, '').replace(',', '.'));
@@ -1784,11 +1826,12 @@ const gratificables = identificarGratificables(textoCompleto);
 let estadoGratificables = "ok";
 
 if (!gratificables || gratificables.length === 0) {
-    estadoGratificables = "warning"; // gratificación se calculará con datos incompletos
+
+    estadoGratificables = "warning";
 }
 
-// guardar en resumen global
-agregarResultadoResumen("Haberes Gratificables", estadoGratificables, 0);
+// NO agregar aún.
+// Se agregará después del análisis real de gratificación.
 
 function obtenerJornadaMaxima(mes, año) {
 
@@ -2201,37 +2244,44 @@ function calcularGratificacion(
             "Gratificación Con Tope (C.T.)";
     }
 
-    // =====================================================
-    // COMPARACIONES
-    // =====================================================
+ // =====================================================
+// COMPARACIONES
+// =====================================================
 
-    const diferenciaConTope =
-        gratificacionPDF - valorConTope;
+const diferenciaConTope =
+    gratificacionPDF - valorConTope;
 
-    const diferenciaSinTope =
-        gratificacionPDF - valorSinTope;
+const diferenciaSinTope =
+    gratificacionPDF - valorSinTope;
 
-    let comparacionHTML = "";
+let comparacionHTML = "";
 
-    if (
-        Math.abs(diferenciaConTope) < 1
-    ) {
+let estadoGratificacionResumen = "ok";
+let diferenciaResumenGratificacion = 0;
 
-        comparacionHTML = `
-            <span style="color:green;">
-                ✅ Coincide con Gratificación CON TOPE
-            </span>
-        `;
+if (
+    Math.abs(diferenciaConTope) < 1
+) {
 
-    } else if (
-        Math.abs(diferenciaSinTope) < 1
-    ) {
+    comparacionHTML = `
+        <span style="color:green;">
+            ✅ Coincide con Gratificación CON TOPE
+        </span>
+    `;
 
-        comparacionHTML = `
-            <span style="color:green;">
-                ✅ Coincide con Gratificación SIN TOPE
-            </span>
-        `;
+    estadoGratificacionResumen = "ok";
+
+} else if (
+    Math.abs(diferenciaSinTope) < 1
+) {
+
+    comparacionHTML = `
+        <span style="color:green;">
+            ✅ Coincide con Gratificación SIN TOPE
+        </span>
+    `;
+
+    estadoGratificacionResumen = "ok";
 
 } else {
 
@@ -2240,13 +2290,42 @@ function calcularGratificacion(
         Math.abs(diferenciaSinTope)
     );
 
-    comparacionHTML = `
-        <span style="color:red;">
-            ❌ El monto pagado en la liquidación NO coincide con el cálculo esperado.<br>
-            Diferencia detectada: <b>${formatCurrency(diferenciaMinima)}</b>
-        </span>
-    `;
+    diferenciaResumenGratificacion =
+        diferenciaMinima;
+
+    if (diferenciaMinima <= 100) {
+
+        estadoGratificacionResumen = "warning";
+
+        comparacionHTML = `
+            <span style="color:orange;">
+                ⚠ Existe una pequeña diferencia detectada.<br>
+                Diferencia: <b>${formatCurrency(diferenciaMinima)}</b>
+            </span>
+        `;
+
+    } else {
+
+        estadoGratificacionResumen = "error";
+
+        comparacionHTML = `
+            <span style="color:red;">
+                ❌ El monto pagado en la liquidación NO coincide con el cálculo esperado.<br>
+                Diferencia detectada: <b>${formatCurrency(diferenciaMinima)}</b>
+            </span>
+        `;
+    }
 }
+
+// =====================================================
+// 🚦 RESUMEN GRATIFICACIÓN
+// =====================================================
+
+agregarResultadoResumen(
+    "Gratificación",
+    estadoGratificacionResumen,
+    diferenciaResumenGratificacion
+);
 
     // =====================================================
     // RESULTADO HTML

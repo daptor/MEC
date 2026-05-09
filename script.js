@@ -1124,43 +1124,19 @@ if (matchFecha) {
 
 const diferenciaSueldo = sueldoProporcional - sueldoEsperado;
 
-        let detalleResumenSueldo = "";
-
-        if (typeof variacionPorcentual !== "undefined") {
-
-            if (variacionPorcentual >= 0) {
-
-                detalleResumenSueldo =
-                    ` → Supera IMM en ${variacionPorcentual.toFixed(1)}%`;
-
-            } else {
-
-                detalleResumenSueldo =
-                    ` → Inferior IMM en ${Math.abs(variacionPorcentual).toFixed(1)}%`;
-            }
-        }
-
         if (Math.abs(diferenciaSueldo) < 1) {
 
             resultadoProporcional = `<span style="color: green;">✅ Cálculo correcto</span>`;
 
             // 🚦 guardar en resumen
-            agregarResultadoResumen(
-            "Sueldo Base" + detalleResumenSueldo,
-            "ok",
-            0
-        );
+            agregarResultadoResumen("Sueldo Base", "ok", 0);
 
         } else {
 
             resultadoProporcional = `<span style="color: red;">❌ Discrepancia detectada: Se esperaba ${formatearCLP(sueldoEsperado)}</span>`;
 
             // 🚦 guardar en resumen
-            agregarResultadoResumen(
-            "Sueldo Base" + detalleResumenSueldo,
-            "error",
-            diferenciaSueldo
-        );
+            agregarResultadoResumen("Sueldo Base", "error", diferenciaSueldo);
         }
     }
 
@@ -2565,7 +2541,6 @@ async function extraerDatosReportePremio(archivo) {
         return null;
     }
 }
-
 
 let datosReporte = null;
 const inputPremioEl = document.getElementById('filePremio');

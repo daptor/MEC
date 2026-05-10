@@ -2429,6 +2429,12 @@ agregarResultadoResumen(
     ).innerHTML = resultadoHTML;
 }
 
+// =====================================================
+// ⚡ CALCULAR GRATIFICACIÓN ANTES DEL RESUMEN
+// =====================================================
+
+mostrarGratificacionMec(gratificables);
+
     // ===== Mostrar resultados en HTML =====
     document.getElementById('resultadoAnalisis').innerHTML = `
     ${generarResumenAnalisisHTML()}
@@ -2488,7 +2494,6 @@ ${montoDiferenciaCaja !== 0 ? `<p><strong>Dif. Caja:</strong> ${formatCurrency(m
         </div>
 <hr>
   `;
-  mostrarGratificacionMec(gratificables);
 
 // ---------- INICIA: ANÁLISIS COMISIÓN GRUPAL (ASESOR DE COMPRAS) ----------
 

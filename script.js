@@ -1140,12 +1140,7 @@ if (diferenciaAbs <= 10) {
         </span>
     `;
 
-    // 🚦 resumen
-    agregarResultadoResumen(
-        "Sueldo Base",
-        "ok",
-        0
-    );
+    agregarResultadoResumen("Sueldo Base","ok",0);
 
 // =====================================================
 // 🟡 DIFERENCIA MENOR
@@ -1160,12 +1155,7 @@ if (diferenciaAbs <= 10) {
         </span>
     `;
 
-    // 🚦 resumen
-    agregarResultadoResumen(
-        "Sueldo Base",
-        "warning",
-        diferenciaAbs
-    );
+    agregarResultadoResumen("Sueldo Base","warning",diferenciaAbs);
 
 // =====================================================
 // 🔴 DIFERENCIA RELEVANTE
@@ -1176,18 +1166,14 @@ if (diferenciaAbs <= 10) {
     resultadoProporcional = `
         <span style="color: red;">
             ❌ Discrepancia detectada.<br>
-            Se esperaba:
-            ${formatearCLP(sueldoEsperado)}
+            Se esperaba: ${formatearCLP(sueldoEsperado)}
         </span>
     `;
 
-    // 🚦 resumen
-    agregarResultadoResumen(
-        "Sueldo Base",
-        "error",
-        diferenciaAbs
-    );
+    agregarResultadoResumen("Sueldo Base","error",diferenciaAbs);
 }
+
+
 
 // =====================================================
 // 💰 VALIDACIÓN SUELDO BASE VS IMM
@@ -1199,8 +1185,7 @@ let jornadaMaxima = 45;
 if (
     año > 2026 ||
     (año === 2026 &&
-     ["ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"]
-        .includes(mes))
+     ["ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"].includes(mes))
 ) {
     jornadaMaxima = 42;
 
@@ -1208,13 +1193,13 @@ if (
 } else if (
     año > 2024 ||
     (año === 2024 &&
-     ["MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"]
-        .includes(mes))
+     ["MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"].includes(mes))
 ) {
     jornadaMaxima = 44;
 }
 
-let inm = 0;
+
+// 🔵 SOLO UNA DECLARACIÓN
 let inm =
     ingresosMinimos[año] &&
     ingresosMinimos[año][mes.toUpperCase()]
@@ -1224,17 +1209,14 @@ let inm =
 let inmProporcional = inm;
 
 if (Number(jornadaSeleccionada) <= 30) {
-
-    inmProporcional =
-        (inm / jornadaMaxima) *
-        Number(jornadaSeleccionada);
+    inmProporcional = (inm / jornadaMaxima) * Number(jornadaSeleccionada);
 }
 
 let variacionPorcentual = 0;
 let mensajeVariacion = '';
 
-const diferenciaIMM =
-    sueldoBaseContractual - inmProporcional;
+const diferenciaIMM = sueldoBaseContractual - inmProporcional;
+
 
 // =====================================================
 // 🟢 SUELDO MAYOR AL IMM
@@ -1242,33 +1224,25 @@ const diferenciaIMM =
 
 if (diferenciaIMM > 0) {
 
-    variacionPorcentual =
-        ((diferenciaIMM) / inmProporcional) * 100;
+    variacionPorcentual = (diferenciaIMM / inmProporcional) * 100;
 
-    // Jornada parcial
     if (Number(jornadaSeleccionada) <= 30) {
-
         mensajeVariacion = `
             <span style="color: green;">
-                ✅ El sueldo base es un
-                ${Math.round(variacionPorcentual * 10) / 10}%
-                superior al IMM proporcional para una jornada de
-                ${jornadaSeleccionada} horas.
+                ✅ El sueldo base es ${Math.round(variacionPorcentual * 10) / 10}%
+                superior al IMM proporcional (${jornadaSeleccionada} hrs).
             </span>
         `;
-
-    // Jornada ordinaria
     } else {
-
         mensajeVariacion = `
             <span style="color: green;">
-                ✅ El sueldo base es un
-                ${Math.round(variacionPorcentual * 10) / 10}%
+                ✅ El sueldo base es ${Math.round(variacionPorcentual * 10) / 10}%
                 superior al IMM vigente.
             </span>
         `;
     }
-}
+
+
 // =====================================================
 // 🟡 SUELDO IGUAL AL IMM
 // =====================================================
@@ -1276,22 +1250,19 @@ if (diferenciaIMM > 0) {
 } else if (Math.abs(diferenciaIMM) < 1) {
 
     if (Number(jornadaSeleccionada) <= 30) {
-
         mensajeVariacion = `
             <span style="color: orange;">
-                ⚠ El sueldo base coincide exactamente con el IMM proporcional para una jornada de
-                ${jornadaSeleccionada} horas.
+                ⚠ El sueldo base coincide con el IMM proporcional (${jornadaSeleccionada} hrs).
             </span>
         `;
-
     } else {
-
         mensajeVariacion = `
             <span style="color: orange;">
-                ⚠ El sueldo base coincide exactamente con el IMM vigente.
+                ⚠ El sueldo base coincide con el IMM vigente.
             </span>
         `;
     }
+
 
 // =====================================================
 // 🔴 SUELDO MENOR AL IMM
@@ -1299,83 +1270,71 @@ if (diferenciaIMM > 0) {
 
 } else {
 
-    variacionPorcentual =
-        ((Math.abs(diferenciaIMM)) / inmProporcional) * 100;
+    variacionPorcentual = (Math.abs(diferenciaIMM) / inmProporcional) * 100;
 
-    // Jornada parcial
     if (Number(jornadaSeleccionada) <= 30) {
-
         mensajeVariacion = `
             <span style="color: red;">
-                ❌ El sueldo base es inferior al IMM proporcional vigente para una jornada de
-                ${jornadaSeleccionada} horas.
+                ❌ Sueldo base inferior al IMM proporcional (${jornadaSeleccionada} hrs).
             </span>
         `;
-
-    // Jornada ordinaria
     } else {
-
         mensajeVariacion = `
             <span style="color: red;">
-                ❌ El sueldo base es inferior al IMM vigente.
+                ❌ Sueldo base inferior al IMM vigente.
             </span>
         `;
     }
 }
-    // ----- HORAS EXTRAS 50% -----
-    let resultadoHorasExtras = '';
-    let estadoHorasExtras = "info";
-    let diferenciaHorasExtras = 0;
 
-    const regexHorasExtras = /HORAS\s*EXTRAS\s*50\s*%\s*\(([\d.,]+)\)\s*\$\s*([\d.,]+)/i;
-    const matchHorasExtras = textoCompleto.match(regexHorasExtras);
 
-    let horasExtrasRealizadas = "No especificadas";
-    let montoPagadoHorasExtras = "No encontrado";
-    let montoEsperadoHorasExtras = null;
 
-    if (matchHorasExtras) {
-        horasExtrasRealizadas = matchHorasExtras[1].replace(',', '.'); // Extrae las horas (con coma decimal)
-        montoPagadoHorasExtras = parseFloat(
-            matchHorasExtras[2].replace('.', '').replace(',', '.')
-        ); // Extrae el monto
-    }
+// =====================================================
+// ⏱ HORAS EXTRAS 50%
+// =====================================================
+
+let resultadoHorasExtras = '';
+let estadoHorasExtras = "info";
+let diferenciaHorasExtras = 0;
+
+const regexHorasExtras = /HORAS\s*EXTRAS\s*50\s*%\s*\(([\d.,]+)\)\s*\$\s*([\d.,]+)/i;
+const matchHorasExtras = textoCompleto.match(regexHorasExtras);
+
+let horasExtrasRealizadas = "No especificadas";
+let montoPagadoHorasExtras = "No encontrado";
+let montoEsperadoHorasExtras = null;
+
+if (matchHorasExtras) {
+    horasExtrasRealizadas = matchHorasExtras[1].replace(',', '.');
+    montoPagadoHorasExtras = parseFloat(
+        matchHorasExtras[2].replace('.', '').replace(',', '.')
+    );
+}
 
 if (
     horasExtrasRealizadas === "No especificadas" ||
     montoPagadoHorasExtras === "No encontrado"
 ) {
-
     estadoHorasExtras = "info";
-
-    resultadoHorasExtras =
-        `<span style="color: orange;">⛔ No se realizaron.</span>`;
+    resultadoHorasExtras = `<span style="color: orange;">⛔ No se realizaron.</span>`;
 
 } else {
 
     montoEsperadoHorasExtras =
-        sueldoBaseContractual *
-        factor *
-        parseFloat(horasExtrasRealizadas);
+        sueldoBaseContractual * factor * parseFloat(horasExtrasRealizadas);
 
     diferenciaHorasExtras =
-        montoPagadoHorasExtras -
-        montoEsperadoHorasExtras;
+        montoPagadoHorasExtras - montoEsperadoHorasExtras;
 
     if (Math.abs(diferenciaHorasExtras) < 1) {
-
         estadoHorasExtras = "ok";
-
-        resultadoHorasExtras =
-            `<span style="color: green;">✅ Cálculo correcto</span>`;
-
+        resultadoHorasExtras = `<span style="color: green;">✅ Cálculo correcto</span>`;
     } else {
-
         estadoHorasExtras = "error";
-
         resultadoHorasExtras =
             `<span style="color: red;">❌ Discrepancia detectada: ${formatearCLP(diferenciaHorasExtras)}</span>`;
     }
+}
 }
 
     // ----- HORAS EXTRAS DOMINGO -----

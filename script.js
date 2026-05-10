@@ -1241,6 +1241,27 @@ if (diferenciaIMM >= 0) {
         `;
     }
 }
+
+// =====================================================
+// 📊 ESTADO LEGAL SUELDO BASE → RESUMEN MEC
+// =====================================================
+
+let estadoResumenSueldoBase = "ok";
+let diferenciaResumenSueldoBase = 0;
+
+// Si NO cumple IMM → error en resumen
+if (diferenciaIMM < 0) {
+    estadoResumenSueldoBase = "error";
+    diferenciaResumenSueldoBase = Math.abs(diferenciaIMM);
+}
+
+// Enviamos resultado LEGAL al resumen
+agregarResultadoResumen(
+    "Sueldo Base",
+    estadoResumenSueldoBase,
+    diferenciaResumenSueldoBase
+);
+
     // ----- HORAS EXTRAS 50% -----
     let resultadoHorasExtras = '';
     let estadoHorasExtras = "info";

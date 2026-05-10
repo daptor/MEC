@@ -185,8 +185,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (btnLogout) {
     btnLogout.addEventListener("click", async () => {
-      await supabase.auth.signOut();
-      window.location.href = "login.html";
+    await supabase.auth.signOut(); window.location.replace("login.html");
     });
   }
 });

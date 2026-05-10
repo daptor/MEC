@@ -2429,19 +2429,6 @@ agregarResultadoResumen(
     ).innerHTML = resultadoHTML;
 }
 
-// =====================================================
-// ⚡ CALCULAR GRATIFICACIÓN ANTES DEL RESUMEN
-// =====================================================
-
-    calcularGratificacion(
-        gratificables,
-        textoCompleto,
-        jornadaSeleccionada,
-        mes,
-        año,
-        valorTotalGratificacion
-    );
-
     // ===== Mostrar resultados en HTML =====
     document.getElementById('resultadoAnalisis').innerHTML = `
     ${generarResumenAnalisisHTML()}

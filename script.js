@@ -2431,7 +2431,9 @@ agregarResultadoResumen(
 
     // ===== Mostrar resultados en HTML =====
     document.getElementById('resultadoAnalisis').innerHTML = `
-    ${generarResumenAnalisisHTML()}
+    <div id="resumenMecContainer">
+        ${generarResumenAnalisisHTML()}
+    </div>
 <hr>
         <p><strong>Mes y Año: </strong> ${mes} DE ${año}. <strong>
         <p>Jornada: </strong> ${jornadaSeleccionada} horas.</p>
@@ -2489,15 +2491,11 @@ ${montoDiferenciaCaja !== 0 ? `<p><strong>Dif. Caja:</strong> ${formatCurrency(m
 <hr>
   `;
 
-  mostrarGratificacionMec(gratificables);
+mostrarGratificacionMec(gratificables);
 
-// 🔄 refrescar resumen ahora que Gratificación ya fue agregada
-document.getElementById('resultadoAnalisis').innerHTML =
-    document.getElementById('resultadoAnalisis').innerHTML
-        .replace(
-            /🚦 Resumen: Análisis MEC[\s\S]*?<hr>/,
-            `${generarResumenAnalisisHTML()}<hr>`
-        );
+// 🔄 refrescar SOLO el resumen
+document.getElementById('resumenMecContainer').innerHTML =
+    generarResumenAnalisisHTML();
   
 // ---------- INICIA: ANÁLISIS COMISIÓN GRUPAL (ASESOR DE COMPRAS) ----------
 

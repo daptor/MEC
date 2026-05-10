@@ -360,3 +360,146 @@ input:focus, select:focus, textarea:focus,
 .btn-pro-lock:hover {
     transform: none; /* evita efecto hover normal */
 }
+
+
+/* MEJORAS VISUALES A ANALSIS DE LIQUIDACION*/
+
+/* =====================================================
+   ✨ MEJORA VISUAL INFORME MEC
+===================================================== */
+
+/* CONTENEDOR GENERAL RESULTADOS */
+#resultadoAnalisis,
+#resultadoGratificacion,
+#listaGratificables {
+    line-height: 1.65;
+    font-size: 16px;
+    color: #2b2b2b;
+}
+
+/* SEPARACIÓN ENTRE BLOQUES */
+#resultadoAnalisis hr,
+#resultadoGratificacion hr {
+    border: none;
+    border-top: 1px solid rgba(0,0,0,0.15);
+    margin: 28px 0;
+}
+
+/* TÍTULOS PRINCIPALES */
+#resultadoAnalisis h1,
+#resultadoAnalisis h2,
+#resultadoAnalisis h3 {
+    color: #1f4d24;
+    margin-top: 30px;
+    margin-bottom: 18px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+}
+
+/* SUBTÍTULOS DE SECCIONES */
+#resultadoAnalisis strong {
+    color: #222;
+}
+
+/* BLOQUES DE TEXTO */
+#resultadoAnalisis p {
+    margin: 10px 0;
+    line-height: 1.7;
+}
+
+/* LISTAS */
+#resultadoAnalisis ul {
+    padding-left: 22px;
+    margin-top: 10px;
+    margin-bottom: 18px;
+}
+
+#resultadoAnalisis li {
+    margin-bottom: 8px;
+}
+
+/* RESULTADOS POSITIVOS */
+.color-verde {
+    color: #159947;
+    font-weight: 700;
+}
+
+/* RESULTADOS ADVERTENCIA */
+.color-amarillo {
+    color: #d97706;
+    font-weight: 700;
+}
+
+/* RESULTADOS ERROR */
+.color-rojo {
+    color: #dc2626;
+    font-weight: 700;
+}
+
+/* MEJORA VISUAL DEL RESUMEN */
+.resumen-item {
+    background: rgba(255,255,255,0.75);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    transition: 0.2s ease;
+}
+
+.resumen-item:hover {
+    transform: translateY(-1px);
+}
+
+/* TÍTULOS NUMERADOS */
+.titulo-seccion {
+    font-size: 20px;
+    font-weight: 800;
+    color: #1f4d24;
+    margin-top: 35px;
+    margin-bottom: 18px;
+}
+
+/* BLOQUES IMPORTANTES */
+.bloque-destacado {
+    background: #f7fff3;
+    border-left: 5px solid #28a745;
+    padding: 14px;
+    border-radius: 10px;
+    margin: 15px 0;
+}
+
+/* DIFERENCIAS */
+.diferencia-alerta {
+    color: #dc2626;
+    font-weight: 700;
+    margin-top: 8px;
+}
+
+/* ANÁLISIS */
+.linea-analisis {
+    background: rgba(255,255,255,0.55);
+    padding: 10px 14px;
+    border-radius: 10px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+/* AJUSTE MOBILE */
+@media (max-width: 480px) {
+
+    #resultadoAnalisis,
+    #resultadoGratificacion,
+    #listaGratificables {
+        font-size: 15px;
+    }
+
+    #resultadoAnalisis h1,
+    #resultadoAnalisis h2,
+    #resultadoAnalisis h3 {
+        font-size: 24px;
+    }
+
+    .titulo-seccion {
+        font-size: 18px;
+    }
+}

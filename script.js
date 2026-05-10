@@ -1193,6 +1193,13 @@ const porcentajeSobreIMM =
 const porcentajeRedondeado =
     Math.round(porcentajeSobreIMM * 10) / 10;
 
+// =====================================================
+// 📊 ESTADO LEGAL SUELDO BASE → RESUMEN MEC
+// =====================================================
+
+let estadoResumenSueldoBase = "ok";
+let diferenciaResumenSueldoBase = 0;
+
 // -----------------------------------------------------
 // 🟢 CUMPLE IMM
 // -----------------------------------------------------
@@ -1212,7 +1219,7 @@ if (diferenciaIMM >= 0) {
 
         mensajeVariacion = `
             <span style="color: green;">
-                ✅ El sueldo base contractual supera el IMM vigente en ${porcentajeRedondeado}%.
+                ✅ El sueldo base supera el IMM vigente en ${porcentajeRedondeado}%.
             </span>
         `;
     }
@@ -1221,6 +1228,9 @@ if (diferenciaIMM >= 0) {
 // 🔴 NO CUMPLE IMM
 // -----------------------------------------------------
 } else {
+
+    estadoResumenSueldoBase = "error";
+    diferenciaResumenSueldoBase = Math.abs(diferenciaIMM);
 
     // Jornada parcial
     if (Number(jornadaSeleccionada) <= 30) {
@@ -1243,19 +1253,9 @@ if (diferenciaIMM >= 0) {
 }
 
 // =====================================================
-// 📊 ESTADO LEGAL SUELDO BASE → RESUMEN MEC
+// 🚦 ENVIAR RESULTADO LEGAL AL RESUMEN MEC
 // =====================================================
 
-let estadoResumenSueldoBase = "ok";
-let diferenciaResumenSueldoBase = 0;
-
-// Si NO cumple IMM → error en resumen
-if (diferenciaIMM < 0) {
-    estadoResumenSueldoBase = "error";
-    diferenciaResumenSueldoBase = Math.abs(diferenciaIMM);
-}
-
-// Enviamos resultado LEGAL al resumen
 agregarResultadoResumen(
     "Sueldo Base",
     estadoResumenSueldoBase,

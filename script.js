@@ -1214,7 +1214,8 @@ if (
     jornadaMaxima = 44;
 }
 
-const inm =
+let inm = 0;
+let inm =
     ingresosMinimos[año] &&
     ingresosMinimos[año][mes.toUpperCase()]
         ? ingresosMinimos[año][mes.toUpperCase()]

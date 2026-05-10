@@ -1122,52 +1122,205 @@ if (matchFecha) {
         const diasDelMes = 30;
         const sueldoEsperado = (sueldoBaseContractual / diasDelMes) * diasTrabajados;
 
-const diferenciaSueldo = sueldoProporcional - sueldoEsperado;
+const diferenciaSueldo =
+    sueldoProporcional - sueldoEsperado;
 
-        if (Math.abs(diferenciaSueldo) < 1) {
+const diferenciaAbs =
+    Math.abs(diferenciaSueldo);
 
-            resultadoProporcional = `<span style="color: green;">✅ Cálculo correcto</span>`;
+// =====================================================
+// 🟢 DIFERENCIA NORMAL / REDONDEO
+// =====================================================
 
-            // 🚦 guardar en resumen
-            agregarResultadoResumen("Sueldo Base", "ok", 0);
+if (diferenciaAbs <= 10) {
 
-        } else {
+    resultadoProporcional = `
+        <span style="color: green;">
+            ✅ Cálculo correcto.
+        </span>
+    `;
 
-            resultadoProporcional = `<span style="color: red;">❌ Discrepancia detectada: Se esperaba ${formatearCLP(sueldoEsperado)}</span>`;
+    // 🚦 resumen
+    agregarResultadoResumen(
+        "Sueldo Base",
+        "ok",
+        0
+    );
 
-            // 🚦 guardar en resumen
-            agregarResultadoResumen("Sueldo Base", "error", diferenciaSueldo);
-        }
-    }
+// =====================================================
+// 🟡 DIFERENCIA MENOR
+// =====================================================
 
-    let jornadaMaxima = 45;
-    if (año > 2026 || (año === 2026 && mes === "MAYO")) {
-        jornadaMaxima = 42;
-    }
+} else if (diferenciaAbs <= 500) {
 
-    const inm = ingresosMinimos[año] && ingresosMinimos[año][mes.toUpperCase()] ? ingresosMinimos[año][mes.toUpperCase()] : 0;
+    resultadoProporcional = `
+        <span style="color: orange;">
+            ⚠ Existe una pequeña diferencia detectada.<br>
+            Diferencia: ${formatearCLP(diferenciaAbs)}
+        </span>
+    `;
 
-    let inmProporcional = inm;
+    // 🚦 resumen
+    agregarResultadoResumen(
+        "Sueldo Base",
+        "warning",
+        diferenciaAbs
+    );
 
-    if (jornadaSeleccionada <= 30) {
-        inmProporcional = (inm / jornadaMaxima) * jornadaSeleccionada;
-    }
+// =====================================================
+// 🔴 DIFERENCIA RELEVANTE
+// =====================================================
 
-    let variacionPorcentual = 0;
-    let mensajeVariacion = '';
-    if (sueldoBaseContractual > inmProporcional) {
+} else {
 
-    variacionPorcentual = ((sueldoBaseContractual - inmProporcional) / inmProporcional) * 100;
-    mensajeVariacion = `✅ Es un ${Math.round(variacionPorcentual * 10) / 10}% mayor que el IMM `;
-    } else if (sueldoBaseContractual === inmProporcional) {
+    resultadoProporcional = `
+        <span style="color: red;">
+            ❌ Discrepancia detectada.<br>
+            Se esperaba:
+            ${formatearCLP(sueldoEsperado)}
+        </span>
+    `;
 
-      mensajeVariacion = `Es igual al IMM `;
+    // 🚦 resumen
+    agregarResultadoResumen(
+        "Sueldo Base",
+        "error",
+        diferenciaAbs
+    );
+}
+
+// =====================================================
+// 💰 VALIDACIÓN SUELDO BASE VS IMM
+// =====================================================
+
+let jornadaMaxima = 45;
+
+// 42 horas desde abril 2026
+if (
+    año > 2026 ||
+    (año === 2026 &&
+     ["ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"]
+        .includes(mes))
+) {
+    jornadaMaxima = 42;
+
+// 44 horas desde mayo 2024
+} else if (
+    año > 2024 ||
+    (año === 2024 &&
+     ["MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"]
+        .includes(mes))
+) {
+    jornadaMaxima = 44;
+}
+
+const inm =
+    ingresosMinimos[año] &&
+    ingresosMinimos[año][mes.toUpperCase()]
+        ? ingresosMinimos[año][mes.toUpperCase()]
+        : 0;
+
+let inmProporcional = inm;
+
+if (Number(jornadaSeleccionada) <= 30) {
+
+    inmProporcional =
+        (inm / jornadaMaxima) *
+        Number(jornadaSeleccionada);
+}
+
+let variacionPorcentual = 0;
+let mensajeVariacion = '';
+
+const diferenciaIMM =
+    sueldoBaseContractual - inmProporcional;
+
+// =====================================================
+// 🟢 SUELDO MAYOR AL IMM
+// =====================================================
+
+if (diferenciaIMM > 0) {
+
+    variacionPorcentual =
+        ((diferenciaIMM) / inmProporcional) * 100;
+
+    // Jornada parcial
+    if (Number(jornadaSeleccionada) <= 30) {
+
+        mensajeVariacion = `
+            <span style="color: green;">
+                ✅ El sueldo base es un
+                ${Math.round(variacionPorcentual * 10) / 10}%
+                superior al IMM proporcional para una jornada de
+                ${jornadaSeleccionada} horas.
+            </span>
+        `;
+
+    // Jornada ordinaria
     } else {
 
-      variacionPorcentual = ((inmProporcional - sueldoBaseContractual) / inmProporcional) * 100;
-      mensajeVariacion = `❌ Es ${Math.round(variacionPorcentual * 10) / 10}% inferior al IMM `;
+        mensajeVariacion = `
+            <span style="color: green;">
+                ✅ El sueldo base es un
+                ${Math.round(variacionPorcentual * 10) / 10}%
+                superior al IMM vigente.
+            </span>
+        `;
     }
 
+// =====================================================
+// 🟡 SUELDO IGUAL AL IMM
+// =====================================================
+
+} else if (Math.abs(diferenciaIMM) < 1) {
+
+    if (Number(jornadaSeleccionada) <= 30) {
+
+        mensajeVariacion = `
+            <span style="color: orange;">
+                ⚠ El sueldo base coincide exactamente con el IMM proporcional para una jornada de
+                ${jornadaSeleccionada} horas.
+            </span>
+        `;
+
+    } else {
+
+        mensajeVariacion = `
+            <span style="color: orange;">
+                ⚠ El sueldo base coincide exactamente con el IMM vigente.
+            </span>
+        `;
+    }
+
+// =====================================================
+// 🔴 SUELDO MENOR AL IMM
+// =====================================================
+
+} else {
+
+    variacionPorcentual =
+        ((Math.abs(diferenciaIMM)) / inmProporcional) * 100;
+
+    // Jornada parcial
+    if (Number(jornadaSeleccionada) <= 30) {
+
+        mensajeVariacion = `
+            <span style="color: red;">
+                ❌ El sueldo base es inferior al IMM proporcional vigente para una jornada de
+                ${jornadaSeleccionada} horas.
+            </span>
+        `;
+
+    // Jornada ordinaria
+    } else {
+
+        mensajeVariacion = `
+            <span style="color: red;">
+                ❌ El sueldo base es inferior al IMM vigente.
+            </span>
+        `;
+    }
+}
     // ----- HORAS EXTRAS 50% -----
     let resultadoHorasExtras = '';
     let estadoHorasExtras = "info";

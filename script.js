@@ -2490,6 +2490,14 @@ ${montoDiferenciaCaja !== 0 ? `<p><strong>Dif. Caja:</strong> ${formatCurrency(m
   `;
 
   mostrarGratificacionMec(gratificables);
+
+// 🔄 refrescar resumen ahora que Gratificación ya fue agregada
+document.getElementById('resultadoAnalisis').innerHTML =
+    document.getElementById('resultadoAnalisis').innerHTML
+        .replace(
+            /🚦 Resumen: Análisis MEC[\s\S]*?<hr>/,
+            `${generarResumenAnalisisHTML()}<hr>`
+        );
   
 // ---------- INICIA: ANÁLISIS COMISIÓN GRUPAL (ASESOR DE COMPRAS) ----------
 

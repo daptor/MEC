@@ -1077,68 +1077,114 @@ for (let i = 1; i <= pdf.numPages; i++) {
 // Detectar premio en la nómina tempranamente para integrarlo en haberes si existe
 const regexPremioNomina_global = /(PREMIO\s*VENTA\s*TIENDA(?:\s*AUT\.?)?|PREMIO\s*VENTA\s*TIENDA|PREMIO\s*CUMPL\.?GRUPAL\s*VTAS|INCENTIVO\s*TIENDA|PREMIO\s*VENTA)[^\$]*\$\s*([\d\.,]+)/i;
 const matchPremioNomina_global = textoCompleto.match(regexPremioNomina_global);
-window.comisionPagadaEnNomina = matchPremioNomina_global ? procesarMonto(matchPremioNomina_global[2]) : 0;
-const regexFecha = /(\b(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\b) de (\d{4})/i;
+
+window.comisionPagadaEnNomina =
+    matchPremioNomina_global
+        ? procesarMonto(matchPremioNomina_global[2])
+        : 0;
+
+const regexFecha =
+    /(\b(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\b) de (\d{4})/i;
+
 const matchFecha = textoCompleto.match(regexFecha);
 
 let mes = "No encontrado";
 let año = "No encontrado";
+
 if (matchFecha) {
     mes = matchFecha[1].toUpperCase();
     año = parseInt(matchFecha[2]);
 }
 
-    const regexCargo = /FECHA\s*INGRESO\s*(.*?)(?=\s*[\r\n]|$)/i;
-    const matchCargo = textoCompleto.match(regexCargo);
+const regexCargo =
+    /FECHA\s*INGRESO\s*(.*?)(?=\s*[\r\n]|$)/i;
 
-    let cargo = "No encontrado";
-    if (matchCargo) {
-        cargo = matchCargo[1].trim();
+const matchCargo = textoCompleto.match(regexCargo);
+
+let cargo = "No encontrado";
+
+if (matchCargo) {
+    cargo = matchCargo[1].trim();
+}
+
+const cargoEncontrado =
+    listaCargos.find(c => cargo.includes(c));
+
+if (cargoEncontrado) {
+    cargo = cargoEncontrado;
+}
+
+const regexSueldoBaseContractual =
+    /SUELDO\s*BASE.*?\$\s*(\d[\d.]*)/i;
+
+const matchSueldoBaseContractual =
+    textoCompleto.match(regexSueldoBaseContractual);
+
+let sueldoBaseContractual = null;
+
+if (matchSueldoBaseContractual) {
+
+    sueldoBaseContractual = parseFloat(
+        matchSueldoBaseContractual[1]
+            .replace('.', '')
+            .replace(',', '.')
+    );
+}
+
+const regexSueldoBaseProporcional =
+    /SUELDO\s*BASE\s*\((\d+)\)\s*\$\s*(\d[\d.]*)/i;
+
+const matchSueldoBaseProporcional =
+    textoCompleto.match(regexSueldoBaseProporcional);
+
+let diasTrabajados = null;
+let sueldoProporcional = null;
+let resultadoProporcional = '';
+
+// =====================================================
+// 💰 VALIDACIÓN PROPORCIONAL SUELDO BASE
+// =====================================================
+
+if (matchSueldoBaseProporcional && sueldoBaseContractual) {
+
+    diasTrabajados =
+        parseInt(matchSueldoBaseProporcional[1]);
+
+    sueldoProporcional = parseFloat(
+        matchSueldoBaseProporcional[2]
+            .replace('.', '')
+            .replace(',', '.')
+    );
+
+    const diasDelMes = 30;
+
+    const sueldoEsperado =
+        (sueldoBaseContractual / diasDelMes)
+        * diasTrabajados;
+
+    const diferenciaSueldo =
+        sueldoProporcional - sueldoEsperado;
+
+    // ⚠ SOLO INFORMAR
+    // ⚠ NO alimentar resumen MEC
+    if (Math.abs(diferenciaSueldo) < 1) {
+
+        resultadoProporcional = `
+            <span style="color: green;">
+                ✅ Cálculo correcto
+            </span>
+        `;
+
+    } else {
+
+        resultadoProporcional = `
+            <span style="color: red;">
+                ❌ Discrepancia detectada:
+                Se esperaba ${formatearCLP(sueldoEsperado)}
+            </span>
+        `;
     }
-    const cargoEncontrado = listaCargos.find(c => cargo.includes(c));
-    if (cargoEncontrado) {
-        cargo = cargoEncontrado;
-    }
-
-    const regexSueldoBaseContractual = /SUELDO\s*BASE.*?\$\s*(\d[\d.]*)/i;
-    const matchSueldoBaseContractual = textoCompleto.match(regexSueldoBaseContractual);
-
-    let sueldoBaseContractual = null;
-    if (matchSueldoBaseContractual) {
-        sueldoBaseContractual = parseFloat(matchSueldoBaseContractual[1].replace('.', '').replace(',', '.'));
-    }
-
-    const regexSueldoBaseProporcional = /SUELDO\s*BASE\s*\((\d+)\)\s*\$\s*(\d[\d.]*)/i;
-    const matchSueldoBaseProporcional = textoCompleto.match(regexSueldoBaseProporcional);
-
-    let diasTrabajados = null;
-    let sueldoProporcional = null;
-    let resultadoProporcional = '';
-
-    if (matchSueldoBaseProporcional && sueldoBaseContractual) {
-        diasTrabajados = parseInt(matchSueldoBaseProporcional[1]);
-        sueldoProporcional = parseFloat(matchSueldoBaseProporcional[2].replace('.', '').replace(',', '.'));
-
-        const diasDelMes = 30;
-        const sueldoEsperado = (sueldoBaseContractual / diasDelMes) * diasTrabajados;
-
-const diferenciaSueldo = sueldoProporcional - sueldoEsperado;
-
-        if (Math.abs(diferenciaSueldo) < 1) {
-
-            resultadoProporcional = `<span style="color: green;">✅ Cálculo correcto</span>`;
-
-            // 🚦 guardar en resumen
-            agregarResultadoResumen("Sueldo Base", "ok", 0);
-
-        } else {
-
-            resultadoProporcional = `<span style="color: red;">❌ Discrepancia detectada: Se esperaba ${formatearCLP(sueldoEsperado)}</span>`;
-
-            // 🚦 guardar en resumen
-            agregarResultadoResumen("Sueldo Base", "error", diferenciaSueldo);
-        }
-    }
+}
 
 // =====================================================
 // 💰 VALIDACIÓN SUELDO BASE VS IMM
@@ -1149,19 +1195,31 @@ let jornadaMaxima = 45;
 // 42 horas desde abril 2026
 if (
     año > 2026 ||
-    (año === 2026 &&
-     ["ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"]
-        .includes(mes))
+    (
+        año === 2026 &&
+        [
+            "ABRIL","MAYO","JUNIO","JULIO",
+            "AGOSTO","SEPTIEMBRE","OCTUBRE",
+            "NOVIEMBRE","DICIEMBRE"
+        ].includes(mes)
+    )
 ) {
+
     jornadaMaxima = 42;
 
 // 44 horas desde mayo 2024
 } else if (
     año > 2024 ||
-    (año === 2024 &&
-     ["MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"]
-        .includes(mes))
+    (
+        año === 2024 &&
+        [
+            "MAYO","JUNIO","JULIO","AGOSTO",
+            "SEPTIEMBRE","OCTUBRE",
+            "NOVIEMBRE","DICIEMBRE"
+        ].includes(mes)
+    )
 ) {
+
     jornadaMaxima = 44;
 }
 
@@ -1173,13 +1231,18 @@ const inm =
 
 let inmProporcional = inm;
 
+// Jornada parcial → IMM proporcional
 if (Number(jornadaSeleccionada) <= 30) {
-    inmProporcional = (inm / jornadaMaxima) * Number(jornadaSeleccionada);
+
+    inmProporcional =
+        (inm / jornadaMaxima)
+        * Number(jornadaSeleccionada);
 }
 
 let mensajeVariacion = '';
 
-const diferenciaIMM = sueldoBaseContractual - inmProporcional;
+const diferenciaIMM =
+    sueldoBaseContractual - inmProporcional;
 
 // =====================================================
 // 💰 INTERPRETACIÓN JURÍDICA SUELDO BASE VS IMM
@@ -1187,7 +1250,10 @@ const diferenciaIMM = sueldoBaseContractual - inmProporcional;
 
 const porcentajeSobreIMM =
     inmProporcional > 0
-        ? ((sueldoBaseContractual - inmProporcional) / inmProporcional) * 100
+        ? (
+            (sueldoBaseContractual - inmProporcional)
+            / inmProporcional
+        ) * 100
         : 0;
 
 const porcentajeRedondeado =
@@ -1230,7 +1296,9 @@ if (diferenciaIMM >= 0) {
 } else {
 
     estadoResumenSueldoBase = "error";
-    diferenciaResumenSueldoBase = Math.abs(diferenciaIMM);
+
+    diferenciaResumenSueldoBase =
+        Math.abs(diferenciaIMM);
 
     // Jornada parcial
     if (Number(jornadaSeleccionada) <= 30) {
@@ -1253,7 +1321,7 @@ if (diferenciaIMM >= 0) {
 }
 
 // =====================================================
-// 🚦 ENVIAR RESULTADO LEGAL AL RESUMEN MEC
+// 🚦 RESUMEN MEC → SOLO VALIDACIÓN LEGAL IMM
 // =====================================================
 
 agregarResultadoResumen(

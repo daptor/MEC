@@ -2433,7 +2433,14 @@ agregarResultadoResumen(
 // ⚡ CALCULAR GRATIFICACIÓN ANTES DEL RESUMEN
 // =====================================================
 
-mostrarGratificacionMec(gratificables);
+    calcularGratificacion(
+        gratificables,
+        textoCompleto,
+        jornadaSeleccionada,
+        mes,
+        año,
+        valorTotalGratificacion
+    );
 
     // ===== Mostrar resultados en HTML =====
     document.getElementById('resultadoAnalisis').innerHTML = `
@@ -2495,6 +2502,8 @@ ${montoDiferenciaCaja !== 0 ? `<p><strong>Dif. Caja:</strong> ${formatCurrency(m
 <hr>
   `;
 
+  mostrarGratificacionMec(gratificables);
+  
 // ---------- INICIA: ANÁLISIS COMISIÓN GRUPAL (ASESOR DE COMPRAS) ----------
 
 // Detectar premio grupal real en la nómina

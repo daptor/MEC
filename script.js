@@ -1174,36 +1174,36 @@ const inm =
 let inmProporcional = inm;
 
 if (Number(jornadaSeleccionada) <= 30) {
-
-    inmProporcional =
-        (inm / jornadaMaxima) *
-        Number(jornadaSeleccionada);
+    inmProporcional = (inm / jornadaMaxima) * Number(jornadaSeleccionada);
 }
 
-let variacionPorcentual = 0;
 let mensajeVariacion = '';
 
-const diferenciaIMM =
-    sueldoBaseContractual - inmProporcional;
+const diferenciaIMM = sueldoBaseContractual - inmProporcional;
 
 // =====================================================
-// 🟢 SUELDO MAYOR AL IMM
+// 💰 INTERPRETACIÓN JURÍDICA SUELDO BASE VS IMM
 // =====================================================
 
-if (diferenciaIMM > 0) {
+const porcentajeSobreIMM =
+    inmProporcional > 0
+        ? ((sueldoBaseContractual - inmProporcional) / inmProporcional) * 100
+        : 0;
 
-    variacionPorcentual =
-        ((diferenciaIMM) / inmProporcional) * 100;
+const porcentajeRedondeado =
+    Math.round(porcentajeSobreIMM * 10) / 10;
+
+// -----------------------------------------------------
+// 🟢 CUMPLE IMM
+// -----------------------------------------------------
+if (diferenciaIMM >= 0) {
 
     // Jornada parcial
     if (Number(jornadaSeleccionada) <= 30) {
 
         mensajeVariacion = `
             <span style="color: green;">
-                ✅ El sueldo base es un
-                ${Math.round(variacionPorcentual * 10) / 10}%
-                superior al IMM proporcional para una jornada de
-                ${jornadaSeleccionada} horas.
+                ✅ El sueldo base es un ${porcentajeRedondeado}% superior al IMM proporcional vigente para una jornada de ${jornadaSeleccionada} horas.
             </span>
         `;
 
@@ -1212,53 +1212,22 @@ if (diferenciaIMM > 0) {
 
         mensajeVariacion = `
             <span style="color: green;">
-                ✅ El sueldo base es un
-                ${Math.round(variacionPorcentual * 10) / 10}%
-                superior al IMM vigente.
+                ✅ El sueldo base contractual supera el IMM vigente en ${porcentajeRedondeado}%.
             </span>
         `;
     }
 
-// =====================================================
-// 🟡 SUELDO IGUAL AL IMM
-// =====================================================
-
-} else if (Math.abs(diferenciaIMM) < 1) {
-
-    if (Number(jornadaSeleccionada) <= 30) {
-
-        mensajeVariacion = `
-            <span style="color: orange;">
-                ⚠ El sueldo base coincide exactamente con el IMM proporcional para una jornada de
-                ${jornadaSeleccionada} horas.
-            </span>
-        `;
-
-    } else {
-
-        mensajeVariacion = `
-            <span style="color: orange;">
-                ⚠ El sueldo base coincide exactamente con el IMM vigente.
-            </span>
-        `;
-    }
-
-// =====================================================
-// 🔴 SUELDO MENOR AL IMM
-// =====================================================
-
+// -----------------------------------------------------
+// 🔴 NO CUMPLE IMM
+// -----------------------------------------------------
 } else {
-
-    variacionPorcentual =
-        ((Math.abs(diferenciaIMM)) / inmProporcional) * 100;
 
     // Jornada parcial
     if (Number(jornadaSeleccionada) <= 30) {
 
         mensajeVariacion = `
             <span style="color: red;">
-                ❌ El sueldo base es inferior al IMM proporcional vigente para una jornada de
-                ${jornadaSeleccionada} horas.
+                ❌ El sueldo base es inferior al IMM proporcional vigente para una jornada de ${jornadaSeleccionada} horas.
             </span>
         `;
 

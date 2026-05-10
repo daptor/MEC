@@ -1266,10 +1266,25 @@ const porcentajeRedondeado =
 let estadoResumenSueldoBase = "ok";
 let diferenciaResumenSueldoBase = 0;
 
-// -----------------------------------------------------
+// =====================================================
 // 🟢 CUMPLE IMM
-// -----------------------------------------------------
+// =====================================================
 if (diferenciaIMM >= 0) {
+
+    // -------------------------------------------------
+    // ✅ Mostrar cálculo proporcional SOLO si cumple IMM
+    // -------------------------------------------------
+    if (
+        typeof diferenciaSueldo !== "undefined" &&
+        Math.abs(diferenciaSueldo) < 1
+    ) {
+
+        resultadoProporcional = `
+            <span style="color: green;">
+                ✅ Cálculo correcto
+            </span>
+        `;
+    }
 
     // Jornada parcial
     if (Number(jornadaSeleccionada) <= 30) {
@@ -1290,9 +1305,9 @@ if (diferenciaIMM >= 0) {
         `;
     }
 
-// -----------------------------------------------------
+// =====================================================
 // 🔴 NO CUMPLE IMM
-// -----------------------------------------------------
+// =====================================================
 } else {
 
     estadoResumenSueldoBase = "error";
@@ -1300,12 +1315,23 @@ if (diferenciaIMM >= 0) {
     diferenciaResumenSueldoBase =
         Math.abs(diferenciaIMM);
 
+    // -------------------------------------------------
+    // ❌ Ocultar "Cálculo correcto"
+    // si existe incumplimiento IMM
+    // -------------------------------------------------
+    resultadoProporcional = '';
+
     // Jornada parcial
     if (Number(jornadaSeleccionada) <= 30) {
 
         mensajeVariacion = `
             <span style="color: red;">
                 ❌ El sueldo base es inferior al IMM proporcional vigente para una jornada de ${jornadaSeleccionada} horas.
+                <br>
+                Diferencia detectada:
+                ${formatearCLP(
+                    Math.abs(diferenciaIMM)
+                )}
             </span>
         `;
 
@@ -1315,6 +1341,11 @@ if (diferenciaIMM >= 0) {
         mensajeVariacion = `
             <span style="color: red;">
                 ❌ El sueldo base es inferior al IMM vigente.
+                <br>
+                Diferencia detectada:
+                ${formatearCLP(
+                    Math.abs(diferenciaIMM)
+                )}
             </span>
         `;
     }

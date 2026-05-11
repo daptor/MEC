@@ -29,12 +29,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     emailSpan.innerText = user.email;
   }
 
-  // Botón cerrar sesión
+  // Botón cerrar sesión (versión menú)
   const btnLogout = document.getElementById("btnLogout");
   if (btnLogout) {
     btnLogout.addEventListener("click", async () => {
-      await supabase.auth.signOut();
-      window.location.replace("/");
+      try {
+        await supabase.auth.signOut();
+      } catch (e) {
+        console.error("Error en signOut:", e);
+      }
+      // 👇 clave: reemplaza la entrada del historial y va a login
+      history.replaceState(null, "", "/login.html");
+      window.location.replace("/login.html");
     });
   }
 
@@ -45,7 +51,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 // 🔥 ESCUCHAR CAMBIOS DE SESIÓN
 supabase.auth.onAuthStateChange((event) => {
   if (event === "SIGNED_OUT") {
-    window.location.replace("/login.html");
+    try {
+      // 👇 mismo criterio: no dejar rastro en historial
+      history.replaceState(null, "", "/login.html");
+      window.location.replace("/login.html");
+    } catch (e) {
+      console.error("onAuthStateChange error:", e);
+      window.location.replace("/login.html");
+    }
   }
 });
 
@@ -176,16 +189,25 @@ function requireProFeature(featureName = "Esta función") {
   );
 }
 
-// =====================================================
-// 🔒 BOTÓN CERRAR SESIÓN (versión menú)
-// =====================================================
 
-document.addEventListener("DOMContentLoaded", () => {
-  const btnLogout = document.getElementById("btnLogout");
+// 🔁 MANEJO DE "VOLVER ATRÁS" (bfcache / historial)
+window.addEventListener('pageshow', async (event) => {
+  try {
+    // Si viene desde back/forward cache, forzamos control
+    if (event.persisted) {
+      // cache-buster: recarga limpia
+      window.location.replace(window.location.pathname + '?cb=' + Date.now());
+      return;
+    }
 
-  if (btnLogout) {
-    btnLogout.addEventListener("click", async () => {
-    await supabase.auth.signOut(); window.location.replace("login.html");
-    });
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      history.replaceState(null, "", "/login.html");
+      window.location.replace("/login.html");
+    }
+  } catch (e) {
+    console.error('pageshow check error', e);
+    history.replaceState(null, "", "/login.html");
+    window.location.replace("/login.html");
   }
 });

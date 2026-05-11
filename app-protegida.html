@@ -269,16 +269,24 @@
       <button onclick="mostrarPantalla('menu-principal')">↩ Menú</button>
   </div>
 
-  <!-- Pantalla de Chat Privado (Usuario) -->
-  <div id="pantalla-chat-privado" class="pantalla" style="display:none;">
-      <h1>Chat con Admin</h1>
-      <div id="mensaje-chat-privado" class="chat-container"></div>
-      <textarea id="mensajeUsuarioPrivado" rows="3" placeholder="Escribe tu mensaje privado..."></textarea>
-      <button id="enviarMensajePrivadoBtn">Enviar Mensaje</button>
-      <p id="confirmacionEnvioPrivado" style="display:none; color: green;">✅ ¡Mensaje enviado!</p>
-      <button onclick="mostrarPantalla('pantalla-chat')">💬 Volver al Chat Grupal</button>
-      <button onclick="volverAlMenu()">↩ Menú</button>
-  </div>
+<!-- Pantalla de Chat Privado (Usuario) -->
+<div id="pantalla-chat-privado" class="pantalla" style="display:none;">
+  <h1>Chat con Admin</h1>
+  <div id="mensaje-chat-privado" class="chat-container"></div>
+  <textarea id="mensajeUsuarioPrivado" rows="3" placeholder="Escribe tu mensaje privado..."></textarea>
+  <!-- NUEVO: adjuntar archivo (PDF o Excel, máx 3MB) -->
+  <input
+    type="file"
+    id="archivoPrivado"
+    accept=".pdf,application/pdf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  />
+  <small>Solo PDF o Excel, máx. 3 MB.</small>
+  <button id="enviarMensajePrivadoBtn">Enviar Mensaje</button>
+  <p id="confirmacionEnvioPrivado" style="display:none; color: green;">✅ ¡Mensaje enviado!</p>
+  <button onclick="mostrarPantalla('pantalla-chat')"> Volver al Chat Grupal</button>
+  <button onclick="volverAlMenu()">↩ Menú</button>
+</div>
+
 
   <!-- Pantalla de Admin para gestionar chats privados -->
   <div id="pantalla-admin-chat" class="pantalla" style="display:none;">

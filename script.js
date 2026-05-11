@@ -4198,6 +4198,62 @@ async function obtenerNickPorId(userId) {
 }
 
 // =========================
+// SUBIR ARCHIVO CHAT PRIVADO (usuario)
+// =========================
+async function subirArchivoPrivado(file, idConversacion) {
+  if (!file) return null;
+
+  // Validar tamaño (3 MB)
+  const maxBytes = 3 * 1024 * 1024; // 3MB
+  if (file.size > maxBytes) {
+    alert("El archivo supera los 3 MB permitidos.");
+    return null;
+  }
+
+  // Validar tipo
+  const mime = file.type;
+  const tiposPermitidos = [
+    "application/pdf",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  ];
+  if (!tiposPermitidos.includes(mime)) {
+    alert("Solo se permiten PDF y archivos Excel (.xls / .xlsx).");
+    return null;
+  }
+
+  // Obtener usuario actual
+  const { data } = await supabase.auth.getUser();
+  const user = data.user;
+  if (!user) {
+    alert("No hay usuario autenticado.");
+    return null;
+  }
+
+  // Path interno: user_id/conversacion_id/timestamp_nombre
+  const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
+  const path = `${user.id}/${idConversacion}/${Date.now()}_${safeName}`;
+
+  const { error } = await supabase
+    .storage
+    .from("chat_privado_adjuntos")
+    .upload(path, file);
+
+  if (error) {
+    console.error("Error subiendo archivo privado:", error);
+    alert("No se pudo subir el archivo. Inténtalo nuevamente.");
+    return null;
+  }
+
+  // Devolvemos datos para guardar en mensajes_privados
+  return {
+    archivo_path: path,
+    archivo_nombre: file.name,
+    archivo_mime: mime
+  };
+}
+
+// =========================
 // INICIAR CHAT USUARIO
 // =========================
 async function iniciarChatPrivado() {
@@ -4335,52 +4391,121 @@ async function cargarMensajesPrivados(idConversacion) {
 // RENDER INCREMENTAL REAL
 // =========================
 async function agregarMensajePrivadoAlDOM(msg) {
+  if (mensajesPrivadosRenderizados.has(msg.id)) return;
+  const user = await getUser();
+  const contenedor = document.getElementById("mensaje-chat-privado");
+  const div = document.createElement('div');
+  div.style.textAlign = (msg.user_id === user.id) ? "right" : "left";
+  const nick = await obtenerNickPorId(msg.user_id);
 
-    if (mensajesPrivadosRenderizados.has(msg.id)) return;
+  let html = `
+    <strong>${nick}:</strong> ${msg.mensaje}
+    <br><small>${new Date(msg.fecha_envio).toLocaleTimeString()}</small>
+  `;
 
-    const user = await getUser();
-    const contenedor = document.getElementById("mensaje-chat-privado");
-
-    const div = document.createElement('div');
-    div.style.textAlign = (msg.user_id === user.id) ? "right" : "left";
-
-    const nick = await obtenerNickPorId(msg.user_id);
-
-    div.innerHTML = `
-        <strong>${nick}:</strong> ${msg.mensaje}
-        <br><small>${new Date(msg.fecha_envio).toLocaleTimeString()}</small>
+  if (msg.archivo_path && msg.archivo_nombre) {
+    html += `
+      <br>
+      <button type="button"
+        style="margin-top:4px; padding:4px 8px; font-size:12px;"
+        onclick="verArchivoAdjunto('${msg.archivo_path}', '${msg.archivo_nombre.replace(/'/g, "\\'")}')">
+        📎 Ver archivo: ${msg.archivo_nombre}
+      </button>
     `;
+  }
 
-    contenedor.appendChild(div);
-
-    mensajesPrivadosRenderizados.add(msg.id);
-
-    contenedor.scrollTop = contenedor.scrollHeight;
+  div.innerHTML = html;
+  contenedor.appendChild(div);
+  mensajesPrivadosRenderizados.add(msg.id);
+  contenedor.scrollTop = contenedor.scrollHeight;
 }
 
 // =========================
 // ENVIAR MENSAJE USUARIO
 // =========================
 async function enviarMensajePrivado(idConversacion) {
+  const user = await getUser();
+  if (!user) return;
 
-    const user = await getUser();
-    if (!user) return;
+  const inputTexto = document.getElementById('mensajeUsuarioPrivado');
+  const inputArchivo = document.getElementById('archivoPrivado');
+  if (!inputTexto) return;
 
-    const input = document.getElementById('mensajeUsuarioPrivado');
-    if (!input) return;
+  const mensaje = (inputTexto.value || "").trim();
+  const file = inputArchivo ? inputArchivo.files[0] : null;
 
-    const mensaje = input.value.trim();
-    if (!mensaje) return;
+  if (!mensaje && !file) {
+    alert("Escribe un mensaje o adjunta un archivo.");
+    return;
+  }
 
-    await supabase.from('mensajes_privados').insert([{
-        conversation_privada_id: idConversacion,
-        mensaje,
-        user_id: user.id,
-        rol: 'usuario'
-    }]);
+  // 1) Subir archivo si existe
+  let datosArchivo = null;
+  if (file) {
+    datosArchivo = await subirArchivoPrivado(file, idConversacion);
+    if (!datosArchivo) {
+      // Falló subida → no enviamos nada
+      return;
+    }
+  }
 
-    input.value = '';
+  // 2) Insertar mensaje en la tabla mensajes_privados
+  const payload = {
+    conversation_privada_id: idConversacion,
+    mensaje: mensaje || "(Adjunto enviado)",
+    user_id: user.id,
+    rol: 'usuario'
+  };
+
+  if (datosArchivo) {
+    payload.archivo_path   = datosArchivo.archivo_path;
+    payload.archivo_nombre = datosArchivo.archivo_nombre;
+    payload.archivo_mime   = datosArchivo.archivo_mime;
+  }
+
+  const { error } = await supabase.from('mensajes_privados').insert([payload]);
+  if (error) {
+    console.error("Error insertando mensaje privado:", error);
+    alert("No se pudo enviar el mensaje.");
+    return;
+  }
+
+  // 3) Limpiar inputs
+  inputTexto.value = '';
+  if (inputArchivo) inputArchivo.value = '';
+
+  const confirmacion = document.getElementById('confirmacionEnvioPrivado');
+  if (confirmacion) {
+    confirmacion.style.display = "block";
+    setTimeout(() => { confirmacion.style.display = "none"; }, 1500);
+  }
 }
+
+// =========================
+// VER ARCHIVO ADJUNTO (URL firmada)
+// =========================
+async function verArchivoAdjunto(archivoPath, archivoNombre) {
+  if (!archivoPath) return;
+
+  try {
+    const { data, error } = await supabase
+      .storage
+      .from("chat_privado_adjuntos")
+      .createSignedUrl(archivoPath, 60 * 10); // 10 minutos
+
+    if (error || !data?.signedUrl) {
+      console.error("Error obteniendo URL firmada:", error);
+      alert("No se pudo abrir el archivo.");
+      return;
+    }
+
+    window.open(data.signedUrl, "_blank");
+  } catch (e) {
+    console.error("Error verArchivoAdjunto:", e);
+    alert("No se pudo abrir el archivo.");
+  }
+}
+
 
 // =========================
 // ADMIN - CONTROL RENDER
@@ -4513,32 +4638,38 @@ async function cargarMensajesAdmin(idConversacion, userIdUsuario) {
 // ADMIN - RENDER INCREMENTAL
 // =========================
 async function agregarMensajeAdminAlDOM(msg, userIdUsuario, nickUsuarioCache = null) {
+  if (mensajesAdminRenderizados.has(msg.id)) return;
+  const contenedor = document.getElementById("admin-chat-mensajes");
+  const div = document.createElement('div');
+  div.style.textAlign = (msg.rol === "admin") ? "right" : "left";
 
-    if (mensajesAdminRenderizados.has(msg.id)) return;
+  let nick;
+  if (msg.rol === "admin") {
+    nick = "Admin";
+  } else {
+    nick = nickUsuarioCache || await obtenerNickPorId(userIdUsuario);
+  }
 
-    const contenedor = document.getElementById("admin-chat-mensajes");
+  let html = `
+    <strong>${nick}:</strong> ${msg.mensaje}
+    <br><small>${new Date(msg.fecha_envio).toLocaleTimeString()}</small>
+  `;
 
-    const div = document.createElement('div');
-    div.style.textAlign = (msg.rol === "admin") ? "right" : "left";
-
-    let nick;
-
-    if (msg.rol === "admin") {
-        nick = "Admin";
-    } else {
-        nick = nickUsuarioCache || await obtenerNickPorId(userIdUsuario);
-    }
-
-    div.innerHTML = `
-        <strong>${nick}:</strong> ${msg.mensaje}
-        <small>${new Date(msg.fecha_envio).toLocaleTimeString()}</small>
+  if (msg.archivo_path && msg.archivo_nombre) {
+    html += `
+      <br>
+      <button type="button"
+        style="margin-top:4px; padding:4px 8px; font-size:12px;"
+        onclick="verArchivoAdjunto('${msg.archivo_path}', '${msg.archivo_nombre.replace(/'/g, "\\'")}')">
+        📎 Ver archivo: ${msg.archivo_nombre}
+      </button>
     `;
+  }
 
-    contenedor.appendChild(div);
-
-    mensajesAdminRenderizados.add(msg.id);
-
-    contenedor.scrollTop = contenedor.scrollHeight;
+  div.innerHTML = html;
+  contenedor.appendChild(div);
+  mensajesAdminRenderizados.add(msg.id);
+  contenedor.scrollTop = contenedor.scrollHeight;
 }
 
 // =========================

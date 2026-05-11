@@ -3162,10 +3162,12 @@ function calcularHoras() {
     const valorHoraBase = (sueldo / 30) * (28 / (parseInt(jornada) * 4));
     document.getElementById("horas-valorHoraBase").textContent = formatearCLP(valorHoraBase);
 
-    // Factor jornada
+// Factor jornada
     const factorObj = listaHoraExtra.find(item => item.horas === jornada);
     const factor = factorObj ? factorObj.factor : 0;
-    document.getElementById("horas-factor").textContent = formatearCLP(factor);
+    // Mostrar como número con 7 decimales (sin formato CLP)
+    document.getElementById("horas-factor").textContent = factor.toFixed(7);
+
 
     // Horas extras
     const valorHorasExtras = sueldo * factor * extra;

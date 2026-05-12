@@ -4253,23 +4253,22 @@ async function subirArchivoPrivado(file, idConversacion) {
   const dd = String(hoy.getDate()).padStart(2, "0");
   const fechaStr = `${yyyy}-${mm}-${dd}`;
 
-  // Descomponer nombre original
+  // Extensión original
   const originalName = file.name;
   const lastDot = originalName.lastIndexOf(".");
-  const baseOriginal = lastDot > 0 ? originalName.slice(0, lastDot) : originalName;
   const ext = lastDot > 0 ? originalName.slice(lastDot + 1) : "";
-
-  // Limpiar nick y base para que sean seguros en el nombre
-  const safeNick = nick.replace(/[^a-zA-Z0-9]/g, "_");
-  const safeBase = baseOriginal.replace(/[^a-zA-Z0-9]/g, "_");
   const safeExt = ext.replace(/[^a-zA-Z0-9]/g, "");
 
-  const nombreFinal = safeExt
-    ? `${safeNick}_${fechaStr}_${safeBase}.${safeExt}`
-    : `${safeNick}_${fechaStr}_${safeBase}`;
+  // Limpiar nick
+  const safeNick = nick.replace(/[^a-zA-Z0-9]/g, "_");
 
-  // Path interno: user_id/conversacion_id/nombreFinal
-  const path = `${user.id}/${idConversacion}/${nombreFinal}`;
+  // Nombre final para MOSTRAR: Nick_Fecha.ext
+  const nombreFinal = safeExt
+    ? `${safeNick}_${fechaStr}.${safeExt}`
+    : `${safeNick}_${fechaStr}`;
+
+  // Path interno ÚNICO en Storage (incluye timestamp)
+  const path = `${user.id}/${idConversacion}/${Date.now()}_${nombreFinal}`;
 
   const { error } = await supabase
     .storage
@@ -4284,8 +4283,8 @@ async function subirArchivoPrivado(file, idConversacion) {
 
   // Devolvemos datos para guardar en mensajes_privados
   return {
-    archivo_path: path,
-    archivo_nombre: nombreFinal,
+    archivo_path: path,        // único por mensaje
+    archivo_nombre: nombreFinal, // lo que se muestra en el chat
     archivo_mime: mime
   };
 }

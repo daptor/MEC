@@ -4230,9 +4230,46 @@ async function subirArchivoPrivado(file, idConversacion) {
     return null;
   }
 
-  // Path interno: user_id/conversacion_id/timestamp_nombre
-  const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
-  const path = `${user.id}/${idConversacion}/${Date.now()}_${safeName}`;
+  // Obtener nick del usuario para el nombre del archivo
+  let nick = "Usuario";
+  try {
+    const { data: dataNick } = await supabase
+      .from("usuarios")
+      .select("nick")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (dataNick?.nick) {
+      nick = dataNick.nick;
+    }
+  } catch (e) {
+    console.warn("No se pudo obtener nick, usando 'Usuario'", e);
+  }
+
+  // Fecha actual YYYY-MM-DD
+  const hoy = new Date();
+  const yyyy = hoy.getFullYear();
+  const mm = String(hoy.getMonth() + 1).padStart(2, "0");
+  const dd = String(hoy.getDate()).padStart(2, "0");
+  const fechaStr = `${yyyy}-${mm}-${dd}`;
+
+  // Descomponer nombre original
+  const originalName = file.name;
+  const lastDot = originalName.lastIndexOf(".");
+  const baseOriginal = lastDot > 0 ? originalName.slice(0, lastDot) : originalName;
+  const ext = lastDot > 0 ? originalName.slice(lastDot + 1) : "";
+
+  // Limpiar nick y base para que sean seguros en el nombre
+  const safeNick = nick.replace(/[^a-zA-Z0-9]/g, "_");
+  const safeBase = baseOriginal.replace(/[^a-zA-Z0-9]/g, "_");
+  const safeExt = ext.replace(/[^a-zA-Z0-9]/g, "");
+
+  const nombreFinal = safeExt
+    ? `${safeNick}_${fechaStr}_${safeBase}.${safeExt}`
+    : `${safeNick}_${fechaStr}_${safeBase}`;
+
+  // Path interno: user_id/conversacion_id/nombreFinal
+  const path = `${user.id}/${idConversacion}/${nombreFinal}`;
 
   const { error } = await supabase
     .storage
@@ -4248,10 +4285,11 @@ async function subirArchivoPrivado(file, idConversacion) {
   // Devolvemos datos para guardar en mensajes_privados
   return {
     archivo_path: path,
-    archivo_nombre: file.name,
+    archivo_nombre: nombreFinal,
     archivo_mime: mime
   };
 }
+
 
 // =========================
 // INICIAR CHAT USUARIO

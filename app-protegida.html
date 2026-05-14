@@ -359,6 +359,7 @@
           <option value="PuertoMontt">Sindicato Puerto Montt</option>
           <option value="Rancagua">Sindicato Rancagua</option>
           <option value="Trebol">Sindicato Trebol</option>
+          <option value="RendicionFederacion">Rendición de viáticos Federación</option>
       </select>
       <!-- Modal para ingresar la clave -->
       <div id="modal-clave" class="modal oculto">
@@ -384,6 +385,53 @@
       <ul id="lista-documentos-varios"></ul>
       <button onclick="mostrarPantalla('menu-principal')">↩ Menú</button>
   </div>
+
+<!-- Pantalla Rendición Federación - Director -->
+<div id="pantalla-rendicion-federacion-director" class="pantalla" style="display:none;">
+  <h1>Mis rendiciones de viáticos</h1>
+
+  <div id="rv-lista-director">
+    <!-- Aquí se listarán las rendiciones del director -->
+  </div>
+
+  <hr>
+
+  <h2>Nueva rendición</h2>
+  <label for="rv-fecha-boleta">Fecha de boleta:</label>
+  <input type="date" id="rv-fecha-boleta">
+
+  <label for="rv-descripcion">Descripción:</label>
+  <input type="text" id="rv-descripcion" placeholder="Motivo / reunión">
+
+  <label for="rv-monto">Monto (opcional):</label>
+  <input type="number" id="rv-monto" min="0" step="1">
+
+  <label for="rv-boleta-file">Boleta (JPG/PNG/PDF, máx 5MB):</label>
+  <input type="file" id="rv-boleta-file" accept="image/jpeg,image/png,application/pdf">
+
+  <button id="rv-btn-guardar">Enviar rendición</button>
+  <button onclick="mostrarPantalla('pantalla-archivosindical')">↩ Volver a Archivo Sindical</button>
+</div>
+
+<!-- Pantalla Rendición Federación - Tesorero -->
+<div id="pantalla-rendicion-federacion-tesorero" class="pantalla" style="display:none;">
+  <h1>Consolidado rendiciones de viáticos</h1>
+
+  <div id="rv-filtros-tesorero">
+    <label for="rv-filtro-estado">Estado:</label>
+    <select id="rv-filtro-estado">
+      <option value="">Todos</option>
+      <option value="pendiente">Pendiente</option>
+      <option value="pagada">Pagada</option>
+    </select>
+  </div>
+
+  <div id="rv-lista-tesorero">
+    <!-- Aquí se mostrará la tabla consolidada -->
+  </div>
+
+  <button onclick="mostrarPantalla('pantalla-archivosindical')">↩ Volver a Archivo Sindical</button>
+</div>
 
 <!-- Favicon -->
 <link rel="icon" href="data:,">

@@ -3742,21 +3742,32 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // Función para mostrar el modal de clave
-    function mostrarClaveInput() {
-        // Obtén el sindicato seleccionado
-        sindicatoSeleccionado = document.getElementById("select-sindicato").value;
-        const modalClave = document.getElementById("modal-clave");
+// Función para mostrar el modal de clave
+function mostrarClaveInput() {
+  const select = document.getElementById("select-sindicato");
+  const valor = select.value;
+  const modalClave = document.getElementById("modal-clave");
 
-        if (sindicatoSeleccionado) {
-            // Si hay un sindicato seleccionado, muestra el modal de clave
-            document.getElementById("clave-input").value = ""; // Limpia el campo de la clave
-            document.getElementById("mensaje-error").style.display = "none"; // Oculta el mensaje de error
-            modalClave.classList.remove("oculto");
-        } else {
-            // Si no se seleccionó un sindicato, oculta el modal
-            modalClave.classList.add("oculto");
-        }
-    }
+  // 🟢 Caso especial: Rendición Federación (NO sindicato)
+  if (valor === "RendicionFederacion") {
+    manejarAccesoRendicionFederacion();
+    // Resetear el select para no dejarlo “pegado”
+    select.value = "";
+    // Asegurar que el modal normal quede oculto
+    if (modalClave) modalClave.classList.add("oculto");
+    return;
+  }
+
+  // 🟢 Caso normal: sindicato (comportamiento actual)
+  sindicatoSeleccionado = valor;
+  if (sindicatoSeleccionado) {
+    document.getElementById("clave-input").value = ""; // Limpia el campo de la clave
+    document.getElementById("mensaje-error").style.display = "none"; // Oculta el mensaje de error
+    modalClave.classList.remove("oculto");
+  } else {
+    modalClave.classList.add("oculto");
+  }
+}
 
     // Función para verificar la clave ingresada desde la API
     async function verificarClave() {
@@ -3826,6 +3837,49 @@ function cerrarModalClave() {
     if (claveInput) claveInput.value = "";
     const mensajeError = document.getElementById("mensaje-error");
     if (mensajeError) mensajeError.style.display = "none";
+}
+
+async function manejarAccesoRendicionFederacion() {
+  // Reutilizamos /api/keys que ya existe
+  const claves = await obtenerClaves();
+  const clave = prompt("Ingresa tu clave de Rendición Federación:");
+
+  if (!clave) return;
+
+  let tipoAcceso = null;
+  let directorCodigo = null;
+
+  // DIRECTORES: CLAVE_DIRECTOR_1 ... CLAVE_DIRECTOR_9
+  for (let i = 1; i <= 9; i++) {
+    const envKey = claves[`CLAVE_DIRECTOR_${i}`];
+    if (envKey && clave === envKey) {
+      tipoAcceso = "director";
+      directorCodigo = `DIRECTOR_${i}`;
+      break;
+    }
+  }
+
+  // TESORERO
+  if (!tipoAcceso && clave === claves.CLAVE_TESORERO) {
+    tipoAcceso = "tesorero";
+  }
+
+  if (!tipoAcceso) {
+    alert("Clave incorrecta para Rendición Federación.");
+    return;
+  }
+
+  // Guardamos contexto mínimo global (sin sindicato)
+  window.contextoRendicion = {
+    tipoAcceso,        // "director" | "tesorero"
+    directorCodigo     // ej: "DIRECTOR_3" o null si tesorero
+  };
+
+  if (tipoAcceso === "director") {
+    mostrarPantalla("pantalla-rendicion-federacion-director");
+  } else {
+    mostrarPantalla("pantalla-rendicion-federacion-tesorero");
+  }
 }
 
 // Asignar las funciones al objeto global 'window'
@@ -4900,3 +4954,50 @@ function actualizarCandadosUI() {
 
     });
 }
+
+// ===============================
+// RENDICIÓN FEDERACIÓN (UI BÁSICA)
+// ===============================
+document.addEventListener("DOMContentLoaded", () => {
+  // Director: click "Enviar rendición"
+  const btnGuardar = document.getElementById("rv-btn-guardar");
+  if (btnGuardar) {
+    btnGuardar.addEventListener("click", async () => {
+      if (!window.contextoRendicion || window.contextoRendicion.tipoAcceso !== "director") {
+        alert("No se detectó director válido para esta rendición.");
+        return;
+      }
+
+      const fechaBoleta = document.getElementById("rv-fecha-boleta").value;
+      const descripcion = document.getElementById("rv-descripcion").value.trim();
+      const montoStr = document.getElementById("rv-monto").value;
+      const archivo = document.getElementById("rv-boleta-file").files[0];
+
+      if (!fechaBoleta || !descripcion || !archivo) {
+        alert("Debes ingresar fecha, descripción y archivo de boleta.");
+        return;
+      }
+
+      // TODO: validación de tamaño / tipo de archivo aquí si quieres
+
+      // 🔜 TODO MEC-RV4:
+      // Aquí se llamará a la API/función backend para:
+      // 1) subir archivo al bucket rendiciones_viaticos
+      // 2) insertar registro en la tabla rendiciones_viaticos
+      // usando window.contextoRendicion.directorCodigo
+
+      alert("(TODO) Enviar rendición al backend. Aún no conectado.");
+    });
+  }
+
+  // Tesorero: cambio de filtro de estado
+  const filtroEstado = document.getElementById("rv-filtro-estado");
+  if (filtroEstado) {
+    filtroEstado.addEventListener("change", () => {
+      // 🔜 TODO MEC-RV4:
+      // Aquí se llamará a la API/función backend para listar
+      // rendiciones con el estado elegido y refrescar rv-lista-tesorero
+      console.log("Filtro de estado cambiado a:", filtroEstado.value);
+    });
+  }
+});

@@ -3804,6 +3804,7 @@ async function verificarClave() {
             window.rolFederacion = "director";
             window.directorCodigoFederacion = directorCodigo;
             mostrarPantalla("pantalla-rendicion-federacion-director");
+            cargarMisRendiciones();
         }
 
         cerrarModalClave();
@@ -4805,58 +4806,58 @@ async function cerrarConversacion() {
     await mostrarPantallaAdminChat();
 }
 
-// ============================
-// RENDICIÓN FEDERACIÓN – CLAVES
-// ============================
+// ======================================================
+// 📥 Cargar rendiciones del director desde Supabase
+// ======================================================
+async function cargarMisRendiciones() {
 
-async function abrirRendicionFederacion() {
-  try {
-    const claveIngresada = window.prompt("Ingresa la clave de Rendición Federación:");
+    const contenedor = document.getElementById("rv-lista-director");
 
-    if (!claveIngresada) {
-      alert("Debes ingresar una clave.");
-      return;
-    }
+    if (!contenedor) return;
 
-    const claves = await obtenerClaves(); // { ADMIN_KEY, CODIGO_ACCESO, CLAVE_CONCEPCION..., DIRECTOR_1..7 }
+    contenedor.innerHTML = "Cargando rendiciones...";
 
-    let directorCodigo = "";
-    let esTesorero = false;
+    try {
 
-    // 1) ¿Es tesorero? (usa ADMIN_KEY como clave de tesorero)
-    if (claveIngresada === claves.ADMIN_KEY) {
-      esTesorero = true;
-    } else {
-      // 2) ¿Es uno de los DIRECTOR_X (1 a 7)?
-      for (let i = 1; i <= 7; i++) {
-        const keyName = `DIRECTOR_${i}`;
-        if (claveIngresada === claves[keyName]) {
-          directorCodigo = `DIRECTOR_${i}`;
-          break;
+        const { data, error } = await supabase
+            .from("rendiciones_viaticos")
+            .select("*")
+            .eq("director_codigo", window.directorCodigoFederacion)
+            .order("fecha_creacion", { ascending: false });
+
+        if (error) {
+            console.error(error);
+            contenedor.innerHTML = "Error al cargar rendiciones.";
+            return;
         }
-      }
-    }
 
-    // 3) Si no coincide con nada
-    if (!esTesorero && !directorCodigo) {
-      alert("Clave incorrecta para Rendición Federación.");
-      return;
-    }
+        if (!data || data.length === 0) {
+            contenedor.innerHTML = "<p>No tienes rendiciones aún.</p>";
+            return;
+        }
 
-    // 4) Solo navegación de pantallas (sin tocar Supabase por ahora)
-    if (esTesorero) {
-      mostrarPantalla("pantalla-rendicion-federacion-tesorero");
-    } else {
-      mostrarPantalla("pantalla-rendicion-federacion-director");
-    }
+        let html = "<ul>";
 
-  } catch (err) {
-    console.error("Error en abrirRendicionFederacion:", err);
-    alert("Ocurrió un error al validar la clave de Rendición Federación.");
-  }
+        data.forEach(r => {
+            html += `
+                <li>
+                    <strong>${r.fecha_boleta || "Sin fecha"}</strong> — 
+                    ${r.descripcion || "Sin descripción"} 
+                    (${r.estado})
+                </li>
+            `;
+        });
+
+        html += "</ul>";
+
+        contenedor.innerHTML = html;
+
+    } catch (err) {
+        console.error(err);
+        contenedor.innerHTML = "Error inesperado.";
+    }
 }
 
-window.abrirRendicionFederacion = abrirRendicionFederacion;
 
 // =========================================
 // 💰 FREEMIUM — MOSTRAR RESULTADO DEL ANÁLISIS

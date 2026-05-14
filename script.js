@@ -3758,25 +3758,68 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    // Función para verificar la clave ingresada desde la API
-    async function verificarClave() {
-        const claveIngresada = document.getElementById("clave-input").value;
-        const claves = await obtenerClaves();  // Obtener claves desde Vercel
-        const sindicatoSeleccionado = document.getElementById("select-sindicato").value;
+// Función para verificar la clave ingresada desde la API
+async function verificarClave() {
 
-        // Compara la clave ingresada con la almacenada en la API
-        if (claveIngresada === claves[`CLAVE_${sindicatoSeleccionado.toUpperCase()}`]) {
-            // Si coincide, muestra los documentos y luego limpia la selección
-            mostrarDocumentos(sindicatoSeleccionado);
+    const claveIngresada = document.getElementById("clave-input").value;
+    const claves = await obtenerClaves();
+    const sindicatoSeleccionado = document.getElementById("select-sindicato").value;
+    const mensajeError = document.getElementById("mensaje-error");
+
+    // ======================================================
+    // 🧾 CASO ESPECIAL: RENDICIÓN VIÁTICOS FEDERACIÓN
+    // ======================================================
+    if (sindicatoSeleccionado === "RendicionFederacion") {
+
+        let directorCodigo = "";
+        let esTesorero = false;
+
+        // TESORERO usa ADMIN_KEY
+        if (claveIngresada === claves.ADMIN_KEY) {
+            esTesorero = true;
         } else {
-            // Si no, muestra mensaje de error
-            const mensajeError = document.getElementById("mensaje-error");
-            if (mensajeError) {
-                mensajeError.innerText = "Clave incorrecta. Inténtalo de nuevo.";
-                mensajeError.style.display = "block";
+            // DIRECTORES 1..7
+            for (let i = 1; i <= 7; i++) {
+                const keyName = `DIRECTOR_${i}`;
+                if (claveIngresada === claves[keyName]) {
+                    directorCodigo = `DIRECTOR_${i}`;
+                    break;
+                }
             }
         }
+
+        // ❌ Clave incorrecta
+        if (!esTesorero && !directorCodigo) {
+            mensajeError.innerText = "Clave incorrecta para Rendición Federación.";
+            mensajeError.style.display = "block";
+            return;
+        }
+
+        // 💾 Guardamos identidad global (se usará con Supabase después)
+        if (esTesorero) {
+            window.rolFederacion = "tesorero";
+            window.directorCodigoFederacion = null;
+            mostrarPantalla("pantalla-rendicion-federacion-tesorero");
+        } else {
+            window.rolFederacion = "director";
+            window.directorCodigoFederacion = directorCodigo;
+            mostrarPantalla("pantalla-rendicion-federacion-director");
+        }
+
+        cerrarModalClave();
+        return; // 🚨 evita que siga la lógica de sindicatos normales
     }
+
+    // ======================================================
+    // 🏢 FLUJO ORIGINAL – SINDICATOS (NO TOCAR)
+    // ======================================================
+    if (claveIngresada === claves[`CLAVE_${sindicatoSeleccionado.toUpperCase()}`]) {
+        mostrarDocumentos(sindicatoSeleccionado);
+    } else {
+        mensajeError.innerText = "Clave incorrecta. Inténtalo de nuevo.";
+        mensajeError.style.display = "block";
+    }
+}
 
     // Función para mostrar la pantalla de documentos para el sindicato autenticado
     function mostrarDocumentos(sindicato) {
@@ -4800,29 +4843,12 @@ async function abrirRendicionFederacion() {
       return;
     }
 
-// ======================================
-// Guardar identidad para Supabase (RLS)
-// ======================================
-
-if (esTesorero) {
-  window.rolFederacion = "tesorero";
-  window.directorCodigoFederacion = null;
-} else {
-  window.rolFederacion = "director";
-  window.directorCodigoFederacion = directorCodigo;
-}
-
-// Debug útil (puedes borrar después)
-console.log("Rol federación:", window.rolFederacion);
-console.log("Director código:", window.directorCodigoFederacion);
-
-// Navegación de pantallas
-if (esTesorero) {
-    mostrarPantalla("pantalla-rendicion-federacion-tesorero");
-} else {
-    mostrarPantalla("pantalla-rendicion-federacion-director");
-    cargarMisRendiciones();
-}
+    // 4) Solo navegación de pantallas (sin tocar Supabase por ahora)
+    if (esTesorero) {
+      mostrarPantalla("pantalla-rendicion-federacion-tesorero");
+    } else {
+      mostrarPantalla("pantalla-rendicion-federacion-director");
+    }
 
   } catch (err) {
     console.error("Error en abrirRendicionFederacion:", err);
@@ -4831,48 +4857,6 @@ if (esTesorero) {
 }
 
 window.abrirRendicionFederacion = abrirRendicionFederacion;
-
-// ======================================
-// Cargar rendiciones del director
-// ======================================
-async function cargarMisRendiciones() {
-  try {
-    const supabaseFed = getSupabaseFederacion();
-
-    const { data, error } = await supabaseFed
-      .from("rendiciones_viaticos")
-      .select("*")
-      .order("fecha_creacion", { ascending: false });
-
-    if (error) {
-      console.error("Error cargando rendiciones:", error);
-      alert("No se pudieron cargar las rendiciones.");
-      return;
-    }
-
-    console.log("Rendiciones recibidas:", data);
-
-    const contenedor = document.getElementById("lista-mis-rendiciones");
-    if (!contenedor) return;
-
-    if (!data.length) {
-      contenedor.innerHTML = "<p>No tienes rendiciones aún.</p>";
-      return;
-    }
-
-    contenedor.innerHTML = data.map(r => `
-      <div class="card-rendicion">
-        <strong>${r.fecha_boleta ?? ""}</strong><br>
-        ${r.descripcion ?? ""}<br>
-        Monto: $${r.monto ?? 0}<br>
-        Estado: ${r.estado}
-      </div>
-    `).join("");
-
-  } catch (err) {
-    console.error(err);
-  }
-}
 
 // =========================================
 // 💰 FREEMIUM — MOSTRAR RESULTADO DEL ANÁLISIS

@@ -4775,14 +4775,13 @@ async function abrirRendicionFederacion() {
       return;
     }
 
-    // De /api/keys se espera algo como { Tesorero: '...', DIRECTOR_1: '...', ... }
-    const claves = await obtenerClaves();
+    const claves = await obtenerClaves(); // { ADMIN_KEY, CODIGO_ACCESO, CLAVE_CONCEPCION..., DIRECTOR_1..7 }
 
     let directorCodigo = "";
     let esTesorero = false;
 
-    // 1) ¿Es tesorero?
-    if (claveIngresada === claves.Tesorero) {
+    // 1) ¿Es tesorero? (usa ADMIN_KEY como clave de tesorero)
+    if (claveIngresada === claves.ADMIN_KEY) {
       esTesorero = true;
     } else {
       // 2) ¿Es uno de los DIRECTOR_X (1 a 7)?

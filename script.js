@@ -4859,15 +4859,7 @@ async function cargarMisRendiciones() {
     }
 }
 
-document.addEventListener("click", (e) => {
 
-    if (e.target && e.target.id === "rv-btn-guardar") {
-        console.log("CLICK RENDICION DETECTADO");
-
-        enviarRendicionViatico(); // o el nombre real de tu función insert
-    }
-
-});
 
 
 // =========================================

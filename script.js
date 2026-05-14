@@ -4900,3 +4900,57 @@ function actualizarCandadosUI() {
 
     });
 }
+
+// ============================
+// RENDICIÓN FEDERACIÓN – CLAVES
+// ============================
+
+async function abrirRendicionFederacion() {
+  try {
+    const claveIngresada = window.prompt("Ingresa la clave de Rendición Federación:");
+
+    if (!claveIngresada) {
+      alert("Debes ingresar una clave.");
+      return;
+    }
+
+    // De /api/keys se espera algo como { Tesorero: '...', DIRECTOR_1: '...', ... }
+    const claves = await obtenerClaves();
+
+    let directorCodigo = "";
+    let esTesorero = false;
+
+    // 1) ¿Es tesorero?
+    if (claveIngresada === claves.Tesorero) {
+      esTesorero = true;
+    } else {
+      // 2) ¿Es uno de los DIRECTOR_X (1 a 7)?
+      for (let i = 1; i <= 7; i++) {
+        const keyName = `DIRECTOR_${i}`;
+        if (claveIngresada === claves[keyName]) {
+          directorCodigo = `DIRECTOR_${i}`;
+          break;
+        }
+      }
+    }
+
+    // 3) Si no coincide con nada
+    if (!esTesorero && !directorCodigo) {
+      alert("Clave incorrecta para Rendición Federación.");
+      return;
+    }
+
+    // 4) Solo navegación de pantallas (sin tocar Supabase por ahora)
+    if (esTesorero) {
+      mostrarPantalla("pantalla-rendicion-federacion-tesorero");
+    } else {
+      mostrarPantalla("pantalla-rendicion-federacion-director");
+    }
+
+  } catch (err) {
+    console.error("Error en abrirRendicionFederacion:", err);
+    alert("Ocurrió un error al validar la clave de Rendición Federación.");
+  }
+}
+
+window.abrirRendicionFederacion = abrirRendicionFederacion;

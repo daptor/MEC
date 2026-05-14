@@ -4844,7 +4844,7 @@ async function cargarMisRendiciones() {
                 <li>
                     <strong>${r.fecha_boleta || "Sin fecha"}</strong> — 
                     ${r.descripcion || "Sin descripción"} 
-                    (${r.estado || "sin estado"})
+                    (${r.estado})
                 </li>
             `;
         });
@@ -4859,56 +4859,6 @@ async function cargarMisRendiciones() {
     }
 }
 
-
-// ======================================================
-// 👆 CLICK GLOBAL BOTÓN RENDICIÓN
-// ======================================================
-async function enviarRendicionViatico() {
-
-    const fecha = document.getElementById("rv-fecha-boleta").value;
-    const descripcion = document.getElementById("rv-descripcion").value;
-    const monto = document.getElementById("rv-monto").value;
-    const archivo = document.getElementById("rv-boleta-file").files[0];
-
-    if (!fecha || !descripcion) {
-        alert("Faltan datos obligatorios");
-        return;
-    }
-
-    try {
-
-        const { data, error } = await supabase
-            .from("rendiciones_viaticos")
-            .insert([{
-                director_codigo: window.directorCodigoFederacion || null,
-                director_nombre: window.directorNombre || null,
-                sindicato_nombre: window.sindicatoNombre || null,
-
-                fecha_boleta: fecha,
-                descripcion: descripcion,
-                monto: monto ? Number(monto) : null,
-
-                boleta_nombre: archivo ? archivo.name : null,
-                boleta_path: archivo ? `rendiciones/${archivo.name}` : null,
-                boleta_mime: archivo ? archivo.type : null,
-
-                estado: "pendiente"
-            }]);
-
-        if (error) {
-            console.error(error);
-            alert("Error Supabase");
-            return;
-        }
-
-        alert("Rendición enviada correctamente");
-
-        cargarMisRendiciones();
-
-    } catch (err) {
-        console.error(err);
-    }
-}
 
 // =========================================
 // 💰 FREEMIUM — MOSTRAR RESULTADO DEL ANÁLISIS

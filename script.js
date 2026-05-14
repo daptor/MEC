@@ -3766,57 +3766,50 @@ async function verificarClave() {
     const sindicatoSeleccionado = document.getElementById("select-sindicato").value;
     const mensajeError = document.getElementById("mensaje-error");
 
-// ======================================================
-// 🧾 CASO ESPECIAL: RENDICIÓN VIÁTICOS FEDERACIÓN
-// ======================================================
-if (sindicatoSeleccionado === "RendicionFederacion") {
+    // ======================================================
+    // 🧾 CASO ESPECIAL: RENDICIÓN VIÁTICOS FEDERACIÓN
+    // ======================================================
+    if (sindicatoSeleccionado === "RendicionFederacion") {
 
-    let directorCodigo = "";
-    let esTesorero = false;
+        let directorCodigo = "";
+        let esTesorero = false;
 
-    // TESORERO usa ADMIN_KEY
-    if (claveIngresada === claves.ADMIN_KEY) {
-        esTesorero = true;
-    } else {
-        // DIRECTORES 1..7
-        for (let i = 1; i <= 7; i++) {
-            const keyName = `DIRECTOR_${i}`;
-            if (claveIngresada === claves[keyName]) {
-                directorCodigo = `DIRECTOR_${i}`;
-                break;
+        // TESORERO usa ADMIN_KEY
+        if (claveIngresada === claves.ADMIN_KEY) {
+            esTesorero = true;
+        } else {
+            // DIRECTORES 1..7
+            for (let i = 1; i <= 7; i++) {
+                const keyName = `DIRECTOR_${i}`;
+                if (claveIngresada === claves[keyName]) {
+                    directorCodigo = `DIRECTOR_${i}`;
+                    break;
+                }
             }
         }
-    }
 
-    // ❌ Clave incorrecta
-    if (!esTesorero && !directorCodigo) {
-        mensajeError.innerText = "Clave incorrecta para Rendición Federación.";
-        mensajeError.style.display = "block";
-        return;
-    }
+        // ❌ Clave incorrecta
+        if (!esTesorero && !directorCodigo) {
+            mensajeError.innerText = "Clave incorrecta para Rendición Federación.";
+            mensajeError.style.display = "block";
+            return;
+        }
 
-    // 💾 Guardamos identidad global (para RLS Supabase)
-    if (esTesorero) {
-        window.rolFederacion = "tesorero";
-        window.directorCodigoFederacion = null;
-
-        mostrarPantalla("pantalla-rendicion-federacion-tesorero");
-
-    } else {
-        window.rolFederacion = "director";
-        window.directorCodigoFederacion = directorCodigo;
-
-        mostrarPantalla("pantalla-rendicion-federacion-director");
-
-        // ⏳ Esperar render de pantalla antes de consultar Supabase
-        setTimeout(() => {
+        // 💾 Guardamos identidad global (se usará con Supabase después)
+        if (esTesorero) {
+            window.rolFederacion = "tesorero";
+            window.directorCodigoFederacion = null;
+            mostrarPantalla("pantalla-rendicion-federacion-tesorero");
+        } else {
+            window.rolFederacion = "director";
+            window.directorCodigoFederacion = directorCodigo;
+            mostrarPantalla("pantalla-rendicion-federacion-director");
             cargarMisRendiciones();
-        }, 300);
-    }
+        }
 
-    cerrarModalClave();
-    return; // 🚨 evita que siga la lógica de sindicatos normales
-}
+        cerrarModalClave();
+        return; // 🚨 evita que siga la lógica de sindicatos normales
+    }
 
     // ======================================================
     // 🏢 FLUJO ORIGINAL – SINDICATOS (NO TOCAR)
@@ -4819,25 +4812,14 @@ async function cerrarConversacion() {
 async function cargarMisRendiciones() {
 
     const contenedor = document.getElementById("rv-lista-director");
+
     if (!contenedor) return;
 
     contenedor.innerHTML = "Cargando rendiciones...";
 
-    // ⏳ Esperar a que Supabase esté inicializado
-    let intentos = 0;
-    while (!window.supabase && intentos < 20) {
-        await new Promise(r => setTimeout(r, 200));
-        intentos++;
-    }
-
-    if (!window.supabase) {
-        contenedor.innerHTML = "Error: Supabase no está disponible.";
-        return;
-    }
-
     try {
 
-        const { data, error } = await window.supabase
+        const { data, error } = await supabase
             .from("rendiciones_viaticos")
             .select("*")
             .eq("director_codigo", window.directorCodigoFederacion)

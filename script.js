@@ -4800,12 +4800,29 @@ async function abrirRendicionFederacion() {
       return;
     }
 
-    // 4) Solo navegación de pantallas (sin tocar Supabase por ahora)
-    if (esTesorero) {
-      mostrarPantalla("pantalla-rendicion-federacion-tesorero");
-    } else {
-      mostrarPantalla("pantalla-rendicion-federacion-director");
-    }
+// ======================================
+// Guardar identidad para Supabase (RLS)
+// ======================================
+
+if (esTesorero) {
+  window.rolFederacion = "tesorero";
+  window.directorCodigoFederacion = null;
+} else {
+  window.rolFederacion = "director";
+  window.directorCodigoFederacion = directorCodigo;
+}
+
+// Debug útil (puedes borrar después)
+console.log("Rol federación:", window.rolFederacion);
+console.log("Director código:", window.directorCodigoFederacion);
+
+// Navegación de pantallas
+if (esTesorero) {
+    mostrarPantalla("pantalla-rendicion-federacion-tesorero");
+} else {
+    mostrarPantalla("pantalla-rendicion-federacion-director");
+    cargarMisRendiciones();
+}
 
   } catch (err) {
     console.error("Error en abrirRendicionFederacion:", err);
@@ -4814,6 +4831,48 @@ async function abrirRendicionFederacion() {
 }
 
 window.abrirRendicionFederacion = abrirRendicionFederacion;
+
+// ======================================
+// Cargar rendiciones del director
+// ======================================
+async function cargarMisRendiciones() {
+  try {
+    const supabaseFed = getSupabaseFederacion();
+
+    const { data, error } = await supabaseFed
+      .from("rendiciones_viaticos")
+      .select("*")
+      .order("fecha_creacion", { ascending: false });
+
+    if (error) {
+      console.error("Error cargando rendiciones:", error);
+      alert("No se pudieron cargar las rendiciones.");
+      return;
+    }
+
+    console.log("Rendiciones recibidas:", data);
+
+    const contenedor = document.getElementById("lista-mis-rendiciones");
+    if (!contenedor) return;
+
+    if (!data.length) {
+      contenedor.innerHTML = "<p>No tienes rendiciones aún.</p>";
+      return;
+    }
+
+    contenedor.innerHTML = data.map(r => `
+      <div class="card-rendicion">
+        <strong>${r.fecha_boleta ?? ""}</strong><br>
+        ${r.descripcion ?? ""}<br>
+        Monto: $${r.monto ?? 0}<br>
+        Estado: ${r.estado}
+      </div>
+    `).join("");
+
+  } catch (err) {
+    console.error(err);
+  }
+}
 
 // =========================================
 // 💰 FREEMIUM — MOSTRAR RESULTADO DEL ANÁLISIS

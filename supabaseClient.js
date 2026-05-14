@@ -14,5 +14,21 @@ if (!window.supabase) {
 }
 
 function initSupabase() {
+  // Cliente global original (NO tocar, lo usa todo MEC)
   window.supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+}
+
+// ======================================
+// Cliente Supabase exclusivo Federación
+// (envía headers para RLS)
+// ======================================
+function getSupabaseFederacion() {
+  return window.supabase.createClient(supabaseUrl, supabaseKey, {
+    global: {
+      headers: {
+        "x-rol": window.rolFederacion || "",
+        "x-director-codigo": window.directorCodigoFederacion || ""
+      }
+    }
+  });
 }

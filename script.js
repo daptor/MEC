@@ -4863,19 +4863,6 @@ async function cargarMisRendiciones() {
 // ======================================================
 // 👆 CLICK GLOBAL BOTÓN RENDICIÓN
 // ======================================================
-document.addEventListener("click", (e) => {
-
-    if (e.target && e.target.id === "rv-btn-guardar") {
-        console.log("CLICK RENDICION DETECTADO");
-        enviarRendicionViatico();
-    }
-
-});
-
-
-// ======================================================
-// 📤 ENVIAR RENDICIÓN A SUPABASE
-// ======================================================
 async function enviarRendicionViatico() {
 
     const fecha = document.getElementById("rv-fecha-boleta").value;
@@ -4894,10 +4881,17 @@ async function enviarRendicionViatico() {
             .from("rendiciones_viaticos")
             .insert([{
                 director_codigo: window.directorCodigoFederacion || null,
+                director_nombre: window.directorNombre || null,
+                sindicato_nombre: window.sindicatoNombre || null,
+
                 fecha_boleta: fecha,
                 descripcion: descripcion,
                 monto: monto ? Number(monto) : null,
-                archivo_nombre: archivo ? archivo.name : null,
+
+                boleta_nombre: archivo ? archivo.name : null,
+                boleta_path: archivo ? `rendiciones/${archivo.name}` : null,
+                boleta_mime: archivo ? archivo.type : null,
+
                 estado: "pendiente"
             }]);
 

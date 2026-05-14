@@ -4812,14 +4812,25 @@ async function cerrarConversacion() {
 async function cargarMisRendiciones() {
 
     const contenedor = document.getElementById("rv-lista-director");
-
     if (!contenedor) return;
 
     contenedor.innerHTML = "Cargando rendiciones...";
 
+    // ⏳ Esperar a que Supabase esté inicializado
+    let intentos = 0;
+    while (!window.supabase && intentos < 20) {
+        await new Promise(r => setTimeout(r, 200));
+        intentos++;
+    }
+
+    if (!window.supabase) {
+        contenedor.innerHTML = "Error: Supabase no está disponible.";
+        return;
+    }
+
     try {
 
-        const { data, error } = await supabase
+        const { data, error } = await window.supabase
             .from("rendiciones_viaticos")
             .select("*")
             .eq("director_codigo", window.directorCodigoFederacion)

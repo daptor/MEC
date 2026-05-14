@@ -3766,50 +3766,57 @@ async function verificarClave() {
     const sindicatoSeleccionado = document.getElementById("select-sindicato").value;
     const mensajeError = document.getElementById("mensaje-error");
 
-    // ======================================================
-    // 🧾 CASO ESPECIAL: RENDICIÓN VIÁTICOS FEDERACIÓN
-    // ======================================================
-    if (sindicatoSeleccionado === "RendicionFederacion") {
+// ======================================================
+// 🧾 CASO ESPECIAL: RENDICIÓN VIÁTICOS FEDERACIÓN
+// ======================================================
+if (sindicatoSeleccionado === "RendicionFederacion") {
 
-        let directorCodigo = "";
-        let esTesorero = false;
+    let directorCodigo = "";
+    let esTesorero = false;
 
-        // TESORERO usa ADMIN_KEY
-        if (claveIngresada === claves.ADMIN_KEY) {
-            esTesorero = true;
-        } else {
-            // DIRECTORES 1..7
-            for (let i = 1; i <= 7; i++) {
-                const keyName = `DIRECTOR_${i}`;
-                if (claveIngresada === claves[keyName]) {
-                    directorCodigo = `DIRECTOR_${i}`;
-                    break;
-                }
+    // TESORERO usa ADMIN_KEY
+    if (claveIngresada === claves.ADMIN_KEY) {
+        esTesorero = true;
+    } else {
+        // DIRECTORES 1..7
+        for (let i = 1; i <= 7; i++) {
+            const keyName = `DIRECTOR_${i}`;
+            if (claveIngresada === claves[keyName]) {
+                directorCodigo = `DIRECTOR_${i}`;
+                break;
             }
         }
-
-        // ❌ Clave incorrecta
-        if (!esTesorero && !directorCodigo) {
-            mensajeError.innerText = "Clave incorrecta para Rendición Federación.";
-            mensajeError.style.display = "block";
-            return;
-        }
-
-        // 💾 Guardamos identidad global (se usará con Supabase después)
-        if (esTesorero) {
-            window.rolFederacion = "tesorero";
-            window.directorCodigoFederacion = null;
-            mostrarPantalla("pantalla-rendicion-federacion-tesorero");
-        } else {
-            window.rolFederacion = "director";
-            window.directorCodigoFederacion = directorCodigo;
-            mostrarPantalla("pantalla-rendicion-federacion-director");
-            cargarMisRendiciones();
-        }
-
-        cerrarModalClave();
-        return; // 🚨 evita que siga la lógica de sindicatos normales
     }
+
+    // ❌ Clave incorrecta
+    if (!esTesorero && !directorCodigo) {
+        mensajeError.innerText = "Clave incorrecta para Rendición Federación.";
+        mensajeError.style.display = "block";
+        return;
+    }
+
+    // 💾 Guardamos identidad global (para RLS Supabase)
+    if (esTesorero) {
+        window.rolFederacion = "tesorero";
+        window.directorCodigoFederacion = null;
+
+        mostrarPantalla("pantalla-rendicion-federacion-tesorero");
+
+    } else {
+        window.rolFederacion = "director";
+        window.directorCodigoFederacion = directorCodigo;
+
+        mostrarPantalla("pantalla-rendicion-federacion-director");
+
+        // ⏳ Esperar render de pantalla antes de consultar Supabase
+        setTimeout(() => {
+            cargarMisRendiciones();
+        }, 300);
+    }
+
+    cerrarModalClave();
+    return; // 🚨 evita que siga la lógica de sindicatos normales
+}
 
     // ======================================================
     // 🏢 FLUJO ORIGINAL – SINDICATOS (NO TOCAR)

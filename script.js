@@ -3742,39 +3742,21 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // Función para mostrar el modal de clave
-// Función para mostrar el modal de clave o abrir Rendición Federación
-function mostrarClaveInput() {
-  const selectSindicato = document.getElementById("select-sindicato");
-  const valor = selectSindicato.value;
-  const modalClave = document.getElementById("modal-clave");
+    function mostrarClaveInput() {
+        // Obtén el sindicato seleccionado
+        sindicatoSeleccionado = document.getElementById("select-sindicato").value;
+        const modalClave = document.getElementById("modal-clave");
 
-  // Si no hay selección, ocultar modal y salir
-  if (!valor) {
-    if (modalClave) modalClave.classList.add("oculto");
-    return;
-  }
-
-  // Rama especial: Rendición de viáticos Federación
-  if (valor === "RendicionFederacion") {
-    // Limpiamos selección para no dejar el combo pegado
-    selectSindicato.value = "";
-    // Abrimos flujo especial de rendición (director / tesorero)
-    if (typeof window.abrirRendicionFederacion === "function") {
-      window.abrirRendicionFederacion();
-    } else {
-      alert("Función abrirRendicionFederacion no está disponible.");
+        if (sindicatoSeleccionado) {
+            // Si hay un sindicato seleccionado, muestra el modal de clave
+            document.getElementById("clave-input").value = ""; // Limpia el campo de la clave
+            document.getElementById("mensaje-error").style.display = "none"; // Oculta el mensaje de error
+            modalClave.classList.remove("oculto");
+        } else {
+            // Si no se seleccionó un sindicato, oculta el modal
+            modalClave.classList.add("oculto");
+        }
     }
-    return;
-  }
-
-  // Resto de casos: sindicatos normales → mostrar modal de clave sindical
-  if (modalClave) {
-    document.getElementById("clave-input").value = "";
-    const mensajeError = document.getElementById("mensaje-error");
-    if (mensajeError) mensajeError.style.display = "none";
-    modalClave.classList.remove("oculto");
-  }
-}
 
     // Función para verificar la clave ingresada desde la API
     async function verificarClave() {
@@ -4918,54 +4900,3 @@ function actualizarCandadosUI() {
 
     });
 }
-
-// ============================
-// RENDICIÓN FEDERACIÓN – CLAVES
-// ============================
-
-async function abrirRendicionFederacion() {
-  try {
-    const claveIngresada = window.prompt("Ingresa la clave de Rendición Federación:");
-
-    if (!claveIngresada) {
-      alert("Debes ingresar una clave.");
-      return;
-    }
-
-    const claves = await obtenerClaves();
-
-    let directorCodigo = "";
-    let esTesorero = false;
-
-    if (claveIngresada === claves.CLAVE_TESORERO) {
-      esTesorero = true;
-    } else {
-      for (let i = 1; i <= 7; i++) {
-        const keyName = `CLAVE_DIRECTOR_${i}`;
-        if (claveIngresada === claves[keyName]) {
-          directorCodigo = `DIRECTOR_${i}`;
-          break;
-        }
-      }
-    }
-
-    if (!esTesorero && !directorCodigo) {
-      alert("Clave incorrecta para Rendición Federación.");
-      return;
-    }
-
-    if (esTesorero) {
-      window.setDirectorCodigo("TESORERO");
-      mostrarPantalla("pantalla-rendicion-federacion-tesorero");
-    } else {
-      window.setDirectorCodigo(directorCodigo);
-      mostrarPantalla("pantalla-rendicion-federacion-director");
-    }
-
-  } catch (err) {
-    console.error("Error en abrirRendicionFederacion:", err);
-    alert("Ocurrió un error al validar la clave de Rendición Federación.");
-  }
-}
-
-window.abrirRendicionFederacion = abrirRendicionFederacion;

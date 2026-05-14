@@ -13,39 +13,6 @@ if (!window.supabase) {
   initSupabase();
 }
 
-// Inicializa/Reinicializa el cliente Supabase con la cabecera x-director-codigo tomada de sessionStorage
 function initSupabase() {
-  const directorCodigo = window.sessionStorage.getItem('director_codigo') || '';
-
-  // intenta limpiar canales antiguos si existían (opcional)
-  try {
-    if (window.supabase && typeof window.supabase.removeAllChannels === 'function') {
-      window.supabase.removeAllChannels();
-    }
-  } catch (e) {
-    // no hacer nada si falla
-  }
-
-  window.supabase = window.supabase.createClient(supabaseUrl, supabaseKey, {
-    global: {
-      headers: {
-        'x-director-codigo': directorCodigo
-      }
-    }
-  });
+  window.supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 }
-
-// Helper para actualizar el código de director/tesorero y reinicializar Supabase
-function setDirectorCodigo(codigo) {
-  if (!codigo) {
-    window.sessionStorage.removeItem('director_codigo');
-  } else {
-    window.sessionStorage.setItem('director_codigo', codigo);
-  }
-  if (typeof initSupabase === 'function') initSupabase();
-}
-
-// Exponer helpers al scope global
-window.initSupabase = initSupabase;
-window.setDirectorCodigo = setDirectorCodigo;
-

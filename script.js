@@ -4806,6 +4806,7 @@ async function cerrarConversacion() {
     await mostrarPantallaAdminChat();
 }
 
+
 // ======================================================
 // 📥 Cargar rendiciones del director desde Supabase
 // ======================================================
@@ -4857,6 +4858,16 @@ async function cargarMisRendiciones() {
         contenedor.innerHTML = "Error inesperado.";
     }
 }
+
+document.addEventListener("click", (e) => {
+
+    if (e.target && e.target.id === "rv-btn-guardar") {
+        console.log("CLICK RENDICION DETECTADO");
+
+        enviarRendicionViatico(); // o el nombre real de tu función insert
+    }
+
+});
 
 
 // =========================================

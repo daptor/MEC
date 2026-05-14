@@ -4844,7 +4844,7 @@ async function cargarMisRendiciones() {
                 <li>
                     <strong>${r.fecha_boleta || "Sin fecha"}</strong> — 
                     ${r.descripcion || "Sin descripción"} 
-                    (${r.estado})
+                    (${r.estado || "sin estado"})
                 </li>
             `;
         });
@@ -4859,16 +4859,62 @@ async function cargarMisRendiciones() {
     }
 }
 
+
+// ======================================================
+// 👆 CLICK GLOBAL BOTÓN RENDICIÓN
+// ======================================================
 document.addEventListener("click", (e) => {
 
     if (e.target && e.target.id === "rv-btn-guardar") {
         console.log("CLICK RENDICION DETECTADO");
-
-        enviarRendicionViatico(); // o el nombre real de tu función insert
+        enviarRendicionViatico();
     }
 
 });
 
+
+// ======================================================
+// 📤 ENVIAR RENDICIÓN A SUPABASE
+// ======================================================
+async function enviarRendicionViatico() {
+
+    const fecha = document.getElementById("rv-fecha-boleta").value;
+    const descripcion = document.getElementById("rv-descripcion").value;
+    const monto = document.getElementById("rv-monto").value;
+    const archivo = document.getElementById("rv-boleta-file").files[0];
+
+    if (!fecha || !descripcion) {
+        alert("Faltan datos obligatorios");
+        return;
+    }
+
+    try {
+
+        const { data, error } = await supabase
+            .from("rendiciones_viaticos")
+            .insert([{
+                director_codigo: window.directorCodigoFederacion || null,
+                fecha_boleta: fecha,
+                descripcion: descripcion,
+                monto: monto ? Number(monto) : null,
+                archivo_nombre: archivo ? archivo.name : null,
+                estado: "pendiente"
+            }]);
+
+        if (error) {
+            console.error(error);
+            alert("Error Supabase");
+            return;
+        }
+
+        alert("Rendición enviada correctamente");
+
+        cargarMisRendiciones();
+
+    } catch (err) {
+        console.error(err);
+    }
+}
 
 // =========================================
 // 💰 FREEMIUM — MOSTRAR RESULTADO DEL ANÁLISIS

@@ -4984,10 +4984,7 @@ async function rvGuardarHandler(event) {
   }
 })();
 
-// -----------------------------
-// Handler definitivo corregido: "Enviar rendición" (Federación)
-// Pegar justo después de cargarMisRendiciones(), reemplaza la versión anterior
-// -----------------------------
+// Handler definitivo corregido: usa header x-director-codigo y cliente con headers para Storage
 async function rvGuardarHandler(event) {
   event && event.preventDefault && event.preventDefault();
 
@@ -4999,19 +4996,21 @@ async function rvGuardarHandler(event) {
   if (!btn) return console.warn("Botón #rv-btn-guardar no encontrado.");
 
   const BUCKET = "rendiciones_viaticos";
-  const MAX_BYTES = 5 * 1024 * 1024; // 5MB
+  const MAX_BYTES = 5 * 1024 * 1024;
   const ALLOWED = ["application/pdf", "image/jpeg", "image/png"];
 
   btn.disabled = true;
   const originalText = btn.innerText || "Enviar rendición";
 
   try {
-    // 1) sesión/rol
     const rol = window.rolFederacion;
     if (!rol) throw new Error("Sesión inválida. Reingrese la clave.");
-    const directorCodigo = rol;
 
-    // 2) validar formulario
+    // director_code header esperado por las policies
+    const directorHeader = window.directorCodigoFederacion || rol;
+    const directorCodigo = rol; // se guarda en la tabla como rol según lo solicitaste
+
+    // validaciones
     const fechaBoleta = inputFecha?.value?.trim();
     const descripcion = inputDesc?.value?.trim();
     const montoRaw = inputMonto?.value?.trim();
@@ -5020,7 +5019,7 @@ async function rvGuardarHandler(event) {
     const monto = montoRaw ? Number(montoRaw) : null;
     if (montoRaw && isNaN(monto)) throw new Error("Monto inválido.");
 
-    // 3) obtener director_nombre desde socios por rol
+    // obtener director_nombre desde socios por rol
     let directorNombre = "SIN_NOMBRE";
     const supaForLookup = getSupabaseFederacion();
     const { data: socio, error: socioErr } = await supaForLookup
@@ -5031,22 +5030,24 @@ async function rvGuardarHandler(event) {
       .maybeSingle();
     if (!socioErr && socio && socio.nombre) directorNombre = socio.nombre;
 
-    // 4) boleta obligatoria y validación
+    // archivo obligatorio
     if (!inputFile || !inputFile.files || inputFile.files.length === 0) throw new Error("Se requiere boleta (archivo).");
     const file = inputFile.files[0];
     if (file.size > MAX_BYTES) throw new Error("El archivo excede 5 MB.");
     if (!ALLOWED.includes(file.type)) throw new Error("Tipo de archivo no permitido.");
 
-    // 5) subir boleta (usar cliente autenticado para Storage)
+    // construir path: primer segmento MUST match header x-director-codigo
     const ts = Date.now();
     const safe = file.name.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_\-\.]/g, "");
-    const path = `rendiciones/${rol}/${ts}_${safe}`;
-    const clientStorage = window.supabase || getSupabaseFederacion();
-    const { data: upData, error: upErr } = await clientStorage.storage.from(BUCKET).upload(path, file, { cacheControl: "3600", upsert: false });
+    const path = `rendiciones/${directorHeader}/${ts}_${safe}`;
+
+    // subir usando cliente que envia headers (getSupabaseFederacion)
+    const clientWithHeaders = getSupabaseFederacion();
+    const { data: upData, error: upErr } = await clientWithHeaders.storage.from(BUCKET).upload(path, file, { cacheControl: "3600", upsert: false });
     if (upErr) throw new Error("Error subiendo boleta: " + upErr.message);
     const boletaPath = upData?.path || path;
 
-    // 6) insertar en rendiciones_viaticos usando cliente con headers (RLS)
+    // insertar en DB usando el cliente con headers (RLS)
     const payload = {
       director_codigo: directorCodigo,
       director_nombre: directorNombre,
@@ -5061,12 +5062,11 @@ async function rvGuardarHandler(event) {
     const supaDb = getSupabaseFederacion();
     const { error: insertErr } = await supaDb.from("rendiciones_viaticos").insert([payload]);
     if (insertErr) {
-      // eliminar archivo subido si falla la inserción
-      await clientStorage.storage.from(BUCKET).remove([boletaPath]).catch(()=>{});
+      // limpiar si falla
+      await clientWithHeaders.storage.from(BUCKET).remove([boletaPath]).catch(()=>{});
       throw new Error("Error guardando rendición: " + insertErr.message);
     }
 
-    // 7) éxito: refrescar lista y limpiar formulario
     if (typeof cargarMisRendiciones === "function") cargarMisRendiciones();
     inputFecha.value = "";
     inputDesc.value = "";
@@ -5082,7 +5082,7 @@ async function rvGuardarHandler(event) {
   }
 }
 
-// Asociar listener (idempotente) — reemplaza cualquier attach anterior
+// asociar listener (reemplaza anterior)
 (function attachRvListener(){
   const btnRv = document.getElementById("rv-btn-guardar");
   if (btnRv) {

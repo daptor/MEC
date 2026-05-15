@@ -4950,14 +4950,18 @@ async function rvGuardarHandler(event) {
     // obtener director_nombre desde socios por código de director (DIRECTOR_1, etc.)
     let directorNombre = "SIN_NOMBRE";
     try {
-      const supaLookup = getSupabaseFederacion();
-      const { data: socio } = await supaLookup
+      const { data: socio, error: socioErr } = await window.supabase
         .from("socios")
-        .select("nombre")
-        .eq("rol", directorCode)   // <--- MUY IMPORTANTE: usar directorCode, no rol
+        .select("nombre, rol")
+        .eq("rol", directorCode)   // directorCode = "DIRECTOR_1", "DIRECTOR_4", etc.
         .limit(1)
         .maybeSingle();
-      if (socio && socio.nombre) directorNombre = socio.nombre;
+
+      if (socioErr) {
+        console.warn("Error consultando socios:", socioErr.message);
+      } else if (socio && socio.nombre) {
+        directorNombre = socio.nombre;
+      }
     } catch (e) {
       console.warn("No se obtuvo nombre:", e?.message || e);
     }
@@ -5015,7 +5019,6 @@ async function rvGuardarHandler(event) {
 // 👀 Vista Tesorero: ver y gestionar todas las rendiciones
 // ======================================================
 
-// Cargar rendiciones para Tesorero
 async function cargarRendicionesTesorero() {
   const contenedor = document.getElementById("rv-lista-tesorero");
   const filtroSelect = document.getElementById("rv-filtro-estado");
@@ -5081,7 +5084,6 @@ async function cargarRendicionesTesorero() {
   }
 }
 
-
 // Actualizar estado (pagada / rechazada) + observación opcional
 async function actualizarEstadoRendicion(id, nuevoEstado) {
   const observacion = nuevoEstado === "rechazada"
@@ -5138,9 +5140,9 @@ async function verBoletaRendicion(path) {
   if (contenedor) {
     contenedor.addEventListener("click", function (e) {
       const target = e.target;
-      const fila = target.closest("tr[data-id]");
-      if (!fila) return;
-      const id = Number(fila.getAttribute("data-id"));
+      const card = target.closest(".rv-card-rendicion");
+      if (!card) return;
+      const id = Number(card.getAttribute("data-id"));
 
       if (target.classList.contains("rv-btn-marcar-pagada")) {
         actualizarEstadoRendicion(id, "pagada");
@@ -5153,6 +5155,7 @@ async function verBoletaRendicion(path) {
     });
   }
 })();
+
 
 
 // =========================================

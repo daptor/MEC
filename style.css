@@ -565,3 +565,16 @@ input:focus, select:focus, textarea:focus,
 #rv-filtros-tesorero {
   margin-bottom: 10px;
 }
+
+#pantalla-rendicion-federacion-tesorero {
+  max-width: 700px;    /* reduce el ancho máximo */
+  margin: 0 auto;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+#rv-lista-tesorero {
+  max-height: 70vh;          /* opcional: altura máxima */
+  overflow-y: auto;          /* scroll interno si hay muchas tarjetas */
+  padding-right: 4px;
+}

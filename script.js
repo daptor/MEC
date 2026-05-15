@@ -4985,12 +4985,9 @@ async function rvGuardarHandler(event) {
 })();
 
 // -----------------------------
-// Handler único y definitivo: "Enviar rendición" (Federación)
-// - usa director_codigo = window.rolFederacion
-// - obtiene director_nombre desde socios por rol
-// - sube boleta a bucket "rendiciones_viaticos" (5MB, pdf/jpg/png)
-// - inserta en tabla rendiciones_viaticos con boleta_path/boleta_nombre/boleta_mime y estado "pendiente"
-// Pegar justo después de cargarMisRendiciones()
+// Handler definitivo: "Enviar rendición" (Federación)
+// Inserta registro en public.rendiciones_viaticos y sube boleta al bucket "rendiciones_viaticos"
+// Usa director_codigo = window.rolFederacion y obtiene director_nombre desde socios por rol
 // -----------------------------
 async function rvGuardarHandler(event) {
   event && event.preventDefault && event.preventDefault();
@@ -5003,19 +5000,19 @@ async function rvGuardarHandler(event) {
   if (!btn) return console.warn("Botón #rv-btn-guardar no encontrado.");
 
   const BUCKET = "rendiciones_viaticos";
-  const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+  const MAX_BYTES = 5 * 1024 * 1024; // 5MB
   const ALLOWED = ["application/pdf", "image/jpeg", "image/png"];
 
   btn.disabled = true;
   const originalText = btn.innerText || "Enviar rendición";
 
   try {
-    // requerir sesión/rol
+    // 1) sesión/rol
     const rol = window.rolFederacion;
     if (!rol) throw new Error("Sesión inválida. Reingrese la clave.");
-    const directorCodigo = rol; // se guarda el rol como codigo
+    const directorCodigo = rol;
 
-    // validar formulario
+    // 2) validar formulario
     const fechaBoleta = inputFecha?.value?.trim();
     const descripcion = inputDesc?.value?.trim();
     const montoRaw = inputMonto?.value?.trim();
@@ -5024,7 +5021,7 @@ async function rvGuardarHandler(event) {
     const monto = montoRaw ? Number(montoRaw) : null;
     if (montoRaw && isNaN(monto)) throw new Error("Monto inválido.");
 
-    // obtener director_nombre desde socios por rol
+    // 3) obtener director_nombre desde socios por rol
     let directorNombre = "SIN_NOMBRE";
     const supa = getSupabaseFederacion();
     const { data: socio, error: socioErr } = await supa
@@ -5035,13 +5032,13 @@ async function rvGuardarHandler(event) {
       .maybeSingle();
     if (!socioErr && socio && socio.nombre) directorNombre = socio.nombre;
 
-    // boleta obligatoria y validación
+    // 4) boleta obligatoria y validación
     if (!inputFile || !inputFile.files || inputFile.files.length === 0) throw new Error("Se requiere boleta (archivo).");
     const file = inputFile.files[0];
     if (file.size > MAX_BYTES) throw new Error("El archivo excede 5 MB.");
     if (!ALLOWED.includes(file.type)) throw new Error("Tipo de archivo no permitido.");
 
-    // subir boleta
+    // 5) subir boleta
     const ts = Date.now();
     const safe = file.name.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_\-\.]/g, "");
     const path = `rendiciones/${rol}/${ts}_${safe}`;
@@ -5049,7 +5046,7 @@ async function rvGuardarHandler(event) {
     if (upErr) throw new Error("Error subiendo boleta: " + upErr.message);
     const boletaPath = upData?.path || path;
 
-    // insertar en rendiciones_viaticos
+    // 6) insertar en rendiciones_viaticos
     const payload = {
       director_codigo: directorCodigo,
       director_nombre: directorNombre,
@@ -5063,12 +5060,12 @@ async function rvGuardarHandler(event) {
     };
     const { error: insertErr } = await supa.from("rendiciones_viaticos").insert([payload]);
     if (insertErr) {
-      // limpiar archivo si falla la inserción
+      // eliminar archivo subido si falla la inserción
       await supa.storage.from(BUCKET).remove([boletaPath]).catch(()=>{});
       throw new Error("Error guardando rendición: " + insertErr.message);
     }
 
-    // éxito: refrescar lista y limpiar formulario
+    // 7) éxito: refrescar lista y limpiar formulario
     if (typeof cargarMisRendiciones === "function") cargarMisRendiciones();
     inputFecha.value = "";
     inputDesc.value = "";
@@ -5084,7 +5081,7 @@ async function rvGuardarHandler(event) {
   }
 }
 
-// asociar listener (asegura no duplicados)
+// Asociar listener (idempotente) — dejar al final del bloque que pegues
 (function attachRvListener(){
   const btnRv = document.getElementById("rv-btn-guardar");
   if (btnRv) {
@@ -5092,6 +5089,7 @@ async function rvGuardarHandler(event) {
     btnRv.addEventListener("click", rvGuardarHandler);
   }
 })();
+
 
 // =========================================
 // 💰 FREEMIUM — MOSTRAR RESULTADO DEL ANÁLISIS

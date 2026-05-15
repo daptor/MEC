@@ -4947,31 +4947,10 @@ async function rvGuardarHandler(event) {
     if (upErr) throw new Error("Error subiendo boleta: " + upErr.message);
     const boletaPath = upData?.path || path;
 
-    // obtener director_nombre desde socios por código de director (DIRECTOR_1, etc.)
-    let directorNombre = "SIN_NOMBRE";
-    try {
-      const { data: socio, error: socioErr } = await window.supabase
-        .from("socios")
-        .select("nombre, rol")
-        .eq("rol", directorCode)   // directorCode = "DIRECTOR_1", "DIRECTOR_3", etc.
-        .limit(1)
-        .maybeSingle();
-
-      if (socioErr) {
-        console.warn("Error consultando socios:", socioErr.message);
-      } else if (socio && socio.nombre) {
-        directorNombre = socio.nombre;
-      }
-    } catch (e) {
-      console.warn("No se obtuvo nombre:", e?.message || e);
-    }
-
-
-
-    // insertar en rendiciones_viaticos
+    // insertar en rendiciones_viaticos (director_nombre lo rellena el trigger en BD)
     const payload = {
-      director_codigo: directorCode,   // aquí va el código del director (ej. DIRECTOR_1)
-      director_nombre: directorNombre,
+      director_codigo: directorCode,   // DIRECTOR_1..7
+      director_nombre: null,           // se sobreescribe en el trigger
       fecha_boleta: fechaBoleta,
       descripcion,
       monto,

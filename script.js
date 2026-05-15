@@ -3776,22 +3776,22 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    // Función para mostrar el modal de clave
-    function mostrarClaveInput() {
-        // Obtén el sindicato seleccionado
-        sindicatoSeleccionado = document.getElementById("select-sindicato").value;
-        const modalClave = document.getElementById("modal-clave");
+// Función para mostrar el modal de clave
+function mostrarClaveInput() {
+    // Obtén el sindicato seleccionado
+    sindicatoSeleccionado = document.getElementById("select-sindicato").value;
+    const modalClave = document.getElementById("modal-clave");
 
-        if (sindicatoSeleccionado) {
-            // Si hay un sindicato seleccionado, muestra el modal de clave
-            document.getElementById("clave-input").value = ""; // Limpia el campo de la clave
-            document.getElementById("mensaje-error").style.display = "none"; // Oculta el mensaje de error
-            modalClave.classList.remove("oculto");
-        } else {
-            // Si no se seleccionó un sindicato, oculta el modal
-            modalClave.classList.add("oculto");
-        }
+    if (sindicatoSeleccionado) {
+        // Si hay un sindicato seleccionado, muestra el modal de clave
+        document.getElementById("clave-input").value = ""; // Limpia el campo de la clave
+        document.getElementById("mensaje-error").style.display = "none"; // Oculta el mensaje de error
+        modalClave.classList.remove("oculto");
+    } else {
+        // Si no se seleccionó un sindicato, oculta el modal
+        modalClave.classList.add("oculto");
     }
+}
 
 // Función para verificar la clave ingresada desde la API
 async function verificarClave() {
@@ -3833,13 +3833,18 @@ async function verificarClave() {
         // 💾 Guardamos identidad global (se usará con Supabase después)
         if (esTesorero) {
             window.rolFederacion = "tesorero";
-            window.directorCodigoFederacion = null;
+            window.directorCodigoFederacion = "TESORERO"; // código genérico para tesorero
             mostrarPantalla("pantalla-rendicion-federacion-tesorero");
+            if (typeof cargarRendicionesTesorero === "function") {
+                cargarRendicionesTesorero();
+            }
         } else {
             window.rolFederacion = "director";
             window.directorCodigoFederacion = directorCodigo;
             mostrarPantalla("pantalla-rendicion-federacion-director");
-            cargarMisRendiciones();
+            if (typeof cargarMisRendiciones === "function") {
+                cargarMisRendiciones();
+            }
         }
 
         cerrarModalClave();
@@ -3857,45 +3862,45 @@ async function verificarClave() {
     }
 }
 
-    // Función para mostrar la pantalla de documentos para el sindicato autenticado
-    function mostrarDocumentos(sindicato) {
-        const nombreSindicato = document.getElementById("nombre-sindicato");
-        if (nombreSindicato) nombreSindicato.textContent = "Sindicato de " + sindicato;
+// Función para mostrar la pantalla de documentos para el sindicato autenticado
+function mostrarDocumentos(sindicato) {
+    const nombreSindicato = document.getElementById("nombre-sindicato");
+    if (nombreSindicato) nombreSindicato.textContent = "Sindicato de " + sindicato;
 
-        const listaSindicato = document.getElementById("lista-documentos-sindicato");
-        if (listaSindicato) listaSindicato.innerHTML = ""; // Limpiar cualquier contenido previo
+    const listaSindicato = document.getElementById("lista-documentos-sindicato");
+    if (listaSindicato) listaSindicato.innerHTML = ""; // Limpiar cualquier contenido previo
 
-        const docsSindicato = documentosSindicato[sindicato] || [];
-        docsSindicato.forEach(doc => {
-            const li = document.createElement("li");
-            li.innerHTML = `<a href="${doc.url}" target="_blank">${doc.nombre}</a>`;
-            listaSindicato.appendChild(li);
-        });
+    const docsSindicato = documentosSindicato[sindicato] || [];
+    docsSindicato.forEach(doc => {
+        const li = document.createElement("li");
+        li.innerHTML = `<a href="${doc.url}" target="_blank">${doc.nombre}</a>`;
+        listaSindicato.appendChild(li);
+    });
 
-        const listaPublicos = document.getElementById("lista-documentos-publicos");
-        if (listaPublicos) listaPublicos.innerHTML = "";
-        documentosPublicos.forEach(doc => {
-            const li = document.createElement("li");
-            li.innerHTML = `<a href="${doc.url}" target="_blank">${doc.nombre}</a>`;
-            listaPublicos.appendChild(li);
-        });
+    const listaPublicos = document.getElementById("lista-documentos-publicos");
+    if (listaPublicos) listaPublicos.innerHTML = "";
+    documentosPublicos.forEach(doc => {
+        const li = document.createElement("li");
+        li.innerHTML = `<a href="${doc.url}" target="_blank">${doc.nombre}</a>`;
+        listaPublicos.appendChild(li);
+    });
 
-        const listaVarios = document.getElementById("lista-documentos-varios");
-        if (listaVarios) listaVarios.innerHTML = "";
-        documentosVarios.forEach(doc => {
-            const li = document.createElement("li");
-            li.innerHTML = `<a href="${doc.url}" target="_blank">${doc.nombre}</a>`;
-            listaVarios.appendChild(li);
-        });
+    const listaVarios = document.getElementById("lista-documentos-varios");
+    if (listaVarios) listaVarios.innerHTML = "";
+    documentosVarios.forEach(doc => {
+        const li = document.createElement("li");
+        li.innerHTML = `<a href="${doc.url}" target="_blank">${doc.nombre}</a>`;
+        listaVarios.appendChild(li);
+    });
 
-        // Limpiar el campo de clave y el select
-        document.getElementById("clave-input").value = "";
-        document.getElementById("select-sindicato").value = "";
+    // Limpiar el campo de clave y el select
+    document.getElementById("clave-input").value = "";
+    document.getElementById("select-sindicato").value = "";
 
-        cerrarModalClave(); // Limpia y oculta el modal de clave
+    cerrarModalClave(); // Limpia y oculta el modal de clave
 
-        mostrarPantalla("pantalla-documentos");
-    }
+    mostrarPantalla("pantalla-documentos");
+}
 
 // Función para cerrar el modal de clave
 function cerrarModalClave() {
@@ -4942,20 +4947,21 @@ async function rvGuardarHandler(event) {
     if (upErr) throw new Error("Error subiendo boleta: " + upErr.message);
     const boletaPath = upData?.path || path;
 
-    // obtener director_nombre desde socios por rol
+    // obtener director_nombre desde socios por código de director (DIRECTOR_1, etc.)
     let directorNombre = "SIN_NOMBRE";
     try {
       const supaLookup = getSupabaseFederacion();
       const { data: socio } = await supaLookup
         .from("socios")
         .select("nombre")
-        .eq("rol", rol)
+        .eq("rol", directorCode)   // <--- ANTES era .eq("rol", rol)
         .limit(1)
         .maybeSingle();
       if (socio && socio.nombre) directorNombre = socio.nombre;
     } catch (e) {
       console.warn("No se obtuvo nombre:", e?.message || e);
     }
+
 
     // insertar en rendiciones_viaticos
     const payload = {
@@ -5002,6 +5008,159 @@ async function rvGuardarHandler(event) {
   if (btnRv) {
     btnRv.removeEventListener("click", rvGuardarHandler);
     btnRv.addEventListener("click", rvGuardarHandler);
+  }
+})();
+
+// ======================================================
+// 👀 Vista Tesorero: ver y gestionar todas las rendiciones
+// ======================================================
+
+// Cargar rendiciones para Tesorero
+async function cargarRendicionesTesorero() {
+  const contenedor = document.getElementById("rv-lista-tesorero");
+  const filtroSelect = document.getElementById("rv-filtro-estado");
+  if (!contenedor) return;
+
+  contenedor.innerHTML = "Cargando rendiciones...";
+
+  try {
+    const supa = getSupabaseFederacion(); // x-rol debe ser "tesorero" en login
+    let query = supa
+      .from("rendiciones_viaticos")
+      .select("*")
+      .order("fecha_creacion", { ascending: false });
+
+    const estado = filtroSelect ? filtroSelect.value : "";
+    if (estado) query = query.eq("estado", estado);
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error(error);
+      contenedor.innerHTML = "Error al cargar rendiciones.";
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      contenedor.innerHTML = "<p>No hay rendiciones registradas.</p>";
+      return;
+    }
+
+    let html = `
+      <table class="tabla-rendiciones">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Director</th>
+            <th>Fecha boleta</th>
+            <th>Descripción</th>
+            <th>Monto</th>
+            <th>Estado</th>
+            <th>Boleta</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    data.forEach(r => {
+      html += `
+        <tr data-id="${r.id}">
+          <td>${r.id}</td>
+          <td>${r.director_nombre || r.director_codigo}</td>
+          <td>${r.fecha_boleta || ""}</td>
+          <td>${r.descripcion || ""}</td>
+          <td>${r.monto != null ? r.monto : ""}</td>
+          <td>${r.estado}</td>
+          <td>
+            ${r.boleta_path ? `<button class="rv-btn-ver-boleta" data-path="${r.boleta_path}">Ver</button>` : ""}
+          </td>
+          <td>
+            <button class="rv-btn-marcar-pagada">Pagada</button>
+            <button class="rv-btn-marcar-rechazada">Rechazar</button>
+          </td>
+        </tr>
+      `;
+    });
+
+    html += `</tbody></table>`;
+    contenedor.innerHTML = html;
+
+  } catch (err) {
+    console.error(err);
+    contenedor.innerHTML = "Error inesperado.";
+  }
+}
+
+// Actualizar estado (pagada / rechazada) + observación opcional
+async function actualizarEstadoRendicion(id, nuevoEstado) {
+  const observacion = nuevoEstado === "rechazada"
+    ? (prompt("Ingrese motivo de rechazo (opcional):", "") || null)
+    : null;
+
+  try {
+    const supa = getSupabaseFederacion(); // x-rol="tesorero"
+    const { error } = await supa
+      .from("rendiciones_viaticos")
+      .update({
+        estado: nuevoEstado,
+        observacion_tesorero: observacion,
+        fecha_pago: nuevoEstado === "pagada" ? new Date().toISOString() : null
+      })
+      .eq("id", id);
+
+    if (error) throw error;
+    alert("Estado actualizado.");
+    cargarRendicionesTesorero();
+  } catch (e) {
+    console.error(e);
+    alert("Error actualizando estado: " + (e.message || e));
+  }
+}
+
+// Ver boleta (abre en nueva pestaña usando signed URL)
+async function verBoletaRendicion(path) {
+  try {
+    const { data, error } = await window.supabase.storage
+      .from("rendiciones_viaticos")
+      .createSignedUrl(path, 60 * 10); // 10 minutos
+
+    if (error) throw error;
+    if (!data || !data.signedUrl) throw new Error("No se pudo generar URL firmada.");
+
+    window.open(data.signedUrl, "_blank");
+  } catch (e) {
+    console.error(e);
+    alert("Error abriendo boleta: " + (e.message || e));
+  }
+}
+
+// ================================
+// Listeners para la UI del tesorero
+// ================================
+(function initTesoreroEventos() {
+  const filtroSelect = document.getElementById("rv-filtro-estado");
+  if (filtroSelect) {
+    filtroSelect.addEventListener("change", cargarRendicionesTesorero);
+  }
+
+  const contenedor = document.getElementById("rv-lista-tesorero");
+  if (contenedor) {
+    contenedor.addEventListener("click", function (e) {
+      const target = e.target;
+      const fila = target.closest("tr[data-id]");
+      if (!fila) return;
+      const id = Number(fila.getAttribute("data-id"));
+
+      if (target.classList.contains("rv-btn-marcar-pagada")) {
+        actualizarEstadoRendicion(id, "pagada");
+      } else if (target.classList.contains("rv-btn-marcar-rechazada")) {
+        actualizarEstadoRendicion(id, "rechazada");
+      } else if (target.classList.contains("rv-btn-ver-boleta")) {
+        const path = target.getAttribute("data-path");
+        if (path) verBoletaRendicion(path);
+      }
+    });
   }
 })();
 

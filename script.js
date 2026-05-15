@@ -4985,9 +4985,8 @@ async function rvGuardarHandler(event) {
 })();
 
 // -----------------------------
-// Handler definitivo: "Enviar rendición" (Federación)
-// Inserta registro en public.rendiciones_viaticos y sube boleta al bucket "rendiciones_viaticos"
-// Usa director_codigo = window.rolFederacion y obtiene director_nombre desde socios por rol
+// Handler definitivo corregido: "Enviar rendición" (Federación)
+// Pegar justo después de cargarMisRendiciones(), reemplaza la versión anterior
 // -----------------------------
 async function rvGuardarHandler(event) {
   event && event.preventDefault && event.preventDefault();
@@ -5023,8 +5022,8 @@ async function rvGuardarHandler(event) {
 
     // 3) obtener director_nombre desde socios por rol
     let directorNombre = "SIN_NOMBRE";
-    const supa = getSupabaseFederacion();
-    const { data: socio, error: socioErr } = await supa
+    const supaForLookup = getSupabaseFederacion();
+    const { data: socio, error: socioErr } = await supaForLookup
       .from("socios")
       .select("nombre")
       .eq("rol", rol)
@@ -5038,15 +5037,16 @@ async function rvGuardarHandler(event) {
     if (file.size > MAX_BYTES) throw new Error("El archivo excede 5 MB.");
     if (!ALLOWED.includes(file.type)) throw new Error("Tipo de archivo no permitido.");
 
-    // 5) subir boleta
+    // 5) subir boleta (usar cliente autenticado para Storage)
     const ts = Date.now();
     const safe = file.name.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_\-\.]/g, "");
     const path = `rendiciones/${rol}/${ts}_${safe}`;
-    const { data: upData, error: upErr } = await supa.storage.from(BUCKET).upload(path, file, { cacheControl: "3600", upsert: false });
+    const clientStorage = window.supabase || getSupabaseFederacion();
+    const { data: upData, error: upErr } = await clientStorage.storage.from(BUCKET).upload(path, file, { cacheControl: "3600", upsert: false });
     if (upErr) throw new Error("Error subiendo boleta: " + upErr.message);
     const boletaPath = upData?.path || path;
 
-    // 6) insertar en rendiciones_viaticos
+    // 6) insertar en rendiciones_viaticos usando cliente con headers (RLS)
     const payload = {
       director_codigo: directorCodigo,
       director_nombre: directorNombre,
@@ -5058,10 +5058,11 @@ async function rvGuardarHandler(event) {
       boleta_mime: file.type,
       estado: "pendiente"
     };
-    const { error: insertErr } = await supa.from("rendiciones_viaticos").insert([payload]);
+    const supaDb = getSupabaseFederacion();
+    const { error: insertErr } = await supaDb.from("rendiciones_viaticos").insert([payload]);
     if (insertErr) {
       // eliminar archivo subido si falla la inserción
-      await supa.storage.from(BUCKET).remove([boletaPath]).catch(()=>{});
+      await clientStorage.storage.from(BUCKET).remove([boletaPath]).catch(()=>{});
       throw new Error("Error guardando rendición: " + insertErr.message);
     }
 
@@ -5081,7 +5082,7 @@ async function rvGuardarHandler(event) {
   }
 }
 
-// Asociar listener (idempotente) — dejar al final del bloque que pegues
+// Asociar listener (idempotente) — reemplaza cualquier attach anterior
 (function attachRvListener(){
   const btnRv = document.getElementById("rv-btn-guardar");
   if (btnRv) {
@@ -5089,6 +5090,7 @@ async function rvGuardarHandler(event) {
     btnRv.addEventListener("click", rvGuardarHandler);
   }
 })();
+
 
 
 // =========================================

@@ -4913,8 +4913,8 @@ async function rvGuardarHandler(event) {
   const originalText = btn.innerText || "Enviar rendición";
 
   try {
-    const rol = window.rolFederacion;                 // ej. "director" o "tesorero"
-    const directorCode = window.directorCodigoFederacion; // ej. "DIRECTOR_1"
+    const rol = window.rolFederacion;                  // "director" o "tesorero"
+    const directorCode = window.directorCodigoFederacion; // "DIRECTOR_1", "DIRECTOR_4", etc.
     if (!rol || !directorCode) throw new Error("Sesión inválida. Reingrese la clave.");
 
     // validar formulario
@@ -4947,10 +4947,31 @@ async function rvGuardarHandler(event) {
     if (upErr) throw new Error("Error subiendo boleta: " + upErr.message);
     const boletaPath = upData?.path || path;
 
-    // insertar en rendiciones_viaticos (director_nombre lo rellena el trigger en BD)
+    // obtener director_nombre solo si es un director
+    let directorNombre = null;
+    if (rol === "director") {
+      try {
+        const { data: socio, error: socioErr } = await window.supabase
+          .from("socios")
+          .select("nombre, rol")
+          .eq("rol", directorCode)   // DIRECTOR_1..7
+          .limit(1)
+          .maybeSingle();
+
+        if (socioErr) {
+          console.warn("Error consultando socios:", socioErr.message);
+        } else if (socio && socio.nombre) {
+          directorNombre = socio.nombre;
+        }
+      } catch (e) {
+        console.warn("No se obtuvo nombre:", e?.message || e);
+      }
+    }
+
+    // insertar en rendiciones_viaticos
     const payload = {
-      director_codigo: directorCode,   // DIRECTOR_1..7
-      director_nombre: null,           // se sobreescribe en el trigger
+      director_codigo: directorCode,   // DIRECTOR_1..7 o TESORERO
+      director_nombre: directorNombre, // puede ser null si no se obtuvo o es tesorero
       fecha_boleta: fechaBoleta,
       descripcion,
       monto,
@@ -4994,6 +5015,7 @@ async function rvGuardarHandler(event) {
     btnRv.addEventListener("click", rvGuardarHandler);
   }
 })();
+
 
 // ======================================================
 // 👀 Vista Tesorero: ver y gestionar todas las rendiciones

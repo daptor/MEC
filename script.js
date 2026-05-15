@@ -5054,28 +5054,28 @@ async function cargarRendicionesTesorero() {
     let html = "";
     data.forEach(r => {
       const montoStr = r.monto != null ? r.monto : "";
-      html += `
-        <div class="rv-card-rendicion" data-id="${r.id}">
-          <div class="rv-card-header">
-            <div>
-              #${r.id} · ${r.director_nombre || r.director_codigo}
-            </div>
-            <span>${r.fecha_boleta || ""}</span>
-          </div>
-          <div class="rv-card-body">
-            <p><strong>Descripción:</strong> ${r.descripcion || ""}</p>
-            <p><strong>Monto:</strong> ${montoStr}</p>
-          </div>
-          <div class="rv-card-footer">
-            <span class="rv-badge-estado ${r.estado}">${r.estado}</span>
-            <div class="rv-card-actions">
-              ${r.boleta_path ? `<button class="rv-btn-ver-boleta" data-path="${r.boleta_path}">Ver boleta</button>` : ""}
-              <button class="rv-btn-marcar-pagada">Pagada</button>
-              <button class="rv-btn-marcar-rechazada">Rechazar</button>
-            </div>
-          </div>
-        </div>
-      `;
+html += `
+  <div class="rv-card-rendicion" data-id="${r.id}">
+<div class="rv-card-header">
+  <div class="rv-card-header-main">
+    #${r.id} · ${r.director_nombre || r.director_codigo}
+  </div>
+  <span>${r.fecha_boleta || ""}</span>
+</div>
+    <div class="rv-card-body">
+      <p><strong>Descripción:</strong> ${r.descripcion || ""}</p>
+      <p><strong>Monto:</strong> ${montoStr}</p>
+    </div>
+    <div class="rv-card-footer">
+      <span class="rv-badge-estado ${r.estado}">${r.estado}</span>
+      <div class="rv-card-actions">
+        ${r.boleta_path ? `<button class="rv-btn-ver-boleta" data-path="${r.boleta_path}">Ver boleta</button>` : ""}
+        <button class="rv-btn-marcar-pagada">Pagada</button>
+        <button class="rv-btn-marcar-rechazada">Rechazar</button>
+      </div>
+    </div>
+  </div>
+`;
     });
 
     contenedor.innerHTML = html;

@@ -507,74 +507,81 @@ input:focus, select:focus, textarea:focus,
 /* ====== Vista Tesorero Rendiciones ====== */
 
 #pantalla-rendicion-federacion-tesorero {
-  max-width: 900px;
+  max-width: 800px;
   margin: 0 auto;
-}
-
-.rv-card-rendicion {
-  background: rgba(255,255,255,0.9);
-  border-radius: 12px;
-  padding: 12px 14px;
-  margin-bottom: 10px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.08);
-  font-size: 14px;
-}
-
-.rv-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: 700;
-  margin-bottom: 6px;
-}
-
-.rv-card-header span {
-  font-size: 13px;
-  color: #555;
-}
-
-.rv-card-body p {
-  margin: 3px 0;
-}
-
-.rv-card-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 6px;
-}
-
-.rv-badge-estado {
-  padding: 2px 6px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.rv-badge-estado.pendiente { background:#fff7e6; color:#a15c00; }
-.rv-badge-estado.pagada    { background:#e6ffed; color:#166534; }
-.rv-badge-estado.rechazada { background:#ffe6e6; color:#b91c1c; }
-
-.rv-card-actions button {
-  margin-left: 4px;
-  padding: 3px 7px;
-  font-size: 12px;
-}
-
-#rv-filtros-tesorero {
-  margin-bottom: 10px;
-}
-
-#pantalla-rendicion-federacion-tesorero {
-  max-width: 700px;    /* reduce el ancho máximo */
-  margin: 0 auto;
-  padding: 10px;
+  padding: 8px 10px;
   box-sizing: border-box;
 }
 
 #rv-lista-tesorero {
-  max-height: 70vh;          /* opcional: altura máxima */
-  overflow-y: auto;          /* scroll interno si hay muchas tarjetas */
+  max-height: 70vh;
+  overflow-y: auto;
   padding-right: 4px;
 }
+
+/* Tarjeta básica */
+.rv-card-rendicion {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+  font-size: 13px;
+}
+
+/* Primera línea: ID + director + estado a la derecha */
+.rv-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.rv-card-header-main {
+  font-weight: 700;
+  color: #1f2933;
+}
+
+.rv-card-header span {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* Cuerpo: descripción y monto en dos columnas */
+.rv-card-body {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 2px 0;
+}
+
+.rv-card-body p {
+  margin: 0;
+}
+
+/* Pie: estado + acciones alineados */
+.rv-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.rv-badge-estado {
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.rv-badge-estado.pendiente { background:#fff7e6; color:#92400e; }
+.rv-badge-estado.pagada    { background:#e6ffed; color:#166534; }
+.rv-badge-estado.rechazada { background:#fee2e2; color:#b91c1c; }
+
+.rv-card-actions button {
+  margin-left: 3px;
+  padding: 2px 6px;
+  font-size: 11px;
+}
+

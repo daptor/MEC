@@ -219,41 +219,76 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 // =========================================
-// 🔑 LOGIN POR CÓDIGO (SE MANTIENE)
+// 🔑 LOGIN POR CÓDIGO (REEMPLAZO COMPLETO)
+// Usa /api/validate-clave y setea window.rolFederacion + window.directorCodigoFederacion
 // =========================================
 async function obtenerClaves() {
-    const response = await fetch("/api/keys");
-    return await response.json();
+  // mantener por compatibilidad si hay otras partes que la llaman
+  const response = await fetch("/api/keys");
+  return await response.json();
 }
 
 const btnIngresar = document.getElementById("ingresarBtn");
 
 if (btnIngresar) {
-    btnIngresar.addEventListener("click", async function () {
+  // remover listeners previos por seguridad
+  try { btnIngresar.removeEventListener("click", window._oldIngresarListener); } catch(e){}
 
-        const codigoIngresado = document.getElementById("codigoAcceso").value;
-        const claves = await obtenerClaves();
+  btnIngresar.addEventListener("click", async function () {
+    const codigoIngresado = document.getElementById("codigoAcceso").value;
 
-        if (codigoIngresado === claves.ADMIN_KEY) {
-            localStorage.setItem("rol", "admin");
-            document.getElementById("login-container").style.display = "none";
-            document.getElementById("menu-principal").style.display = "block";
-            document.body.classList.add('admin');
-            await mostrarContadorVisitas();
+    try {
+      // Llamar al endpoint en Vercel que valida la clave y devuelve { role, director_code }
+      const resp = await fetch("/api/validate-clave", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clave: codigoIngresado })
+      });
+
+      const j = await resp.json();
+
+      if (!resp.ok) {
+        const mensajeError = document.getElementById("mensajeError");
+        if (mensajeError) {
+          mensajeError.style.display = "block";
+          mensajeError.textContent = j.error || "Código incorrecto.";
         }
-        else if (codigoIngresado === claves.CODIGO_ACCESO) {
-            localStorage.setItem("rol", "usuario");
-            document.getElementById("login-container").style.display = "none";
-            document.getElementById("menu-principal").style.display = "block";
-            await incrementarVisitas();
-        }
-        else {
-            const mensajeError = document.getElementById("mensajeError");
-            mensajeError.style.display = "block";
-            mensajeError.textContent = "Código incorrecto.";
-        }
-    });
+        return;
+      }
+
+      // Guardar valores que usará el flujo de Rendición de viáticos
+      // role: ej. "DIRECTOR_3" o "TESORERO"
+      // director_code: valor EXACTO que las policies esperan (usar como x-director-codigo y primer segmento del path)
+      window.rolFederacion = j.role;
+      window.directorCodigoFederacion = j.director_code;
+
+      // Persistir localmente si quieres
+      try {
+        localStorage.setItem("rolFederacion", window.rolFederacion);
+        localStorage.setItem("directorCodigoFederacion", window.directorCodigoFederacion);
+      } catch(e){ /* ignore storage errors */ }
+
+      // Mantener UX existente de Archivo Sindical
+      const loginContainer = document.getElementById("login-container");
+      const menuPrincipal = document.getElementById("menu-principal");
+      if (loginContainer) loginContainer.style.display = "none";
+      if (menuPrincipal) menuPrincipal.style.display = "block";
+
+      // conservar llamadas previas si existen
+      if (typeof mostrarContadorVisitas === "function") await mostrarContadorVisitas();
+      if (typeof incrementarVisitas === "function") await incrementarVisitas();
+
+    } catch (e) {
+      console.error("Error validando clave:", e);
+      const mensajeError = document.getElementById("mensajeError");
+      if (mensajeError) {
+        mensajeError.style.display = "block";
+        mensajeError.textContent = "Error al validar clave.";
+      }
+    }
+  });
 }
+
 
 // =========================================
 // 🧭 NAVEGACIÓN PANTALLAS
@@ -4811,57 +4846,53 @@ async function cerrarConversacion() {
 // 📥 Cargar rendiciones del director desde Supabase
 // ======================================================
 async function cargarMisRendiciones() {
+  const contenedor = document.getElementById("rv-lista-director");
+  if (!contenedor) return;
+  contenedor.innerHTML = "Cargando rendiciones...";
 
-    const contenedor = document.getElementById("rv-lista-director");
+  try {
+    // usar cliente con headers para respetar RLS (director sólo ve sus rendiciones)
+    const supa = getSupabaseFederacion();
+    const { data, error } = await supa
+      .from("rendiciones_viaticos")
+      .select("*")
+      .eq("director_codigo", window.rolFederacion || window.directorCodigoFederacion)
+      .order("fecha_creacion", { ascending: false });
 
-    if (!contenedor) return;
-
-    contenedor.innerHTML = "Cargando rendiciones...";
-
-    try {
-
-        const { data, error } = await supabase
-            .from("rendiciones_viaticos")
-            .select("*")
-            .eq("director_codigo", window.directorCodigoFederacion)
-            .order("fecha_creacion", { ascending: false });
-
-        if (error) {
-            console.error(error);
-            contenedor.innerHTML = "Error al cargar rendiciones.";
-            return;
-        }
-
-        if (!data || data.length === 0) {
-            contenedor.innerHTML = "<p>No tienes rendiciones aún.</p>";
-            return;
-        }
-
-        let html = "<ul>";
-
-        data.forEach(r => {
-            html += `
-                <li>
-                    <strong>${r.fecha_boleta || "Sin fecha"}</strong> — 
-                    ${r.descripcion || "Sin descripción"} 
-                    (${r.estado})
-                </li>
-            `;
-        });
-
-        html += "</ul>";
-
-        contenedor.innerHTML = html;
-
-    } catch (err) {
-        console.error(err);
-        contenedor.innerHTML = "Error inesperado.";
+    if (error) {
+      console.error(error);
+      contenedor.innerHTML = "Error al cargar rendiciones.";
+      return;
     }
+
+    if (!data || data.length === 0) {
+      contenedor.innerHTML = "<p>No tienes rendiciones aún.</p>";
+      return;
+    }
+
+    let html = "<ul>";
+    data.forEach(r => {
+      html += `
+        <li>
+          <strong>${r.fecha_boleta || "Sin fecha"}</strong> — 
+          ${r.descripcion || "Sin descripción"} 
+          (${r.estado})
+        </li>
+      `;
+    });
+    html += "</ul>";
+    contenedor.innerHTML = html;
+  } catch (err) {
+    console.error(err);
+    contenedor.innerHTML = "Error inesperado.";
+  }
 }
 
 // -----------------------------
-// Handler final y único: "Enviar rendición" (Federación)
-// Reemplaza cualquier versión anterior de rvGuardarHandler y attachRvListener
+// Handler definitivo: "Enviar rendición" (Federación)
+// - usa director_code en window.directorCodigoFederacion como primer segmento del path
+// - sube boleta con fetch (incluye Authorization + x-director-codigo) para cumplir policies
+// - inserta registro en rendiciones_viaticos usando getSupabaseFederacion()
 // -----------------------------
 async function rvGuardarHandler(event) {
   event && event.preventDefault && event.preventDefault();
@@ -4875,18 +4906,16 @@ async function rvGuardarHandler(event) {
 
   const BUCKET = "rendiciones_viaticos";
   const MAX_BYTES = 5 * 1024 * 1024;
-  const ALLOWED = ["application/pdf", "image/jpeg", "image/png"];
+  const ALLOWED = ["application/pdf","image/jpeg","image/png"];
 
   btn.disabled = true;
   const originalText = btn.innerText || "Enviar rendición";
 
   try {
-    // sesión/rol/directorCode: directorCodigoFederacion debe existir y será usado como primer segmento del path
     const rol = window.rolFederacion;
-    const directorHeader = window.directorCodigoFederacion; // MUST match policy
+    const directorHeader = window.directorCodigoFederacion;
     if (!rol || !directorHeader) throw new Error("Sesión inválida. Reingrese la clave.");
 
-    // validar formulario
     const fechaBoleta = inputFecha?.value?.trim();
     const descripcion = inputDesc?.value?.trim();
     const montoRaw = inputMonto?.value?.trim();
@@ -4895,58 +4924,49 @@ async function rvGuardarHandler(event) {
     const monto = montoRaw ? Number(montoRaw) : null;
     if (montoRaw && isNaN(monto)) throw new Error("Monto inválido.");
 
-    // obtener director_nombre desde socios por rol
-    let directorNombre = "SIN_NOMBRE";
-    try {
-      const supaForLookup = getSupabaseFederacion();
-      const { data: socio, error: socioErr } = await supaForLookup
-        .from("socios")
-        .select("nombre")
-        .eq("rol", rol)
-        .limit(1)
-        .maybeSingle();
-      if (!socioErr && socio && socio.nombre) directorNombre = socio.nombre;
-    } catch (e) {
-      console.warn("Error buscando socio:", e?.message || e);
-    }
-
-    // boleta obligatoria
     if (!inputFile || !inputFile.files || inputFile.files.length === 0) throw new Error("Se requiere boleta (archivo).");
     const file = inputFile.files[0];
     if (file.size > MAX_BYTES) throw new Error("El archivo excede 5 MB.");
     if (!ALLOWED.includes(file.type)) throw new Error("Tipo de archivo no permitido.");
 
-    // construir path: primer segmento debe coincidir con directorHeader (policy)
+    // construir path (primer segmento = directorHeader)
     const ts = Date.now();
-    const safe = file.name.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_\-\.]/g, "");
+    const safe = file.name.replace(/\s+/g,"_").replace(/[^a-zA-Z0-9_\-\.]/g,"");
     const path = `rendiciones/${directorHeader}/${ts}_${safe}`;
 
-    // obtener token de sesión y crear cliente temporal que incluya Authorization + headers
+    // obtener token de sesión
     const sessionResp = await window.supabase.auth.getSession();
-    const token = sessionResp?.data?.session?.access_token || null;
-    if (!token) throw new Error("No hay sesión válida (token). Reingrese la clave.");
+    const token = sessionResp?.data?.session?.access_token;
+    if (!token) throw new Error("No hay sesión válida. Reingrese la clave.");
 
-    const clientWithAuthAndHeaders = (window._supabaseLib && typeof window._supabaseLib.createClient === "function")
-      ? window._supabaseLib.createClient(supabaseUrl, supabaseKey, {
-          global: {
-            headers: {
-              "x-rol": rol || "",
-              "x-director-codigo": directorHeader || "",
-              "Authorization": `Bearer ${token}`
-            }
-          }
-        })
-      : window.supabase; // fallback
+    // subir boleta con fetch para asegurar headers llegan al endpoint Storage
+    const storageUrl = `${supabaseUrl}/storage/v1/object/${BUCKET}/${encodeURIComponent(path)}`;
+    const uploadResp = await fetch(storageUrl, {
+      method: "PUT",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "x-director-codigo": directorHeader,
+        "Content-Type": file.type
+      },
+      body: file
+    });
+    if (!uploadResp.ok) {
+      const txt = await uploadResp.text().catch(()=>null);
+      throw new Error("Error subiendo boleta: "+(txt || uploadResp.status));
+    }
+    const boletaPath = path;
 
-    // subir boleta usando cliente que envía headers + auth (cumple policy)
-    const { data: upData, error: upErr } = await clientWithAuthAndHeaders.storage.from(BUCKET)
-      .upload(path, file, { cacheControl: "3600", upsert: false });
-    if (upErr) throw new Error("Error subiendo boleta: " + upErr.message);
-    const boletaPath = upData?.path || path;
+    // obtener director_nombre desde socios por rol
+    let directorNombre = "SIN_NOMBRE";
+    try {
+      const supaLookup = getSupabaseFederacion();
+      const { data: socio } = await supaLookup.from("socios").select("nombre").eq("rol", rol).limit(1).maybeSingle();
+      if (socio && socio.nombre) directorNombre = socio.nombre;
+    } catch (e) { console.warn("No se obtuvo nombre:", e?.message || e); }
 
-    // insertar en DB usando cliente con headers (RLS)
+    // insertar en rendiciones_viaticos usando cliente con headers (aplica RLS)
     const payload = {
-      director_codigo: rol, // almacenar rol como solicitaste
+      director_codigo: rol,
       director_nombre: directorNombre,
       fecha_boleta: fechaBoleta,
       descripcion,
@@ -4959,19 +4979,18 @@ async function rvGuardarHandler(event) {
     const supaDb = getSupabaseFederacion();
     const { error: insertErr } = await supaDb.from("rendiciones_viaticos").insert([payload]);
     if (insertErr) {
-      // limpiar archivo si falla la inserción
-      await clientWithAuthAndHeaders.storage.from(BUCKET).remove([boletaPath]).catch(()=>{});
-      throw new Error("Error guardando rendición: " + insertErr.message);
+      // intentar eliminar archivo subido si falla la inserción
+      await fetch(`${supabaseUrl}/storage/v1/object/${BUCKET}/${encodeURIComponent(boletaPath)}`, {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${token}`, "x-director-codigo": directorHeader }
+      }).catch(()=>{});
+      throw new Error("Error guardando rendición: "+insertErr.message);
     }
 
-    // éxito: refrescar y limpiar
+    // éxito: refrescar lista y limpiar formulario
     if (typeof cargarMisRendiciones === "function") cargarMisRendiciones();
-    inputFecha.value = "";
-    inputDesc.value = "";
-    inputMonto.value = "";
-    inputFile.value = "";
+    inputFecha.value = ""; inputDesc.value = ""; inputMonto.value = ""; inputFile.value = "";
     alert("Rendición enviada correctamente.");
-
   } catch (err) {
     console.error(err);
     alert(err?.message || "Error al enviar rendición.");
@@ -4981,7 +5000,7 @@ async function rvGuardarHandler(event) {
   }
 }
 
-// Asociar listener (reemplaza cualquier anterior)
+// asociar listener (idempotente)
 (function attachRvListener(){
   const btnRv = document.getElementById("rv-btn-guardar");
   if (btnRv) {
@@ -4989,9 +5008,6 @@ async function rvGuardarHandler(event) {
     btnRv.addEventListener("click", rvGuardarHandler);
   }
 })();
-
-
-
 
 // =========================================
 // 💰 FREEMIUM — MOSTRAR RESULTADO DEL ANÁLISIS

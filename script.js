@@ -4851,12 +4851,11 @@ async function cargarMisRendiciones() {
   contenedor.innerHTML = "Cargando rendiciones...";
 
   try {
-    // usar cliente con headers para respetar RLS (director sólo ve sus rendiciones)
-    const supa = getSupabaseFederacion();
+    const supa = getSupabaseFederacion(); // envía x-rol y x-director-codigo
     const { data, error } = await supa
       .from("rendiciones_viaticos")
       .select("*")
-      .eq("director_codigo", window.rolFederacion || window.directorCodigoFederacion)
+      .eq("director_codigo", window.directorCodigoFederacion) // coincide con header x-director-codigo
       .order("fecha_creacion", { ascending: false });
 
     if (error) {
@@ -4890,9 +4889,6 @@ async function cargarMisRendiciones() {
 
 // -----------------------------
 // Handler definitivo: "Enviar rendición" (Federación)
-// - usa director_code en window.directorCodigoFederacion como primer segmento del path
-// - sube boleta con fetch (incluye Authorization + x-director-codigo) para cumplir policies
-// - inserta registro en rendiciones_viaticos usando getSupabaseFederacion()
 // -----------------------------
 async function rvGuardarHandler(event) {
   event && event.preventDefault && event.preventDefault();
@@ -4912,10 +4908,11 @@ async function rvGuardarHandler(event) {
   const originalText = btn.innerText || "Enviar rendición";
 
   try {
-    const rol = window.rolFederacion;
-    const directorHeader = window.directorCodigoFederacion;
-    if (!rol || !directorHeader) throw new Error("Sesión inválida. Reingrese la clave.");
+    const rol = window.rolFederacion;                 // ej. "director" o "tesorero"
+    const directorCode = window.directorCodigoFederacion; // ej. "DIRECTOR_1"
+    if (!rol || !directorCode) throw new Error("Sesión inválida. Reingrese la clave.");
 
+    // validar formulario
     const fechaBoleta = inputFecha?.value?.trim();
     const descripcion = inputDesc?.value?.trim();
     const montoRaw = inputMonto?.value?.trim();
@@ -4924,49 +4921,45 @@ async function rvGuardarHandler(event) {
     const monto = montoRaw ? Number(montoRaw) : null;
     if (montoRaw && isNaN(monto)) throw new Error("Monto inválido.");
 
-    if (!inputFile || !inputFile.files || inputFile.files.length === 0) throw new Error("Se requiere boleta (archivo).");
+    // archivo obligatorio
+    if (!inputFile || !inputFile.files || inputFile.files.length === 0) {
+      throw new Error("Se requiere boleta (archivo).");
+    }
     const file = inputFile.files[0];
     if (file.size > MAX_BYTES) throw new Error("El archivo excede 5 MB.");
     if (!ALLOWED.includes(file.type)) throw new Error("Tipo de archivo no permitido.");
 
-    // construir path (primer segmento = directorHeader)
+    // path en Storage (para organizar)
     const ts = Date.now();
     const safe = file.name.replace(/\s+/g,"_").replace(/[^a-zA-Z0-9_\-\.]/g,"");
-    const path = `rendiciones/${directorHeader}/${ts}_${safe}`;
+    const path = `rendiciones/${directorCode}/${ts}_${safe}`;
 
-    // obtener token de sesión
-    const sessionResp = await window.supabase.auth.getSession();
-    const token = sessionResp?.data?.session?.access_token;
-    if (!token) throw new Error("No hay sesión válida. Reingrese la clave.");
+    // subir boleta con cliente autenticado de Supabase
+    const { data: upData, error: upErr } = await window.supabase
+      .storage.from(BUCKET)
+      .upload(path, file, { cacheControl: "3600", upsert: false });
 
-    // subir boleta con fetch para asegurar headers llegan al endpoint Storage
-    const storageUrl = `${supabaseUrl}/storage/v1/object/${BUCKET}/${encodeURIComponent(path)}`;
-    const uploadResp = await fetch(storageUrl, {
-      method: "PUT",
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "x-director-codigo": directorHeader,
-        "Content-Type": file.type
-      },
-      body: file
-    });
-    if (!uploadResp.ok) {
-      const txt = await uploadResp.text().catch(()=>null);
-      throw new Error("Error subiendo boleta: "+(txt || uploadResp.status));
-    }
-    const boletaPath = path;
+    if (upErr) throw new Error("Error subiendo boleta: " + upErr.message);
+    const boletaPath = upData?.path || path;
 
     // obtener director_nombre desde socios por rol
     let directorNombre = "SIN_NOMBRE";
     try {
       const supaLookup = getSupabaseFederacion();
-      const { data: socio } = await supaLookup.from("socios").select("nombre").eq("rol", rol).limit(1).maybeSingle();
+      const { data: socio } = await supaLookup
+        .from("socios")
+        .select("nombre")
+        .eq("rol", rol)
+        .limit(1)
+        .maybeSingle();
       if (socio && socio.nombre) directorNombre = socio.nombre;
-    } catch (e) { console.warn("No se obtuvo nombre:", e?.message || e); }
+    } catch (e) {
+      console.warn("No se obtuvo nombre:", e?.message || e);
+    }
 
-    // insertar en rendiciones_viaticos usando cliente con headers (aplica RLS)
+    // insertar en rendiciones_viaticos
     const payload = {
-      director_codigo: rol,
+      director_codigo: directorCode,   // aquí va el código del director (ej. DIRECTOR_1)
       director_nombre: directorNombre,
       fecha_boleta: fechaBoleta,
       descripcion,
@@ -4976,21 +4969,24 @@ async function rvGuardarHandler(event) {
       boleta_mime: file.type,
       estado: "pendiente"
     };
+
     const supaDb = getSupabaseFederacion();
-    const { error: insertErr } = await supaDb.from("rendiciones_viaticos").insert([payload]);
+    const { error: insertErr } = await supaDb
+      .from("rendiciones_viaticos")
+      .insert([payload]);
+
     if (insertErr) {
-      // intentar eliminar archivo subido si falla la inserción
-      await fetch(`${supabaseUrl}/storage/v1/object/${BUCKET}/${encodeURIComponent(boletaPath)}`, {
-        method: "DELETE",
-        headers: { "Authorization": `Bearer ${token}`, "x-director-codigo": directorHeader }
-      }).catch(()=>{});
-      throw new Error("Error guardando rendición: "+insertErr.message);
+      await window.supabase.storage.from(BUCKET).remove([boletaPath]).catch(()=>{});
+      throw new Error("Error guardando rendición: " + insertErr.message);
     }
 
-    // éxito: refrescar lista y limpiar formulario
     if (typeof cargarMisRendiciones === "function") cargarMisRendiciones();
-    inputFecha.value = ""; inputDesc.value = ""; inputMonto.value = ""; inputFile.value = "";
+    inputFecha.value = "";
+    inputDesc.value = "";
+    inputMonto.value = "";
+    inputFile.value = "";
     alert("Rendición enviada correctamente.");
+
   } catch (err) {
     console.error(err);
     alert(err?.message || "Error al enviar rendición.");
@@ -5008,6 +5004,7 @@ async function rvGuardarHandler(event) {
     btnRv.addEventListener("click", rvGuardarHandler);
   }
 })();
+
 
 // =========================================
 // 💰 FREEMIUM — MOSTRAR RESULTADO DEL ANÁLISIS

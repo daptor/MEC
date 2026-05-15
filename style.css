@@ -504,44 +504,64 @@ input:focus, select:focus, textarea:focus,
     }
 }
 
+/* ====== Vista Tesorero Rendiciones ====== */
 
-/*=================================================
-/* Tabla rendiciones (tesorero) */
-.tabla-rendiciones {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 1rem;
-  font-size: 0.9rem;
+#pantalla-rendicion-federacion-tesorero {
+  max-width: 900px;
+  margin: 0 auto;
 }
 
-.tabla-rendiciones th,
-.tabla-rendiciones td {
-  border: 1px solid #ddd;
-  padding: 6px 8px;
-  text-align: left;
+.rv-card-rendicion {
+  background: rgba(255,255,255,0.9);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+  font-size: 14px;
 }
 
-.tabla-rendiciones thead {
-  background-color: #f0f0f0;
-  font-weight: bold;
+.rv-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 700;
+  margin-bottom: 6px;
 }
 
-.tabla-rendiciones tr:nth-child(even) {
-  background-color: #fafafa;
+.rv-card-header span {
+  font-size: 13px;
+  color: #555;
 }
 
-.tabla-rendiciones tr:hover {
-  background-color: #eef;
+.rv-card-body p {
+  margin: 3px 0;
+}
+
+.rv-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.rv-badge-estado {
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.rv-badge-estado.pendiente { background:#fff7e6; color:#a15c00; }
+.rv-badge-estado.pagada    { background:#e6ffed; color:#166534; }
+.rv-badge-estado.rechazada { background:#ffe6e6; color:#b91c1c; }
+
+.rv-card-actions button {
+  margin-left: 4px;
+  padding: 3px 7px;
+  font-size: 12px;
 }
 
 #rv-filtros-tesorero {
-  margin-bottom: 0.5rem;
-}
-
-#rv-filtros-tesorero label {
-  margin-right: 0.5rem;
-}
-
-#rv-filtros-tesorero select {
-  padding: 4px 6px;
+  margin-bottom: 10px;
 }

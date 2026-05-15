@@ -4954,7 +4954,7 @@ async function rvGuardarHandler(event) {
       const { data: socio } = await supaLookup
         .from("socios")
         .select("nombre")
-        .eq("rol", directorCode)   // <--- ANTES era .eq("rol", rol)
+        .eq("rol", directorCode)   // <--- MUY IMPORTANTE: usar directorCode, no rol
         .limit(1)
         .maybeSingle();
       if (socio && socio.nombre) directorNombre = socio.nombre;
@@ -5024,7 +5024,7 @@ async function cargarRendicionesTesorero() {
   contenedor.innerHTML = "Cargando rendiciones...";
 
   try {
-    const supa = getSupabaseFederacion(); // x-rol debe ser "tesorero" en login
+    const supa = getSupabaseFederacion();
     let query = supa
       .from("rendiciones_viaticos")
       .select("*")
@@ -5046,44 +5046,33 @@ async function cargarRendicionesTesorero() {
       return;
     }
 
-    let html = `
-      <table class="tabla-rendiciones">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Director</th>
-            <th>Fecha boleta</th>
-            <th>Descripción</th>
-            <th>Monto</th>
-            <th>Estado</th>
-            <th>Boleta</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-    `;
-
+    let html = "";
     data.forEach(r => {
+      const montoStr = r.monto != null ? r.monto : "";
       html += `
-        <tr data-id="${r.id}">
-          <td>${r.id}</td>
-          <td>${r.director_nombre || r.director_codigo}</td>
-          <td>${r.fecha_boleta || ""}</td>
-          <td>${r.descripcion || ""}</td>
-          <td>${r.monto != null ? r.monto : ""}</td>
-          <td>${r.estado}</td>
-          <td>
-            ${r.boleta_path ? `<button class="rv-btn-ver-boleta" data-path="${r.boleta_path}">Ver</button>` : ""}
-          </td>
-          <td>
-            <button class="rv-btn-marcar-pagada">Pagada</button>
-            <button class="rv-btn-marcar-rechazada">Rechazar</button>
-          </td>
-        </tr>
+        <div class="rv-card-rendicion" data-id="${r.id}">
+          <div class="rv-card-header">
+            <div>
+              #${r.id} · ${r.director_nombre || r.director_codigo}
+            </div>
+            <span>${r.fecha_boleta || ""}</span>
+          </div>
+          <div class="rv-card-body">
+            <p><strong>Descripción:</strong> ${r.descripcion || ""}</p>
+            <p><strong>Monto:</strong> ${montoStr}</p>
+          </div>
+          <div class="rv-card-footer">
+            <span class="rv-badge-estado ${r.estado}">${r.estado}</span>
+            <div class="rv-card-actions">
+              ${r.boleta_path ? `<button class="rv-btn-ver-boleta" data-path="${r.boleta_path}">Ver boleta</button>` : ""}
+              <button class="rv-btn-marcar-pagada">Pagada</button>
+              <button class="rv-btn-marcar-rechazada">Rechazar</button>
+            </div>
+          </div>
+        </div>
       `;
     });
 
-    html += `</tbody></table>`;
     contenedor.innerHTML = html;
 
   } catch (err) {
@@ -5091,6 +5080,7 @@ async function cargarRendicionesTesorero() {
     contenedor.innerHTML = "Error inesperado.";
   }
 }
+
 
 // Actualizar estado (pagada / rechazada) + observación opcional
 async function actualizarEstadoRendicion(id, nuevoEstado) {

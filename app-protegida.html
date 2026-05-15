@@ -360,7 +360,36 @@
           <option value="Rancagua">Sindicato Rancagua</option>
           <option value="Trebol">Sindicato Trebol</option>
           <option value="RendicionFederacion">Rendición de viáticos Federación</option>
-      </select>
+                </select>
+            <!-- Herramientas Federación -->
+            <hr>
+            <h3>Herramientas Federación</h3>
+            <p>Acceso a funciones especiales para plenarias y coordinación sindical.</p>
+            <button onclick="mostrarPantalla('pantalla-reunion-federacion')">
+              Reunión Federación (Contrarreloj)
+            </button>
+
+  <!-- Nueva Pantalla Reunión Federación -->
+<div id="pantalla-reunion-federacion" class="pantalla" style="display:none;">
+  <h1>Reunión Federación</h1>
+  <p>Contrarreloj Plenarias</p>
+
+  <!-- Zona principal de opciones -->
+  <button id="btnCrearReunion">Crear nueva reunión</button>
+
+  <hr>
+
+  <!-- Unirse por código -->
+  <h3>Unirme a una reunión</h3>
+  <label for="codigoReunionInput">Código de reunión</label>
+  <input type="text" id="codigoReunionInput" placeholder="Ej: RF-2025-05-PLENARIA">
+  <button id="btnUnirmeReunion">Unirme a la reunión</button>
+
+  <p id="mensajeReunion" class="error-msg" style="display:none;"></p>
+
+  <button onclick="mostrarPantalla('pantalla-archivosindical')">↩ Volver a Archivo Sindical</button>
+</div>
+
       <!-- Modal para ingresar la clave -->
       <div id="modal-clave" class="modal oculto">
           <div class="modal-contenido">

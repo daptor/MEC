@@ -503,3 +503,45 @@ input:focus, select:focus, textarea:focus,
         font-size: 18px;
     }
 }
+
+
+/*=================================================
+/* Tabla rendiciones (tesorero) */
+.tabla-rendiciones {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+.tabla-rendiciones th,
+.tabla-rendiciones td {
+  border: 1px solid #ddd;
+  padding: 6px 8px;
+  text-align: left;
+}
+
+.tabla-rendiciones thead {
+  background-color: #f0f0f0;
+  font-weight: bold;
+}
+
+.tabla-rendiciones tr:nth-child(even) {
+  background-color: #fafafa;
+}
+
+.tabla-rendiciones tr:hover {
+  background-color: #eef;
+}
+
+#rv-filtros-tesorero {
+  margin-bottom: 0.5rem;
+}
+
+#rv-filtros-tesorero label {
+  margin-right: 0.5rem;
+}
+
+#rv-filtros-tesorero select {
+  padding: 4px 6px;
+}

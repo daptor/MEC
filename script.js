@@ -4859,6 +4859,239 @@ async function cargarMisRendiciones() {
     }
 }
 
+// -----------------------------
+// Handler para guardar rendición (Federación)
+// Pegar justo después de cargarMisRendiciones()
+// -----------------------------
+async function rvGuardarHandler(event) {
+  event && event.preventDefault && event.preventDefault();
+
+  const btn = document.getElementById("rv-btn-guardar");
+  const inputFecha = document.getElementById("rv-fecha-boleta");
+  const inputDesc = document.getElementById("rv-descripcion");
+  const inputMonto = document.getElementById("rv-monto");
+  const inputFile = document.getElementById("rv-boleta-file");
+
+  if (!btn) return console.warn("Botón #rv-btn-guardar no encontrado.");
+
+  const BUCKET = "rendiciones_viaticos";
+  const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+  const ALLOWED = ["application/pdf", "image/jpeg", "image/png"];
+
+  btn.disabled = true;
+  const originalText = btn.innerText || "Guardar";
+
+  try {
+    // 1) Determinar director_codigo (fallbacks)
+    let directorCodigo = window.directorCodigoFederacion || localStorage.getItem("directorCodigoFederacion") || null;
+    if (!directorCodigo && window.supabase && typeof window.supabase.auth !== "undefined") {
+      try {
+        const userResp = await window.supabase.auth.getUser();
+        directorCodigo = userResp?.data?.user?.id || userResp?.data?.user?.user_metadata?.rut || directorCodigo;
+      } catch(e){ /* ignore */ }
+    }
+    if (!directorCodigo) throw new Error("No se encontró el código del director (inicie sesión).");
+
+    // 2) Validaciones formulario
+    const fechaBoleta = inputFecha?.value?.trim();
+    const descripcion = inputDesc?.value?.trim();
+    const montoRaw = inputMonto?.value?.trim();
+    if (!fechaBoleta) throw new Error("Ingrese fecha de boleta.");
+    if (!descripcion) throw new Error("Ingrese descripción.");
+    if (!montoRaw || isNaN(Number(montoRaw))) throw new Error("Monto inválido.");
+    const monto = Number(montoRaw);
+
+    // 3) Obtener director_nombre desde socios: intentar rut luego id
+    let directorNombre = null;
+    try {
+      const supa = getSupabaseFederacion();
+      // intento por rut
+      let q = await supa.from("socios").select("id,nombre,rut").eq("rut", directorCodigo).limit(1).maybeSingle();
+      if (q.error) { /* continue to try by id */ }
+      if (q && q.data && q.data.nombre) directorNombre = q.data.nombre;
+      if (!directorNombre) {
+        let q2 = await supa.from("socios").select("id,nombre,rut").eq("id", directorCodigo).limit(1).maybeSingle();
+        if (q2 && q2.data && q2.data.nombre) directorNombre = q2.data.nombre;
+      }
+    } catch (e) {
+      console.warn("Error buscando socio:", e?.message || e);
+    }
+    if (!directorNombre) directorNombre = "SIN_NOMBRE";
+
+    // 4) Archivo requerido (tu tabla boleta_path NOT NULL)
+    if (!inputFile || !inputFile.files || inputFile.files.length === 0) {
+      throw new Error("Se requiere boleta (archivo).");
+    }
+    const file = inputFile.files[0];
+    if (file.size > MAX_BYTES) throw new Error("El archivo excede 5 MB.");
+    if (!ALLOWED.includes(file.type)) throw new Error("Tipo de archivo no permitido.");
+
+    const ts = Date.now();
+    const safe = file.name.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_\-\.]/g, "");
+    const path = `rendiciones/${directorCodigo}/${ts}_${safe}`;
+
+    const supaStorage = getSupabaseFederacion();
+    const { data: upData, error: upErr } = await supaStorage.storage.from(BUCKET).upload(path, file, { cacheControl: "3600", upsert: false });
+    if (upErr) throw new Error("Error subiendo boleta: " + upErr.message);
+    const boletaPath = upData?.path || path;
+    const boletaNombre = file.name;
+    const boletaMime = file.type;
+
+    // 5) Insertar en rendiciones_viaticos
+    const payload = {
+      director_codigo: directorCodigo,
+      director_nombre: directorNombre,
+      fecha_boleta: fechaBoleta,
+      descripcion: descripcion,
+      monto: monto,
+      boleta_path: boletaPath,
+      boleta_nombre: boletaNombre,
+      boleta_mime: boletaMime,
+      estado: "pendiente"
+    };
+
+    const supaInsert = getSupabaseFederacion();
+    const { data: insertData, error: insertErr } = await supaInsert.from("rendiciones_viaticos").insert([payload]);
+    if (insertErr) {
+      // limpiar archivo subido si hay error
+      await getSupabaseFederacion().storage.from(BUCKET).remove([boletaPath]).catch(()=>{});
+      throw new Error("Error insertando rendición: " + insertErr.message);
+    }
+
+    // 6) Éxito: refrescar lista y resetear form
+    if (typeof cargarMisRendiciones === "function") cargarMisRendiciones();
+    inputDesc.value = "";
+    inputMonto.value = "";
+    inputFile.value = "";
+    inputFecha.value = "";
+    alert("Rendición enviada correctamente.");
+
+  } catch (err) {
+    console.error(err);
+    alert(err?.message || "Error guardando la rendición.");
+  } finally {
+    btn.disabled = false;
+    btn.innerText = originalText;
+  }
+}
+
+// Asociar listener (idempotente)
+(function attachRvListener(){
+  const btnRv = document.getElementById("rv-btn-guardar");
+  if (btnRv) {
+    btnRv.removeEventListener("click", rvGuardarHandler);
+    btnRv.addEventListener("click", rvGuardarHandler);
+  }
+})();
+
+// -----------------------------
+// Handler único y definitivo: "Enviar rendición" (Federación)
+// - usa director_codigo = window.rolFederacion
+// - obtiene director_nombre desde socios por rol
+// - sube boleta a bucket "rendiciones_viaticos" (5MB, pdf/jpg/png)
+// - inserta en tabla rendiciones_viaticos con boleta_path/boleta_nombre/boleta_mime y estado "pendiente"
+// Pegar justo después de cargarMisRendiciones()
+// -----------------------------
+async function rvGuardarHandler(event) {
+  event && event.preventDefault && event.preventDefault();
+
+  const btn = document.getElementById("rv-btn-guardar");
+  const inputFecha = document.getElementById("rv-fecha-boleta");
+  const inputDesc = document.getElementById("rv-descripcion");
+  const inputMonto = document.getElementById("rv-monto");
+  const inputFile = document.getElementById("rv-boleta-file");
+  if (!btn) return console.warn("Botón #rv-btn-guardar no encontrado.");
+
+  const BUCKET = "rendiciones_viaticos";
+  const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+  const ALLOWED = ["application/pdf", "image/jpeg", "image/png"];
+
+  btn.disabled = true;
+  const originalText = btn.innerText || "Enviar rendición";
+
+  try {
+    // requerir sesión/rol
+    const rol = window.rolFederacion;
+    if (!rol) throw new Error("Sesión inválida. Reingrese la clave.");
+    const directorCodigo = rol; // se guarda el rol como codigo
+
+    // validar formulario
+    const fechaBoleta = inputFecha?.value?.trim();
+    const descripcion = inputDesc?.value?.trim();
+    const montoRaw = inputMonto?.value?.trim();
+    if (!fechaBoleta) throw new Error("Ingrese fecha de boleta.");
+    if (!descripcion) throw new Error("Ingrese descripción.");
+    const monto = montoRaw ? Number(montoRaw) : null;
+    if (montoRaw && isNaN(monto)) throw new Error("Monto inválido.");
+
+    // obtener director_nombre desde socios por rol
+    let directorNombre = "SIN_NOMBRE";
+    const supa = getSupabaseFederacion();
+    const { data: socio, error: socioErr } = await supa
+      .from("socios")
+      .select("nombre")
+      .eq("rol", rol)
+      .limit(1)
+      .maybeSingle();
+    if (!socioErr && socio && socio.nombre) directorNombre = socio.nombre;
+
+    // boleta obligatoria y validación
+    if (!inputFile || !inputFile.files || inputFile.files.length === 0) throw new Error("Se requiere boleta (archivo).");
+    const file = inputFile.files[0];
+    if (file.size > MAX_BYTES) throw new Error("El archivo excede 5 MB.");
+    if (!ALLOWED.includes(file.type)) throw new Error("Tipo de archivo no permitido.");
+
+    // subir boleta
+    const ts = Date.now();
+    const safe = file.name.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_\-\.]/g, "");
+    const path = `rendiciones/${rol}/${ts}_${safe}`;
+    const { data: upData, error: upErr } = await supa.storage.from(BUCKET).upload(path, file, { cacheControl: "3600", upsert: false });
+    if (upErr) throw new Error("Error subiendo boleta: " + upErr.message);
+    const boletaPath = upData?.path || path;
+
+    // insertar en rendiciones_viaticos
+    const payload = {
+      director_codigo: directorCodigo,
+      director_nombre: directorNombre,
+      fecha_boleta: fechaBoleta,
+      descripcion: descripcion,
+      monto: monto,
+      boleta_path: boletaPath,
+      boleta_nombre: file.name,
+      boleta_mime: file.type,
+      estado: "pendiente"
+    };
+    const { error: insertErr } = await supa.from("rendiciones_viaticos").insert([payload]);
+    if (insertErr) {
+      // limpiar archivo si falla la inserción
+      await supa.storage.from(BUCKET).remove([boletaPath]).catch(()=>{});
+      throw new Error("Error guardando rendición: " + insertErr.message);
+    }
+
+    // éxito: refrescar lista y limpiar formulario
+    if (typeof cargarMisRendiciones === "function") cargarMisRendiciones();
+    inputFecha.value = "";
+    inputDesc.value = "";
+    inputMonto.value = "";
+    inputFile.value = "";
+    alert("Rendición enviada correctamente.");
+  } catch (err) {
+    console.error(err);
+    alert(err?.message || "Error al enviar rendición.");
+  } finally {
+    btn.disabled = false;
+    btn.innerText = originalText;
+  }
+}
+
+// asociar listener (asegura no duplicados)
+(function attachRvListener(){
+  const btnRv = document.getElementById("rv-btn-guardar");
+  if (btnRv) {
+    btnRv.removeEventListener("click", rvGuardarHandler);
+    btnRv.addEventListener("click", rvGuardarHandler);
+  }
+})();
 
 // =========================================
 // 💰 FREEMIUM — MOSTRAR RESULTADO DEL ANÁLISIS

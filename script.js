@@ -4953,7 +4953,7 @@ async function rvGuardarHandler(event) {
       const { data: socio, error: socioErr } = await window.supabase
         .from("socios")
         .select("nombre, rol")
-        .eq("rol", directorCode)   // directorCode = "DIRECTOR_1", "DIRECTOR_4", etc.
+        .eq("rol", directorCode)   // directorCode = "DIRECTOR_1", "DIRECTOR_3", etc.
         .limit(1)
         .maybeSingle();
 
@@ -4965,6 +4965,7 @@ async function rvGuardarHandler(event) {
     } catch (e) {
       console.warn("No se obtuvo nombre:", e?.message || e);
     }
+
 
 
     // insertar en rendiciones_viaticos

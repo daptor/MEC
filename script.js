@@ -3731,6 +3731,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Variable para almacenar el sindicato seleccionado
     let sindicatoSeleccionado = "";
+    window.usuarioFederacion = null;
+    window.sindicatoFederacionActual = null;
 
     // Función para obtener las claves desde la API en Vercel
     async function obtenerClaves() {
@@ -3800,6 +3802,135 @@ async function verificarClave() {
     const claves = await obtenerClaves();
     const sindicatoSeleccionado = document.getElementById("select-sindicato").value;
     const mensajeError = document.getElementById("mensaje-error");
+
+// ======================================================
+// 🧑‍⚖️ CASO ESPECIAL: REUNIÓN FEDERACIÓN
+// ======================================================
+    if (sindicatoSeleccionado === "ReunionFederacion") {
+
+        let sindicatoValido = null;
+
+        // Validar claves sindicales existentes
+        const sindicatos = [
+            "Concepcion",
+            "Costanera",
+            "Curico",
+            "Iquique",
+            "PlazaNorte",
+            "PuertoMontt",
+            "Rancagua",
+            "Trebol"
+        ];
+
+        for (const sindicato of sindicatos) {
+            const claveCorrecta =
+                claves[`CLAVE_${sindicato.toUpperCase()}`];
+            if (claveIngresada === claveCorrecta) {
+                sindicatoValido = sindicato;
+                break;
+            }
+        }
+
+        // ❌ Clave inválida
+        if (!sindicatoValido) {
+            mensajeError.innerText =
+                "Clave inválida para Reunión Federación.";
+            mensajeError.style.display = "block";
+            return;
+        }
+
+        try {
+
+            // ==================================================
+            // MAPEO NOMBRE → UUID REAL
+            // ==================================================
+            const mapaSindicato = {
+                "Concepcion": "9ca693bd-8284-41ae-943f-cb6ec8e76c2c",
+                "Costanera": "de394bc2-fef6-4a68-9998-d68223183905",
+                "Curico": "64cfea41-937d-48e7-876d-578c3aba7941",
+                "Iquique": "af3b44d8-8bb3-4d8c-b066-1060b5daaa48",
+                "PlazaNorte": "4361900f-099b-4419-8bbe-f801817f673f",
+                "PuertoMontt": "732f660b-d50e-4b59-8859-ab8ee046626e",
+                "Rancagua": "c255adf1-0c00-4aa2-aac7-ffbe590534ec",
+                "Trebol": "c0e6834e-73fa-4bf0-a5b9-778848e388a8"
+            };
+
+            const sindicatoUUID =
+                mapaSindicato[sindicatoValido];
+
+            window.sindicatoFederacionActual = {
+                nombre: sindicatoValido,
+                id: sindicatoUUID
+            };
+
+            // ==================================================
+            // CONSULTAR SOCIOS
+            // ==================================================
+            const { data: socios, error } = await supabase
+                .from("socios")
+                .select("*")
+                .eq("sindicato_id", sindicatoUUID)
+                .eq("estado", "activo")
+                .order("nombre");
+
+            if (error) {
+                console.error(error);
+                mensajeError.innerText =
+                    "Error cargando socios.";
+                mensajeError.style.display = "block";
+
+                return;
+            }
+
+            // ==================================================
+            // RENDER LISTA
+            // ==================================================
+            const lista =
+                document.getElementById("lista-socios-reunion");
+
+            lista.innerHTML = "";
+            socios.forEach((socio) => {
+                const div = document.createElement("div");
+                div.className = "item-socio-reunion";
+                div.innerHTML = `
+                    <label>
+                        <input
+                            type="radio"
+                            name="socioReunion"
+                            value="${socio.id}"
+                        >
+                        ${socio.nombre}
+                        (${socio.rol})
+                    </label>
+                `;
+                lista.appendChild(div);
+            });
+
+            // ==================================================
+            // TITULO
+            // ==================================================
+            document.getElementById(
+                "reunion-sindicato-actual"
+            ).innerText =
+                "Sindicato: " + sindicatoValido;
+
+            // ==================================================
+            // MOSTRAR PANTALLA
+            // ==================================================
+            cerrarModalClave();
+            mostrarPantalla(
+                "pantalla-reunion-acceso"
+            );
+
+        } catch (err) {
+            console.error(err);
+            mensajeError.innerText =
+                "Error inesperado.";
+            mensajeError.style.display = "block";
+        }
+
+        return;
+}
 
     // ======================================================
     // 🧾 CASO ESPECIAL: RENDICIÓN VIÁTICOS FEDERACIÓN
@@ -3920,6 +4051,60 @@ window.cerrarModalClave = cerrarModalClave;
 // Enlazar las funciones a los botones del DOM
 document.getElementById("select-sindicato")?.addEventListener("change", mostrarClaveInput);
 document.getElementById("ingresarBtn")?.addEventListener("click", verificarClave);
+});
+
+// ======================================================
+// 🎯 SELECCIÓN SOCIO REUNIÓN
+// ======================================================
+document.addEventListener("change", (e) => {
+    if (e.target.name === "socioReunion") {
+        const btn =
+            document.getElementById(
+                "btnIngresarReunion"
+            );
+        btn.disabled = false;
+    }
+});
+
+// ======================================================
+// 🚀 INGRESAR A REUNIÓN
+// ======================================================
+document.getElementById(
+    "btnIngresarReunion"
+)?.addEventListener("click", async () => {
+    const seleccionado =
+        document.querySelector(
+            'input[name="socioReunion"]:checked'
+        );
+    if (!seleccionado) return;
+    const socioId = seleccionado.value;
+    const { data: socio, error } = await supabase
+        .from("socios")
+        .select("*")
+        .eq("id", socioId)
+        .single();
+    if (error || !socio) {
+        alert("Error obteniendo socio.");
+        return;
+    }
+
+    window.usuarioFederacion = {
+        socio_id: socio.id,
+        nombre: socio.nombre,
+        rol: socio.rol,
+        sindicato_id: socio.sindicato_id,
+        sindicato_nombre:
+            window.sindicatoFederacionActual.nombre
+    };
+    console.log(
+        "✅ usuarioFederacion:",
+        window.usuarioFederacion
+    );
+    alert(
+        "Ingreso correcto: " +
+        socio.nombre
+    );
+
 });
 
 // ******bienvenida*********

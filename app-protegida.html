@@ -359,6 +359,7 @@
           <option value="PuertoMontt">Sindicato Puerto Montt</option>
           <option value="Rancagua">Sindicato Rancagua</option>
           <option value="Trebol">Sindicato Trebol</option>
+          <option value="ReunionFederacion">Reunión Federación</option>
           <option value="RendicionFederacion">Rendición de viáticos Federación</option>
           </select>
  
@@ -387,6 +388,16 @@
       <ul id="lista-documentos-varios"></ul>
       <button onclick="mostrarPantalla('menu-principal')">↩ Menú</button>
   </div>
+
+<!-- Pantalla Mesa Sindical Digital -->
+    <div id="pantalla-reunion-acceso" class="pantalla" style="display:none;">
+      <h1>🧑‍⚖️ Mesa Sindical Digital</h1>
+      <p id="reunion-sindicato-actual"></p>
+      <h3>Selecciona tu identidad sindical</h3>
+      <div id="lista-socios-reunion"></div>
+      <button id="btnIngresarReunion" disabled>Ingresar a la reunión</button>
+      <button onclick="mostrarPantalla('pantalla-archivosindical')">↩ Volver</button>
+    </div>
 
 <!-- Pantalla Rendición Federación - Director -->
 <div id="pantalla-rendicion-federacion-director" class="pantalla" style="display:none;">

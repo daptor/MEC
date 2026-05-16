@@ -4128,12 +4128,89 @@ document.getElementById(
         "✅ usuarioFederacion:",
         window.usuarioFederacion
     );
+        mostrarPantalla("pantalla-reunion-federacion");
+        inicializarPantallaReunionFederacion();
     alert(
         "Ingreso correcto: " +
         socio.nombre
     );
 
 });
+
+// ======================================================
+// 🧑‍⚖️ INGRESAR COMO SOCIO A MESA SINDICAL DIGITAL
+// ======================================================
+window.ingresarComoSocioFederacion = async function () {
+    const seleccionado = document.querySelector(
+        'input[name="socioReunion"]:checked'
+    );
+
+    if (!seleccionado) {
+        alert("⚠️ Debes seleccionar un integrante.");
+        return;
+    }
+    const socioId = seleccionado.value;
+    try {
+
+        // ==================================================
+        // CONSULTAR SOCIO
+        // ==================================================
+        const { data: socio, error } = await supabase
+            .from("socios")
+            .select("*")
+            .eq("id", socioId)
+            .single();
+
+        if (error || !socio) {
+            console.error(error);
+            alert(
+                "❌ No fue posible obtener datos del socio."
+            );
+            return;
+        }
+
+        // ==================================================
+        // CONSTRUIR IDENTIDAD FEDERATIVA
+        // ==================================================
+        window.usuarioFederacion = {
+
+            socio_id: socio.id,
+            nombre: socio.nombre,
+            rol: socio.rol,
+            sindicato_id: socio.sindicato_id,
+            sindicato_nombre:
+                window.sindicatoFederacionActual?.nombre || ""
+
+        };
+
+        console.log(
+            "✅ usuarioFederacion:",
+            window.usuarioFederacion
+        );
+
+        // ==================================================
+        // ACTUALIZAR UI
+        // ==================================================
+        const nombre = document.getElementById(
+            "nombre-usuario-reunion"
+        );
+
+        if (nombre) {
+            nombre.innerText =
+                window.usuarioFederacion.nombre;
+        }
+
+        // ==================================================
+        // ENTRAR A SALA
+        // ==================================================
+        mostrarPantalla("pantalla-reunion-sala");
+    } catch (err) {
+        console.error(err);
+        alert(
+            "❌ Error ingresando a Mesa Sindical Digital."
+        );
+    }
+};
 
 // ******bienvenida*********
 document.addEventListener("DOMContentLoaded", function () {

@@ -400,6 +400,45 @@
       <button onclick="mostrarPantalla('pantalla-archivosindical')">↩ Volver</button>
     </div>
 
+   <!-- ===================================================== -->
+<!-- 🧑‍⚖️ MESA SINDICAL DIGITAL — SALA FEDERATIVA -->
+<!-- ===================================================== -->
+
+<div
+    id="pantalla-reunion-sala"
+    class="pantalla"
+    style="display:none;"
+>
+    <h1>🧑‍⚖️ Mesa Sindical Digital</h1>
+    <div class="contenedor-sala-federativa">
+        <h2>
+            Bienvenido:
+            <span id="nombre-usuario-reunion">
+                Usuario
+            </span>
+        </h2>
+        <p>
+            Has ingresado correctamente a la
+            sala federativa.
+        </p>
+        <hr>
+        <h3>Funciones próximas:</h3>
+        <ul style="text-align:left;">
+            <li>✅ Crear reunión</li>
+            <li>✅ Ingresar mediante código</li>
+            <li>✅ Moderador y participantes</li>
+            <li>✅ Cola de turnos</li>
+            <li>✅ Contrarreloj sindical</li>
+            <li>✅ Participación realtime</li>
+        </ul>
+        <button
+            onclick="mostrarPantalla('menu-principal')"
+        >
+            ↩ Menú Principal
+        </button>
+    </div>
+</div> 
+
 <!-- Pantalla Rendición Federación - Director -->
 <div id="pantalla-rendicion-federacion-director" class="pantalla" style="display:none;">
   <h1>Mis rendiciones de viáticos</h1>
@@ -438,6 +477,40 @@
   <button type="button" onclick="mostrarPantalla('pantalla-archivosindical')">
     ↩ Volver a Archivo Sindical
   </button>
+</div>
+
+<!-- ====================================================== -->
+<!-- 🧑‍⚖️ MESA SINDICAL DIGITAL -->
+<!-- ====================================================== -->
+
+<div id="pantalla-reunion-federacion" class="pantalla" style="display:none;">
+    <h1>🧑‍⚖️ Mesa Sindical Digital</h1>
+    <div id="reunion-usuario-info"></div>
+    <hr>
+    <!-- ====================================== -->
+    <!-- CREAR REUNIÓN -->
+    <!-- ====================================== -->
+    <h2>Crear reunión</h2>
+    <input
+        type="text"
+        id="input-nombre-reunion"
+        placeholder="Nombre de la reunión"
+    >
+    <button onclick="crearNuevaReunion()">➕ Crear Reunión</button>
+    <hr>
+    <!-- ====================================== -->
+    <!-- UNIRSE -->
+    <!-- ====================================== -->
+    <h2>Ingresar a reunión</h2>
+    <input
+        type="text"
+        id="input-codigo-reunion"
+        placeholder="Código reunión"
+    >
+    <button onclick="unirseAReunion()">🚪 Unirse</button>
+    <hr>
+    <div id="mensaje-reunion"></div>
+    <button onclick="mostrarPantalla('menu-principal')">↩ Menú</button>
 </div>
 
 <!-- Favicon -->

@@ -4337,7 +4337,9 @@ window.crearNuevaReunion = async function () {
 
 // ======================================================
 // ⚖ UNIRSE A UNA REUNIÓN (POR CÓDIGO)
-// CAPA 2 – Gestión de reuniones (participante)
+// Soporta:
+// - input #input-codigo-reunion (pantalla federación)
+// - span #codigo-reunion-actual (pantalla sala)
 // ======================================================
 window.unirseAReunion = async function () {
     try {
@@ -4347,16 +4349,25 @@ window.unirseAReunion = async function () {
             return;
         }
 
-        // 2) Obtener código desde input (pantalla federación)
+        // 2) Intentar obtener código desde input (pantalla federación)
         const input = document.getElementById("input-codigo-reunion");
-        const codigo = (input?.value || "").trim().toUpperCase();
+        let codigo = (input?.value || "").trim().toUpperCase();
 
+        // 3) Si no hay input o viene vacío, usar el span de la sala
         if (!codigo) {
-            alert("⚠ Debes ingresar un código de reunión.");
+            const spanCodigo = document.getElementById("codigo-reunion-actual");
+            if (spanCodigo) {
+                codigo = (spanCodigo.innerText || "").trim().toUpperCase();
+            }
+        }
+
+        // 4) Si todavía no hay código, pedirlo
+        if (!codigo) {
+            alert("⚠ Debes ingresar código de reunión.");
             return;
         }
 
-        // 3) Buscar reunión activa por código
+        // 5) Buscar reunión ACTIVA por código
         const { data: reunion, error } = await supabase
             .from("reuniones")
             .select("*")
@@ -4375,11 +4386,11 @@ window.unirseAReunion = async function () {
             return;
         }
 
-        // 4) Guardar reunión actual global
+        // 6) Guardar reunión actual global
         window.reunionFederacionActual = reunion;
         console.log("✅ Reunión encontrada:", reunion);
 
-        // 5) Actualizar UI de la sala
+        // 7) Actualizar UI de la sala
         const codigoSpan = document.getElementById("codigo-reunion-actual");
         if (codigoSpan) {
             codigoSpan.innerText = reunion.codigo || codigo;
@@ -4390,7 +4401,7 @@ window.unirseAReunion = async function () {
             nombreUsuario.innerText = window.usuarioFederacion.nombre;
         }
 
-        // 6) Mostrar sala (misma para moderador y participantes por ahora)
+        // 8) Mostrar sala (por si fue llamado desde pantalla federación)
         mostrarPantalla("pantalla-reunion-sala");
 
     } catch (err) {

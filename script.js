@@ -3780,17 +3780,45 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // Función para mostrar el modal de clave
 function mostrarClaveInput() {
+
     // Obtén el sindicato seleccionado
     sindicatoSeleccionado = document.getElementById("select-sindicato").value;
     const modalClave = document.getElementById("modal-clave");
+    const descripcion = document.getElementById("descripcion-acceso");
 
     if (sindicatoSeleccionado) {
-        // Si hay un sindicato seleccionado, muestra el modal de clave
-        document.getElementById("clave-input").value = ""; // Limpia el campo de la clave
-        document.getElementById("mensaje-error").style.display = "none"; // Oculta el mensaje de error
+        // Limpia campo clave
+        document.getElementById("clave-input").value = "";
+        // Oculta errores previos
+        document.getElementById("mensaje-error").style.display =
+            "none";
+        // ======================================================
+        // 🧠 MENSAJE DINÁMICO SEGÚN MÓDULO
+        // ======================================================
+        if (sindicatoSeleccionado === "RendicionFederacion") {
+            descripcion.innerHTML = `
+                🔐 Ingreso Rendición Federación<br><br>
+                • Director: usar clave DIRECTOR<br>
+                • Tesorero: usar clave ADMIN
+            `;
+
+        } else if (
+            sindicatoSeleccionado === "ReunionFederacion"
+        ) {
+            descripcion.innerHTML = `
+            🧑‍⚖️ Ingreso Mesa Sindical Digital<br><br>
+            • Utiliza la misma clave del sindicato
+            `;
+        } else {
+            descripcion.innerHTML = `
+                🏢 Ingreso Archivo Sindical<br><br>
+                • Ingresa clave del sindicato seleccionado
+            `;
+        }
+        // Mostrar modal
         modalClave.classList.remove("oculto");
     } else {
-        // Si no se seleccionó un sindicato, oculta el modal
+        // Ocultar modal si no hay selección
         modalClave.classList.add("oculto");
     }
 }

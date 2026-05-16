@@ -4410,6 +4410,112 @@ window.unirseAReunion = async function () {
     }
 };
 
+// ======================================================
+// CAPA 3 – Sistema Contrarreloj
+// Subfase 3.1: Cronómetro general (solo frontend)
+// ======================================================
+
+window.msdEstadoReunion = {
+    generalSegRestantes: 0,
+    generalTimerId: null,
+    generalRunning: false
+};
+
+// Formatea segundos → mm:ss
+function msdFormatearTiempo(seg) {
+    const s = Math.max(0, Math.floor(seg));
+    const minutos = String(Math.floor(s / 60)).padStart(2, "0");
+    const segundos = String(s % 60).padStart(2, "0");
+    return `${minutos}:${segundos}`;
+}
+
+// Actualiza el display y color según tiempo
+function msdActualizarDisplayGeneral() {
+    const display = document.getElementById("msd-general-display");
+    if (!display) return;
+
+    const seg = window.msdEstadoReunion.generalSegRestantes;
+    display.textContent = msdFormatearTiempo(seg);
+
+    // Colores según porcentaje de tiempo
+    const inputDur = document.getElementById("msd-duracion-min");
+    const minBase = inputDur ? Number(inputDur.value || 3) : 3;
+    const totalSeg = minBase * 60;
+
+    if (!totalSeg || seg <= 0) {
+        display.style.color = "#b91c1c";   // rojo al llegar o pasar 0
+        return;
+    }
+
+    const ratio = seg / totalSeg;
+    if (ratio > 0.6) {
+        display.style.color = "#16a34a";   // verde
+    } else if (ratio > 0.3) {
+        display.style.color = "#ea580c";   // naranja
+    } else {
+        display.style.color = "#b91c1c";   // rojo
+    }
+}
+
+// Inicia el cronómetro general
+window.msdIniciarGeneral = function () {
+    const inputDur = document.getElementById("msd-duracion-min");
+    const minBase = inputDur ? Number(inputDur.value || 3) : 3;
+
+    if (!minBase || minBase <= 0) {
+        alert("⚠ Define una duración base válida en minutos.");
+        return;
+    }
+
+    // Si está pausado, seguimos desde donde quedó
+    if (!window.msdEstadoReunion.generalRunning &&
+        window.msdEstadoReunion.generalSegRestantes <= 0) {
+        // Primera vez o reiniciado: cargar segundos totales
+        window.msdEstadoReunion.generalSegRestantes = minBase * 60;
+    }
+
+    if (window.msdEstadoReunion.generalTimerId) {
+        // Ya está corriendo
+        return;
+    }
+
+    window.msdEstadoReunion.generalRunning = true;
+
+    window.msdEstadoReunion.generalTimerId = setInterval(() => {
+        window.msdEstadoReunion.generalSegRestantes -= 1;
+        msdActualizarDisplayGeneral();
+
+        if (window.msdEstadoReunion.generalSegRestantes <= 0) {
+            // Llegó a cero, detenemos pero dejamos en 00:00
+            msdPausarGeneral();
+            window.msdEstadoReunion.generalSegRestantes = 0;
+            msdActualizarDisplayGeneral();
+            // Aquí más adelante podemos disparar aviso sonoro/visual
+        }
+    }, 1000);
+
+    msdActualizarDisplayGeneral();
+};
+
+// Pausa el cronómetro general
+window.msdPausarGeneral = function () {
+    if (window.msdEstadoReunion.generalTimerId) {
+        clearInterval(window.msdEstadoReunion.generalTimerId);
+        window.msdEstadoReunion.generalTimerId = null;
+    }
+    window.msdEstadoReunion.generalRunning = false;
+};
+
+// Reinicia el cronómetro (sin iniciarlo automáticamente)
+window.msdReiniciarGeneral = function () {
+    const inputDur = document.getElementById("msd-duracion-min");
+    const minBase = inputDur ? Number(inputDur.value || 3) : 3;
+
+    window.msdPausarGeneral();
+    window.msdEstadoReunion.generalSegRestantes = minBase * 60;
+    msdActualizarDisplayGeneral();
+};
+
 
 // ******bienvenida*********
 document.addEventListener("DOMContentLoaded", function () {

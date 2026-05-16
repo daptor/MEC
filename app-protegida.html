@@ -426,6 +426,35 @@
             Código reunión:
             <span id="codigo-reunion-actual">---</span>
         </h3>
+
+        <!-- ==========================================
+             CAPA 3 – Cronómetro general (Subfase 3.1)
+             ========================================== -->
+        <hr>
+        <h3>⏱ Contador general de la reunión</h3>
+        <!-- Display principal -->
+        <div id="msd-general-display"
+             style="font-size: 32px; font-weight: bold; margin: 10px 0;">
+            00:00
+        </div>
+        <!-- Configuración simple de duración base (minutos) -->
+        <label for="msd-duracion-min">Duración base (minutos):</label>
+        <input
+            id="msd-duracion-min"
+            type="number"
+            min="1"
+            max="60"
+            value="3"
+            style="width:80px; margin-left:8px;"
+        />
+
+        <!-- Botones de control -->
+        <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" onclick="msdIniciarGeneral()">▶ Iniciar</button>
+            <button type="button" onclick="msdPausarGeneral()">⏸ Pausa</button>
+            <button type="button" onclick="msdReiniciarGeneral()">⟲ Reiniciar</button>
+        </div>
+
         <button onclick="crearNuevaReunion()">🚀 Crear Reunión</button>
         <button onclick="unirseAReunion()">🔑 Ingresar a Reunión</button>
         <br><br>

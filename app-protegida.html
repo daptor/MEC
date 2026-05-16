@@ -360,34 +360,8 @@
           <option value="Rancagua">Sindicato Rancagua</option>
           <option value="Trebol">Sindicato Trebol</option>
           <option value="RendicionFederacion">Rendición de viáticos Federación</option>
-                </select>
-            <!-- Herramientas Federación -->
-            <hr>
-            <h3>Herramientas Federación</h3>
-            <p>Acceso a funciones especiales para plenarias y coordinación sindical.</p>
-            <button onclick="mostrarPantalla('pantalla-reunion-federacion')">
-              🎤 Reunión Federación (Contrarreloj)
-            </button>
-
-  <!-- Nueva Pantalla Reunión Federación -->
-  <div id="pantalla-reunion-federacion" class="pantalla" style="display:none;">
-  <h1>Reunión Federación</h1>
-  <p>Contrarreloj</p>
-
-  <!-- Zona principal de opciones -->
-  <button id="btnCrearReunion">Crear nueva reunión</button>
-  <hr>
-  <!-- Unirse por código -->
-  <h3>Unirme a una reunión</h3>
-  <label for="codigoReunionInput">Código de reunión</label>
-  <input type="text" id="codigoReunionInput" placeholder="Ej: RF-2025-05-PLENARIA">
-  <button id="btnUnirmeReunion">Unirme a la reunión</button>
-
-  <p id="mensajeReunion" class="error-msg" style="display:none;"></p>
-
-  <button onclick="mostrarPantalla('pantalla-archivosindical')">↩ Volver a Archivo Sindical</button>
-</div>
-
+          </select>
+ 
       <!-- Modal para ingresar la clave -->
       <div id="modal-clave" class="modal oculto">
           <div class="modal-contenido">
@@ -402,6 +376,7 @@
       <!-- Botón Volver al menú -->
       <button onclick="mostrarPantalla('menu-principal')">↩ Menú</button>
   </div>
+
   <!-- Pantalla de documentos (mostrar solo después de ingresar la clave correctamente) -->
   <div id="pantalla-documentos" class="pantalla" style="display: none;">
       <h2 id="nombre-sindicato"></h2>
@@ -416,26 +391,19 @@
 <!-- Pantalla Rendición Federación - Director -->
 <div id="pantalla-rendicion-federacion-director" class="pantalla" style="display:none;">
   <h1>Mis rendiciones de viáticos</h1>
-
   <div id="rv-lista-director">
     <!-- Aquí se listarán las rendiciones del director -->
   </div>
-
   <hr>
-
   <h2>Nueva rendición</h2>
   <label for="rv-fecha-boleta">Fecha de boleta:</label>
   <input type="date" id="rv-fecha-boleta">
-
   <label for="rv-descripcion">Descripción:</label>
   <input type="text" id="rv-descripcion" placeholder="Motivo / reunión">
-
   <label for="rv-monto">Monto (opcional):</label>
   <input type="number" id="rv-monto" min="0" step="1">
-
   <label for="rv-boleta-file">Boleta (JPG/PNG/PDF, máx 5MB):</label>
   <input type="file" id="rv-boleta-file" accept="image/jpeg,image/png,application/pdf">
-
   <button id="rv-btn-guardar">Enviar rendición</button>
   <button onclick="mostrarPantalla('pantalla-archivosindical')">↩ Volver a Archivo Sindical</button>
 </div>
@@ -443,7 +411,6 @@
 <!-- Pantalla Rendición Federación - Tesorero -->
 <div id="pantalla-rendicion-federacion-tesorero" class="pantalla" style="display:none;">
   <h1>Rendiciones</h1>
-
   <div id="rv-filtros-tesorero">
     <label for="rv-filtro-estado">Estado:</label>
     <select id="rv-filtro-estado">
@@ -453,16 +420,13 @@
       <option value="rechazada">Rechazada</option>
     </select>
   </div>
-
   <div id="rv-lista-tesorero">
     <!-- Aquí se mostrará la tabla consolidada -->
   </div>
-
   <button type="button" onclick="mostrarPantalla('pantalla-archivosindical')">
     ↩ Volver a Archivo Sindical
   </button>
 </div>
-
 
 <!-- Favicon -->
 <link rel="icon" href="data:,">

@@ -5158,7 +5158,38 @@ async function verBoletaRendicion(path) {
   }
 })();
 
+// ======================================================
+// 🟣 REUNIÓN FEDERACIÓN — ACTIVAR BOTONES (FASE LOCAL)
+// ======================================================
 
+// Esperar que cargue el DOM completo
+document.addEventListener("DOMContentLoaded", () => {
+
+  const btnCrear = document.getElementById("btnCrearReunion");
+
+  if (btnCrear) {
+    btnCrear.addEventListener("click", crearReunionLocal);
+  }
+
+});
+
+// ======================================================
+// 🆕 Crear reunión (modo LOCAL etapa inicial)
+// ======================================================
+
+function crearReunionLocal() {
+
+  const codigo = generarCodigoReunion();
+
+  alert(
+`🎉 Reunión creada
+
+Comparte este código con los directores:
+
+${codigo}`
+  );
+
+}
 
 // =========================================
 // 💰 FREEMIUM — MOSTRAR RESULTADO DEL ANÁLISIS
@@ -5189,6 +5220,50 @@ function mostrarResultadoFreemium(htmlResultado) {
     console.log("🆓 FREE → mostrando análisis");
     contenedor.innerHTML += htmlResultado;
 }
+
+// ======================================================
+// 🔢 Generar código reunión Federación
+// ======================================================
+
+function generarCodigoReunion() {
+
+  const fecha = new Date();
+
+  const año = fecha.getFullYear();
+  const mes = String(fecha.getMonth() + 1).padStart(2, "0");
+
+  const random = Math.random().toString(36).substring(2, 7).toUpperCase();
+
+  return `RF-${año}-${mes}-${random}`;
+}
+
+// ======================================================
+// 🚪 Unirse a reunión (modo LOCAL etapa inicial)
+// ======================================================
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  const btnUnirme = document.getElementById("btnUnirmeReunion");
+
+  if (btnUnirme) {
+    btnUnirme.addEventListener("click", unirmeReunionLocal);
+  }
+
+});
+
+// ======================================================
+// 🚪 Unirse a reunión (modo LOCAL etapa inicial)
+// ======================================================
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  const btnUnirme = document.getElementById("btnUnirmeReunion");
+
+  if (btnUnirme) {
+    btnUnirme.addEventListener("click", unirmeReunionLocal);
+  }
+
+});
 
 // ========================================
 // 🔄 CUANDO EL PLAN CAMBIA

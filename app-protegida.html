@@ -455,6 +455,45 @@
             <button type="button" onclick="msdReiniciarGeneral()">⟲ Reiniciar</button>
         </div>
 
+<!-- ==========================================
+    CAPA 3 – Subfase 3.2: Turnos y turno actual
+    ========================================== -->
+        <hr>
+        <h3>🗣 Turnos de palabra</h3>
+        <!-- Participante: anotarse -->
+        <button
+            type="button"
+            id="msd-btn-anotarme"
+            onclick="msdAnotarmeTurno()">✋ Me anoto para intervenir</button>
+        <p id="msd-msg-anotado" style="display:none; color:#16a34a;">
+            Anotado en la lista de intervenciones.
+        </p>
+        <!-- Cola simple (solo visual por ahora) -->
+        <h4>En cola para intervenir</h4>
+        <ul id="msd-turnos-cola" style="min-height: 30px; padding-left:18px;"></ul>
+
+        <!-- Bloque "Hablando ahora" -->
+        <div
+            id="msd-bloque-hablando"
+            style="margin-top:15px; padding:10px; border-radius:10px; background:#f9fafb;"
+        >
+            <h4>Hablando ahora</h4>
+            <p id="msd-hablando-nombre" style="font-weight:bold;">(Nadie está interviniendo)</p>
+            <div
+                id="msd-hablando-display"
+                style="font-size:28px; font-weight:bold; margin:6px 0;"
+            >
+                00:00
+            </div>
+
+            <!-- Controles de turno (solo moderador verá esto) -->
+            <div id="msd-controles-moderador" style="display:none; gap:8px; flex-wrap:wrap;">
+                <button type="button" onclick="msdSiguientePersona()">⏭ Siguiente persona</button>
+                <button type="button" onclick="msdPausarTurno()">⏸ Pausar turno</button>
+                <button type="button" onclick="msdReanudarTurno()">▶ Reanudar turno</button>
+            </div>
+        </div>
+
         <button onclick="crearNuevaReunion()">🚀 Crear Reunión</button>
         <button onclick="unirseAReunion()">🔑 Ingresar a Reunión</button>
         <br><br>

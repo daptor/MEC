@@ -4304,10 +4304,7 @@ window.crearNuevaReunion = async function () {
         // GUARDAR GLOBAL
         // ==================================================
         window.reunionFederacionActual = data;
-        console.log(
-            "✅ reunión creada:",
-            data
-        );
+        console.log("✅ reunión creada:",data);
         // ==================================================
         // UI
         // ==================================================
@@ -4315,6 +4312,10 @@ window.crearNuevaReunion = async function () {
             document.getElementById(
                 "codigo-reunion-actual"
             );
+        // ================================================== aqui es         
+            msdConfigurarVistaRol();
+            msdRenderCola();
+        // ==================================================
         if (codigoUI) {
             codigoUI.innerText = data.codigo;
         }
@@ -4403,6 +4404,9 @@ window.unirseAReunion = async function () {
 
         // 8) Mostrar sala (por si fue llamado desde pantalla federación)
         mostrarPantalla("pantalla-reunion-sala");
+
+        msdConfigurarVistaRol();
+        msdRenderCola();
 
     } catch (err) {
         console.error("Error unirseAReunion:", err);
@@ -4514,6 +4518,185 @@ window.msdReiniciarGeneral = function () {
     window.msdPausarGeneral();
     window.msdEstadoReunion.generalSegRestantes = minBase * 60;
     msdActualizarDisplayGeneral();
+};
+
+// ======================================================
+// CAPA 3 – Subfase 3.2: Turnos de palabra (cola simple)
+// ======================================================
+
+window.msdTurnos = {
+    cola: [],               // [{ socio_id, nombre }]
+    actual: null,           // socio actual hablando
+    segRestantes: 0,
+    timerId: null,
+    running: false
+};
+
+// Saber si el usuario actual es moderador de la reunión
+function msdEsModerador() {
+    if (!window.usuarioFederacion || !window.reunionFederacionActual) return false;
+    return window.usuarioFederacion.socio_id === window.reunionFederacionActual.moderador_socio_id;
+}
+
+// Configurar la vista según rol (mostrar/ocultar controles moderador)
+function msdConfigurarVistaRol() {
+    const bloqueControles = document.getElementById("msd-controles-moderador");
+    if (!bloqueControles) return;
+    bloqueControles.style.display = msdEsModerador() ? "flex" : "none";
+}
+
+// Render cola en UL
+function msdRenderCola() {
+    const ul = document.getElementById("msd-turnos-cola");
+    if (!ul) return;
+    ul.innerHTML = "";
+
+    if (!window.msdTurnos.cola.length) {
+        const li = document.createElement("li");
+        li.textContent = "No hay personas anotadas aún.";
+        li.style.color = "#6b7280";
+        ul.appendChild(li);
+        return;
+    }
+
+    window.msdTurnos.cola.forEach((item, idx) => {
+        const li = document.createElement("li");
+        li.textContent = `${idx + 1}. ${item.nombre}`;
+        ul.appendChild(li);
+    });
+}
+
+// Display turno individual
+function msdActualizarDisplayTurno() {
+    const display = document.getElementById("msd-hablando-display");
+    if (!display) return;
+    const s = Math.max(0, Math.floor(window.msdTurnos.segRestantes || 0));
+    const m = String(Math.floor(s / 60)).padStart(2, "0");
+    const ss = String(s % 60).padStart(2, "0");
+    display.textContent = `${m}:${ss}`;
+
+    // Colores simples
+    if (s === 0 && window.msdTurnos.running === false) {
+        display.style.color = "#b91c1c";
+    } else {
+        display.style.color = "#0f172a";
+    }
+}
+
+// Iniciar turno con un socio
+function msdIniciarTurnoCon(socio) {
+    const inputDur = document.getElementById("msd-duracion-min");
+    const minBase = inputDur ? Number(inputDur.value || 3) : 3;
+
+    // Limpiar turno previo
+    if (window.msdTurnos.timerId) clearInterval(window.msdTurnos.timerId);
+    window.msdTurnos.timerId = null;
+
+    window.msdTurnos.actual = socio;
+    window.msdTurnos.segRestantes = minBase * 60;
+    window.msdTurnos.running = true;
+
+    const nombreEl = document.getElementById("msd-hablando-nombre");
+    if (nombreEl) {
+        nombreEl.textContent = socio ? socio.nombre : "(Nadie está interviniendo)";
+    }
+
+    msdActualizarDisplayTurno();
+
+    window.msdTurnos.timerId = setInterval(() => {
+        window.msdTurnos.segRestantes -= 1;
+        msdActualizarDisplayTurno();
+
+        if (window.msdTurnos.segRestantes <= 0) {
+            msdPausarTurno();
+            window.msdTurnos.segRestantes = 0;
+            msdActualizarDisplayTurno();
+            // Aquí luego podemos disparar aviso sonoro / automático siguiente
+        }
+    }, 1000);
+}
+
+// =========================
+// API pública de turnos
+// =========================
+
+// Participante se anota
+window.msdAnotarmeTurno = function () {
+    if (!window.usuarioFederacion) {
+        alert("⚠ Debes ingresar primero como socio en Reunión Federación.");
+        return;
+    }
+
+    const yaEnCola = window.msdTurnos.cola.some(
+        (t) => t.socio_id === window.usuarioFederacion.socio_id
+    );
+    const esActual =
+        window.msdTurnos.actual &&
+        window.msdTurnos.actual.socio_id === window.usuarioFederacion.socio_id;
+
+    if (yaEnCola || esActual) {
+        const msg = document.getElementById("msd-msg-anotado");
+        if (msg) msg.style.display = "block";
+        return;
+    }
+
+    window.msdTurnos.cola.push({
+        socio_id: window.usuarioFederacion.socio_id,
+        nombre: window.usuarioFederacion.nombre
+    });
+
+    const msg = document.getElementById("msd-msg-anotado");
+    if (msg) msg.style.display = "block";
+
+    msdRenderCola();
+};
+
+// Moderador pasa al siguiente
+window.msdSiguientePersona = function () {
+    if (!msdEsModerador()) {
+        alert("Solo el moderador puede controlar los turnos.");
+        return;
+    }
+
+    if (!window.msdTurnos.cola.length) {
+        alert("No hay personas en la cola.");
+        return;
+    }
+
+    const siguiente = window.msdTurnos.cola.shift();
+    msdRenderCola();
+    msdIniciarTurnoCon(siguiente);
+};
+
+// Pausar turno actual
+window.msdPausarTurno = function () {
+    if (window.msdTurnos.timerId) {
+        clearInterval(window.msdTurnos.timerId);
+        window.msdTurnos.timerId = null;
+    }
+    window.msdTurnos.running = false;
+};
+
+// Reanudar turno actual
+window.msdReanudarTurno = function () {
+    if (!window.msdTurnos.actual) {
+        alert("No hay nadie hablando actualmente.");
+        return;
+    }
+    if (window.msdTurnos.timerId) return; // ya corriendo
+
+    window.msdTurnos.running = true;
+
+    window.msdTurnos.timerId = setInterval(() => {
+        window.msdTurnos.segRestantes -= 1;
+        msdActualizarDisplayTurno();
+
+        if (window.msdTurnos.segRestantes <= 0) {
+            msdPausarTurno();
+            window.msdTurnos.segRestantes = 0;
+            msdActualizarDisplayTurno();
+        }
+    }, 1000);
 };
 
 

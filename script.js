@@ -4335,6 +4335,71 @@ window.crearNuevaReunion = async function () {
     }
 };
 
+// ======================================================
+// ⚖ UNIRSE A UNA REUNIÓN (POR CÓDIGO)
+// CAPA 2 – Gestión de reuniones (participante)
+// ======================================================
+window.unirseAReunion = async function () {
+    try {
+        // 1) Verificar identidad federativa
+        if (!window.usuarioFederacion) {
+            alert("⚠ Debes ingresar primero como socio en Reunión Federación.");
+            return;
+        }
+
+        // 2) Obtener código desde input (pantalla federación)
+        const input = document.getElementById("input-codigo-reunion");
+        const codigo = (input?.value || "").trim().toUpperCase();
+
+        if (!codigo) {
+            alert("⚠ Debes ingresar un código de reunión.");
+            return;
+        }
+
+        // 3) Buscar reunión activa por código
+        const { data: reunion, error } = await supabase
+            .from("reuniones")
+            .select("*")
+            .eq("codigo", codigo)
+            .eq("estado", "activa")
+            .maybeSingle();
+
+        if (error) {
+            console.error("Error buscando reunión:", error);
+            alert("❌ Error buscando reunión. Intenta nuevamente.");
+            return;
+        }
+
+        if (!reunion) {
+            alert("⚠ No existe una reunión activa con ese código.");
+            return;
+        }
+
+        // 4) Guardar reunión actual global
+        window.reunionFederacionActual = reunion;
+        console.log("✅ Reunión encontrada:", reunion);
+
+        // 5) Actualizar UI de la sala
+        const codigoSpan = document.getElementById("codigo-reunion-actual");
+        if (codigoSpan) {
+            codigoSpan.innerText = reunion.codigo || codigo;
+        }
+
+        const nombreUsuario = document.getElementById("nombre-usuario-reunion");
+        if (nombreUsuario && window.usuarioFederacion?.nombre) {
+            nombreUsuario.innerText = window.usuarioFederacion.nombre;
+        }
+
+        // 6) Mostrar sala (misma para moderador y participantes por ahora)
+        mostrarPantalla("pantalla-reunion-sala");
+
+    } catch (err) {
+        console.error("Error unirseAReunion:", err);
+        alert("❌ Error inesperado al unirse a la reunión.");
+    }
+};
+
+
 // ******bienvenida*********
 document.addEventListener("DOMContentLoaded", function () {
     const intro = document.getElementById("introBienvenida");

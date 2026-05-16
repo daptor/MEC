@@ -4212,6 +4212,99 @@ window.ingresarComoSocioFederacion = async function () {
     }
 };
 
+// ======================================================
+// 🚀 CREAR NUEVA REUNIÓN FEDERATIVA
+// ======================================================
+window.crearNuevaReunion = async function () {
+    try {
+        // ==================================================
+        // VALIDAR USUARIO
+        // ==================================================
+        if (!window.usuarioFederacion) {
+            alert(
+                "⚠️ Debes ingresar como socio."
+            );
+            return;
+        }
+        // ==================================================
+        // GENERAR CÓDIGO SIMPLE
+        // ==================================================
+        const codigo =
+            Math.random()
+                .toString(36)
+                .substring(2, 8)
+                .toUpperCase();
+
+        // ==================================================
+        // NOMBRE REUNIÓN
+        // ==================================================
+        const nombreReunion =
+            "Mesa Federativa " +
+            new Date().toLocaleDateString();
+
+        // ==================================================
+        // INSERTAR REUNIÓN
+        // ==================================================
+        const { data, error } = await supabase
+            .from("reuniones")
+            .insert([
+                {
+                    codigo: codigo,
+                    nombre: nombreReunion,
+                    estado: "activa",
+                    moderador_socio_id:
+                        window.usuarioFederacion.socio_id
+                }
+            ])
+            .select()
+            .single();
+
+        // ==================================================
+        // ERROR
+        // ==================================================
+        if (error) {
+            console.error(error);
+            alert(
+                "❌ Error creando reunión."
+            );
+            return;
+        }
+
+        // ==================================================
+        // GUARDAR GLOBAL
+        // ==================================================
+        window.reunionFederacionActual = data;
+        console.log(
+            "✅ reunión creada:",
+            data
+        );
+        // ==================================================
+        // UI
+        // ==================================================
+        const codigoUI =
+            document.getElementById(
+                "codigo-reunion-actual"
+            );
+        if (codigoUI) {
+            codigoUI.innerText = data.codigo;
+        }
+
+        // ==================================================
+        // MENSAJE
+        // ==================================================
+        alert(
+            "✅ Reunión creada correctamente.\n\n" +
+            "Código: " +
+            data.codigo
+        );
+    } catch (err) {
+        console.error(err);
+        alert(
+            "❌ Error inesperado creando reunión."
+        );
+    }
+};
+
 // ******bienvenida*********
 document.addEventListener("DOMContentLoaded", function () {
     const intro = document.getElementById("introBienvenida");

@@ -400,27 +400,17 @@
       <button onclick="mostrarPantalla('pantalla-archivosindical')">↩ Volver</button>
     </div>
 
-   <!-- ===================================================== -->
+<!-- ===================================================== -->
 <!-- 🧑‍⚖️ MESA SINDICAL DIGITAL — SALA FEDERATIVA -->
 <!-- ===================================================== -->
-
 <div
     id="pantalla-reunion-sala"
     class="pantalla"
     style="display:none;"
->
-    <h1>🧑‍⚖️ Mesa Sindical Digital</h1>
+>    <h1>🧑‍⚖️ Mesa Sindical Digital</h1>
     <div class="contenedor-sala-federativa">
-        <h2>
-            Bienvenido:
-            <span id="nombre-usuario-reunion">
-                Usuario
-            </span>
-        </h2>
-        <p>
-            Has ingresado correctamente a la
-            sala federativa.
-        </p>
+        <h2>Bienvenido:<span id="nombre-usuario-reunion">Usuario</span></h2>
+        <p>Has ingresado a Sala de Reunión.</p>
         <hr>
         <h3>Funciones próximas:</h3>
         <ul style="text-align:left;">
@@ -431,13 +421,18 @@
             <li>✅ Contrarreloj sindical</li>
             <li>✅ Participación realtime</li>
         </ul>
-        <button
-            onclick="mostrarPantalla('menu-principal')"
-        >
-            ↩ Menú Principal
-        </button>
+        <hr>
+        <h3>
+            Código reunión:
+            <span id="codigo-reunion-actual">---</span>
+        </h3>
+        <button onclick="crearNuevaReunion()">🚀 Crear Reunión</button>
+        <button onclick="unirseAReunion()">🔑 Ingresar a Reunión</button>
+        <br><br>
+        <button onclick="mostrarPantalla('menu-principal')">↩ Menú Principal</button>
     </div>
-</div> 
+</div>
+
 
 <!-- Pantalla Rendición Federación - Director -->
 <div id="pantalla-rendicion-federacion-director" class="pantalla" style="display:none;">

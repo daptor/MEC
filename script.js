@@ -4129,7 +4129,7 @@ document.getElementById(
         window.usuarioFederacion
     );
         mostrarPantalla("pantalla-reunion-federacion");
-        inicializarPantallaReunionFederacion();
+        //inicializarPantallaReunionFederacion();
     alert(
         "Ingreso correcto: " +
         socio.nombre

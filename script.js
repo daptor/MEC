@@ -4097,45 +4097,75 @@ document.addEventListener("change", (e) => {
 // ======================================================
 // 🚀 INGRESAR A REUNIÓN
 // ======================================================
-document.getElementById(
-    "btnIngresarReunion"
-)?.addEventListener("click", async () => {
-    const seleccionado =
-        document.querySelector(
+document.getElementById("btnIngresarReunion")
+    ?.addEventListener("click", async () => {
+
+        const socioSeleccionado = document.querySelector(
             'input[name="socioReunion"]:checked'
         );
-    if (!seleccionado) return;
-    const socioId = seleccionado.value;
-    const { data: socio, error } = await supabase
-        .from("socios")
-        .select("*")
-        .eq("id", socioId)
-        .single();
-    if (error || !socio) {
-        alert("Error obteniendo socio.");
-        return;
-    }
+        if (!socioSeleccionado) {
+            alert("⚠️ Debes seleccionar un socio.");
+            return;
+        }
+        const socioId = socioSeleccionado.value;
+        try {
+            const { data: socio, error } = await supabase
+                .from("socios")
+                .select("*")
+                .eq("id", socioId)
+                .single();
+            if (error || !socio) {
+                alert("❌ Error obteniendo socio.");
+                return;
+            }
 
-    window.usuarioFederacion = {
-        socio_id: socio.id,
-        nombre: socio.nombre,
-        rol: socio.rol,
-        sindicato_id: socio.sindicato_id,
-        sindicato_nombre:
-            window.sindicatoFederacionActual.nombre
-    };
-    console.log(
-        "✅ usuarioFederacion:",
-        window.usuarioFederacion
-    );
-        mostrarPantalla("pantalla-reunion-federacion");
-        //inicializarPantallaReunionFederacion();
-    alert(
-        "Ingreso correcto: " +
-        socio.nombre
-    );
+            // ==================================================
+            // USUARIO FEDERACIÓN GLOBAL
+            // ==================================================
 
-});
+            window.usuarioFederacion = {
+                socio_id: socio.id,
+                nombre: socio.nombre,
+                rol: socio.rol,
+                sindicato_id: socio.sindicato_id,
+                sindicato_nombre:
+                    window.sindicatoFederacionActual?.nombre || ""
+            };
+
+            console.log(
+                "✅ usuarioFederacion:",
+                window.usuarioFederacion
+            );
+
+            // ==================================================
+            // MOSTRAR SALA
+            // ==================================================
+
+            mostrarPantalla("pantalla-reunion-sala");
+
+            // ==================================================
+            // RENDER USUARIO
+            // ==================================================
+
+            const nombreUsuario = document.getElementById(
+                "nombre-usuario-reunion"
+            );
+
+            if (nombreUsuario) {
+                nombreUsuario.innerText =
+                    window.usuarioFederacion.nombre;
+            }
+
+        } catch (err) {
+
+            console.error(err);
+
+            alert(
+                "❌ Error ingresando a Mesa Sindical."
+            );
+        }
+    });
+
 
 // ======================================================
 // 🧑‍⚖️ INGRESAR COMO SOCIO A MESA SINDICAL DIGITAL

@@ -4363,7 +4363,7 @@ function msd2_detenerTimer() {
 }
 
 // ------------------------------------------------------
-// ENTRAR A LA SALA (FIX REALTIME DEFINITIVO v2)
+// ENTRAR A LA SALA (ESTADO INICIAL + REALTIME DEFINITIVO)
 // ------------------------------------------------------
 async function msd2_entrarSala() {
 
@@ -4374,100 +4374,85 @@ async function msd2_entrarSala() {
   window.msd2_estado.segRestantes = 0;
   window.msd2_estado.running = false;
 
-  // 🔴 NUEVO: flag para evitar realtime prematuro
-  window.msd2_salaInicializada = false;
-
   msd2_configurarSalaBasica();
   msd2_configurarVistaRolSala();
 
-  // 🔹 Cargar estado COMPLETO inicial desde BD
+  // 🔥 CARGAR TODO EL ESTADO REAL DE LA SALA
   await msd2_cargarEstadoInicialSala();
+  await msd2_cargarColaDesdeBD();
 
-  console.log("📡 Suscribiendo realtime sala:", window.reunionFederacionActual.id);
+  // Esperar ciclo (clave realtime)
+  await new Promise(r => setTimeout(r, 400));
+
   msd2_suscribirseReloj();
 
   mostrarPantalla("pantalla-reunion-sala");
-
-  // 🔥 AHORA sí permitimos realtime
-  window.msd2_salaInicializada = true;
 }
 
 
 // ------------------------------------------------------
-// 🔥 CARGA INICIAL COMPLETA (cola + reloj + orador)
+// CARGAR ESTADO COMPLETO SALA (RELOJ + ORADOR)
 // ------------------------------------------------------
 async function msd2_cargarEstadoInicialSala() {
 
-  const reunion = window.reunionFederacionActual;
-  if (!reunion) return;
-
-  // 1️⃣ REUNION
-  const { data: r } = await supabase
+  const { data } = await supabase
     .from("reuniones")
     .select("seg_restantes, reloj_activo, orador_actual_id")
-    .eq("id", reunion.id)
+    .eq("id", window.reunionFederacionActual.id)
     .single();
 
-  if (r) {
-    window.msd2_estado.segRestantes = r.seg_restantes || 0;
+  if (!data) return;
 
-    // 🔥 Cargar orador al entrar (BUG PRINCIPAL)
-    if (r.orador_actual_id) {
-      const { data: socio } = await supabase
-        .from("socios")
-        .select("nombre")
-        .eq("socio_id", r.orador_actual_id)
-        .single();
+  window.msd2_estado.segRestantes = data.seg_restantes || 0;
 
-      const el = document.getElementById("msd2-hablando-nombre");
-      if (el) el.textContent = socio?.nombre || "(Interviniendo)";
-    }
+  // 🔥 MOSTRAR ORADOR AL ENTRAR (CLAVE DEL BUG)
+  const el = document.getElementById("msd2-hablando-nombre");
 
-    if (r.reloj_activo) msd2_iniciarTimerLocal();
-    msd2_actualizarDisplayTurno();
+  if (data.orador_actual_id) {
+    const { data: socio } = await supabase
+      .from("socios")
+      .select("nombre")
+      .eq("socio_id", data.orador_actual_id)
+      .single();
+
+    if (el) el.textContent = socio?.nombre || "(Interviniendo)";
+  } else {
+    if (el) el.textContent = "(Nadie está interviniendo)";
   }
 
-  // 2️⃣ COLA
-  await msd2_cargarColaDesdeBD();
+  // 🔥 ARRANCAR TIMER SI YA ESTABA ACTIVO
+  if (data.reloj_activo) {
+    msd2_iniciarTimerLocal();
+  }
+
+  msd2_actualizarDisplayTurno();
 }
 
 
 // ------------------------------------------------------
-// COLA (render seguro DOM)
+// COLA
 // ------------------------------------------------------
 function msd2_renderCola() {
+  const ul = document.getElementById("msd2-turnos-cola");
+  if (!ul) return;
+  ul.innerHTML = "";
 
-  const intentarRender = () => {
-    const ul = document.getElementById("msd2-turnos-cola");
-    if (!ul) return false;
-
-    ul.innerHTML = "";
-
-    if (!window.msd2_estado.cola.length) {
-      const li = document.createElement("li");
-      li.textContent = "No hay personas anotadas aún.";
-      li.style.color = "#6b7280";
-      ul.appendChild(li);
-      return true;
-    }
-
-    window.msd2_estado.cola.forEach((item, idx) => {
-      const li = document.createElement("li");
-      li.textContent = `${idx + 1}. ${item.nombre}`;
-      ul.appendChild(li);
-    });
-
-    return true;
-  };
-
-  // 🔥 Si DOM aún no está → reintentar
-  if (!intentarRender()) {
-    setTimeout(msd2_renderCola, 300);
+  if (!window.msd2_estado.cola.length) {
+    const li = document.createElement("li");
+    li.textContent = "No hay personas anotadas aún.";
+    li.style.color = "#6b7280";
+    ul.appendChild(li);
+    return;
   }
+
+  window.msd2_estado.cola.forEach((item, idx) => {
+    const li = document.createElement("li");
+    li.textContent = `${idx + 1}. ${item.nombre}`;
+    ul.appendChild(li);
+  });
 }
 
 async function msd2_cargarColaDesdeBD() {
-
   const reunion = window.reunionFederacionActual;
   if (!reunion) return;
 
@@ -4483,7 +4468,86 @@ async function msd2_cargarColaDesdeBD() {
 
 
 // ------------------------------------------------------
-// REALTIME SALA (RELOJ + COLA) 🔥 VERSION FINAL ESTABLE
+// DISPLAY RELOJ
+// ------------------------------------------------------
+function msd2_formatoTiempo(s) {
+  const sec = Math.max(0, Math.floor(s));
+  const m = String(Math.floor(sec / 60)).padStart(2, "0");
+  const ss = String(sec % 60).padStart(2, "0");
+  return `${m}:${ss}`;
+}
+
+function msd2_actualizarDisplayTurno() {
+  const disp = document.getElementById("msd2-hablando-display");
+  if (!disp) return;
+  disp.textContent = msd2_formatoTiempo(window.msd2_estado.segRestantes || 0);
+}
+
+
+// ------------------------------------------------------
+// CONTROLES MODERADOR
+// ------------------------------------------------------
+window.msd2_iniciarTurno = async function () {
+
+  if (!msd2_esModeradorActual()) {
+    alert("Solo el moderador puede controlar el tiempo.");
+    return;
+  }
+
+  const reunion = window.reunionFederacionActual;
+  if (!reunion) return;
+
+  const { data: cola } = await supabase
+    .from("reuniones_turnos")
+    .select("*")
+    .eq("reunion_id", reunion.id)
+    .order("creado_en", { ascending: true });
+
+  if (!cola || cola.length === 0) {
+    alert("No hay personas en la cola.");
+    return;
+  }
+
+  const orador = cola[0];
+
+  const durInput = document.getElementById("msd2-duracion-min");
+  const min = durInput ? Number(durInput.value || 3) : 3;
+
+  await supabase
+    .from("reuniones")
+    .update({
+      seg_restantes: min * 60,
+      reloj_activo: true,
+      orador_actual_id: orador.socio_id
+    })
+    .eq("id", reunion.id);
+};
+
+window.msd2_pausarTurno = async function () {
+  if (!msd2_esModeradorActual()) return;
+
+  await supabase.from("reuniones")
+    .update({ reloj_activo: false })
+    .eq("id", window.reunionFederacionActual.id);
+};
+
+window.msd2_reiniciarTurno = async function () {
+  if (!msd2_esModeradorActual()) return;
+
+  const durInput = document.getElementById("msd2-duracion-min");
+  const min = durInput ? Number(durInput.value || 3) : 3;
+
+  await supabase.from("reuniones")
+    .update({
+      seg_restantes: min * 60,
+      reloj_activo: false
+    })
+    .eq("id", window.reunionFederacionActual.id);
+};
+
+
+// ------------------------------------------------------
+// REALTIME SALA (RELOJ + ORADOR + COLA)
 // ------------------------------------------------------
 function msd2_suscribirseReloj() {
 
@@ -4496,7 +4560,7 @@ function msd2_suscribirseReloj() {
   window.msd2_canalRealtime = supabase
     .channel("reunion-live-" + reunionId)
 
-    // 🕒 REUNIÓN
+    // 🔴 CAMBIOS REUNIÓN
     .on("postgres_changes", {
       event: "UPDATE",
       schema: "public",
@@ -4504,13 +4568,12 @@ function msd2_suscribirseReloj() {
       filter: "id=eq." + reunionId
     }, async (payload) => {
 
-      // 🔴 Ignorar realtime hasta terminar carga inicial
-      if (!window.msd2_salaInicializada) return;
-
       const r = payload.new;
+
       window.msd2_estado.segRestantes = r.seg_restantes || 0;
 
-      // Orador realtime
+      const el = document.getElementById("msd2-hablando-nombre");
+
       if (r.orador_actual_id) {
         const { data: socio } = await supabase
           .from("socios")
@@ -4518,8 +4581,9 @@ function msd2_suscribirseReloj() {
           .eq("socio_id", r.orador_actual_id)
           .single();
 
-        const el = document.getElementById("msd2-hablando-nombre");
         if (el) el.textContent = socio?.nombre || "(Interviniendo)";
+      } else {
+        if (el) el.textContent = "(Nadie está interviniendo)";
       }
 
       if (r.reloj_activo) msd2_iniciarTimerLocal();
@@ -4528,16 +4592,13 @@ function msd2_suscribirseReloj() {
       msd2_actualizarDisplayTurno();
     })
 
-    // 👥 COLA realtime
+    // 👥 CAMBIOS COLA
     .on("postgres_changes", {
       event: "*",
       schema: "public",
       table: "reuniones_turnos",
       filter: "reunion_id=eq." + reunionId
-    }, () => {
-      if (!window.msd2_salaInicializada) return;
-      msd2_cargarColaDesdeBD();
-    })
+    }, () => msd2_cargarColaDesdeBD())
 
     .subscribe();
 }

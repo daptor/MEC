@@ -4380,7 +4380,11 @@ async function msd2_entrarSala() {
   await msd2_cargarColaDesdeBD();
   await msd2_cargarEstadoRelojDesdeBD();
 
-  msd2_suscribirseReloj();
+  // 🔴 SUSCRIPCIÓN REALTIME (SOLO UNA VEZ POR CLIENTE)
+  if (!window.msd2_realtimeActivo) {
+    window.msd2_realtimeActivo = true;
+    msd2_suscribirseReloj();
+  }
 
   mostrarPantalla("pantalla-reunion-sala");
 }
@@ -4593,42 +4597,28 @@ window.msd2_anotarmeTurno = async function () {
 // REALTIME (RELOJ + COLA)
 // ------------------------------------------------------
 function msd2_suscribirseReloj() {
-
   const reunionId = window.reunionFederacionActual.id;
 
   supabase.channel("reunion-live-" + reunionId)
 
-    // 🔔 CAMBIOS RELOJ
+    // cambios reloj
     .on("postgres_changes",
       { event: "UPDATE", schema: "public", table: "reuniones", filter: "id=eq." + reunionId },
       (payload) => {
-
         const r = payload.new;
-
         window.msd2_estado.segRestantes = r.seg_restantes || 0;
-        msd2_actualizarDisplayTurno();
-
-        // Mostrar nombre del orador en TODOS los navegadores
-        if (r.orador_actual_id) {
-          supabase.from("socios")
-            .select("nombre")
-            .eq("id", r.orador_actual_id)
-            .single()
-            .then(({ data }) => {
-              const hablandoNombre = document.getElementById("msd2-hablando-nombre");
-              if (hablandoNombre && data) hablandoNombre.textContent = data.nombre;
-            });
-        }
 
         if (r.reloj_activo) {
           msd2_iniciarTimerLocal();
         } else {
           msd2_detenerTimer();
         }
+
+        msd2_actualizarDisplayTurno();
       }
     )
 
-    // 🔔 CAMBIOS COLA
+    // cambios cola
     .on("postgres_changes",
       { event: "*", schema: "public", table: "reuniones_turnos", filter: "reunion_id=eq." + reunionId },
       () => msd2_cargarColaDesdeBD()

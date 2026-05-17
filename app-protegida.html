@@ -359,8 +359,8 @@
           <option value="PuertoMontt">Sindicato Puerto Montt</option>
           <option value="Rancagua">Sindicato Rancagua</option>
           <option value="Trebol">Sindicato Trebol</option>
-          <option value="ReunionFederacion">Reunión Federación</option>
-          <option value="RendicionFederacion">Rendición de viáticos Federación</option>
+          <option value="ReunionFederacion">⏳ Reunión Federación</option>
+          <option value="RendicionFederacion">💲 Rendición Federación</option>
           </select>
  
       <!-- Modal para ingresar la clave -->
@@ -402,26 +402,24 @@
 
 <!-- ===================================================== -->
 <!-- 🧑‍⚖️ MESA SINDICAL DIGITAL — SALA FEDERATIVA -->
+<!-- (Pantalla EXCLUSIVA de la reunión)                   -->
 <!-- ===================================================== -->
 <div
     id="pantalla-reunion-sala"
     class="pantalla"
     style="display:none;"
->    <h1>🧑‍⚖️ Mesa Sindical Digital</h1>
+>
+    <h1>🧑‍⚖️ Mesa Sindical Digital</h1>
+
     <div class="contenedor-sala-federativa">
-        <h2>Bienvenido:<span id="nombre-usuario-reunion">Usuario</span></h2>
-        <p>Has ingresado a Sala de Reunión.</p>
+        <h2>
+            Bienvenido:
+            <span id="nombre-usuario-reunion">Usuario</span>
+        </h2>
+        <p>Has ingresado a la Sala de Reunión.</p>
+
         <hr>
-        <h3>Funciones próximas:</h3>
-        <ul style="text-align:left;">
-            <li>✅ Crear reunión</li>
-            <li>✅ Ingresar mediante código</li>
-            <li>✅ Moderador y participantes</li>
-            <li>✅ Cola de turnos</li>
-            <li>✅ Contrarreloj sindical</li>
-            <li>✅ Participación realtime</li>
-        </ul>
-        <hr>
+
         <h3>
             Código reunión:
             <span id="codigo-reunion-actual">---</span>
@@ -432,11 +430,13 @@
              ========================================== -->
         <hr>
         <h3>⏱ Contador general de la reunión</h3>
+
         <!-- Display principal -->
         <div id="msd-general-display"
-             style="font-size: 32px; font-weight: bold; margin: 10px 0;">
+             style="font-size: 40px; font-weight: bold; margin: 10px 0;">
             00:00
         </div>
+
         <!-- Configuración simple de duración base (minutos) -->
         <label for="msd-duracion-min">Duración base (minutos):</label>
         <input
@@ -448,26 +448,27 @@
             style="width:80px; margin-left:8px;"
         />
 
-        <!-- Botones de control -->
+        <!-- Botones de control (solo tendrá efecto visual si es moderador) -->
         <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
             <button type="button" onclick="msdIniciarGeneral()">▶ Iniciar</button>
             <button type="button" onclick="msdPausarGeneral()">⏸ Pausa</button>
             <button type="button" onclick="msdReiniciarGeneral()">⟲ Reiniciar</button>
         </div>
 
-<!-- ==========================================
-    CAPA 3 – Subfase 3.2: Turnos y turno actual
-    ========================================== -->
+        <!-- ==========================================
+             CAPA 3 – Subfase 3.2: Turnos y turno actual
+             ========================================== -->
         <hr>
         <h3>🗣 Turnos de palabra</h3>
         <!-- Participante: anotarse -->
         <button
             type="button"
             id="msd-btn-anotarme"
-            onclick="msdAnotarmeTurno()">✋ Me anoto para intervenir</button>
+            onclick="msdAnotarmeTurno()">✋ Quiero intervenir</button>
         <p id="msd-msg-anotado" style="display:none; color:#16a34a;">
-            Anotado en la lista de intervenciones.
+            Ya estás anotado ✔.
         </p>
+
         <!-- Cola simple (solo visual por ahora) -->
         <h4>En cola para intervenir</h4>
         <ul id="msd-turnos-cola" style="min-height: 30px; padding-left:18px;"></ul>
@@ -478,26 +479,27 @@
             style="margin-top:15px; padding:10px; border-radius:10px; background:#f9fafb;"
         >
             <h4>Hablando ahora</h4>
-            <p id="msd-hablando-nombre" style="font-weight:bold;">(Nadie está interviniendo)</p>
+            <p id="msd-hablando-nombre" style="font-weight:bold;">
+                (Nadie está interviniendo)
+            </p>
             <div
                 id="msd-hablando-display"
-                style="font-size:28px; font-weight:bold; margin:6px 0;"
+                style="font-size:48px; font-weight:bold; margin:6px 0;"
             >
                 00:00
             </div>
 
             <!-- Controles de turno (solo moderador verá esto) -->
-            <div id="msd-controles-moderador" style="display:none; gap:8px; flex-wrap:wrap;">
+            <div id="msd-controles-moderador"
+                 style="display:none; gap:8px; flex-wrap:wrap;">
                 <button type="button" onclick="msdSiguientePersona()">⏭ Siguiente persona</button>
                 <button type="button" onclick="msdPausarTurno()">⏸ Pausar turno</button>
                 <button type="button" onclick="msdReanudarTurno()">▶ Reanudar turno</button>
             </div>
         </div>
 
-        <button onclick="crearNuevaReunion()">🚀 Crear Reunión</button>
-        <button onclick="unirseAReunion()">🔑 Ingresar a Reunión</button>
-        <br><br>
-        <button onclick="mostrarPantalla('menu-principal')">↩ Menú Principal</button>
+        <br>
+        <button onclick="mostrarPantalla('menu-principal')">↩ Volver a Menú</button>
     </div>
 </div>
 

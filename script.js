@@ -4106,56 +4106,59 @@ if (btnIngresarReunion) {
       return;
     }
 
-    const socioId = socioSeleccionado.value;
+text
 
-    try {
-      const { data: socio, error } = await supabase
-        .from("socios")
-        .select("*")
-        .eq("id", socioId)
-        .single();
+Collapse
 
-      if (error || !socio) {
-        alert("❌ Error obteniendo socio.");
-        return;
-      }
 
-      // Identidad sindical global
-      window.usuarioFederacion = {
-        socio_id: socio.id,
-        nombre: socio.nombre,
-        rol: socio.rol,
-        sindicato_id: socio.sindicato_id,
-        sindicato_nombre: window.sindicatoFederacionActual?.nombre || ""
-      };
+ Copy
 
-      console.log("✅ usuarioFederacion:", window.usuarioFederacion);
+const socioId = socioSeleccionado.value;
 
-      // Mostrar lobby Reunión Federación
-      mostrarPantalla("pantalla-reunion-federacion");
+try {
+  const { data: socio, error } = await supabase
+    .from("socios")
+    .select("*")
+    .eq("id", socioId)
+    .single();
 
-      // Configurar lobby según rol (TESORERO / DIRECTOR_x vs SOCIO)
-      if (typeof msd2_configurarLobbyPorRol === "function") {
-        msd2_configurarLobbyPorRol();
-      }
+  if (error || !socio) {
+    alert("❌ Error obteniendo socio.");
+    return;
+  }
 
-      alert("Ingreso correcto: " + socio.nombre);
-    } catch (err) {
-      console.error(err);
-      alert("❌ Error ingresando a Mesa Sindical.");
-    }
+  // Identidad sindical global
+  window.usuarioFederacion = {
+    socio_id: socio.id,
+    nombre: socio.nombre,
+    rol: socio.rol,
+    sindicato_id: socio.sindicato_id,
+    sindicato_nombre: window.sindicatoFederacionActual?.nombre || ""
+  };
+
+  console.log("✅ usuarioFederacion:", window.usuarioFederacion);
+
+  // Mostrar lobby Reunión Federación
+  mostrarPantalla("pantalla-reunion-federacion");
+
+  // Configurar lobby según rol (TESORERO / DIRECTOR_x vs SOCIO)
+  msd2_configurarLobbyPorRol();
+
+  alert("Ingreso correcto: " + socio.nombre);
+} catch (err) {
+  console.error(err);
+  alert("❌ Error ingresando a Mesa Sindical.");
+}
   });
 }
 
 // ======================================================
-// MESA SINDICAL DIGITAL V2 – LOBBY + SALA
+// MESA SINDICAL DIGITAL V2 – LOBBY + SALA (con realtime)
 // Prefijo: msd2_*
 // ======================================================
 
-// Estado local de la sala
+// Estado local (solo visual del reloj)
 window.msd2_estado = {
-  cola: [],            // [{ socio_id, nombre }]
-  actual: null,        // socio actual hablando
   segRestantes: 0,
   timerId: null,
   running: false
@@ -4204,7 +4207,7 @@ function msd2_configurarLobbyPorRol() {
   }
 }
 
-// Crear reunión (solo desde lobby, TESORERO / DIRECTOR_x)
+// Crear reunión (solo TESORERO / DIRECTOR_x, desde lobby)
 window.msd2_crearReunion = async function () {
   try {
     if (!msd2_esRolModeradorPotencial()) {
@@ -4216,79 +4219,93 @@ window.msd2_crearReunion = async function () {
       return;
     }
 
-    const nombreInput = document.getElementById("msd2-input-nombre-reunion");
-    const nombre = (nombreInput?.value || "").trim();
-    if (!nombre) {
-      alert("Escribe un nombre para la reunión.");
-      return;
+text
+
+Collapse
+
+
+ Copy
+
+const nombreInput = document.getElementById("msd2-input-nombre-reunion");
+const nombre = (nombreInput?.value || "").trim();
+if (!nombre) {
+  alert("Escribe un nombre para la reunión.");
+  return;
+}
+
+const codigo = Math.random().toString(36).substring(2, 8).toUpperCase();
+
+const { data, error } = await supabase
+  .from("reuniones")
+  .insert([
+    {
+      codigo,
+      nombre,
+      estado: "activa",
+      moderador_socio_id: window.usuarioFederacion.socio_id
     }
+  ])
+  .select()
+  .single();
 
-    const codigo = Math.random().toString(36).substring(2, 8).toUpperCase();
+if (error) {
+  console.error(error);
+  alert("No se pudo crear la reunión.");
+  return;
+}
 
-    const { data, error } = await supabase
-      .from("reuniones")
-      .insert([
-        {
-          codigo,
-          nombre,
-          estado: "activa",
-          moderador_socio_id: window.usuarioFederacion.socio_id
-        }
-      ])
-      .select()
-      .single();
+window.reunionFederacionActual = data;
+console.log("✅ reunión creada:", data);
 
-    if (error) {
-      console.error(error);
-      alert("No se pudo crear la reunión.");
-      return;
-    }
+msd2_entrarSala();
 
-    window.reunionFederacionActual = data;
-    console.log("✅ reunión creada:", data);
-
-    msd2_entrarSala();
-
-    alert("✔ Reunión creada correctamente. Código: " + data.codigo);
+alert("✔ Reunión creada correctamente. Código: " + data.codigo);
   } catch (e) {
     console.error(e);
     alert("Error creando reunión.");
   }
 };
 
-// Unirse por código (todos los roles usan este camino)
+// Unirse por código (TODOS)
 window.msd2_unirsePorCodigo = async function () {
   try {
     const input = document.getElementById("msd2-input-codigo-reunion");
     const codigo = (input?.value || "").trim().toUpperCase();
 
-    if (!codigo) {
-      alert("Debes ingresar un código de reunión.");
-      return;
-    }
+text
 
-    const { data: reunion, error } = await supabase
-      .from("reuniones")
-      .select("*")
-      .eq("codigo", codigo)
-      .eq("estado", "activa")
-      .maybeSingle();
+Collapse
 
-    if (error) {
-      console.error(error);
-      alert("Error buscando reunión.");
-      return;
-    }
 
-    if (!reunion) {
-      alert("No existe una reunión activa con ese código.");
-      return;
-    }
+ Copy
 
-    window.reunionFederacionActual = reunion;
-    console.log("✅ Reunión encontrada:", reunion);
+if (!codigo) {
+  alert("Debes ingresar un código de reunión.");
+  return;
+}
 
-    msd2_entrarSala();
+const { data: reunion, error } = await supabase
+  .from("reuniones")
+  .select("*")
+  .eq("codigo", codigo)
+  .eq("estado", "activa")
+  .maybeSingle();
+
+if (error) {
+  console.error(error);
+  alert("Error buscando reunión.");
+  return;
+}
+
+if (!reunion) {
+  alert("No existe una reunión activa con ese código.");
+  return;
+}
+
+window.reunionFederacionActual = reunion;
+console.log("✅ Reunión encontrada:", reunion);
+
+msd2_entrarSala();
   } catch (e) {
     console.error(e);
     alert("Error al ingresar a la reunión.");
@@ -4302,14 +4319,11 @@ function msd2_configurarSalaBasica() {
   const reunion = window.reunionFederacionActual;
   if (!reunion) return;
 
-  // Código reunión
   const spanCodigo = document.getElementById("msd2-codigo-reunion");
   if (spanCodigo) {
     spanCodigo.textContent = reunion.codigo || "---";
   }
 
-  // Moderador (por ahora: si el que entra ES el moderador, mostramos su nombre;
-  // más adelante se puede buscar siempre el nombre desde la tabla socios)
   const modInfo = document.getElementById("msd2-moderador-info");
   if (modInfo) {
     if (msd2_esModeradorActual() && window.usuarioFederacion) {
@@ -4319,14 +4333,12 @@ function msd2_configurarSalaBasica() {
     }
   }
 
-  // Nombre actual en "Hablando ahora" al iniciar
   const hablandoNombre = document.getElementById("msd2-hablando-nombre");
   if (hablandoNombre) {
     hablandoNombre.textContent = "(Nadie está interviniendo)";
   }
 }
 
-// Mostrar/ocultar controles de tiempo según rol real en la reunión
 function msd2_configurarVistaRolSala() {
   const controles = document.getElementById("msd2-controles-moderador");
   const inputDur = document.getElementById("msd2-duracion-min");
@@ -4339,46 +4351,27 @@ function msd2_configurarVistaRolSala() {
 // Entrar a la sala (tanto moderador como socios)
 function msd2_entrarSala() {
   msd2_detenerTimer();
-  window.msd2_estado.cola = [];
-  window.msd2_estado.actual = null;
   window.msd2_estado.segRestantes = 0;
-  msd2_renderCola();
   msd2_actualizarDisplayTurno();
 
   msd2_configurarSalaBasica();
   msd2_configurarVistaRolSala();
 
   mostrarPantalla("pantalla-reunion-sala");
+
+  // Realtime + presencia compartida
+  msd2_suscribirRealtime();
+  msd2_registrarPresente();
 }
 
 // ------------------------------------------------------
-// SALA – cola y reloj de turno
+// SALA – reloj visual local
 // ------------------------------------------------------
-function msd2_renderCola() {
-  const ul = document.getElementById("msd2-turnos-cola");
-  if (!ul) return;
-  ul.innerHTML = "";
-
-  if (!window.msd2_estado.cola.length) {
-    const li = document.createElement("li");
-    li.textContent = "No hay personas anotadas aún.";
-    li.style.color = "#6b7280";
-    ul.appendChild(li);
-    return;
-  }
-
-  window.msd2_estado.cola.forEach((item, idx) => {
-    const li = document.createElement("li");
-    li.textContent = `${idx + 1}. ${item.nombre}`;
-    ul.appendChild(li);
-  });
-}
-
 function msd2_formatoTiempo(s) {
   const sec = Math.max(0, Math.floor(s));
   const m = String(Math.floor(sec / 60)).padStart(2, "0");
   const ss = String(sec % 60).padStart(2, "0");
-  return `${m}:${ss}`;
+  return ${m}:${ss};
 }
 
 function msd2_actualizarDisplayTurno() {
@@ -4395,85 +4388,265 @@ function msd2_detenerTimer() {
   window.msd2_estado.running = false;
 }
 
-// Iniciar turno (usa duración base del input)
-window.msd2_iniciarTurno = function () {
-  if (!msd2_esModeradorActual()) {
-    alert("Solo el moderador puede controlar el tiempo.");
-    return;
-  }
+// ------------------------------------------------------
+// MSD2 — Realtime sincronización (reunion_participantes)
+// ------------------------------------------------------
+window.msd2_participantes = []; // cache remoto
+window.msd2_realtime = { channel: null };
 
-  // Si no hay actual definido, iniciamos un turno genérico
-  if (!window.msd2_estado.actual) {
-    window.msd2_estado.actual = { nombre: "Intervención" };
-  }
+function msd2_reunionId() {
+  return window.reunionFederacionActual?.id || null;
+}
+function msd2_miSocioId() {
+  return window.usuarioFederacion?.socio_id || null;
+}
+function msd2_ordenSiguiente() {
+  const enCola = window.msd2_participantes.filter(p => p.estado === 'en_cola');
+  if (!enCola.length) return 1;
+  return Math.max(...enCola.map(p => p.orden || 0)) + 1;
+}
 
-  const durInput = document.getElementById("msd2-duracion-min");
-  const min = durInput ? Number(durInput.value || 3) : 3;
-  if (!min || min <= 0) {
-    alert("Duración inválida.");
-    return;
-  }
+// Carga inicial desde BD
+async function msd2_cargarParticipantes() {
+  const rid = msd2_reunionId();
+  if (!rid) return;
+  const { data, error } = await supabase
+    .from('reunion_participantes')
+    .select('*')
+    .eq('reunion_id', rid);
+  if (error) { console.error('rp load error:', error); return; }
+  window.msd2_participantes = data || [];
+  msd2_renderDesdeRemoto();
+}
 
-  msd2_detenerTimer();
-  window.msd2_estado.segRestantes = min * 60;
-  window.msd2_estado.running = true;
-  msd2_actualizarDisplayTurno();
+// Render unificado desde BD
+function msd2_renderDesdeRemoto() {
+  // Cola
+  const cola = window.msd2_participantes
+    .filter(p => p.estado === 'en_cola')
+    .sort((a,b) => (a.orden||0) - (b.orden||0) || new Date(a.en_cola_at||0) - new Date(b.en_cola_at||0));
 
-  window.msd2_estado.timerId = setInterval(() => {
-    window.msd2_estado.segRestantes -= 1;
-    msd2_actualizarDisplayTurno();
-    if (window.msd2_estado.segRestantes <= 0) {
-      msd2_detenerTimer();
-      window.msd2_estado.segRestantes = 0;
-      msd2_actualizarDisplayTurno();
+  const ul = document.getElementById('msd2-turnos-cola');
+  if (ul) {
+    ul.innerHTML = '';
+    if (!cola.length) {
+      const li = document.createElement('li');
+      li.textContent = 'No hay personas anotadas aún.';
+      li.style.color = '#6b7280';
+      ul.appendChild(li);
+    } else {
+      cola.forEach((p, i) => {
+        const li = document.createElement('li');
+        li.textContent = ${i+1}. ${p.nombre};
+        ul.appendChild(li);
+      });
     }
+  }
+
+  // Hablando ahora
+  const hablando = window.msd2_participantes.find(p => p.estado === 'hablando');
+  const elNom = document.getElementById('msd2-hablando-nombre');
+  if (elNom) elNom.textContent = hablando ? hablando.nombre : '(Nadie está interviniendo)';
+
+  // Reloj compartido (visual local con turno_inicio + dur_min)
+  if (hablando && hablando.turno_inicio && hablando.dur_min) {
+    const start = new Date(hablando.turno_inicio).getTime();
+    const durSeg = (hablando.dur_min || 3) * 60;
+    msd2_iniciarRelojVisual(start, durSeg);
+  } else {
+    msd2_detenerTimer();
+    window.msd2_estado.segRestantes = 0;
+    msd2_actualizarDisplayTurno();
+  }
+}
+
+// Reloj visual basado en inicio + dur
+function msd2_iniciarRelojVisual(startMs, durSeg) {
+  msd2_detenerTimer();
+  window.msd2_estado.timerId = setInterval(() => {
+    const ahora = Date.now();
+    const trans = Math.floor((ahora - startMs)/1000);
+    const rest = Math.max(0, durSeg - trans);
+    window.msd2_estado.segRestantes = rest;
+    msd2_actualizarDisplayTurno();
+    if (rest <= 0) msd2_detenerTimer();
   }, 1000);
+}
+
+// Suscripción Realtime a la reunión
+async function msd2_suscribirRealtime() {
+  const rid = msd2_reunionId();
+  if (!rid) return;
+
+  if (window.msd2_realtime.channel) {
+    supabase.removeChannel(window.msd2_realtime.channel);
+    window.msd2_realtime.channel = null;
+  }
+
+  const ch = supabase
+    .channel('rp_' + rid)
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'reunion_participantes', filter: reunion_id=eq.${rid} },
+      (payload) => {
+        const row = payload.new || payload.old;
+        if (!row) return;
+
+text
+
+Collapse
+
+
+ Copy
+
+    if (payload.eventType === 'DELETE') {
+      window.msd2_participantes = window.msd2_participantes.filter(p => p.id !== row.id);
+    } else {
+      const i = window.msd2_participantes.findIndex(p => p.id === row.id);
+      if (i >= 0 && payload.new) window.msd2_participantes[i] = payload.new;
+      else if (payload.new) window.msd2_participantes.push(payload.new);
+    }
+    msd2_renderDesdeRemoto();
+  }
+)
+.subscribe((status) => {
+  if (status === 'SUBSCRIBED') msd2_cargarParticipantes();
+});
+  window.msd2_realtime.channel = ch;
+}
+
+// Registrar presencia al entrar a sala
+async function msd2_registrarPresente() {
+  const rid = msd2_reunionId();
+  const sid = msd2_miSocioId();
+  if (!rid || !sid) return;
+
+  const { error } = await supabase
+    .from('reunion_participantes')
+    .upsert({
+      reunion_id: rid,
+      socio_id: sid,
+      nombre: window.usuarioFederacion?.nombre || '',
+      rol: window.usuarioFederacion?.rol || 'participante',
+      estado: 'presente'
+    }, { onConflict: 'reunion_id,socio_id' });
+
+  if (error) console.error('rp upsert presente error:', error);
+}
+
+// ------------------------------------------------------
+// Acciones compartidas (cola y turno en BD)
+// ------------------------------------------------------
+
+// Anotarse en la cola (todos) – PERSISTE en BD
+window.msd2_anotarmeTurno = async function () {
+  const rid = msd2_reunionId();
+  const sid = msd2_miSocioId();
+  if (!rid || !sid) {
+    alert('Debes ingresar primero como socio.');
+    return;
+  }
+
+  const ya = window.msd2_participantes.find(p =>
+    p.socio_id === sid && (p.estado === 'en_cola' || p.estado === 'hablando')
+  );
+  if (ya) {
+    const msg = document.getElementById('msd2-msg-anotado');
+    if (msg) msg.style.display = 'block';
+    return;
+  }
+
+  const orden = msd2_ordenSiguiente();
+  const { error } = await supabase
+    .from('reunion_participantes')
+    .upsert({
+      reunion_id: rid,
+      socio_id: sid,
+      nombre: window.usuarioFederacion?.nombre || '',
+      rol: window.usuarioFederacion?.rol || 'participante',
+      estado: 'en_cola',
+      orden,
+      en_cola_at: new Date().toISOString()
+    }, { onConflict: 'reunion_id,socio_id' });
+
+  if (error) {
+    console.error('rp upsert cola error:', error);
+    alert('No se pudo anotar en la cola.');
+    return;
+  }
+
+  const msg = document.getElementById('msd2-msg-anotado');
+  if (msg) msg.style.display = 'block';
+  // Realtime actualizará a todos
 };
 
+// Iniciar turno (moderador) – marca HABLANDO en BD
+window.msd2_iniciarTurno = async function () {
+  if (!msd2_esModeradorActual()) {
+    alert('Solo el moderador puede controlar el tiempo.');
+    return;
+  }
+
+  const rid = msd2_reunionId();
+  if (!rid) return;
+
+  const cola = window.msd2_participantes
+    .filter(p => p.estado === 'en_cola')
+    .sort((a,b) => (a.orden||0) - (b.orden||0) || new Date(a.en_cola_at||0) - new Date(b.en_cola_at||0));
+
+  const primero = cola[0];
+  if (!primero) { alert('No hay personas en cola.'); return; }
+
+  const durInput = document.getElementById('msd2-duracion-min');
+  const dur = durInput ? Number(durInput.value || 3) : 3;
+  const nowIso = new Date().toISOString();
+
+  // Poner primero como "hablando"
+  const { error: e1 } = await supabase
+    .from('reunion_participantes')
+    .update({ estado: 'hablando', turno_inicio: nowIso, dur_min: dur })
+    .eq('id', primero.id);
+
+  if (e1) { console.error(e1); alert('No se pudo iniciar el turno.'); return; }
+
+  // Limpiar cualquier otro "hablando"
+  const { error: e2 } = await supabase
+    .from('reunion_participantes')
+    .update({ estado: 'presente', turno_inicio: null, dur_min: null })
+    .eq('reunion_id', rid)
+    .eq('estado', 'hablando')
+    .neq('id', primero.id);
+
+  if (e2) console.warn('limpieza hablando:', e2);
+};
+
+// Pausa (visual local; si quieres pausa compartida, lo hacemos luego)
 window.msd2_pausarTurno = function () {
   if (!msd2_esModeradorActual()) return;
   msd2_detenerTimer();
 };
 
-window.msd2_reiniciarTurno = function () {
+// Reiniciar turno (moderador) – reinicia tiempos en BD
+window.msd2_reiniciarTurno = async function () {
   if (!msd2_esModeradorActual()) return;
-  const durInput = document.getElementById("msd2-duracion-min");
-  const min = durInput ? Number(durInput.value || 3) : 3;
-  window.msd2_estado.segRestantes = min * 60;
-  msd2_actualizarDisplayTurno();
+
+  const rid = msd2_reunionId();
+  if (!rid) return;
+
+  const durInput = document.getElementById('msd2-duracion-min');
+  const dur = durInput ? Number(durInput.value || 3) : 3;
+
+  const hablando = window.msd2_participantes.find(p => p.estado === 'hablando');
+  if (!hablando) { alert('No hay nadie hablando.'); return; }
+
+  const nowIso = new Date().toISOString();
+  const { error } = await supabase
+    .from('reunion_participantes')
+    .update({ turno_inicio: nowIso, dur_min: dur })
+    .eq('id', hablando.id);
+
+  if (error) console.error('reiniciar turno error:', error);
 };
-
-// Anotarse en la cola (todos)
-window.msd2_anotarmeTurno = function () {
-  if (!window.usuarioFederacion) {
-    alert("Debes ingresar primero como socio.");
-    return;
-  }
-
-  const yaEnCola = window.msd2_estado.cola.some(
-    (t) => t.socio_id === window.usuarioFederacion.socio_id
-  );
-  const esActual =
-    window.msd2_estado.actual &&
-    window.msd2_estado.actual.socio_id === window.usuarioFederacion.socio_id;
-
-  if (yaEnCola || esActual) {
-    const msg = document.getElementById("msd2-msg-anotado");
-    if (msg) msg.style.display = "block";
-    return;
-  }
-
-  window.msd2_estado.cola.push({
-    socio_id: window.usuarioFederacion.socio_id,
-    nombre: window.usuarioFederacion.nombre
-  });
-
-  const msg = document.getElementById("msd2-msg-anotado");
-  if (msg) msg.style.display = "block";
-
-  msd2_renderCola();
-};
-
 
 // ******bienvenida*********
 document.addEventListener("DOMContentLoaded", function () {

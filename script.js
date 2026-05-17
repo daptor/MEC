@@ -4623,9 +4623,15 @@ function msd2_suscribirseReloj() {
 
   console.log("📡 Suscribiendo realtime sala:", reunionId);
 
-  // 🔵 CANAL 1 — RELOJ
-  supabase
-    .channel("reloj-" + reunionId)
+  // 🧹 Evitar canales duplicados (CLAVE DEL BUG)
+  if (window.msd2_canalRealtime) {
+    supabase.removeChannel(window.msd2_canalRealtime);
+  }
+
+  window.msd2_canalRealtime = supabase
+    .channel("reunion-live-" + reunionId)
+
+    // 🕒 CAMBIOS EN REUNIÓN (RELOJ + ORADOR)
     .on(
       "postgres_changes",
       {
@@ -4634,14 +4640,31 @@ function msd2_suscribirseReloj() {
         table: "reuniones",
         filter: "id=eq." + reunionId
       },
-      (payload) => {
+      async (payload) => {
 
-        console.log("⏱ Cambio realtime RELOJ:", payload.new);
+        console.log("🕒 Cambio realtime REUNIÓN:", payload.new);
 
         const r = payload.new;
 
+        // actualizar segundos
         window.msd2_estado.segRestantes = r.seg_restantes || 0;
 
+        // 🔥 NUEVO: mostrar orador en TODOS
+        if (r.orador_actual_id) {
+          const { data: socio } = await supabase
+            .from("socios")
+            .select("nombre")
+            .eq("socio_id", r.orador_actual_id)
+            .single();
+
+          const el = document.getElementById("msd2-hablando-nombre");
+          if (el) el.textContent = socio?.nombre || "(Interviniendo)";
+        } else {
+          const el = document.getElementById("msd2-hablando-nombre");
+          if (el) el.textContent = "(Nadie está interviniendo)";
+        }
+
+        // iniciar / detener reloj
         if (r.reloj_activo) {
           msd2_iniciarTimerLocal();
         } else {
@@ -4651,11 +4674,8 @@ function msd2_suscribirseReloj() {
         msd2_actualizarDisplayTurno();
       }
     )
-    .subscribe();
 
-  // 🟢 CANAL 2 — COLA (EL QUE FALTABA)
-  supabase
-    .channel("cola-" + reunionId)
+    // 👥 CAMBIOS EN COLA
     .on(
       "postgres_changes",
       {
@@ -4669,6 +4689,7 @@ function msd2_suscribirseReloj() {
         msd2_cargarColaDesdeBD();
       }
     )
+
     .subscribe();
 }
 

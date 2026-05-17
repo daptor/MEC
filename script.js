@@ -4461,7 +4461,7 @@ function msd2_actualizarDisplayTurno() {
 }
 
 // ------------------------------------------------------
-// CONTROLES MODERADOR (AHORA FULL SINCRONIZADOS)
+// CONTROLES MODERADOR (FULL SINCRONIZADOS + ORADOR)
 // ------------------------------------------------------
 window.msd2_iniciarTurno = async function () {
   if (!msd2_esModeradorActual()) {
@@ -4469,14 +4469,40 @@ window.msd2_iniciarTurno = async function () {
     return;
   }
 
+  const reunion = window.reunionFederacionActual;
+  if (!reunion) return;
+
+  // 1️⃣ Obtener cola desde BD
+  const { data: cola } = await supabase
+    .from("reuniones_turnos")
+    .select("*")
+    .eq("reunion_id", reunion.id)
+    .order("creado_en", { ascending: true });
+
+  // 2️⃣ Validar cola
+  if (!cola || !cola.length) {
+    alert("No hay personas en la cola.");
+    return;
+  }
+
+  // 3️⃣ Tomar primer orador
+  const orador = cola[0];
+
+  // 4️⃣ Mostrar nombre del orador localmente
+  const hablandoNombre = document.getElementById("msd2-hablando-nombre");
+  if (hablandoNombre) hablandoNombre.textContent = orador.nombre;
+
+  // 5️⃣ Duración del turno
   const durInput = document.getElementById("msd2-duracion-min");
   const min = durInput ? Number(durInput.value || 3) : 3;
 
+  // 6️⃣ Encender reloj + guardar orador en BD
   await supabase.from("reuniones").update({
     seg_restantes: min * 60,
     reloj_activo: true,
+    orador_actual_id: orador.socio_id,
     actualizado_en: new Date()
-  }).eq("id", window.reunionFederacionActual.id);
+  }).eq("id", reunion.id);
 };
 
 window.msd2_pausarTurno = async function () {
@@ -4507,6 +4533,7 @@ window.msd2_reiniciarTurno = async function () {
 window.msd2_anotarmeTurno = async function () {
 
   const reunion = window.reunionFederacionActual;
+  if (!reunion) return;
 
   const { data: existente } = await supabase
     .from("reuniones_turnos")
@@ -4538,7 +4565,7 @@ function msd2_suscribirseReloj() {
 
   supabase.channel("reunion-live-" + reunionId)
 
-    // cambios reloj
+    // 🔔 CAMBIOS RELOJ
     .on("postgres_changes",
       { event: "UPDATE", schema: "public", table: "reuniones", filter: "id=eq." + reunionId },
       (payload) => {
@@ -4546,18 +4573,29 @@ function msd2_suscribirseReloj() {
         const r = payload.new;
 
         window.msd2_estado.segRestantes = r.seg_restantes || 0;
+        msd2_actualizarDisplayTurno();
+
+        // Mostrar nombre del orador en TODOS los navegadores
+        if (r.orador_actual_id) {
+          supabase.from("socios")
+            .select("nombre")
+            .eq("id", r.orador_actual_id)
+            .single()
+            .then(({ data }) => {
+              const hablandoNombre = document.getElementById("msd2-hablando-nombre");
+              if (hablandoNombre && data) hablandoNombre.textContent = data.nombre;
+            });
+        }
 
         if (r.reloj_activo) {
           msd2_iniciarTimerLocal();
         } else {
           msd2_detenerTimer();
         }
-
-        msd2_actualizarDisplayTurno();
       }
     )
 
-    // cambios cola
+    // 🔔 CAMBIOS COLA
     .on("postgres_changes",
       { event: "*", schema: "public", table: "reuniones_turnos", filter: "reunion_id=eq." + reunionId },
       () => msd2_cargarColaDesdeBD()

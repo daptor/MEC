@@ -4823,71 +4823,131 @@ async function msd2_suscribirseReloj(reunionId) {
   window.msd2_canalRealtime = canal;
 
 
-  // 🕒 CAMBIOS EN REUNIÓN
-  canal.on(
-    "postgres_changes",
-    {
-      event: "UPDATE",
-      schema: "public",
-      table: "reuniones",
-      filter: "id=eq." + reunionId
-    },
-    async (payload) => {
+// ------------------------------------------------------
+// 🕒 CAMBIOS EN REUNIÓN
+// 🔥 SINCRONIZACIÓN GLOBAL RELOJ + ORADOR
+// ------------------------------------------------------
+canal.on(
+  "postgres_changes",
+  {
+    event: "UPDATE",
+    schema: "public",
+    table: "reuniones",
+    filter: "id=eq." + reunionId
+  },
 
-      console.log("🕒 Cambio realtime REUNIÓN:", payload.new);
+  async (payload) => {
 
-      const r = payload.new;
+    console.log("🔥 UPDATE REUNION RECIBIDO:", payload);
 
-      window.msd2_estado.segRestantes = r.seg_restantes || 0;
+    const r = payload.new;
 
-      const el = document.getElementById("msd2-hablando-nombre");
+    if (!r) {
+      console.warn("⚠️ Payload reunión vacío");
+      return;
+    }
 
-      if (r.orador_actual_id) {
+    // ------------------------------------------------------
+    // 🔄 ACTUALIZAR ESTADO GLOBAL LOCAL
+    // ------------------------------------------------------
+    window.msd2_estado.segRestantes =
+      Number(r.seg_restantes || 0);
 
-        const { data: socio } = await supabase
-          .from("socios")
-          .select("nombre")
-          .eq("socio_id", r.orador_actual_id)
-          .single();
+    window.msd2_estado.running =
+      !!r.reloj_activo;
 
-        if (el) {
-          el.textContent = socio?.nombre || "(Interviniendo)";
-        }
+    // ------------------------------------------------------
+    // 🗣 ACTUALIZAR ORADOR
+    // ------------------------------------------------------
+    const el = document.getElementById("msd2-hablando-nombre");
+
+    if (r.orador_actual_id) {
+
+      console.log("🗣 Nuevo orador:", r.orador_actual_id);
+
+      const { data: socio, error } = await supabase
+        .from("socios")
+        .select("nombre")
+        .eq("socio_id", r.orador_actual_id)
+        .single();
+
+      if (error) {
+
+        console.error("❌ Error cargando orador:", error);
 
       } else {
 
         if (el) {
-          el.textContent = "(Nadie está interviniendo)";
+          el.textContent =
+            socio?.nombre || "(Interviniendo)";
         }
       }
 
-      // 🔥 reloj
-      if (r.reloj_activo) {
-        msd2_iniciarTimerLocal();
-      } else {
-        msd2_detenerTimer();
+    } else {
+
+      console.log("🛑 Sin orador activo");
+
+      if (el) {
+        el.textContent =
+          "(Nadie está interviniendo)";
       }
-
-      msd2_actualizarDisplayTurno();
     }
-  );
 
-  // 👥 CAMBIOS EN COLA
-  canal.on(
-    "postgres_changes",
-    {
-      event: "*",
-      schema: "public",
-      table: "reuniones_turnos",
-      filter: "reunion_id=eq." + reunionId
-    },
-    async (payload) => {
+    // ------------------------------------------------------
+    // ⏱ CONTROL RELOJ GLOBAL
+    // ------------------------------------------------------
+    if (r.reloj_activo) {
 
-      console.log("👥 Cambio realtime COLA:", payload);
+      console.log("▶ Iniciando timer realtime");
 
-      await msd2_cargarColaDesdeBD();
+      msd2_iniciarTimerLocal();
+
+    } else {
+
+      console.log("⏸ Deteniendo timer realtime");
+
+      msd2_detenerTimer();
     }
-  );
+
+    // ------------------------------------------------------
+    // 🖥 ACTUALIZAR DISPLAY
+    // ------------------------------------------------------
+    msd2_actualizarDisplayTurno();
+
+    // ------------------------------------------------------
+    // 🔄 RECARGAR COLA
+    // 🔥 IMPORTANTE:
+    // el orador ya fue removido de la cola
+    // ------------------------------------------------------
+    await msd2_cargarColaDesdeBD();
+
+    console.log("✅ Estado reunión sincronizado");
+  }
+);
+
+// ------------------------------------------------------
+// 👥 CAMBIOS EN COLA
+// 🔥 SINCRONIZACIÓN GLOBAL COLA
+// ------------------------------------------------------
+canal.on(
+  "postgres_changes",
+  {
+    event: "*",
+    schema: "public",
+    table: "reuniones_turnos",
+    filter: "reunion_id=eq." + reunionId
+  },
+
+  async (payload) => {
+
+    console.log("👥 Cambio realtime COLA:", payload);
+
+    // 🔄 refrescar cola completa
+    await msd2_cargarColaDesdeBD();
+
+    console.log("✅ Cola sincronizada");
+  }
+);
 
   // 🔥 SUSCRIPCIÓN SEGURA
   canal.subscribe((status) => {

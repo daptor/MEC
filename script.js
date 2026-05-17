@@ -4680,27 +4680,91 @@ window.msd2_iniciarTurno = async function () {
 };
 
 // ------------------------------------------------------
-// PAUSAR TURNO
+// ⏸ PAUSAR / ▶ CONTINUAR TURNO
 // ------------------------------------------------------
 window.msd2_pausarTurno = async function () {
 
   if (!msd2_esModeradorActual()) return;
 
-  const { error } = await supabase
-    .from("reuniones")
-    .update({
-      reloj_activo: false
-    })
-    .eq("id", window.reunionFederacionActual.id);
+  const reunionId =
+    window.reunionFederacionActual.id;
 
-  if (error) {
+  // ------------------------------------------------------
+  // 🔍 estado actual realtime
+  // ------------------------------------------------------
+  const relojActivo =
+    window.msd2_estado.running;
 
-    console.error("❌ Error pausando turno:", error);
+  // ------------------------------------------------------
+  // ⏸ PAUSAR
+  // ------------------------------------------------------
+  if (relojActivo) {
 
-    return;
+    const { error } = await supabase
+      .from("reuniones")
+      .update({
+        reloj_activo: false
+      })
+      .eq("id", reunionId);
+
+    if (error) {
+
+      console.error(
+        "❌ Error pausando turno:",
+        error
+      );
+
+      return;
+    }
+
+    console.log("⏸ Turno pausado");
+
+    // 🔥 cambiar texto botón
+    const btn =
+      document.getElementById(
+        "msd2-btn-pausar"
+      );
+
+    if (btn) {
+      btn.textContent = "▶ Continuar";
+    }
+
   }
 
-  console.log("⏸ Turno pausado");
+  // ------------------------------------------------------
+  // ▶ CONTINUAR
+  // ------------------------------------------------------
+  else {
+
+    const { error } = await supabase
+      .from("reuniones")
+      .update({
+        reloj_activo: true
+      })
+      .eq("id", reunionId);
+
+    if (error) {
+
+      console.error(
+        "❌ Error continuando turno:",
+        error
+      );
+
+      return;
+    }
+
+    console.log("▶ Turno continuado");
+
+    // 🔥 restaurar texto botón
+    const btn =
+      document.getElementById(
+        "msd2-btn-pausar"
+      );
+
+    if (btn) {
+      btn.textContent = "⏸ Pausa";
+    }
+  }
 };
 
 // ------------------------------------------------------

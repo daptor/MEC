@@ -4533,27 +4533,60 @@ window.msd2_reiniciarTurno = async function () {
 window.msd2_anotarmeTurno = async function () {
 
   const reunion = window.reunionFederacionActual;
-  if (!reunion) return;
+  if (!reunion) {
+    alert("No hay reunión activa.");
+    return;
+  }
 
-  const { data: existente } = await supabase
+  if (!window.usuarioFederacion) {
+    alert("Usuario no cargado.");
+    return;
+  }
+
+  console.log("👉 Intentando anotarse en cola:", window.usuarioFederacion.nombre);
+
+  // 1️⃣ verificar si ya existe
+  const { data: existente, error: errCheck } = await supabase
     .from("reuniones_turnos")
     .select("id")
     .eq("reunion_id", reunion.id)
     .eq("socio_id", window.usuarioFederacion.socio_id)
     .maybeSingle();
 
+  if (errCheck) {
+    console.error("❌ Error verificando cola:", errCheck);
+    alert("Error verificando cola. Mira la consola.");
+    return;
+  }
+
   if (existente) {
+    console.log("⚠️ Ya estaba en cola");
     document.getElementById("msd2-msg-anotado").style.display = "block";
     return;
   }
 
-  await supabase.from("reuniones_turnos").insert({
-    reunion_id: reunion.id,
-    socio_id: window.usuarioFederacion.socio_id,
-    nombre: window.usuarioFederacion.nombre
-  });
+  // 2️⃣ INSERT REAL CON DEBUG
+  const { data, error } = await supabase
+    .from("reuniones_turnos")
+    .insert({
+      reunion_id: reunion.id,
+      socio_id: window.usuarioFederacion.socio_id,
+      nombre: window.usuarioFederacion.nombre
+    })
+    .select();
+
+  if (error) {
+    console.error("❌ ERROR INSERT TURNOS:", error);
+    alert("No se pudo entrar a la cola. Revisa consola.");
+    return;
+  }
+
+  console.log("✅ Insert exitoso en cola:", data);
 
   document.getElementById("msd2-msg-anotado").style.display = "block";
+
+  // 🔄 recargar cola manual para el cliente actual
+  await msd2_cargarColaDesdeBD();
 };
 
 // ------------------------------------------------------

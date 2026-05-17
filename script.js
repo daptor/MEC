@@ -4496,18 +4496,32 @@ function msd2_actualizarDisplayTurno() {
 
 // ------------------------------------------------------
 // CONTROLES MODERADOR (FULL SINCRONIZADOS + ORADOR)
+// VERSION CORREGIDA 🔥
 // ------------------------------------------------------
 window.msd2_iniciarTurno = async function () {
 
+  // 🔒 Solo moderador
   if (!msd2_esModeradorActual()) {
+
     alert("Solo el moderador puede controlar el tiempo.");
+
     return;
   }
 
   const reunion = window.reunionFederacionActual;
-  if (!reunion) return;
 
-  // 1️⃣ Obtener cola desde BD
+  if (!reunion) {
+
+    console.error("❌ No existe reunión activa");
+
+    return;
+  }
+
+  console.log("🎤 Iniciando turno...");
+
+  // ------------------------------------------------------
+  // 1️⃣ OBTENER COLA ACTUAL
+  // ------------------------------------------------------
   const { data: cola, error } = await supabase
     .from("reuniones_turnos")
     .select("*")
@@ -4515,41 +4529,113 @@ window.msd2_iniciarTurno = async function () {
     .order("creado_en", { ascending: true });
 
   if (error) {
-    console.error("Error obteniendo cola:", error);
+
+    console.error("❌ Error obteniendo cola:", error);
+
     return;
   }
 
-  // 2️⃣ Validar cola
+  // ------------------------------------------------------
+  // 2️⃣ VALIDAR COLA
+  // ------------------------------------------------------
   if (!cola || cola.length === 0) {
+
     alert("No hay personas en la cola.");
+
     return;
   }
 
-  // 3️⃣ Tomar primer orador
+  // ------------------------------------------------------
+  // 3️⃣ TOMAR PRIMER ORADOR
+  // ------------------------------------------------------
   const orador = cola[0];
 
-  // 4️⃣ Mostrar nombre del orador local (feedback inmediato)
+  console.log("🗣 Próximo orador:", orador.nombre);
+
+  // ------------------------------------------------------
+  // 4️⃣ FEEDBACK VISUAL LOCAL INMEDIATO
+  // ------------------------------------------------------
   const hablandoNombre = document.getElementById("msd2-hablando-nombre");
-  if (hablandoNombre) hablandoNombre.textContent = orador.nombre;
 
-  // 5️⃣ Duración del turno
+  if (hablandoNombre) {
+
+    hablandoNombre.textContent = orador.nombre;
+  }
+
+  // ------------------------------------------------------
+  // 5️⃣ DURACIÓN DEL TURNO
+  // ------------------------------------------------------
   const durInput = document.getElementById("msd2-duracion-min");
-  const min = durInput ? Number(durInput.value || 3) : 3;
 
-  // 🔥 6️⃣ Encender reloj + guardar orador en BD (SIN actualizado_en)
+  const min = durInput
+    ? Number(durInput.value || 3)
+    : 3;
+
+  const segundos = min * 60;
+
+  // ------------------------------------------------------
+  // 6️⃣ ELIMINAR ORADOR DE LA COLA
+  // 🔥 ESTO ERA EL BUG PRINCIPAL
+  // ------------------------------------------------------
+  const { error: deleteError } = await supabase
+    .from("reuniones_turnos")
+    .delete()
+    .eq("id", orador.id);
+
+  if (deleteError) {
+
+    console.error("❌ Error eliminando turno:", deleteError);
+
+    return;
+  }
+
+  console.log("🧹 Turno removido de cola");
+
+  // ------------------------------------------------------
+  // 7️⃣ ACTUALIZAR ESTADO DE REUNIÓN
+  // ------------------------------------------------------
   const { error: updateError } = await supabase
     .from("reuniones")
     .update({
-      seg_restantes: min * 60,
+
+      seg_restantes: segundos,
+
       reloj_activo: true,
+
       orador_actual_id: orador.socio_id
+
     })
     .eq("id", reunion.id);
 
-  if (updateError) console.error("Error iniciando turno:", updateError);
+  if (updateError) {
+
+    console.error("❌ Error iniciando turno:", updateError);
+
+    return;
+  }
+
+  console.log("✅ Turno iniciado correctamente");
+
+  // ------------------------------------------------------
+  // 8️⃣ ACTUALIZAR UI LOCAL
+  // ------------------------------------------------------
+  window.msd2_estado.segRestantes = segundos;
+
+  msd2_actualizarDisplayTurno();
+
+  msd2_iniciarTimerLocal();
+
+  // ------------------------------------------------------
+  // 9️⃣ RECARGAR COLA LOCAL
+  // ------------------------------------------------------
+  await msd2_cargarColaDesdeBD();
 };
 
+// ------------------------------------------------------
+// PAUSAR TURNO
+// ------------------------------------------------------
 window.msd2_pausarTurno = async function () {
+
   if (!msd2_esModeradorActual()) return;
 
   const { error } = await supabase
@@ -4559,24 +4645,66 @@ window.msd2_pausarTurno = async function () {
     })
     .eq("id", window.reunionFederacionActual.id);
 
-  if (error) console.error("Error pausando turno:", error);
+  if (error) {
+
+    console.error("❌ Error pausando turno:", error);
+
+    return;
+  }
+
+  console.log("⏸ Turno pausado");
 };
 
+// ------------------------------------------------------
+// REINICIAR TURNO
+// ------------------------------------------------------
 window.msd2_reiniciarTurno = async function () {
+
   if (!msd2_esModeradorActual()) return;
 
   const durInput = document.getElementById("msd2-duracion-min");
-  const min = durInput ? Number(durInput.value || 3) : 3;
+
+  const min = durInput
+    ? Number(durInput.value || 3)
+    : 3;
+
+  const segundos = min * 60;
 
   const { error } = await supabase
     .from("reuniones")
     .update({
-      seg_restantes: min * 60,
-      reloj_activo: false
+
+      seg_restantes: segundos,
+
+      reloj_activo: false,
+
+      orador_actual_id: null
+
     })
     .eq("id", window.reunionFederacionActual.id);
 
-  if (error) console.error("Error reiniciando turno:", error);
+  if (error) {
+
+    console.error("❌ Error reiniciando turno:", error);
+
+    return;
+  }
+
+  // 🔄 reset local
+  msd2_detenerTimer();
+
+  window.msd2_estado.segRestantes = segundos;
+
+  msd2_actualizarDisplayTurno();
+
+  const hablandoNombre = document.getElementById("msd2-hablando-nombre");
+
+  if (hablandoNombre) {
+
+    hablandoNombre.textContent = "(Nadie está interviniendo)";
+  }
+
+  console.log("⟲ Turno reiniciado");
 };
 
 // ------------------------------------------------------

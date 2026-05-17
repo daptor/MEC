@@ -4334,7 +4334,10 @@ function msd2_configurarVistaRolSala() {
 }
 
 // ------------------------------------------------------
-// TIMER LOCAL REAL (SIN REINICIO EN PAUSA)
+// TIMER LOCAL REAL
+// 🔥 SIN REINICIO EN PAUSA
+// 🔥 SIN TIMER DUPLICADO
+// 🔥 SINCRONIZADO CON SUPABASE
 // ------------------------------------------------------
 function msd2_iniciarTimerLocal() {
 
@@ -4347,30 +4350,58 @@ function msd2_iniciarTimerLocal() {
   // 🔥 activar estado
   window.msd2_estado.running = true;
 
-  // 🖥 actualizar visual inmediato
+  // 🖥 refrescar display inmediato
   msd2_actualizarDisplayTurno();
 
-  // ⏱ iniciar countdown REAL
-  window.msd2_estado.timerId = setInterval(() => {
+  // ⏱ iniciar timer real
+  window.msd2_estado.timerId = setInterval(async () => {
 
-    // 🛑 si fue pausado
+    // 🛑 pausado
     if (!window.msd2_estado.running) {
       return;
     }
 
-    // 🔻 descontar tiempo
-    if (window.msd2_estado.segRestantes > 0) {
-      window.msd2_estado.segRestantes--;
-      msd2_actualizarDisplayTurno();
-    } else {
-
-      // ⏰ tiempo terminado
+    // ⏰ tiempo terminado
+    if (window.msd2_estado.segRestantes <= 0) {
       msd2_detenerTimer();
+      return;
+    }
+
+    // 🔻 descontar
+    window.msd2_estado.segRestantes--;
+
+    // 🖥 actualizar display
+    msd2_actualizarDisplayTurno();
+
+    // ------------------------------------------------------
+    // 🔥 SINCRONIZAR SEGUNDOS REALES EN BD
+    // CLAVE PARA QUE PAUSA FUNCIONE
+    // ------------------------------------------------------
+    try {
+      await supabase
+        .from("reuniones")
+        .update({
+          seg_restantes:
+            window.msd2_estado.segRestantes
+        })
+        .eq(
+          "id",
+          window.reunionFederacionActual.id
+        );
+
+    } catch (err) {
+      console.error(
+        "❌ Error sincronizando segundos:",
+        err
+      );
     }
 
   }, 1000);
 }
 
+// ------------------------------------------------------
+// DETENER TIMER
+// ------------------------------------------------------
 function msd2_detenerTimer() {
   window.msd2_estado.running = false;
   if (window.msd2_estado.timerId) {

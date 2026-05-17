@@ -4334,32 +4334,49 @@ function msd2_configurarVistaRolSala() {
 }
 
 // ------------------------------------------------------
-// TIMER LOCAL REAL (el que mueve el reloj visual)
+// TIMER LOCAL REAL (SIN REINICIO EN PAUSA)
 // ------------------------------------------------------
 function msd2_iniciarTimerLocal() {
 
-  if (window.msd2_estado.timerId) return;
-
-  window.msd2_estado.running = true;
-
-  window.msd2_estado.timerId = setInterval(() => {
-    if (!window.msd2_estado.running) return;
-
-    if (window.msd2_estado.segRestantes > 0) {
-      window.msd2_estado.segRestantes--;
-      msd2_actualizarDisplayTurno();
-    } else {
-      msd2_detenerTimer();
-    }
-  }, 1000);
-}
-
-function msd2_detenerTimer() {
+  // 🧹 limpiar interval anterior
   if (window.msd2_estado.timerId) {
     clearInterval(window.msd2_estado.timerId);
     window.msd2_estado.timerId = null;
   }
+
+  // 🔥 activar estado
+  window.msd2_estado.running = true;
+
+  // 🖥 actualizar visual inmediato
+  msd2_actualizarDisplayTurno();
+
+  // ⏱ iniciar countdown REAL
+  window.msd2_estado.timerId = setInterval(() => {
+
+    // 🛑 si fue pausado
+    if (!window.msd2_estado.running) {
+      return;
+    }
+
+    // 🔻 descontar tiempo
+    if (window.msd2_estado.segRestantes > 0) {
+      window.msd2_estado.segRestantes--;
+      msd2_actualizarDisplayTurno();
+    } else {
+
+      // ⏰ tiempo terminado
+      msd2_detenerTimer();
+    }
+
+  }, 1000);
+}
+
+function msd2_detenerTimer() {
   window.msd2_estado.running = false;
+  if (window.msd2_estado.timerId) {
+    clearInterval(window.msd2_estado.timerId);
+    window.msd2_estado.timerId = null;
+  }
 }
 
 // ------------------------------------------------------

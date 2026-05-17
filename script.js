@@ -4367,28 +4367,55 @@ function msd2_detenerTimer() {
 // ------------------------------------------------------
 async function msd2_entrarSala() {
 
+  // 🛑 detener timer anterior
   msd2_detenerTimer();
 
+  // 🧹 reset estado local
   window.msd2_estado.cola = [];
   window.msd2_estado.actual = null;
   window.msd2_estado.segRestantes = 0;
   window.msd2_estado.running = false;
 
+  // 🔒 validar reunión activa
+  if (!window.reunionFederacionActual?.id) {
+
+    console.error("❌ No existe reunión activa");
+
+    alert("⚠️ Error al ingresar a la sala.");
+
+    return;
+  }
+
+  const reunionId = window.reunionFederacionActual.id;
+
+  console.log("🏛️ Entrando a sala:", reunionId);
+
+  // 🎨 preparar UI
   msd2_configurarSalaBasica();
   msd2_configurarVistaRolSala();
 
-  // 🔹 Cargar estado inicial desde BD
+  // 🔹 cargar estado inicial desde BD
   await msd2_cargarColaDesdeBD();
   await msd2_cargarEstadoRelojDesdeBD();
 
-  // 🔴 ESPERAR UN CICLO DEL EVENT LOOP (CLAVE REALTIME)
-  await new Promise(resolve => setTimeout(resolve, 400));
+  // 🧠 pequeña pausa para estabilizar DOM/UI
+  await new Promise(resolve => setTimeout(resolve, 200));
 
-  console.log("📡 Suscribiendo realtime sala:", window.reunionFederacionActual.id);
+  // 🔥 evitar doble realtime
+  if (window.msd2_realtimeActivo === reunionId) {
 
-  // 🔥 AHORA SÍ la suscripción funciona para TODOS
-  msd2_suscribirseReloj();
+    console.warn("⚠️ Realtime ya activo para esta sala");
 
+  } else {
+
+    console.log("📡 Activando realtime sala:", reunionId);
+
+    await msd2_suscribirseReloj(reunionId);
+
+    window.msd2_realtimeActivo = reunionId;
+  }
+
+  // 🖥️ mostrar sala
   mostrarPantalla("pantalla-reunion-sala");
 }
 
@@ -4618,9 +4645,12 @@ window.msd2_anotarmeTurno = async function () {
 // REALTIME SALA (RELOJ + COLA)
 // VERSION ESTABLE REAL 🔥
 // ------------------------------------------------------
-async function msd2_suscribirseReloj() {
+async function msd2_suscribirseReloj(reunionId) {
 
-  const reunionId = window.reunionFederacionActual.id;
+  if (!reunionId) {
+    console.error("❌ reunionId inválido en realtime");
+    return;
+  }
 
   console.log("📡 Suscribiendo realtime sala:", reunionId);
 

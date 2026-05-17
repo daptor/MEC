@@ -4647,14 +4647,17 @@ window.msd2_anotarmeTurno = async function () {
 // ------------------------------------------------------
 async function msd2_suscribirseReloj(reunionId) {
 
+  // 🔒 validar reunión
   if (!reunionId) {
+
     console.error("❌ reunionId inválido en realtime");
+
     return;
   }
 
   console.log("📡 Suscribiendo realtime sala:", reunionId);
 
-  // 🧹 ELIMINAR canal anterior correctamente
+  // 🧹 eliminar canal anterior
   if (window.msd2_canalRealtime) {
 
     console.log("🧹 Eliminando canal realtime anterior...");
@@ -4664,16 +4667,33 @@ async function msd2_suscribirseReloj(reunionId) {
     window.msd2_canalRealtime = null;
   }
 
-  // 🔥 Crear nuevo canal limpio
+  // 🔑 clave única usuario realtime
+  const realtimeUserKey =
+    window.usuarioFederacion?.socio_id ||
+    crypto.randomUUID();
+
+  console.log("👤 Presence key:", realtimeUserKey);
+
+  // 🔥 crear canal limpio
   const canal = supabase.channel(
     "reunion-live-" + reunionId,
     {
       config: {
-        broadcast: { self: false },
-        presence: {key: window.usuarioActual.id}
+
+        broadcast: {
+          self: false
+        },
+
+        presence: {
+          key: realtimeUserKey
+        }
       }
     }
   );
+
+  // guardar referencia global
+  window.msd2_canalRealtime = canal;
+}
 
   // 🕒 CAMBIOS EN REUNIÓN
   canal.on(

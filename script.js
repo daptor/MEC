@@ -4629,7 +4629,12 @@ function msd2_suscribirseReloj() {
   }
 
   window.msd2_canalRealtime = supabase
-    .channel("reunion-live-" + reunionId)
+    .channel("reunion-live-" + reunionId, {
+    config: {
+        broadcast: { self: false },
+        presence: { key: reunionId }
+    }
+    })
 
     // 🕒 CAMBIOS EN REUNIÓN (RELOJ + ORADOR)
     .on(

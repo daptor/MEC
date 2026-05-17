@@ -4615,18 +4615,31 @@ window.msd2_anotarmeTurno = async function () {
 };
 
 // ------------------------------------------------------
-// REALTIME (RELOJ + COLA)
+// REALTIME SALA (RELOJ + COLA)  🔥 VERSION ESTABLE
 // ------------------------------------------------------
 function msd2_suscribirseReloj() {
+
   const reunionId = window.reunionFederacionActual.id;
 
-  supabase.channel("reunion-live-" + reunionId)
+  console.log("📡 Suscribiendo realtime sala:", reunionId);
 
-    // cambios reloj
-    .on("postgres_changes",
-      { event: "UPDATE", schema: "public", table: "reuniones", filter: "id=eq." + reunionId },
+  // 🔵 CANAL 1 — RELOJ
+  supabase
+    .channel("reloj-" + reunionId)
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "reuniones",
+        filter: "id=eq." + reunionId
+      },
       (payload) => {
+
+        console.log("⏱ Cambio realtime RELOJ:", payload.new);
+
         const r = payload.new;
+
         window.msd2_estado.segRestantes = r.seg_restantes || 0;
 
         if (r.reloj_activo) {
@@ -4638,13 +4651,24 @@ function msd2_suscribirseReloj() {
         msd2_actualizarDisplayTurno();
       }
     )
+    .subscribe();
 
-    // cambios cola
-    .on("postgres_changes",
-      { event: "*", schema: "public", table: "reuniones_turnos", filter: "reunion_id=eq." + reunionId },
-      () => msd2_cargarColaDesdeBD()
+  // 🟢 CANAL 2 — COLA (EL QUE FALTABA)
+  supabase
+    .channel("cola-" + reunionId)
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "reuniones_turnos",
+        filter: "reunion_id=eq." + reunionId
+      },
+      () => {
+        console.log("👥 Cambio realtime COLA");
+        msd2_cargarColaDesdeBD();
+      }
     )
-
     .subscribe();
 }
 

@@ -401,8 +401,7 @@
     </div>
 
 <!-- ===================================================== -->
-<!-- 🧑‍⚖️ MESA SINDICAL DIGITAL — SALA FEDERATIVA -->
-<!-- (Pantalla EXCLUSIVA de la reunión)                   -->
+<!-- 🧑‍⚖️ MESA SINDICAL DIGITAL — SALA FEDERATIVA         -->
 <!-- ===================================================== -->
 <div
     id="pantalla-reunion-sala"
@@ -412,97 +411,86 @@
     <h1>🧑‍⚖️ Mesa Sindical Digital</h1>
 
     <div class="contenedor-sala-federativa">
-        <h2>
-            Bienvenido:
-            <span id="nombre-usuario-reunion">Usuario</span>
-        </h2>
-        <p>Has ingresado a la Sala de Reunión.</p>
 
-        <hr>
-
-        <h3>
+        <!-- Moderador + código visibles para todos -->
+        <p id="msd2-moderador-info"
+           style="font-weight:bold; margin-bottom:4px;">
+            Moderador: (sin definir)
+        </p>
+        <p style="margin-top:0; margin-bottom:10px;">
             Código reunión:
-            <span id="codigo-reunion-actual">---</span>
-        </h3>
+            <span id="msd2-codigo-reunion">---</span>
+        </p>
 
-        <!-- ==========================================
-             CAPA 3 – Cronómetro general (Subfase 3.1)
-             ========================================== -->
         <hr>
-        <h3>⏱ Contador general de la reunión</h3>
 
-        <!-- Display principal -->
-        <div id="msd-general-display"
-             style="font-size: 40px; font-weight: bold; margin: 10px 0;">
+        <!-- HABLANDO AHORA: reloj único y grande -->
+        <h3>🗣 Hablando ahora</h3>
+        <p id="msd2-hablando-nombre"
+           style="font-weight:bold; margin-bottom:6px;">
+            (Nadie está interviniendo)
+        </p>
+
+        <div
+            id="msd2-hablando-display"
+            style="font-size:56px; font-weight:bold; margin:6px 0;"
+        >
             00:00
         </div>
 
-        <!-- Configuración simple de duración base (minutos) -->
-        <label for="msd-duracion-min">Duración base (minutos):</label>
-        <input
-            id="msd-duracion-min"
-            type="number"
-            min="1"
-            max="60"
-            value="3"
-            style="width:80px; margin-left:8px;"
-        />
-
-        <!-- Botones de control (solo tendrá efecto visual si es moderador) -->
-        <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
-            <button type="button" onclick="msdIniciarGeneral()">▶ Iniciar</button>
-            <button type="button" onclick="msdPausarGeneral()">⏸ Pausa</button>
-            <button type="button" onclick="msdReiniciarGeneral()">⟲ Reiniciar</button>
+        <!-- Duración base de intervención -->
+        <div style="margin-top:8px; margin-bottom:8px;">
+            <label for="msd2-duracion-min">
+                Duración de intervención (minutos):
+            </label>
+            <input
+                id="msd2-duracion-min"
+                type="number"
+                min="1"
+                max="60"
+                value="3"
+                style="width:80px; margin-left:8px;"
+            />
         </div>
 
-        <!-- ==========================================
-             CAPA 3 – Subfase 3.2: Turnos y turno actual
-             ========================================== -->
+        <!-- Controles de tiempo (solo moderador real los verá) -->
+        <div
+            id="msd2-controles-moderador"
+            style="display:none; gap:8px; flex-wrap:wrap; margin-bottom:10px;"
+        >
+            <button type="button" onclick="msd2_iniciarTurno()">▶ Iniciar</button>
+            <button type="button" onclick="msd2_pausarTurno()">⏸ Pausa</button>
+            <button type="button" onclick="msd2_reiniciarTurno()">⟲ Reiniciar</button>
+        </div>
+
         <hr>
-        <h3>🗣 Turnos de palabra</h3>
+
+        <!-- TURNOS DE PARTICIPACIÓN -->
+        <h3>🗣 Turnos de participación</h3>
+
         <!-- Participante: anotarse -->
         <button
             type="button"
-            id="msd-btn-anotarme"
-            onclick="msdAnotarmeTurno()">✋ Quiero intervenir</button>
-        <p id="msd-msg-anotado" style="display:none; color:#16a34a;">
-            Ya estás anotado ✔.
+            id="msd2-btn-anotarme"
+            onclick="msd2_anotarmeTurno()"
+        >
+            ✋ Quiero intervenir
+        </button>
+        <p id="msd2-msg-anotado" style="display:none; color:#16a34a;">
+            Ya estás anotado en la lista de intervenciones.
         </p>
 
-        <!-- Cola simple (solo visual por ahora) -->
+        <!-- Cola -->
         <h4>En cola para intervenir</h4>
-        <ul id="msd-turnos-cola" style="min-height: 30px; padding-left:18px;"></ul>
-
-        <!-- Bloque "Hablando ahora" -->
-        <div
-            id="msd-bloque-hablando"
-            style="margin-top:15px; padding:10px; border-radius:10px; background:#f9fafb;"
-        >
-            <h4>Hablando ahora</h4>
-            <p id="msd-hablando-nombre" style="font-weight:bold;">
-                (Nadie está interviniendo)
-            </p>
-            <div
-                id="msd-hablando-display"
-                style="font-size:48px; font-weight:bold; margin:6px 0;"
-            >
-                00:00
-            </div>
-
-            <!-- Controles de turno (solo moderador verá esto) -->
-            <div id="msd-controles-moderador"
-                 style="display:none; gap:8px; flex-wrap:wrap;">
-                <button type="button" onclick="msdSiguientePersona()">⏭ Siguiente persona</button>
-                <button type="button" onclick="msdPausarTurno()">⏸ Pausar turno</button>
-                <button type="button" onclick="msdReanudarTurno()">▶ Reanudar turno</button>
-            </div>
-        </div>
+        <ul id="msd2-turnos-cola"
+            style="min-height: 30px; padding-left:18px;"></ul>
 
         <br>
-        <button onclick="mostrarPantalla('menu-principal')">↩ Volver a Menú</button>
+        <button onclick="mostrarPantalla('menu-principal')">
+            ↩ Volver a Menú
+        </button>
     </div>
 </div>
-
 
 <!-- Pantalla Rendición Federación - Director -->
 <div id="pantalla-rendicion-federacion-director" class="pantalla" style="display:none;">
@@ -547,36 +535,47 @@
 <!-- ====================================================== -->
 <!-- 🧑‍⚖️ MESA SINDICAL DIGITAL -->
 <!-- ====================================================== -->
-
 <div id="pantalla-reunion-federacion" class="pantalla" style="display:none;">
-    <h1>🧑‍⚖️ Mesa Sindical Digital</h1>
-    <div id="reunion-usuario-info"></div>
+
+    <h1>⚖️ Mesa Sindical Digital – Reunión Federación</h1>
+    <div id="msd2-lobby-usuario-info"
+         style="margin-bottom:10px; font-size:14px; color:#374151;">
+        <!-- Se completa por JS: Sindicato / Usuario -->
+    </div>
     <hr>
-    <!-- ====================================== -->
-    <!-- CREAR REUNIÓN -->
-    <!-- ====================================== -->
-    <h2>Crear reunión</h2>
-    <input
-        type="text"
-        id="input-nombre-reunion"
-        placeholder="Nombre de la reunión"
-    >
-    <button onclick="crearNuevaReunion()">➕ Crear Reunión</button>
+    <!-- BLOQUE A: CREAR REUNIÓN (solo TESORERO / DIRECTOR_x) -->
+    <div id="msd2-bloque-crear-reunion">
+        <h2>Crear reunión</h2>
+        <p style="font-size:14px; color:#4b5563;">
+            Solo DIRECTOR_x o TESORERO puede crear una nueva reunión.
+        </p>
+        <input
+            type="text"
+            id="msd2-input-nombre-reunion"
+            placeholder="Nombre de la reunión (ej: Plenaria Mayo)"
+        >
+        <button type="button" onclick="msd2_crearReunion()">➕ Crear reunión</button>
+    </div>
     <hr>
-    <!-- ====================================== -->
-    <!-- UNIRSE -->
-    <!-- ====================================== -->
+
+    <!-- BLOQUE B: INGRESAR A REUNIÓN (TODOS) -->
     <h2>Ingresar a reunión</h2>
+    <p style="font-size:14px; color:#4b5563;">
+        Ingresa el código de la reunión que te envió tu dirigencia (ej: LP14Y4).
+    </p>
     <input
         type="text"
-        id="input-codigo-reunion"
+        id="msd2-input-codigo-reunion"
         placeholder="Código reunión"
     >
-    <button onclick="unirseAReunion()">🚪 Unirse</button>
+    <button type="button" onclick="msd2_unirsePorCodigo()">Unirse</button>
     <hr>
-    <div id="mensaje-reunion"></div>
+    <div id="msd2-lobby-mensaje"
+         style="font-size:14px; color:#b91c1c;">
+    </div>
     <button onclick="mostrarPantalla('menu-principal')">↩ Menú</button>
 </div>
+
 
 <!-- Favicon -->
 <link rel="icon" href="data:,">

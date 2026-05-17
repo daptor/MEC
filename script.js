@@ -4085,618 +4085,393 @@ document.getElementById("ingresarBtn")?.addEventListener("click", verificarClave
 // 🎯 SELECCIÓN SOCIO REUNIÓN
 // ======================================================
 document.addEventListener("change", (e) => {
-    if (e.target.name === "socioReunion") {
-        const btn =
-            document.getElementById(
-                "btnIngresarReunion"
-            );
-        btn.disabled = false;
-    }
+  if (e.target.name === "socioReunion") {
+    const btn = document.getElementById("btnIngresarReunion");
+    if (btn) btn.disabled = false;
+  }
 });
 
 // ======================================================
-// 🚀 INGRESAR A REUNIÓN
+// 🚀 INGRESAR A REUNIÓN (LOBBY MESA SINDICAL DIGITAL)
 // ======================================================
-document.getElementById("btnIngresarReunion")
-    ?.addEventListener("click", async () => {
+const btnIngresarReunion = document.getElementById("btnIngresarReunion");
 
-        const socioSeleccionado = document.querySelector(
-            'input[name="socioReunion"]:checked'
-        );
-        if (!socioSeleccionado) {
-            alert("⚠️ Debes seleccionar un socio.");
-            return;
-        }
-        const socioId = socioSeleccionado.value;
-        try {
-            const { data: socio, error } = await supabase
-                .from("socios")
-                .select("*")
-                .eq("id", socioId)
-                .single();
-            if (error || !socio) {
-                alert("❌ Error obteniendo socio.");
-                return;
-            }
-
-            // ==================================================
-            // USUARIO FEDERACIÓN GLOBAL
-            // ==================================================
-
-            window.usuarioFederacion = {
-                socio_id: socio.id,
-                nombre: socio.nombre,
-                rol: socio.rol,
-                sindicato_id: socio.sindicato_id,
-                sindicato_nombre:
-                    window.sindicatoFederacionActual?.nombre || ""
-            };
-
-            console.log(
-                "✅ usuarioFederacion:",
-                window.usuarioFederacion
-            );
-
-            // ==================================================
-            // MOSTRAR SALA
-            // ==================================================
-
-            mostrarPantalla("pantalla-reunion-sala");
-
-            // ==================================================
-            // RENDER USUARIO
-            // ==================================================
-
-            const nombreUsuario = document.getElementById(
-                "nombre-usuario-reunion"
-            );
-
-            if (nombreUsuario) {
-                nombreUsuario.innerText =
-                    window.usuarioFederacion.nombre;
-            }
-
-        } catch (err) {
-
-            console.error(err);
-
-            alert(
-                "❌ Error ingresando a Mesa Sindical."
-            );
-        }
-    });
-
-
-// ======================================================
-// 🧑‍⚖️ INGRESAR COMO SOCIO A MESA SINDICAL DIGITAL
-// ======================================================
-window.ingresarComoSocioFederacion = async function () {
-    const seleccionado = document.querySelector(
-        'input[name="socioReunion"]:checked'
+if (btnIngresarReunion) {
+  btnIngresarReunion.addEventListener("click", async () => {
+    const socioSeleccionado = document.querySelector(
+      'input[name="socioReunion"]:checked'
     );
-
-    if (!seleccionado) {
-        alert("⚠️ Debes seleccionar un integrante.");
-        return;
+    if (!socioSeleccionado) {
+      alert("⚠️ Debes seleccionar un socio.");
+      return;
     }
-    const socioId = seleccionado.value;
+
+    const socioId = socioSeleccionado.value;
+
     try {
+      const { data: socio, error } = await supabase
+        .from("socios")
+        .select("*")
+        .eq("id", socioId)
+        .single();
 
-        // ==================================================
-        // CONSULTAR SOCIO
-        // ==================================================
-        const { data: socio, error } = await supabase
-            .from("socios")
-            .select("*")
-            .eq("id", socioId)
-            .single();
+      if (error || !socio) {
+        alert("❌ Error obteniendo socio.");
+        return;
+      }
 
-        if (error || !socio) {
-            console.error(error);
-            alert(
-                "❌ No fue posible obtener datos del socio."
-            );
-            return;
-        }
+      // Identidad sindical global
+      window.usuarioFederacion = {
+        socio_id: socio.id,
+        nombre: socio.nombre,
+        rol: socio.rol,
+        sindicato_id: socio.sindicato_id,
+        sindicato_nombre: window.sindicatoFederacionActual?.nombre || ""
+      };
 
-        // ==================================================
-        // CONSTRUIR IDENTIDAD FEDERATIVA
-        // ==================================================
-        window.usuarioFederacion = {
+      console.log("✅ usuarioFederacion:", window.usuarioFederacion);
 
-            socio_id: socio.id,
-            nombre: socio.nombre,
-            rol: socio.rol,
-            sindicato_id: socio.sindicato_id,
-            sindicato_nombre:
-                window.sindicatoFederacionActual?.nombre || ""
+      // Mostrar lobby Reunión Federación
+      mostrarPantalla("pantalla-reunion-federacion");
 
-        };
+      // Configurar lobby según rol (TESORERO / DIRECTOR_x vs SOCIO)
+      if (typeof msd2_configurarLobbyPorRol === "function") {
+        msd2_configurarLobbyPorRol();
+      }
 
-        console.log(
-            "✅ usuarioFederacion:",
-            window.usuarioFederacion
-        );
-
-        // ==================================================
-        // ACTUALIZAR UI
-        // ==================================================
-        const nombre = document.getElementById(
-            "nombre-usuario-reunion"
-        );
-
-        if (nombre) {
-            nombre.innerText =
-                window.usuarioFederacion.nombre;
-        }
-
-        // ==================================================
-        // ENTRAR A SALA
-        // ==================================================
-        mostrarPantalla("pantalla-reunion-sala");
+      alert("Ingreso correcto: " + socio.nombre);
     } catch (err) {
-        console.error(err);
-        alert(
-            "❌ Error ingresando a Mesa Sindical Digital."
-        );
+      console.error(err);
+      alert("❌ Error ingresando a Mesa Sindical.");
     }
-};
-
-// ======================================================
-// 🚀 CREAR NUEVA REUNIÓN FEDERATIVA
-// ======================================================
-window.crearNuevaReunion = async function () {
-    try {
-        // ==================================================
-        // VALIDAR USUARIO
-        // ==================================================
-        if (!window.usuarioFederacion) {
-            alert(
-                "⚠️ Debes ingresar como socio."
-            );
-            return;
-        }
-        // ==================================================
-        // GENERAR CÓDIGO SIMPLE
-        // ==================================================
-        const codigo =
-            Math.random()
-                .toString(36)
-                .substring(2, 8)
-                .toUpperCase();
-
-        // ==================================================
-        // NOMBRE REUNIÓN
-        // ==================================================
-        const nombreReunion =
-            "Mesa Federativa " +
-            new Date().toLocaleDateString();
-
-        // ==================================================
-        // INSERTAR REUNIÓN
-        // ==================================================
-        const { data, error } = await supabase
-            .from("reuniones")
-            .insert([
-                {
-                    codigo: codigo,
-                    nombre: nombreReunion,
-                    estado: "activa",
-                    moderador_socio_id:
-                        window.usuarioFederacion.socio_id
-                }
-            ])
-            .select()
-            .single();
-
-        // ==================================================
-        // ERROR
-        // ==================================================
-        if (error) {
-            console.error(error);
-            alert(
-                "❌ Error creando reunión."
-            );
-            return;
-        }
-
-        // ==================================================
-        // GUARDAR GLOBAL
-        // ==================================================
-        window.reunionFederacionActual = data;
-        console.log("✅ reunión creada:",data);
-        // ==================================================
-        // UI
-        // ==================================================
-        const codigoUI =
-            document.getElementById(
-                "codigo-reunion-actual"
-            );
-        // ================================================== aqui es         
-            msdConfigurarVistaRol();
-            msdRenderCola();
-        // ==================================================
-        if (codigoUI) {
-            codigoUI.innerText = data.codigo;
-        }
-
-        // ==================================================
-        // MENSAJE
-        // ==================================================
-        alert(
-            "✅ Reunión creada correctamente.\n\n" +
-            "Código: " +
-            data.codigo
-        );
-    } catch (err) {
-        console.error(err);
-        alert(
-            "❌ Error inesperado creando reunión."
-        );
-    }
-};
-
-// ======================================================
-// ⚖ UNIRSE A UNA REUNIÓN (POR CÓDIGO)
-// Soporta:
-// - input #input-codigo-reunion (pantalla federación)
-// - span #codigo-reunion-actual (pantalla sala)
-// ======================================================
-window.unirseAReunion = async function () {
-    try {
-        // 1) Verificar identidad federativa
-        if (!window.usuarioFederacion) {
-            alert("⚠ Debes ingresar primero como socio en Reunión Federación.");
-            return;
-        }
-
-        // 2) Intentar obtener código desde input (pantalla federación)
-        const input = document.getElementById("input-codigo-reunion");
-        let codigo = (input?.value || "").trim().toUpperCase();
-
-        // 3) Si no hay input o viene vacío, usar el span de la sala
-        if (!codigo) {
-            const spanCodigo = document.getElementById("codigo-reunion-actual");
-            if (spanCodigo) {
-                codigo = (spanCodigo.innerText || "").trim().toUpperCase();
-            }
-        }
-
-        // 4) Si todavía no hay código, pedirlo
-        if (!codigo) {
-            alert("⚠ Debes ingresar código de reunión.");
-            return;
-        }
-
-        // 5) Buscar reunión ACTIVA por código
-        const { data: reunion, error } = await supabase
-            .from("reuniones")
-            .select("*")
-            .eq("codigo", codigo)
-            .eq("estado", "activa")
-            .maybeSingle();
-
-        if (error) {
-            console.error("Error buscando reunión:", error);
-            alert("❌ Error buscando reunión. Intenta nuevamente.");
-            return;
-        }
-
-        if (!reunion) {
-            alert("⚠ No existe una reunión activa con ese código.");
-            return;
-        }
-
-        // 6) Guardar reunión actual global
-        window.reunionFederacionActual = reunion;
-        console.log("✅ Reunión encontrada:", reunion);
-
-        // 7) Actualizar UI de la sala
-        const codigoSpan = document.getElementById("codigo-reunion-actual");
-        if (codigoSpan) {
-            codigoSpan.innerText = reunion.codigo || codigo;
-        }
-
-        const nombreUsuario = document.getElementById("nombre-usuario-reunion");
-        if (nombreUsuario && window.usuarioFederacion?.nombre) {
-            nombreUsuario.innerText = window.usuarioFederacion.nombre;
-        }
-
-        // 8) Mostrar sala (por si fue llamado desde pantalla federación)
-        mostrarPantalla("pantalla-reunion-sala");
-
-        msdConfigurarVistaRol();
-        msdRenderCola();
-
-    } catch (err) {
-        console.error("Error unirseAReunion:", err);
-        alert("❌ Error inesperado al unirse a la reunión.");
-    }
-};
-
-// ======================================================
-// CAPA 3 – Sistema Contrarreloj
-// Subfase 3.1: Cronómetro general (solo frontend)
-// ======================================================
-
-window.msdEstadoReunion = {
-    generalSegRestantes: 0,
-    generalTimerId: null,
-    generalRunning: false
-};
-
-// Formatea segundos → mm:ss
-function msdFormatearTiempo(seg) {
-    const s = Math.max(0, Math.floor(seg));
-    const minutos = String(Math.floor(s / 60)).padStart(2, "0");
-    const segundos = String(s % 60).padStart(2, "0");
-    return `${minutos}:${segundos}`;
+  });
 }
 
-// Actualiza el display y color según tiempo
-function msdActualizarDisplayGeneral() {
-    const display = document.getElementById("msd-general-display");
-    if (!display) return;
-
-    const seg = window.msdEstadoReunion.generalSegRestantes;
-    display.textContent = msdFormatearTiempo(seg);
-
-    // Colores según porcentaje de tiempo
-    const inputDur = document.getElementById("msd-duracion-min");
-    const minBase = inputDur ? Number(inputDur.value || 3) : 3;
-    const totalSeg = minBase * 60;
-
-    if (!totalSeg || seg <= 0) {
-        display.style.color = "#b91c1c";   // rojo al llegar o pasar 0
-        return;
-    }
-
-    const ratio = seg / totalSeg;
-    if (ratio > 0.6) {
-        display.style.color = "#16a34a";   // verde
-    } else if (ratio > 0.3) {
-        display.style.color = "#ea580c";   // naranja
-    } else {
-        display.style.color = "#b91c1c";   // rojo
-    }
-}
-
-// Inicia el cronómetro general
-window.msdIniciarGeneral = function () {
-    const inputDur = document.getElementById("msd-duracion-min");
-    const minBase = inputDur ? Number(inputDur.value || 3) : 3;
-
-    if (!minBase || minBase <= 0) {
-        alert("⚠ Define una duración base válida en minutos.");
-        return;
-    }
-
-    // Si está pausado, seguimos desde donde quedó
-    if (!window.msdEstadoReunion.generalRunning &&
-        window.msdEstadoReunion.generalSegRestantes <= 0) {
-        // Primera vez o reiniciado: cargar segundos totales
-        window.msdEstadoReunion.generalSegRestantes = minBase * 60;
-    }
-
-    if (window.msdEstadoReunion.generalTimerId) {
-        // Ya está corriendo
-        return;
-    }
-
-    window.msdEstadoReunion.generalRunning = true;
-
-    window.msdEstadoReunion.generalTimerId = setInterval(() => {
-        window.msdEstadoReunion.generalSegRestantes -= 1;
-        msdActualizarDisplayGeneral();
-
-        if (window.msdEstadoReunion.generalSegRestantes <= 0) {
-            // Llegó a cero, detenemos pero dejamos en 00:00
-            msdPausarGeneral();
-            window.msdEstadoReunion.generalSegRestantes = 0;
-            msdActualizarDisplayGeneral();
-            // Aquí más adelante podemos disparar aviso sonoro/visual
-        }
-    }, 1000);
-
-    msdActualizarDisplayGeneral();
-};
-
-// Pausa el cronómetro general
-window.msdPausarGeneral = function () {
-    if (window.msdEstadoReunion.generalTimerId) {
-        clearInterval(window.msdEstadoReunion.generalTimerId);
-        window.msdEstadoReunion.generalTimerId = null;
-    }
-    window.msdEstadoReunion.generalRunning = false;
-};
-
-// Reinicia el cronómetro (sin iniciarlo automáticamente)
-window.msdReiniciarGeneral = function () {
-    const inputDur = document.getElementById("msd-duracion-min");
-    const minBase = inputDur ? Number(inputDur.value || 3) : 3;
-
-    window.msdPausarGeneral();
-    window.msdEstadoReunion.generalSegRestantes = minBase * 60;
-    msdActualizarDisplayGeneral();
-};
-
 // ======================================================
-// CAPA 3 – Subfase 3.2: Turnos de palabra (cola simple)
+// MESA SINDICAL DIGITAL V2 – LOBBY + SALA
+// Prefijo: msd2_*
 // ======================================================
 
-window.msdTurnos = {
-    cola: [],               // [{ socio_id, nombre }]
-    actual: null,           // socio actual hablando
-    segRestantes: 0,
-    timerId: null,
-    running: false
+// Estado local de la sala
+window.msd2_estado = {
+  cola: [],            // [{ socio_id, nombre }]
+  actual: null,        // socio actual hablando
+  segRestantes: 0,
+  timerId: null,
+  running: false
 };
 
-// Saber si el usuario actual es moderador de la reunión
-function msdEsModerador() {
-    if (!window.usuarioFederacion || !window.reunionFederacionActual) return false;
-    return window.usuarioFederacion.socio_id === window.reunionFederacionActual.moderador_socio_id;
+// ------------------------------------------------------
+// Helpers de rol
+// ------------------------------------------------------
+function msd2_esRolModeradorPotencial() {
+  if (!window.usuarioFederacion || !window.usuarioFederacion.rol) return false;
+  const rol = window.usuarioFederacion.rol.toUpperCase();
+  if (rol === "TESORERO") return true;
+  if (rol.startsWith("DIRECTOR_")) return true;
+  return false;
 }
 
-// Configurar la vista según rol (mostrar/ocultar controles moderador)
-function msdConfigurarVistaRol() {
-    const bloqueControles = document.getElementById("msd-controles-moderador");
-    if (!bloqueControles) return;
-    bloqueControles.style.display = msdEsModerador() ? "flex" : "none";
+function msd2_esModeradorActual() {
+  if (!window.usuarioFederacion || !window.reunionFederacionActual) return false;
+  return (
+    window.usuarioFederacion.socio_id ===
+    window.reunionFederacionActual.moderador_socio_id
+  );
 }
 
-// Render cola en UL
-function msdRenderCola() {
-    const ul = document.getElementById("msd-turnos-cola");
-    if (!ul) return;
-    ul.innerHTML = "";
+// ------------------------------------------------------
+// LOBBY – Reunión Federación
+// ------------------------------------------------------
+function msd2_configurarLobbyPorRol() {
+  const bloqueCrear = document.getElementById("msd2-bloque-crear-reunion");
+  if (bloqueCrear) {
+    bloqueCrear.style.display = msd2_esRolModeradorPotencial()
+      ? "block"
+      : "none";
+  }
 
-    if (!window.msdTurnos.cola.length) {
-        const li = document.createElement("li");
-        li.textContent = "No hay personas anotadas aún.";
-        li.style.color = "#6b7280";
-        ul.appendChild(li);
-        return;
+  const info = document.getElementById("msd2-lobby-usuario-info");
+  if (info && window.usuarioFederacion) {
+    info.textContent =
+      "Sindicato: " +
+      (window.usuarioFederacion.sindicato_nombre || "") +
+      " — Usuario: " +
+      window.usuarioFederacion.nombre +
+      " (" +
+      window.usuarioFederacion.rol +
+      ")";
+  }
+}
+
+// Crear reunión (solo desde lobby, TESORERO / DIRECTOR_x)
+window.msd2_crearReunion = async function () {
+  try {
+    if (!msd2_esRolModeradorPotencial()) {
+      alert("Solo DIRECTOR_x o TESORERO puede crear reuniones.");
+      return;
     }
-
-    window.msdTurnos.cola.forEach((item, idx) => {
-        const li = document.createElement("li");
-        li.textContent = `${idx + 1}. ${item.nombre}`;
-        ul.appendChild(li);
-    });
-}
-
-// Display turno individual
-function msdActualizarDisplayTurno() {
-    const display = document.getElementById("msd-hablando-display");
-    if (!display) return;
-    const s = Math.max(0, Math.floor(window.msdTurnos.segRestantes || 0));
-    const m = String(Math.floor(s / 60)).padStart(2, "0");
-    const ss = String(s % 60).padStart(2, "0");
-    display.textContent = `${m}:${ss}`;
-
-    // Colores simples
-    if (s === 0 && window.msdTurnos.running === false) {
-        display.style.color = "#b91c1c";
-    } else {
-        display.style.color = "#0f172a";
-    }
-}
-
-// Iniciar turno con un socio
-function msdIniciarTurnoCon(socio) {
-    const inputDur = document.getElementById("msd-duracion-min");
-    const minBase = inputDur ? Number(inputDur.value || 3) : 3;
-
-    // Limpiar turno previo
-    if (window.msdTurnos.timerId) clearInterval(window.msdTurnos.timerId);
-    window.msdTurnos.timerId = null;
-
-    window.msdTurnos.actual = socio;
-    window.msdTurnos.segRestantes = minBase * 60;
-    window.msdTurnos.running = true;
-
-    const nombreEl = document.getElementById("msd-hablando-nombre");
-    if (nombreEl) {
-        nombreEl.textContent = socio ? socio.nombre : "(Nadie está interviniendo)";
-    }
-
-    msdActualizarDisplayTurno();
-
-    window.msdTurnos.timerId = setInterval(() => {
-        window.msdTurnos.segRestantes -= 1;
-        msdActualizarDisplayTurno();
-
-        if (window.msdTurnos.segRestantes <= 0) {
-            msdPausarTurno();
-            window.msdTurnos.segRestantes = 0;
-            msdActualizarDisplayTurno();
-            // Aquí luego podemos disparar aviso sonoro / automático siguiente
-        }
-    }, 1000);
-}
-
-// =========================
-// API pública de turnos
-// =========================
-
-// Participante se anota
-window.msdAnotarmeTurno = function () {
     if (!window.usuarioFederacion) {
-        alert("⚠ Debes ingresar primero como socio en Reunión Federación.");
-        return;
+      alert("No hay identidad sindical activa.");
+      return;
     }
 
-    const yaEnCola = window.msdTurnos.cola.some(
-        (t) => t.socio_id === window.usuarioFederacion.socio_id
-    );
-    const esActual =
-        window.msdTurnos.actual &&
-        window.msdTurnos.actual.socio_id === window.usuarioFederacion.socio_id;
-
-    if (yaEnCola || esActual) {
-        const msg = document.getElementById("msd-msg-anotado");
-        if (msg) msg.style.display = "block";
-        return;
+    const nombreInput = document.getElementById("msd2-input-nombre-reunion");
+    const nombre = (nombreInput?.value || "").trim();
+    if (!nombre) {
+      alert("Escribe un nombre para la reunión.");
+      return;
     }
 
-    window.msdTurnos.cola.push({
-        socio_id: window.usuarioFederacion.socio_id,
-        nombre: window.usuarioFederacion.nombre
-    });
+    const codigo = Math.random().toString(36).substring(2, 8).toUpperCase();
 
-    const msg = document.getElementById("msd-msg-anotado");
-    if (msg) msg.style.display = "block";
-
-    msdRenderCola();
-};
-
-// Moderador pasa al siguiente
-window.msdSiguientePersona = function () {
-    if (!msdEsModerador()) {
-        alert("Solo el moderador puede controlar los turnos.");
-        return;
-    }
-
-    if (!window.msdTurnos.cola.length) {
-        alert("No hay personas en la cola.");
-        return;
-    }
-
-    const siguiente = window.msdTurnos.cola.shift();
-    msdRenderCola();
-    msdIniciarTurnoCon(siguiente);
-};
-
-// Pausar turno actual
-window.msdPausarTurno = function () {
-    if (window.msdTurnos.timerId) {
-        clearInterval(window.msdTurnos.timerId);
-        window.msdTurnos.timerId = null;
-    }
-    window.msdTurnos.running = false;
-};
-
-// Reanudar turno actual
-window.msdReanudarTurno = function () {
-    if (!window.msdTurnos.actual) {
-        alert("No hay nadie hablando actualmente.");
-        return;
-    }
-    if (window.msdTurnos.timerId) return; // ya corriendo
-
-    window.msdTurnos.running = true;
-
-    window.msdTurnos.timerId = setInterval(() => {
-        window.msdTurnos.segRestantes -= 1;
-        msdActualizarDisplayTurno();
-
-        if (window.msdTurnos.segRestantes <= 0) {
-            msdPausarTurno();
-            window.msdTurnos.segRestantes = 0;
-            msdActualizarDisplayTurno();
+    const { data, error } = await supabase
+      .from("reuniones")
+      .insert([
+        {
+          codigo,
+          nombre,
+          estado: "activa",
+          moderador_socio_id: window.usuarioFederacion.socio_id
         }
-    }, 1000);
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      console.error(error);
+      alert("No se pudo crear la reunión.");
+      return;
+    }
+
+    window.reunionFederacionActual = data;
+    console.log("✅ reunión creada:", data);
+
+    msd2_entrarSala();
+
+    alert("✔ Reunión creada correctamente. Código: " + data.codigo);
+  } catch (e) {
+    console.error(e);
+    alert("Error creando reunión.");
+  }
+};
+
+// Unirse por código (todos los roles usan este camino)
+window.msd2_unirsePorCodigo = async function () {
+  try {
+    const input = document.getElementById("msd2-input-codigo-reunion");
+    const codigo = (input?.value || "").trim().toUpperCase();
+
+    if (!codigo) {
+      alert("Debes ingresar un código de reunión.");
+      return;
+    }
+
+    const { data: reunion, error } = await supabase
+      .from("reuniones")
+      .select("*")
+      .eq("codigo", codigo)
+      .eq("estado", "activa")
+      .maybeSingle();
+
+    if (error) {
+      console.error(error);
+      alert("Error buscando reunión.");
+      return;
+    }
+
+    if (!reunion) {
+      alert("No existe una reunión activa con ese código.");
+      return;
+    }
+
+    window.reunionFederacionActual = reunion;
+    console.log("✅ Reunión encontrada:", reunion);
+
+    msd2_entrarSala();
+  } catch (e) {
+    console.error(e);
+    alert("Error al ingresar a la reunión.");
+  }
+};
+
+// ------------------------------------------------------
+// SALA – configuración básica
+// ------------------------------------------------------
+function msd2_configurarSalaBasica() {
+  const reunion = window.reunionFederacionActual;
+  if (!reunion) return;
+
+  // Código reunión
+  const spanCodigo = document.getElementById("msd2-codigo-reunion");
+  if (spanCodigo) {
+    spanCodigo.textContent = reunion.codigo || "---";
+  }
+
+  // Moderador (por ahora: si el que entra ES el moderador, mostramos su nombre;
+  // más adelante se puede buscar siempre el nombre desde la tabla socios)
+  const modInfo = document.getElementById("msd2-moderador-info");
+  if (modInfo) {
+    if (msd2_esModeradorActual() && window.usuarioFederacion) {
+      modInfo.textContent = "Moderador: " + window.usuarioFederacion.nombre;
+    } else {
+      modInfo.textContent = "Moderador: (moderador conectado)";
+    }
+  }
+
+  // Nombre actual en "Hablando ahora" al iniciar
+  const hablandoNombre = document.getElementById("msd2-hablando-nombre");
+  if (hablandoNombre) {
+    hablandoNombre.textContent = "(Nadie está interviniendo)";
+  }
+}
+
+// Mostrar/ocultar controles de tiempo según rol real en la reunión
+function msd2_configurarVistaRolSala() {
+  const controles = document.getElementById("msd2-controles-moderador");
+  const inputDur = document.getElementById("msd2-duracion-min");
+  const esMod = msd2_esModeradorActual();
+
+  if (controles) controles.style.display = esMod ? "flex" : "none";
+  if (inputDur) inputDur.disabled = !esMod;
+}
+
+// Entrar a la sala (tanto moderador como socios)
+function msd2_entrarSala() {
+  msd2_detenerTimer();
+  window.msd2_estado.cola = [];
+  window.msd2_estado.actual = null;
+  window.msd2_estado.segRestantes = 0;
+  msd2_renderCola();
+  msd2_actualizarDisplayTurno();
+
+  msd2_configurarSalaBasica();
+  msd2_configurarVistaRolSala();
+
+  mostrarPantalla("pantalla-reunion-sala");
+}
+
+// ------------------------------------------------------
+// SALA – cola y reloj de turno
+// ------------------------------------------------------
+function msd2_renderCola() {
+  const ul = document.getElementById("msd2-turnos-cola");
+  if (!ul) return;
+  ul.innerHTML = "";
+
+  if (!window.msd2_estado.cola.length) {
+    const li = document.createElement("li");
+    li.textContent = "No hay personas anotadas aún.";
+    li.style.color = "#6b7280";
+    ul.appendChild(li);
+    return;
+  }
+
+  window.msd2_estado.cola.forEach((item, idx) => {
+    const li = document.createElement("li");
+    li.textContent = `${idx + 1}. ${item.nombre}`;
+    ul.appendChild(li);
+  });
+}
+
+function msd2_formatoTiempo(s) {
+  const sec = Math.max(0, Math.floor(s));
+  const m = String(Math.floor(sec / 60)).padStart(2, "0");
+  const ss = String(sec % 60).padStart(2, "0");
+  return `${m}:${ss}`;
+}
+
+function msd2_actualizarDisplayTurno() {
+  const disp = document.getElementById("msd2-hablando-display");
+  if (!disp) return;
+  disp.textContent = msd2_formatoTiempo(window.msd2_estado.segRestantes || 0);
+}
+
+function msd2_detenerTimer() {
+  if (window.msd2_estado.timerId) {
+    clearInterval(window.msd2_estado.timerId);
+    window.msd2_estado.timerId = null;
+  }
+  window.msd2_estado.running = false;
+}
+
+// Iniciar turno (usa duración base del input)
+window.msd2_iniciarTurno = function () {
+  if (!msd2_esModeradorActual()) {
+    alert("Solo el moderador puede controlar el tiempo.");
+    return;
+  }
+
+  // Si no hay actual definido, iniciamos un turno genérico
+  if (!window.msd2_estado.actual) {
+    window.msd2_estado.actual = { nombre: "Intervención" };
+  }
+
+  const durInput = document.getElementById("msd2-duracion-min");
+  const min = durInput ? Number(durInput.value || 3) : 3;
+  if (!min || min <= 0) {
+    alert("Duración inválida.");
+    return;
+  }
+
+  msd2_detenerTimer();
+  window.msd2_estado.segRestantes = min * 60;
+  window.msd2_estado.running = true;
+  msd2_actualizarDisplayTurno();
+
+  window.msd2_estado.timerId = setInterval(() => {
+    window.msd2_estado.segRestantes -= 1;
+    msd2_actualizarDisplayTurno();
+    if (window.msd2_estado.segRestantes <= 0) {
+      msd2_detenerTimer();
+      window.msd2_estado.segRestantes = 0;
+      msd2_actualizarDisplayTurno();
+    }
+  }, 1000);
+};
+
+window.msd2_pausarTurno = function () {
+  if (!msd2_esModeradorActual()) return;
+  msd2_detenerTimer();
+};
+
+window.msd2_reiniciarTurno = function () {
+  if (!msd2_esModeradorActual()) return;
+  const durInput = document.getElementById("msd2-duracion-min");
+  const min = durInput ? Number(durInput.value || 3) : 3;
+  window.msd2_estado.segRestantes = min * 60;
+  msd2_actualizarDisplayTurno();
+};
+
+// Anotarse en la cola (todos)
+window.msd2_anotarmeTurno = function () {
+  if (!window.usuarioFederacion) {
+    alert("Debes ingresar primero como socio.");
+    return;
+  }
+
+  const yaEnCola = window.msd2_estado.cola.some(
+    (t) => t.socio_id === window.usuarioFederacion.socio_id
+  );
+  const esActual =
+    window.msd2_estado.actual &&
+    window.msd2_estado.actual.socio_id === window.usuarioFederacion.socio_id;
+
+  if (yaEnCola || esActual) {
+    const msg = document.getElementById("msd2-msg-anotado");
+    if (msg) msg.style.display = "block";
+    return;
+  }
+
+  window.msd2_estado.cola.push({
+    socio_id: window.usuarioFederacion.socio_id,
+    nombre: window.usuarioFederacion.nombre
+  });
+
+  const msg = document.getElementById("msd2-msg-anotado");
+  if (msg) msg.style.display = "block";
+
+  msd2_renderCola();
 };
 
 

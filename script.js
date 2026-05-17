@@ -4680,7 +4680,8 @@ window.msd2_iniciarTurno = async function () {
 };
 
 // ------------------------------------------------------
-// ⏸ PAUSAR / ▶ CONTINUAR TURNO
+// ⏸ PAUSAR / ▶ CONTINUAR
+// VERSION REALTIME ESTABLE
 // ------------------------------------------------------
 window.msd2_pausarTurno = async function () {
 
@@ -4690,15 +4691,29 @@ window.msd2_pausarTurno = async function () {
     window.reunionFederacionActual.id;
 
   // ------------------------------------------------------
-  // 🔍 estado actual realtime
+  // 🔍 obtener estado REAL desde BD
   // ------------------------------------------------------
-  const relojActivo =
-    window.msd2_estado.running;
+  const { data: reunion, error: errLoad } =
+    await supabase
+      .from("reuniones")
+      .select("reloj_activo")
+      .eq("id", reunionId)
+      .single();
+
+  if (errLoad || !reunion) {
+
+    console.error(
+      "❌ Error leyendo estado reloj:",
+      errLoad
+    );
+
+    return;
+  }
 
   // ------------------------------------------------------
   // ⏸ PAUSAR
   // ------------------------------------------------------
-  if (relojActivo) {
+  if (reunion.reloj_activo) {
 
     const { error } = await supabase
       .from("reuniones")
@@ -4719,14 +4734,14 @@ window.msd2_pausarTurno = async function () {
 
     console.log("⏸ Turno pausado");
 
-    // 🔥 cambiar texto botón
     const btn =
       document.getElementById(
         "msd2-btn-pausar"
       );
 
     if (btn) {
-      btn.textContent = "▶ Continuar";
+      btn.textContent =
+        "▶ Continuar";
     }
 
   }
@@ -4755,14 +4770,14 @@ window.msd2_pausarTurno = async function () {
 
     console.log("▶ Turno continuado");
 
-    // 🔥 restaurar texto botón
     const btn =
       document.getElementById(
         "msd2-btn-pausar"
       );
 
     if (btn) {
-      btn.textContent = "⏸ Pausa";
+      btn.textContent =
+        "⏸ Pausa";
     }
   }
 };
@@ -4968,16 +4983,49 @@ canal.on(
     window.msd2_estado.running =
       !!r.reloj_activo;
 
-     // ------------------------------------------------------
+
+    // ------------------------------------------------------
+    // 🔥 ACTUALIZAR BOTÓN PAUSA / CONTINUAR
+    // ------------------------------------------------------
+    const btnPausa =
+      document.getElementById(
+        "msd2-btn-pausar"
+      );
+
+    if (btnPausa) {
+
+      if (r.reloj_activo) {
+
+        btnPausa.textContent =
+          "⏸ Pausa";
+
+      } else {
+
+        btnPausa.textContent =
+          "▶ Continuar";
+      }
+    }
+
+
+    // ------------------------------------------------------
     // 🗣 ACTUALIZAR ORADOR
     // ------------------------------------------------------
-    const el = document.getElementById("msd2-hablando-nombre");
+    const el =
+      document.getElementById(
+        "msd2-hablando-nombre"
+      );
 
     if (r.orador_actual_id) {
 
-      console.log("🗣 Nuevo orador:", r.orador_actual_id);
+      console.log(
+        "🗣 Nuevo orador:",
+        r.orador_actual_id
+      );
 
-      const { data: socio, error } = await supabase
+      const {
+        data: socio,
+        error
+      } = await supabase
         .from("socios")
         .select("nombre")
         .eq("id", r.orador_actual_id)
@@ -4985,17 +5033,22 @@ canal.on(
 
       if (error) {
 
-        console.error("❌ Error cargando orador:", error);
+        console.error(
+          "❌ Error cargando orador:",
+          error
+        );
 
         if (el) {
-          el.textContent = "(Interviniendo)";
+          el.textContent =
+            "(Interviniendo)";
         }
 
       } else {
 
         if (el) {
           el.textContent =
-            socio?.nombre || "(Interviniendo)";
+            socio?.nombre ||
+            "(Interviniendo)";
         }
       }
 
@@ -5009,26 +5062,33 @@ canal.on(
       }
     }
 
+
     // ------------------------------------------------------
     // ⏱ CONTROL RELOJ GLOBAL
     // ------------------------------------------------------
     if (r.reloj_activo) {
 
-      console.log("▶ Iniciando timer realtime");
+      console.log(
+        "▶ Iniciando timer realtime"
+      );
 
       msd2_iniciarTimerLocal();
 
     } else {
 
-      console.log("⏸ Deteniendo timer realtime");
+      console.log(
+        "⏸ Deteniendo timer realtime"
+      );
 
       msd2_detenerTimer();
     }
+
 
     // ------------------------------------------------------
     // 🖥 ACTUALIZAR DISPLAY
     // ------------------------------------------------------
     msd2_actualizarDisplayTurno();
+
 
     // ------------------------------------------------------
     // 🔄 RECARGAR COLA
@@ -5037,7 +5097,9 @@ canal.on(
     // ------------------------------------------------------
     await msd2_cargarColaDesdeBD();
 
-    console.log("✅ Estado reunión sincronizado");
+    console.log(
+      "✅ Estado reunión sincronizado"
+    );
   }
 );
 

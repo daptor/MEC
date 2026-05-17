@@ -4856,7 +4856,7 @@ canal.on(
     window.msd2_estado.running =
       !!r.reloj_activo;
 
-    // ------------------------------------------------------
+     // ------------------------------------------------------
     // 🗣 ACTUALIZAR ORADOR
     // ------------------------------------------------------
     const el = document.getElementById("msd2-hablando-nombre");
@@ -4868,12 +4868,16 @@ canal.on(
       const { data: socio, error } = await supabase
         .from("socios")
         .select("nombre")
-        .eq("socio_id", r.orador_actual_id)
+        .eq("id", r.orador_actual_id)
         .single();
 
       if (error) {
 
         console.error("❌ Error cargando orador:", error);
+
+        if (el) {
+          el.textContent = "(Interviniendo)";
+        }
 
       } else {
 

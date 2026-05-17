@@ -4363,7 +4363,7 @@ function msd2_detenerTimer() {
 }
 
 // ------------------------------------------------------
-// ENTRAR A LA SALA
+// ENTRAR A LA SALA (FIX REALTIME DEFINITIVO)
 // ------------------------------------------------------
 async function msd2_entrarSala() {
 
@@ -4377,14 +4377,17 @@ async function msd2_entrarSala() {
   msd2_configurarSalaBasica();
   msd2_configurarVistaRolSala();
 
+  // 🔹 Cargar estado inicial desde BD
   await msd2_cargarColaDesdeBD();
   await msd2_cargarEstadoRelojDesdeBD();
 
-  // 🔴 SUSCRIPCIÓN REALTIME (SOLO UNA VEZ POR CLIENTE)
-  if (!window.msd2_realtimeActivo) {
-    window.msd2_realtimeActivo = true;
-    msd2_suscribirseReloj();
-  }
+  // 🔴 ESPERAR UN CICLO DEL EVENT LOOP (CLAVE REALTIME)
+  await new Promise(resolve => setTimeout(resolve, 400));
+
+  console.log("📡 Suscribiendo realtime sala:", window.reunionFederacionActual.id);
+
+  // 🔥 AHORA SÍ la suscripción funciona para TODOS
+  msd2_suscribirseReloj();
 
   mostrarPantalla("pantalla-reunion-sala");
 }
@@ -4468,6 +4471,7 @@ function msd2_actualizarDisplayTurno() {
 // CONTROLES MODERADOR (FULL SINCRONIZADOS + ORADOR)
 // ------------------------------------------------------
 window.msd2_iniciarTurno = async function () {
+
   if (!msd2_esModeradorActual()) {
     alert("Solo el moderador puede controlar el tiempo.");
     return;
@@ -4477,14 +4481,19 @@ window.msd2_iniciarTurno = async function () {
   if (!reunion) return;
 
   // 1️⃣ Obtener cola desde BD
-  const { data: cola } = await supabase
+  const { data: cola, error } = await supabase
     .from("reuniones_turnos")
     .select("*")
     .eq("reunion_id", reunion.id)
     .order("creado_en", { ascending: true });
 
+  if (error) {
+    console.error("Error obteniendo cola:", error);
+    return;
+  }
+
   // 2️⃣ Validar cola
-  if (!cola || !cola.length) {
+  if (!cola || cola.length === 0) {
     alert("No hay personas en la cola.");
     return;
   }
@@ -4492,7 +4501,7 @@ window.msd2_iniciarTurno = async function () {
   // 3️⃣ Tomar primer orador
   const orador = cola[0];
 
-  // 4️⃣ Mostrar nombre del orador localmente
+  // 4️⃣ Mostrar nombre del orador local (feedback inmediato)
   const hablandoNombre = document.getElementById("msd2-hablando-nombre");
   if (hablandoNombre) hablandoNombre.textContent = orador.nombre;
 
@@ -4500,22 +4509,30 @@ window.msd2_iniciarTurno = async function () {
   const durInput = document.getElementById("msd2-duracion-min");
   const min = durInput ? Number(durInput.value || 3) : 3;
 
-  // 6️⃣ Encender reloj + guardar orador en BD
-  await supabase.from("reuniones").update({
-    seg_restantes: min * 60,
-    reloj_activo: true,
-    orador_actual_id: orador.socio_id,
-    actualizado_en: new Date()
-  }).eq("id", reunion.id);
+  // 🔥 6️⃣ Encender reloj + guardar orador en BD (SIN actualizado_en)
+  const { error: updateError } = await supabase
+    .from("reuniones")
+    .update({
+      seg_restantes: min * 60,
+      reloj_activo: true,
+      orador_actual_id: orador.socio_id
+    })
+    .eq("id", reunion.id);
+
+  if (updateError) console.error("Error iniciando turno:", updateError);
 };
 
 window.msd2_pausarTurno = async function () {
   if (!msd2_esModeradorActual()) return;
 
-  await supabase.from("reuniones").update({
-    reloj_activo: false,
-    actualizado_en: new Date()
-  }).eq("id", window.reunionFederacionActual.id);
+  const { error } = await supabase
+    .from("reuniones")
+    .update({
+      reloj_activo: false
+    })
+    .eq("id", window.reunionFederacionActual.id);
+
+  if (error) console.error("Error pausando turno:", error);
 };
 
 window.msd2_reiniciarTurno = async function () {
@@ -4524,11 +4541,15 @@ window.msd2_reiniciarTurno = async function () {
   const durInput = document.getElementById("msd2-duracion-min");
   const min = durInput ? Number(durInput.value || 3) : 3;
 
-  await supabase.from("reuniones").update({
-    seg_restantes: min * 60,
-    reloj_activo: false,
-    actualizado_en: new Date()
-  }).eq("id", window.reunionFederacionActual.id);
+  const { error } = await supabase
+    .from("reuniones")
+    .update({
+      seg_restantes: min * 60,
+      reloj_activo: false
+    })
+    .eq("id", window.reunionFederacionActual.id);
+
+  if (error) console.error("Error reiniciando turno:", error);
 };
 
 // ------------------------------------------------------

@@ -4615,87 +4615,125 @@ window.msd2_anotarmeTurno = async function () {
 };
 
 // ------------------------------------------------------
-// REALTIME SALA (RELOJ + COLA)  🔥 VERSION ESTABLE
+// REALTIME SALA (RELOJ + COLA)
+// VERSION ESTABLE REAL 🔥
 // ------------------------------------------------------
-function msd2_suscribirseReloj() {
+async function msd2_suscribirseReloj() {
 
   const reunionId = window.reunionFederacionActual.id;
 
   console.log("📡 Suscribiendo realtime sala:", reunionId);
 
-  // 🧹 Evitar canales duplicados (CLAVE DEL BUG)
+  // 🧹 ELIMINAR canal anterior correctamente
   if (window.msd2_canalRealtime) {
-    supabase.removeChannel(window.msd2_canalRealtime);
+
+    console.log("🧹 Eliminando canal realtime anterior...");
+
+    await supabase.removeChannel(window.msd2_canalRealtime);
+
+    window.msd2_canalRealtime = null;
   }
 
-  window.msd2_canalRealtime = supabase
-    .channel("reunion-live-" + reunionId, {
-    config: {
+  // 🔥 Crear nuevo canal limpio
+  const canal = supabase.channel(
+    "reunion-live-" + reunionId,
+    {
+      config: {
         broadcast: { self: false },
-        presence: { key: reunionId }
+        presence: {key: window.usuarioActual.id}
+      }
     }
-    })
+  );
 
-    // 🕒 CAMBIOS EN REUNIÓN (RELOJ + ORADOR)
-    .on(
-      "postgres_changes",
-      {
-        event: "UPDATE",
-        schema: "public",
-        table: "reuniones",
-        filter: "id=eq." + reunionId
-      },
-      async (payload) => {
+  // 🕒 CAMBIOS EN REUNIÓN
+  canal.on(
+    "postgres_changes",
+    {
+      event: "UPDATE",
+      schema: "public",
+      table: "reuniones",
+      filter: "id=eq." + reunionId
+    },
+    async (payload) => {
 
-        console.log("🕒 Cambio realtime REUNIÓN:", payload.new);
+      console.log("🕒 Cambio realtime REUNIÓN:", payload.new);
 
-        const r = payload.new;
+      const r = payload.new;
 
-        // actualizar segundos
-        window.msd2_estado.segRestantes = r.seg_restantes || 0;
+      window.msd2_estado.segRestantes = r.seg_restantes || 0;
 
-        // 🔥 NUEVO: mostrar orador en TODOS
-        if (r.orador_actual_id) {
-          const { data: socio } = await supabase
-            .from("socios")
-            .select("nombre")
-            .eq("socio_id", r.orador_actual_id)
-            .single();
+      const el = document.getElementById("msd2-hablando-nombre");
 
-          const el = document.getElementById("msd2-hablando-nombre");
-          if (el) el.textContent = socio?.nombre || "(Interviniendo)";
-        } else {
-          const el = document.getElementById("msd2-hablando-nombre");
-          if (el) el.textContent = "(Nadie está interviniendo)";
+      if (r.orador_actual_id) {
+
+        const { data: socio } = await supabase
+          .from("socios")
+          .select("nombre")
+          .eq("socio_id", r.orador_actual_id)
+          .single();
+
+        if (el) {
+          el.textContent = socio?.nombre || "(Interviniendo)";
         }
 
-        // iniciar / detener reloj
-        if (r.reloj_activo) {
-          msd2_iniciarTimerLocal();
-        } else {
-          msd2_detenerTimer();
+      } else {
+
+        if (el) {
+          el.textContent = "(Nadie está interviniendo)";
         }
-
-        msd2_actualizarDisplayTurno();
       }
-    )
 
-    // 👥 CAMBIOS EN COLA
-    .on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "reuniones_turnos",
-        filter: "reunion_id=eq." + reunionId
-      },
-      () => {
-        console.log("👥 Cambio realtime COLA");
-        msd2_cargarColaDesdeBD();
+      // 🔥 reloj
+      if (r.reloj_activo) {
+        msd2_iniciarTimerLocal();
+      } else {
+        msd2_detenerTimer();
       }
-    )
 
-    .subscribe();
+      msd2_actualizarDisplayTurno();
+    }
+  );
+
+  // 👥 CAMBIOS EN COLA
+  canal.on(
+    "postgres_changes",
+    {
+      event: "*",
+      schema: "public",
+      table: "reuniones_turnos",
+      filter: "reunion_id=eq." + reunionId
+    },
+    async (payload) => {
+
+      console.log("👥 Cambio realtime COLA:", payload);
+
+      await msd2_cargarColaDesdeBD();
+    }
+  );
+
+  // 🔥 SUSCRIPCIÓN SEGURA
+  canal.subscribe((status) => {
+
+    console.log("📡 Estado realtime:", status);
+
+    if (status === "SUBSCRIBED") {
+      console.log("✅ Realtime conectado correctamente");
+    }
+
+    if (status === "CHANNEL_ERROR") {
+      console.error("❌ Error realtime canal");
+    }
+
+    if (status === "TIMED_OUT") {
+      console.error("⏰ Timeout realtime");
+    }
+
+    if (status === "CLOSED") {
+      console.warn("📴 Canal realtime cerrado");
+    }
+  });
+
+  window.msd2_canalRealtime = canal;
 }
 
 // ******bienvenida*********

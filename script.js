@@ -4693,7 +4693,7 @@ async function msd2_suscribirseReloj(reunionId) {
 
   // guardar referencia global
   window.msd2_canalRealtime = canal;
-}
+
 
   // 🕒 CAMBIOS EN REUNIÓN
   canal.on(

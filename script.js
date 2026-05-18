@@ -5287,10 +5287,7 @@ function msd2_cerrarSalaLocal() {
       "msd2-hablando-nombre"
     );
 
-  if (hablando) {
-    hablando.textContent =
-      "(Nadie está interviniendo)";
-  }
+  if (hablando) {hablando.textContent = "(Nadie está interviniendo)";}
 
   msd2_actualizarDisplayTurno();
 
@@ -5298,11 +5295,7 @@ function msd2_cerrarSalaLocal() {
   // 🖥 VOLVER AL MENÚ
   // ------------------------------------------------------
   alert("📴 La reunión fue cerrada.");
-
-  mostrarPantalla(
-    "pantalla-mesa-sindical"
-  );
-
+    mostrarPantalla("menu-principal");
   console.log(
     "✅ Sala cerrada localmente"
   );

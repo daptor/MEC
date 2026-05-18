@@ -4974,6 +4974,20 @@ canal.on(
       return;
     }
 
+// ------------------------------------------------------
+// 🔴 REUNIÓN CERRADA
+// ------------------------------------------------------
+    if (r.estado === "cerrada") {
+
+      console.log(
+        "🔴 Reunión cerrada por moderador"
+      );
+
+      msd2_cerrarSalaLocal();
+
+      return;
+    }
+
     // ------------------------------------------------------
     // 🔄 ACTUALIZAR ESTADO GLOBAL LOCAL
     // ------------------------------------------------------
@@ -5152,7 +5166,149 @@ canal.on(
   window.msd2_canalRealtime = canal;
 }
 
-// ******bienvenida*********
+// ------------------------------------------------------
+// 🔴 CERRAR REUNIÓN
+// ------------------------------------------------------
+window.msd2_cerrarReunion = async function () {
+
+  if (!msd2_esModeradorActual()) {
+    alert("Solo el moderador puede cerrar la reunión.");
+    return;
+  }
+
+  const reunion = window.reunionFederacionActual;
+
+  if (!reunion?.id) {
+    alert("No existe reunión activa.");
+    return;
+  }
+
+  const confirmar = confirm(
+    "¿Cerrar reunión para todos?"
+  );
+
+  if (!confirmar) return;
+
+  console.log("🔴 Cerrando reunión...");
+
+  // ------------------------------------------------------
+  // 1️⃣ CERRAR REUNIÓN
+  // ------------------------------------------------------
+  const { error: errorReunion } = await supabase
+    .from("reuniones")
+    .update({
+      estado: "cerrada",
+      reloj_activo: false,
+      seg_restantes: 0,
+      orador_actual_id: null
+    })
+    .eq("id", reunion.id);
+
+  if (errorReunion) {
+
+    console.error(
+      "❌ Error cerrando reunión:",
+      errorReunion
+    );
+
+    alert("No se pudo cerrar la reunión.");
+
+    return;
+  }
+
+  // ------------------------------------------------------
+  // 2️⃣ LIMPIAR COLA
+  // ------------------------------------------------------
+  const { error: errorCola } = await supabase
+    .from("reuniones_turnos")
+    .delete()
+    .eq("reunion_id", reunion.id);
+
+  if (errorCola) {
+
+    console.error(
+      "❌ Error limpiando cola:",
+      errorCola
+    );
+  }
+
+  console.log("✅ Reunión cerrada");
+};
+
+// ------------------------------------------------------
+// 🔴 CERRAR SALA LOCAL
+// 🔥 Ejecutado en TODOS los clientes
+// ------------------------------------------------------
+function msd2_cerrarSalaLocal() {
+
+  console.log("🔴 Cerrando sala local...");
+
+  // ------------------------------------------------------
+  // 🛑 DETENER TIMER
+  // ------------------------------------------------------
+  msd2_detenerTimer();
+
+  // ------------------------------------------------------
+  // 🧹 LIMPIAR ESTADO
+  // ------------------------------------------------------
+  window.msd2_estado.cola = [];
+  window.msd2_estado.actual = null;
+  window.msd2_estado.segRestantes = 0;
+  window.msd2_estado.running = false;
+
+  // ------------------------------------------------------
+  // 🧹 LIMPIAR REALTIME
+  // ------------------------------------------------------
+  if (window.msd2_canalRealtime) {
+
+    supabase.removeChannel(
+      window.msd2_canalRealtime
+    );
+
+    window.msd2_canalRealtime = null;
+  }
+
+  window.msd2_realtimeActivo = null;
+
+  // ------------------------------------------------------
+  // 🧹 LIMPIAR UI
+  // ------------------------------------------------------
+  const cola =
+    document.getElementById(
+      "msd2-turnos-cola"
+    );
+
+  if (cola) {
+    cola.innerHTML = "";
+  }
+
+  const hablando =
+    document.getElementById(
+      "msd2-hablando-nombre"
+    );
+
+  if (hablando) {
+    hablando.textContent =
+      "(Nadie está interviniendo)";
+  }
+
+  msd2_actualizarDisplayTurno();
+
+  // ------------------------------------------------------
+  // 🖥 VOLVER AL MENÚ
+  // ------------------------------------------------------
+  alert("📴 La reunión fue cerrada.");
+
+  mostrarPantalla(
+    "pantalla-mesa-sindical"
+  );
+
+  console.log(
+    "✅ Sala cerrada localmente"
+  );
+}
+
+// ****************************bienvenida*********************************
 document.addEventListener("DOMContentLoaded", function () {
     const intro = document.getElementById("introBienvenida");
     const btnEntendido = document.getElementById("btnEntendido");

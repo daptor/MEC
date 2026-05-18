@@ -454,14 +454,16 @@
         </div>
 
         <!-- Controles de tiempo (solo moderador real los verá) -->
-<div
-    id="msd2-controles-moderador"
-    style="display:none; gap:8px; flex-wrap:wrap; margin-bottom:10px;"
->
-    <button type="button" onclick="msd2_iniciarTurno()">▶ Iniciar</button>
-    <button type="button" id="msd2-btn-pausar" onclick="msd2_pausarTurno()">⏸ Pausa</button>
-    <button type="button" onclick="msd2_reiniciarTurno()">⟲ Reiniciar</button>
-</div>
+        <div
+            id="msd2-controles-moderador"
+            style="display:none; gap:8px; flex-wrap:wrap; margin-bottom:10px;"
+        >
+            <button type="button" onclick="msd2_iniciarTurno()">▶ Iniciar</button>
+            <button type="button" id="msd2-btn-pausar" onclick="msd2_pausarTurno()">⏸ Pausa</button>
+            <button type="button" onclick="msd2_reiniciarTurno()">⟲ Reiniciar</button>
+            <button type="button" onclick="msd2_cerrarReunion()" 
+                    style="background:#dc2626;color:white;">🔴 Cerrar reunión</button>
+        </div>
 
         <hr>
 

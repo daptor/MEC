@@ -4554,14 +4554,14 @@ async function generarAsistenciaReunion_v2(reunionId) {
 
     const asistenciaId = asistencia.id;
 
-    // 7) Insertar detalle socio x socio
+    // 7) Insertar detalle socio x socio (nombres reales de columnas)
     const detalle = (socios || []).map(socio => ({
       asistencia_id: asistenciaId,
       socio_id: socio.id,
       socio_nombre: socio.nombre,
       sindicato_id: socio.sindicato_id || null,
-      sindicato_nombre: null, // opcional, puedes completar más adelante
-      asistencia: asistentesSet.has(String(socio.id))
+      sindicato_nombre: null, // si quieres luego puedes completar con join a sindicatos
+      asistio: asistentesSet.has(String(socio.id))  // 👈 nombre de columna REAL
     }));
 
     const { error: errorDetalle } = await supabase
@@ -4578,7 +4578,6 @@ async function generarAsistenciaReunion_v2(reunionId) {
     throw err;
   }
 }
-
 
 // ------------------------------------------------------
 // ENTRAR A LA SALA (FIX REALTIME DEFINITIVO)

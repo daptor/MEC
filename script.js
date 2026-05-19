@@ -4410,6 +4410,149 @@ function msd2_detenerTimer() {
   }
 }
 
+// ======================================================
+// 🟢 REGISTRAR PARTICIPANTE EN REUNIÓN (ASISTENCIA)
+// Se ejecuta automáticamente al entrar a la sala
+// ======================================================
+async function registrarParticipanteEnReunion() {
+  try {
+    if (!window.usuarioFederacion) return;
+    if (!window.reunionFederacionActual?.id) return;
+
+    const reunionId = window.reunionFederacionActual.id;
+    const usuario = window.usuarioFederacion;
+
+    console.log("📝 Registrando participante:", usuario.nombre);
+
+    const { error } = await supabase
+      .from("reunion_participantes")
+      .insert({
+        reunion_id: reunionId,
+        socio_id: usuario.socio_id,
+        socio_nombre: usuario.nombre,
+        sindicato_id: usuario.sindicato_id,
+        sindicato_nombre: usuario.sindicato_nombre,
+        es_moderador: usuario.rol === "tesorero" || usuario.rol === "director"
+      });
+
+    if (error && error.code !== "23505") {
+      console.error("❌ Error registrando participante:", error);
+    } else {
+      console.log("✅ Participante registrado");
+    }
+
+  } catch (err) {
+    console.error("❌ Error asistencia:", err);
+  }
+}
+
+// ======================================================
+// 📋 GENERAR ACTA AUTOMÁTICA DE ASISTENCIA
+// ======================================================
+async function generarAsistenciaReunion_v2(reunionId) {
+  try {
+    if (!reunionId) throw new Error("reunionId requerido");
+
+    console.log("📋 Generando asistencia V2 para reunión:", reunionId);
+
+    // obtener reunión (codigo/nombre)
+    const { data: reunion, error: errReu } = await supabase
+      .from("reuniones")
+      .select("id, codigo, nombre")
+      .eq("id", reunionId)
+      .single();
+    if (errReu || !reunion) throw new Error("Reunión no encontrada");
+
+    // idempotencia: comprobar si ya existe acta
+    const { data: existing, error: errExist } = await supabase
+      .from("reunion_asistencia")
+      .select("id")
+      .eq("reunion_id", reunionId)
+      .limit(1);
+    if (errExist) throw new Error("Error verificando acta existente");
+    if (existing && existing.length > 0) {
+      console.log("ℹ️ Acta ya existente. ID:", existing[0].id);
+      return existing[0];
+    }
+
+    // obtener socios
+    const { data: socios, error: errSocios } = await supabase
+      .from("socios")
+      .select("id, nombre")
+      .order("nombre", { ascending: true });
+    if (errSocios) throw new Error("No se pudieron obtener socios");
+
+    // obtener participantes
+    const { data: participantes, error: errPart } = await supabase
+      .from("reunion_participantes")
+      .select("socio_id")
+      .eq("reunion_id", reunionId);
+    if (errPart) throw new Error("No se pudieron obtener participantes");
+
+    const asistentesSet = new Set((participantes || []).map(p => String(p.socio_id)));
+    const totalSocios = (socios || []).length;
+    const totalAsistentes = (participantes || []).length;
+    const totalInasistentes = totalSocios - totalAsistentes;
+    const porcentaje = totalSocios > 0
+      ? Number(((totalAsistentes / totalSocios) * 100).toFixed(2))
+      : 0;
+
+    const cerradoPor = window.usuarioFederacion?.socio_id || null;
+    const codigoReunion = reunion.codigo || null;
+    const nombreReunion = reunion.nombre || null;
+
+    // insertar maestro
+    const { data: asistencia, error: errAsis } = await supabase
+      .from("reunion_asistencia")
+      .insert({
+        reunion_id: reunionId,
+        codigo_reunion: codigoReunion,
+        nombre_reunion: nombreReunion,
+        cerrado_por: cerradoPor,
+        total_socios: totalSocios,
+        total_asistentes: totalAsistentes,
+        total_inasistentes: totalInasistentes,
+        porcentaje_asistencia: porcentaje
+      })
+      .select()
+      .single();
+
+    if (errAsis) {
+      console.warn("⚠️ Error insertando asistencia, intento recuperar:", errAsis);
+      const { data: rec, error: errRec } = await supabase
+        .from("reunion_asistencia")
+        .select("*")
+        .eq("reunion_id", reunionId)
+        .limit(1);
+      if (errRec) throw new Error("No se pudo crear ni recuperar acta");
+      if (rec && rec.length) return rec[0];
+      throw new Error("No se pudo crear asistencia");
+    }
+
+    const asistenciaId = asistencia.id;
+
+    // insertar detalle
+    const detalle = (socios || []).map(socio => ({
+      asistencia_id: asistenciaId,
+      socio_id: socio.id,
+      socio_nombre: socio.nombre,
+      asistio: asistentesSet.has(String(socio.id))
+    }));
+
+    const { error: errorDetalle } = await supabase
+      .from("reunion_asistencia_detalle")
+      .insert(detalle);
+    if (errorDetalle) throw new Error("Error guardando detalle asistencia");
+
+    console.log("✅ Acta de asistencia generada V2:", asistenciaId);
+    return { ...asistencia, detalle_guardado: true };
+
+  } catch (err) {
+    console.error("❌ generarAsistenciaReunion_v2 error:", err);
+    throw err;
+  }
+}
+
 // ------------------------------------------------------
 // ENTRAR A LA SALA (FIX REALTIME DEFINITIVO)
 // ------------------------------------------------------
@@ -4439,8 +4582,10 @@ async function msd2_entrarSala() {
   console.log("🏛️ Entrando a sala:", reunionId);
 
   // 🎨 preparar UI
-  msd2_configurarSalaBasica();
-  msd2_configurarVistaRolSala();
+    msd2_configurarSalaBasica();
+  // 🟢 REGISTRAR ASISTENCIA AUTOMÁTICA (NUEVO)
+    await registrarParticipanteEnReunion();
+    msd2_configurarVistaRolSala();
 
   // 🔹 cargar estado inicial desde BD
   await msd2_cargarColaDesdeBD();
@@ -5190,6 +5335,13 @@ window.msd2_cerrarReunion = async function () {
   if (!confirmar) return;
 
   console.log("🔴 Cerrando reunión...");
+
+
+
+// ------------------------------------------------------
+// 🟢 GENERAR ACTA DE ASISTENCIA (NUEVO)
+// ------------------------------------------------------
+await generarAsistenciaReunion_v2(reunion.id);
 
   // ------------------------------------------------------
   // 1️⃣ CERRAR REUNIÓN

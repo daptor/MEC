@@ -4489,6 +4489,18 @@ async function generarAsistenciaReunion_v2(reunionId) {
 
     if (errSocios) throw new Error("No se pudieron obtener socios");
 
+    // 3.b) Obtener nombres de sindicatos para mapear sindicato_id → sindicato_nombre
+    const { data: sindicatos, error: errSind } = await supabase
+      .from("sindicatos")
+      .select("id, nombre");
+
+    if (errSind) throw new Error("No se pudieron obtener sindicatos");
+
+    const mapaSindicatos = {};
+    (sindicatos || []).forEach(s =>
+      mapaSindicatos[String(s.id)] = s.nombre || ""
+    );
+
     // 4) Obtener participantes de la reunión
     const { data: participantes, error: errPart } = await supabase
       .from("reunion_participantes")
@@ -4523,7 +4535,7 @@ async function generarAsistenciaReunion_v2(reunionId) {
       }
     }
 
-    // 6) Insertar acta maestra (SOLO columnas reales)
+    // 6) Insertar acta maestra
     const { data: asistencia, error: errAsis } = await supabase
       .from("reunion_asistencia")
       .insert({
@@ -4554,15 +4566,22 @@ async function generarAsistenciaReunion_v2(reunionId) {
 
     const asistenciaId = asistencia.id;
 
-    // 7) Insertar detalle socio x socio (nombres reales de columnas)
-    const detalle = (socios || []).map(socio => ({
-      asistencia_id: asistenciaId,
-      socio_id: socio.id,
-      socio_nombre: socio.nombre,
-      sindicato_id: socio.sindicato_id || null,
-      sindicato_nombre: null, // opcional, puedes completar luego
-      asistio: asistentesSet.has(String(socio.id))  // nombre de columna REAL
-    }));
+    // 7) Insertar detalle socio x socio (todas las columnas NOT NULL llenas)
+    const detalle = (socios || []).map(socio => {
+      const sid = socio.sindicato_id ? String(socio.sindicato_id) : null;
+      const nombreSindicato = sid && mapaSindicatos[sid]
+        ? mapaSindicatos[sid]
+        : ""; // evitar null en columna NOT NULL
+
+      return {
+        asistencia_id: asistenciaId,
+        socio_id: socio.id,
+        socio_nombre: socio.nombre,
+        sindicato_id: socio.sindicato_id || null,
+        sindicato_nombre: nombreSindicato,
+        asistio: asistentesSet.has(String(socio.id))
+      };
+    });
 
     const { error: errorDetalle } = await supabase
       .from("reunion_asistencia_detalle")
@@ -4581,6 +4600,7 @@ async function generarAsistenciaReunion_v2(reunionId) {
     throw err;
   }
 }
+
 
 
 // ------------------------------------------------------

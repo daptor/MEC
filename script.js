@@ -4560,15 +4560,18 @@ async function generarAsistenciaReunion_v2(reunionId) {
       socio_id: socio.id,
       socio_nombre: socio.nombre,
       sindicato_id: socio.sindicato_id || null,
-      sindicato_nombre: null, // si quieres luego puedes completar con join a sindicatos
-      asistio: asistentesSet.has(String(socio.id))  // 👈 nombre de columna REAL
+      sindicato_nombre: null, // opcional, puedes completar luego
+      asistio: asistentesSet.has(String(socio.id))  // nombre de columna REAL
     }));
 
     const { error: errorDetalle } = await supabase
       .from("reunion_asistencia_detalle")
       .insert(detalle);
 
-    if (errorDetalle) throw new Error("Error guardando detalle asistencia");
+    if (errorDetalle) {
+      console.error("❌ Error detalle asistencia (Supabase):", errorDetalle);
+      throw new Error("Error guardando detalle asistencia");
+    }
 
     console.log("✅ Acta de asistencia generada V2:", asistenciaId);
     return { ...asistencia, detalle_guardado: true };
@@ -4578,6 +4581,7 @@ async function generarAsistenciaReunion_v2(reunionId) {
     throw err;
   }
 }
+
 
 // ------------------------------------------------------
 // ENTRAR A LA SALA (FIX REALTIME DEFINITIVO)

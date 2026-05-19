@@ -4432,7 +4432,11 @@ async function registrarParticipanteEnReunion() {
         socio_nombre: usuario.nombre,
         sindicato_id: usuario.sindicato_id,
         sindicato_nombre: usuario.sindicato_nombre,
-        es_moderador: usuario.rol === "tesorero" || usuario.rol === "director"
+        es_moderador: 
+        usuario.rol && 
+        (usuario.rol.toUpperCase() === "TESORERO" ||
+         usuario.rol.toUpperCase().startsWith("DIRECTOR_"))
+
       });
 
     if (error && error.code !== "23505") {
@@ -4447,7 +4451,7 @@ async function registrarParticipanteEnReunion() {
 }
 
 // ======================================================
-// 📋 GENERAR ACTA AUTOMÁTICA DE ASISTENCIA
+// 📋 GENERAR ACTA AUTOMÁTICA DE ASISTENCIA (CORREGIDA)
 // ======================================================
 async function generarAsistenciaReunion_v2(reunionId) {
   try {
@@ -4455,64 +4459,83 @@ async function generarAsistenciaReunion_v2(reunionId) {
 
     console.log("📋 Generando asistencia V2 para reunión:", reunionId);
 
-    // obtener reunión (codigo/nombre)
+    // 1) Obtener reunión (id, código, nombre, moderador)
     const { data: reunion, error: errReu } = await supabase
       .from("reuniones")
-      .select("id, codigo, nombre")
+      .select("id, codigo, nombre, moderador_socio_id")
       .eq("id", reunionId)
       .single();
+
     if (errReu || !reunion) throw new Error("Reunión no encontrada");
 
-    // idempotencia: comprobar si ya existe acta
+    // 2) Idempotencia: ¿ya existe acta?
     const { data: existing, error: errExist } = await supabase
       .from("reunion_asistencia")
       .select("id")
       .eq("reunion_id", reunionId)
       .limit(1);
+
     if (errExist) throw new Error("Error verificando acta existente");
     if (existing && existing.length > 0) {
       console.log("ℹ️ Acta ya existente. ID:", existing[0].id);
       return existing[0];
     }
 
-    // obtener socios
+    // 3) Obtener todos los socios
     const { data: socios, error: errSocios } = await supabase
       .from("socios")
-      .select("id, nombre")
+      .select("id, nombre, sindicato_id")
       .order("nombre", { ascending: true });
+
     if (errSocios) throw new Error("No se pudieron obtener socios");
 
-    // obtener participantes
+    // 4) Obtener participantes de la reunión
     const { data: participantes, error: errPart } = await supabase
       .from("reunion_participantes")
       .select("socio_id")
       .eq("reunion_id", reunionId);
+
     if (errPart) throw new Error("No se pudieron obtener participantes");
 
     const asistentesSet = new Set((participantes || []).map(p => String(p.socio_id)));
     const totalSocios = (socios || []).length;
-    const totalAsistentes = (participantes || []).length;
+    const totalAsistentes = asistentesSet.size;
     const totalInasistentes = totalSocios - totalAsistentes;
     const porcentaje = totalSocios > 0
       ? Number(((totalAsistentes / totalSocios) * 100).toFixed(2))
       : 0;
 
-    const cerradoPor = window.usuarioFederacion?.socio_id || null;
     const codigoReunion = reunion.codigo || null;
     const nombreReunion = reunion.nombre || null;
 
-    // insertar maestro
+    // 5) Determinar moderador_nombre (si se puede)
+    let moderadorNombre = window.usuarioFederacion?.nombre || null;
+
+    if (!moderadorNombre && reunion.moderador_socio_id) {
+      const { data: mod, error: errMod } = await supabase
+        .from("socios")
+        .select("nombre")
+        .eq("id", reunion.moderador_socio_id)
+        .single();
+
+      if (!errMod && mod) {
+        moderadorNombre = mod.nombre;
+      }
+    }
+
+    // 6) Insertar acta maestra (SOLO columnas reales)
     const { data: asistencia, error: errAsis } = await supabase
       .from("reunion_asistencia")
       .insert({
         reunion_id: reunionId,
         codigo_reunion: codigoReunion,
         nombre_reunion: nombreReunion,
-        cerrado_por: cerradoPor,
+        moderador_nombre: moderadorNombre,
         total_socios: totalSocios,
         total_asistentes: totalAsistentes,
         total_inasistentes: totalInasistentes,
-        porcentaje_asistencia: porcentaje
+        porcentaje_asistencia: porcentaje,
+        fecha_cierre: new Date().toISOString()
       })
       .select()
       .single();
@@ -4531,17 +4554,20 @@ async function generarAsistenciaReunion_v2(reunionId) {
 
     const asistenciaId = asistencia.id;
 
-    // insertar detalle
+    // 7) Insertar detalle socio x socio
     const detalle = (socios || []).map(socio => ({
       asistencia_id: asistenciaId,
       socio_id: socio.id,
       socio_nombre: socio.nombre,
-      asistio: asistentesSet.has(String(socio.id))
+      sindicato_id: socio.sindicato_id || null,
+      sindicato_nombre: null, // opcional, puedes completar más adelante
+      asistencia: asistentesSet.has(String(socio.id))
     }));
 
     const { error: errorDetalle } = await supabase
       .from("reunion_asistencia_detalle")
       .insert(detalle);
+
     if (errorDetalle) throw new Error("Error guardando detalle asistencia");
 
     console.log("✅ Acta de asistencia generada V2:", asistenciaId);
@@ -4552,6 +4578,7 @@ async function generarAsistenciaReunion_v2(reunionId) {
     throw err;
   }
 }
+
 
 // ------------------------------------------------------
 // ENTRAR A LA SALA (FIX REALTIME DEFINITIVO)

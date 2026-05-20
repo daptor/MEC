@@ -5679,8 +5679,10 @@ async function cargarHistorialReuniones() {
                 ? new Date(reunion.fecha_cierre).toLocaleDateString("es-CL")
                 : "-";
 
-            // 🔥 FIX CLAVE: usar ID correcto
-            const reunionId = reunion.id || reunion.reunion_id;
+            // 🔥 FIX REAL: usar SOLO UUID si existe
+            const reunionId = reunion.reunion_id ?? reunion.id;
+
+            console.log("REUNION OBJ:", reunion);
 
             fila.innerHTML = `
                 <td>${fecha}</td>
@@ -5702,6 +5704,7 @@ async function cargarHistorialReuniones() {
     }
 }
 
+
 // ======================================================
 // 🔎 VER DETALLE DE REUNIÓN
 // ======================================================
@@ -5714,8 +5717,7 @@ async function verDetalleReunion(reunionId) {
         const { data, error } = await supabase
             .from("reunion_participantes")
             .select("*")
-            //-- .eq("reunion_id", reunionId); // 🚨 SIN Number()
-            .eq("reunion_id", String(reunionId))
+            .eq("reunion_id", String(reunionId));
 
         if (error) {
             console.error("Error cargando detalle reunión:", error);
@@ -5728,7 +5730,6 @@ async function verDetalleReunion(reunionId) {
             return;
         }
 
-        // 🎯 Render simple inicial (luego lo haremos bonito)
         let mensaje = "Participantes:\n\n";
 
         data.forEach(p => {

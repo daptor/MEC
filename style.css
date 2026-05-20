@@ -585,3 +585,44 @@ input:focus, select:focus, textarea:focus,
   font-size: 11px;
 }
 
+/* ======================================================
+   📊 DASHBOARD ASISTENCIA – INTEGRADO A MEC
+   ====================================================== */
+
+.dashboard-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:12px;
+  margin:18px 0 25px 0;
+}
+
+.card-stat{
+  background:#f7fff3;                 /* mismo verde suave que bloques MEC */
+  border-left:6px solid #28a745;     /* identidad MEC */
+  border-radius:12px;
+  padding:14px 12px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.12);
+  text-align:left;
+}
+
+.card-stat h3{
+  margin:0;
+  font-size:14px;
+  font-weight:700;
+  color:#1e4620;
+}
+
+.card-stat span{
+  display:block;
+  margin-top:6px;
+  font-size:28px;
+  font-weight:800;
+  color:#1e4620;
+}
+
+/* móvil */
+@media (max-width:480px){
+  .dashboard-grid{
+    grid-template-columns:1fr;
+  }
+}

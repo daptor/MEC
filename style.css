@@ -626,3 +626,69 @@ input:focus, select:focus, textarea:focus,
     grid-template-columns:1fr;
   }
 }
+
+/* ======================================================
+   📋 ACTA DE REUNIÓN – ESTILO MEC
+   ====================================================== */
+
+.acta-reunion {
+  background: #f7fff3;               /* verde suave, igual que card-stat */
+  border-radius: 12px;
+  border-left: 6px solid #28a745;    /* identidad MEC */
+  padding: 12px 14px;
+  margin-top: 18px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  color: #1e4620;                    /* texto verde oscuro legible */
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.acta-reunion h3 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 800;
+  text-align: left;
+  color: #1e4620;
+  text-shadow: none;
+}
+
+.acta-reunion h4 {
+  margin: 10px 0 6px 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1e4620;
+}
+
+.acta-reunion #detalle-reunion-header p {
+  margin: 2px 0;
+}
+
+.acta-reunion-columns {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.acta-reunion-columns > div {
+  flex: 1;
+  min-width: 200px;
+}
+
+.acta-reunion ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.acta-reunion li {
+  margin-bottom: 3px;
+  color: #333;   /* texto bien oscuro para máxima legibilidad */
+}
+
+/* mobile */
+@media (max-width: 480px) {
+  .acta-reunion {
+    font-size: 13px;
+    padding: 10px 10px;
+  }
+}

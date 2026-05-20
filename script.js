@@ -5705,65 +5705,55 @@ async function cargarHistorialReuniones() {
 }
 
 
+// ======================================================
+// 🔎 VER DETALLE DE REUNIÓN (MODAL + FALLBACK SEGURO)
+// ======================================================
 async function verDetalleReunion(reunionId) {
 
-    try {
+    const { data, error } = await supabase
+        .from("reunion_participantes")
+        .select("*")
+        .eq("reunion_id", String(reunionId));
 
-        const { data, error } = await supabase
-            .from("reunion_participantes")
-            .select("*")
-            .eq("reunion_id", String(reunionId));
+    if (error || !data) {
+        alert("Error cargando detalle.");
+        return;
+    }
 
-        if (error || !data) {
-            alert("Error cargando detalle.");
-            return;
-        }
+    const tbody = document.getElementById("modal-reunion-body");
+    const modal = document.getElementById("modal-reunion-detalle");
 
-        if (data.length === 0) {
-            alert("No hay participantes registrados.");
-            return;
-        }
+    if (!tbody || !modal) {
+        alert("ERROR: modal no existe en DOM");
+        return;
+    }
 
-        // 🔥 SIEMPRE FUNCIONA (fallback primero)
-        let mensaje = "Participantes:\n\n";
-        data.forEach(p => {
-            mensaje += `• ${p.socio_nombre} (${p.sindicato_nombre})\n`;
-        });
+    // 🔥 LIMPIAR ANTES DE MOSTRAR
+    tbody.innerHTML = "";
 
-        const modal = document.getElementById("modal-reunion-detalle");
-        const tbody = document.getElementById("modal-reunion-body");
-
-        // 🔥 SI DOM NO EXISTE → fallback seguro
-        if (!modal || !tbody) {
-            alert(mensaje);
-            return;
-        }
-
-        // limpiar
-        tbody.innerHTML = "";
-
-        // render seguro DOM real
-        data.forEach(p => {
-
+    if (data.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="2">No hay participantes</td>
+            </tr>
+        `;
+    } else {
+        for (const p of data) {
             const tr = document.createElement("tr");
-
             tr.innerHTML = `
                 <td>${p.socio_nombre ?? "-"}</td>
                 <td>${p.sindicato_nombre ?? "-"}</td>
             `;
-
             tbody.appendChild(tr);
-        });
-
-        // forzar visibilidad real
-        modal.style.display = "block";
-        modal.style.visibility = "visible";
-        modal.style.opacity = "1";
-
-    } catch (err) {
-        alert("Error inesperado.");
+        }
     }
+
+    // 🔥 IMPORTANTE: mostrar DESPUÉS del render
+    requestAnimationFrame(() => {
+        modal.style.display = "block";
+    });
 }
+
 
 // ======================================================
 // 🪟 MODAL CONTROL

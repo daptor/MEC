@@ -5922,27 +5922,31 @@ async function cargarRankingDirectores() {
       return;
     }
 
-    // 2) Traer roles para saber quién es director
-    const { data: socios, error: errSoc } = await supabase
-      .from("socios")
-      .select("id, rol");
+// 2) Traer roles para saber quién es director
+const { data: socios, error: errSoc } = await supabase
+  .from("socios")
+  .select("id, rol");
 
-    if (errSoc) {
-      console.error("Error socios directores:", errSoc);
-      tbody.innerHTML = "<tr><td colspan='4'>Error cargando roles</td></tr>";
-      return;
-    }
+if (errSoc) {
+  console.error("Error socios directores:", errSoc);
+  tbody.innerHTML = "<tr><td colspan='4'>Error cargando roles</td></tr>";
+  return;
+}
 
-    const directoresSet = new Set(
-      (socios || [])
-        .filter(s => s.rol && s.rol.toUpperCase().startsWith("DIRECTOR_"))
-        .map(s => String(s.id))
-    );
+const directoresSet = new Set(
+  (socios || [])
+    .filter(s => {
+      if (!s.rol) return false;
+      const r = s.rol.toUpperCase();
+      return r.startsWith("DIRECTOR_") || r === "TESORERO";
+    })
+    .map(s => String(s.id))
+);
 
-    if (directoresSet.size === 0) {
-      tbody.innerHTML = "<tr><td colspan='4'>No hay directores configurados</td></tr>";
-      return;
-    }
+if (directoresSet.size === 0) {
+  tbody.innerHTML = "<tr><td colspan='4'>No hay directores configurados</td></tr>";
+  return;
+}
 
     // 3) Acumular por director
     const estadisticas = {};

@@ -5641,6 +5641,65 @@ async function cargarDashboardAsistencia() {
     }
 }
 
+// ======================================================
+// 📅 HISTORIAL DE REUNIONES
+// ======================================================
+async function cargarHistorialReuniones() {
+
+    try {
+
+        const tbody = document.getElementById("tabla-historial-reuniones");
+
+        if (!tbody) return;
+
+        tbody.innerHTML = "<tr><td colspan='5'>Cargando...</td></tr>";
+
+        const { data, error } = await supabase
+            .from("reunion_asistencia")
+            .select("*")
+            .order("fecha_cierre", { ascending: false });
+
+        if (error) {
+            console.error("Error cargando historial reuniones:", error);
+            tbody.innerHTML = "<tr><td colspan='5'>Error cargando datos</td></tr>";
+            return;
+        }
+
+        if (!data || data.length === 0) {
+            tbody.innerHTML = "<tr><td colspan='5'>No hay reuniones registradas</td></tr>";
+            return;
+        }
+
+        tbody.innerHTML = "";
+
+        data.forEach(reunion => {
+
+            const fila = document.createElement("tr");
+
+            const fecha = new Date(reunion.fecha_cierre).toLocaleDateString("es-CL");
+
+            fila.innerHTML = `
+                <td>${fecha}</td>
+                <td>${reunion.nombre_reunion || "Reunión Federación"}</td>
+                <td>${reunion.moderador_nombre || "-"}</td>
+                <td>${reunion.porcentaje_asistencia}%</td>
+                <td>
+                    <button onclick="verDetalleReunion(${reunion.id})">
+                        Ver detalle
+                    </button>
+                </td>
+            `;
+
+            tbody.appendChild(fila);
+        });
+
+    } catch (err) {
+        console.error("Error inesperado historial:", err);
+    }
+}
+
+
+
 // ****************************bienvenida*********************************
 document.addEventListener("DOMContentLoaded", function () {
     const intro = document.getElementById("introBienvenida");

@@ -5558,7 +5558,7 @@ function msd2_cerrarSalaLocal() {
 }
 
 // ======================================================
-// 📊 DASHBOARD ASISTENCIA - KPIs PRINCIPALES (ROBUSTO)
+// 📊 DASHBOARD ASISTENCIA - KPIs PRINCIPALES (FIX MEC)
 // ======================================================
 async function cargarDashboardAsistencia() {
 
@@ -5566,76 +5566,78 @@ async function cargarDashboardAsistencia() {
 
         console.log("📊 Cargando dashboard de asistencia...");
 
-        // ==================================================
-        // 🔒 VERIFICAR QUE LA PANTALLA EXISTA EN EL DOM
-        // (evita error cuando se ejecuta antes de mostrarla)
-        // ==================================================
-        const elTotalReuniones   = document.getElementById("kpi-total-reuniones");
-        const elAsistenciaProm   = document.getElementById("kpi-asistencia-promedio");
-        const elPromAsistentes   = document.getElementById("kpi-promedio-asistentes");
-        const elUltimaReunion    = document.getElementById("kpi-ultima-reunion");
+        // 🔎 Buscar elementos reales del HTML (nuevos IDs)
+        const elAsistencia = document.getElementById("stat-asistencia");
+        const elReuniones  = document.getElementById("stat-reuniones");
+        const elAsistentes = document.getElementById("stat-asistentes");
+        const elUltima     = document.getElementById("stat-ultima");
 
-        if (!elTotalReuniones || !elAsistenciaProm || !elPromAsistentes || !elUltimaReunion) {
+        // 🚨 Si aún no existen en DOM → salir sin error
+        if (!elAsistencia || !elReuniones || !elAsistentes || !elUltima) {
             console.warn("⚠️ KPIs aún no están en pantalla. Se cancela carga dashboard.");
             return;
         }
 
-        // ==================================================
-        // 📥 CONSULTA SUPABASE
-        // ==================================================
+        // ==============================
+        // 📡 Cargar datos desde Supabase
+        // ==============================
         const { data, error } = await supabase
             .from("reunion_asistencia")
             .select("*")
             .order("fecha_cierre", { ascending: false });
 
         if (error) {
-            console.error("❌ Error cargando dashboard asistencia:", error);
+            console.error("Error cargando dashboard asistencia:", error);
             return;
         }
 
+        // Si no hay reuniones aún
         if (!data || data.length === 0) {
-            console.warn("⚠️ No existen registros de asistencia aún.");
-            elTotalReuniones.innerText = "0";
-            elAsistenciaProm.innerText = "0%";
-            elPromAsistentes.innerText = "0";
-            elUltimaReunion.innerText  = "0%";
+            elAsistencia.innerText = "0%";
+            elReuniones.innerText  = "0";
+            elAsistentes.innerText = "0";
+            elUltima.innerText     = "-";
             return;
         }
 
-        // ==================================================
+        // ==============================
         // 📊 TOTAL REUNIONES
-        // ==================================================
+        // ==============================
         const totalReuniones = data.length;
-        elTotalReuniones.innerText = totalReuniones;
+        elReuniones.innerText = totalReuniones;
 
-        // ==================================================
+        // ==============================
         // 📊 % ASISTENCIA PROMEDIO
-        // ==================================================
+        // ==============================
         const sumaPorcentajes = data.reduce((acc, r) =>
             acc + Number(r.porcentaje_asistencia || 0), 0);
 
-        const promedioAsistencia = (sumaPorcentajes / totalReuniones).toFixed(1);
-        elAsistenciaProm.innerText = promedioAsistencia + "%";
+        const promedioAsistencia =
+            (sumaPorcentajes / totalReuniones).toFixed(1);
 
-        // ==================================================
-        // 📊 PROMEDIO ASISTENTES
-        // ==================================================
+        elAsistencia.innerText = promedioAsistencia + "%";
+
+        // ==============================
+        // 👥 PROMEDIO ASISTENTES
+        // ==============================
         const sumaAsistentes = data.reduce((acc, r) =>
             acc + Number(r.total_asistentes || 0), 0);
 
-        const promedioAsistentes = Math.round(sumaAsistentes / totalReuniones);
-        elPromAsistentes.innerText = promedioAsistentes;
+        const promedioAsistentes =
+            Math.round(sumaAsistentes / totalReuniones);
 
-        // ==================================================
-        // 📊 ÚLTIMA REUNIÓN
-        // ==================================================
+        elAsistentes.innerText = promedioAsistentes;
+
+        // ==============================
+        // 🕒 ÚLTIMA REUNIÓN
+        // ==============================
         const ultima = data[0];
-        elUltimaReunion.innerText = (ultima.porcentaje_asistencia || 0) + "%";
+        elUltima.innerText = ultima.porcentaje_asistencia + "%";
 
-        console.log("✅ Dashboard asistencia cargado correctamente");
+        console.log("✅ Dashboard asistencia cargado");
 
     } catch (err) {
-        console.error("💥 Error inesperado dashboard:", err);
+        console.error("Error inesperado dashboard:", err);
     }
 }
 

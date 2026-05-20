@@ -5674,15 +5674,21 @@ async function cargarHistorialReuniones() {
         data.forEach(reunion => {
 
             const fila = document.createElement("tr");
-            const fecha = new Date(reunion.fecha_cierre).toLocaleDateString("es-CL");
+
+            const fecha = reunion.fecha_cierre
+                ? new Date(reunion.fecha_cierre).toLocaleDateString("es-CL")
+                : "-";
+
+            // 🔥 FIX CLAVE: usar ID correcto
+            const reunionId = reunion.id || reunion.reunion_id;
 
             fila.innerHTML = `
                 <td>${fecha}</td>
                 <td>${reunion.nombre_reunion || "Reunión Federación"}</td>
                 <td>${reunion.moderador_nombre || "-"}</td>
-                <td>${reunion.porcentaje_asistencia}%</td>
+                <td>${reunion.porcentaje_asistencia || 0}%</td>
                 <td>
-                    <button onclick="verDetalleReunion('${reunion.reunion.id}')">
+                    <button onclick="verDetalleReunion('${reunionId}')">
                         Ver
                     </button>
                 </td>
@@ -5708,7 +5714,8 @@ async function verDetalleReunion(reunionId) {
         const { data, error } = await supabase
             .from("reunion_participantes")
             .select("*")
-            .eq("reunion_id", reunionId); // 🚨 SIN Number()
+            //-- .eq("reunion_id", reunionId); // 🚨 SIN Number()
+            .eq("reunion_id", String(reunionId))
 
         if (error) {
             console.error("Error cargando detalle reunión:", error);

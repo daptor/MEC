@@ -5703,10 +5703,12 @@ async function verDetalleReunion(reunionId) {
 
     try {
 
+        console.log("📌 Cargando detalle reunión:", reunionId);
+
         const { data, error } = await supabase
-            .from("reunion_participantes") // ✅ NOMBRE CORRECTO
+            .from("reunion_participantes")
             .select("*")
-            .eq("reunion_id", reunionId);
+            .eq("reunion_id", reunionId); // 🚨 SIN Number()
 
         if (error) {
             console.error("Error cargando detalle reunión:", error);
@@ -5715,23 +5717,21 @@ async function verDetalleReunion(reunionId) {
         }
 
         if (!data || data.length === 0) {
-            alert("No hay asistentes registrados.");
+            alert("No hay participantes registrados.");
             return;
         }
 
-        // 👉 Construir listado simple
-        let listado = "👥 Asistentes:\n\n";
+        // 🎯 Render simple inicial (luego lo haremos bonito)
+        let mensaje = "Participantes:\n\n";
 
         data.forEach(p => {
-            const rol = p.es_moderador ? "🧑‍⚖️ Moderador" : "👤 Participante";
-            listado += `${p.socio_nombre} (${p.sindicato_nombre}) - ${rol}\n`;
+            mensaje += `• ${p.socio_nombre} (${p.sindicato_nombre})\n`;
         });
 
-        alert(listado);
+        alert(mensaje);
 
     } catch (err) {
         console.error("Error inesperado detalle reunión:", err);
-        alert("Error inesperado.");
     }
 }
 

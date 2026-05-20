@@ -5705,9 +5705,6 @@ async function cargarHistorialReuniones() {
 }
 
 
-// ======================================================
-// 🔎 VER DETALLE DE REUNIÓN (MODAL + FALLBACK SEGURO)
-// ======================================================
 async function verDetalleReunion(reunionId) {
 
     try {
@@ -5717,31 +5714,27 @@ async function verDetalleReunion(reunionId) {
             .select("*")
             .eq("reunion_id", String(reunionId));
 
-        if (error) {
+        if (error || !data) {
             alert("Error cargando detalle.");
             return;
         }
 
-        if (!data || data.length === 0) {
+        if (data.length === 0) {
             alert("No hay participantes registrados.");
             return;
         }
 
-        // 🔥 ARMADO DEL TEXTO (fallback seguro)
+        // 🔥 SIEMPRE FUNCIONA (fallback primero)
         let mensaje = "Participantes:\n\n";
-
         data.forEach(p => {
             mensaje += `• ${p.socio_nombre} (${p.sindicato_nombre})\n`;
         });
 
-        // ==================================================
-        // 🪟 INTENTO MODAL (SIN ROMPER SI FALLA)
-        // ==================================================
         const modal = document.getElementById("modal-reunion-detalle");
         const tbody = document.getElementById("modal-reunion-body");
 
+        // 🔥 SI DOM NO EXISTE → fallback seguro
         if (!modal || !tbody) {
-            // 🔥 fallback si el modal no existe
             alert(mensaje);
             return;
         }
@@ -5749,8 +5742,9 @@ async function verDetalleReunion(reunionId) {
         // limpiar
         tbody.innerHTML = "";
 
-        // render seguro
+        // render seguro DOM real
         data.forEach(p => {
+
             const tr = document.createElement("tr");
 
             tr.innerHTML = `
@@ -5761,13 +5755,15 @@ async function verDetalleReunion(reunionId) {
             tbody.appendChild(tr);
         });
 
+        // forzar visibilidad real
         modal.style.display = "block";
+        modal.style.visibility = "visible";
+        modal.style.opacity = "1";
 
     } catch (err) {
         alert("Error inesperado.");
     }
 }
-
 
 // ======================================================
 // 🪟 MODAL CONTROL

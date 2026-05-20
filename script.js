@@ -5649,7 +5649,6 @@ async function cargarHistorialReuniones() {
     try {
 
         const tbody = document.getElementById("tabla-historial-reuniones");
-
         if (!tbody) return;
 
         tbody.innerHTML = "<tr><td colspan='5'>Cargando...</td></tr>";
@@ -5675,7 +5674,6 @@ async function cargarHistorialReuniones() {
         data.forEach(reunion => {
 
             const fila = document.createElement("tr");
-
             const fecha = new Date(reunion.fecha_cierre).toLocaleDateString("es-CL");
 
             fila.innerHTML = `
@@ -5684,7 +5682,7 @@ async function cargarHistorialReuniones() {
                 <td>${reunion.moderador_nombre || "-"}</td>
                 <td>${reunion.porcentaje_asistencia}%</td>
                 <td>
-                    <button onclick="verDetalleReunion(${reunion.id})">
+                    <button onclick="verDetalleReunion('${reunion.id}')">
                         Ver detalle
                     </button>
                 </td>

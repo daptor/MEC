@@ -5706,7 +5706,7 @@ async function cargarHistorialReuniones() {
 
 
 // ======================================================
-// 🔎 VER DETALLE DE REUNIÓN (MODAL)
+// 🔎 VER DETALLE DE REUNIÓN (MODAL + FALLBACK SEGURO)
 // ======================================================
 async function verDetalleReunion(reunionId) {
 
@@ -5722,35 +5722,46 @@ async function verDetalleReunion(reunionId) {
             return;
         }
 
+        if (!data || data.length === 0) {
+            alert("No hay participantes registrados.");
+            return;
+        }
+
+        // 🔥 ARMADO DEL TEXTO (fallback seguro)
+        let mensaje = "Participantes:\n\n";
+
+        data.forEach(p => {
+            mensaje += `• ${p.socio_nombre} (${p.sindicato_nombre})\n`;
+        });
+
+        // ==================================================
+        // 🪟 INTENTO MODAL (SIN ROMPER SI FALLA)
+        // ==================================================
+        const modal = document.getElementById("modal-reunion-detalle");
         const tbody = document.getElementById("modal-reunion-body");
+
+        if (!modal || !tbody) {
+            // 🔥 fallback si el modal no existe
+            alert(mensaje);
+            return;
+        }
+
+        // limpiar
         tbody.innerHTML = "";
 
-        if (!data || data.length === 0) {
-
+        // render seguro
+        data.forEach(p => {
             const tr = document.createElement("tr");
 
             tr.innerHTML = `
-                <td colspan="2">No hay participantes registrados</td>
+                <td>${p.socio_nombre ?? "-"}</td>
+                <td>${p.sindicato_nombre ?? "-"}</td>
             `;
 
             tbody.appendChild(tr);
+        });
 
-        } else {
-
-            data.forEach(p => {
-
-                const tr = document.createElement("tr");
-
-                tr.innerHTML = `
-                    <td>${p.socio_nombre ?? "-"}</td>
-                    <td>${p.sindicato_nombre ?? "-"}</td>
-                `;
-
-                tbody.appendChild(tr);
-            });
-        }
-
-        document.getElementById("modal-reunion-detalle").style.display = "block";
+        modal.style.display = "block";
 
     } catch (err) {
         alert("Error inesperado.");
@@ -5759,14 +5770,11 @@ async function verDetalleReunion(reunionId) {
 
 
 // ======================================================
-// 🪟 MODAL REUNIÓN
+// 🪟 MODAL CONTROL
 // ======================================================
-function mostrarModalReunionDetalle() {
-    document.getElementById("modal-reunion-detalle").style.display = "block";
-}
-
 function cerrarModalReunion() {
-    document.getElementById("modal-reunion-detalle").style.display = "none";
+    const modal = document.getElementById("modal-reunion-detalle");
+    if (modal) modal.style.display = "none";
 }
 
 // ****************************bienvenida*********************************

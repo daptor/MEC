@@ -5799,9 +5799,9 @@ async function verDetalleReunion(reunionId) {
       ulAusentes.appendChild(li);
     });
 
-    // 7) Mostrar bloque
+    // 7) Mostrar bloque y hacer scroll
     contenedorEl.style.display = "block";
-
+    contenedorEl.scrollIntoView({ behavior: "smooth", block: "start" });
     console.log("✅ Acta mostrada correctamente");
 
   } catch (err) {

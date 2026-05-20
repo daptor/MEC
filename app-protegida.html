@@ -644,6 +644,31 @@
 
     <hr>
 
+    <!-- WRAPPER DEL ACTA "VER"-->
+    <div id="detalle-reunion-wrapper" style="display:none; margin-top:10px;">
+    <div class="acta-header-row">
+        <h3 class="acta-title">Acta de reunión</h3>
+        <button type="button" class="btn-mini" onclick="cerrarDetalleReunion()">
+        Cerrar acta
+        </button>
+    </div>
+
+    <div id="detalle-reunion-container" class="acta-reunion">
+        <div id="detalle-reunion-header"></div>
+
+        <div class="acta-reunion-columns">
+        <div>
+            <h4>Asistentes</h4>
+            <ul id="detalle-reunion-asistentes"></ul>
+        </div>
+        <div>
+            <h4>Inasistentes</h4>
+            <ul id="detalle-reunion-ausentes"></ul>
+        </div>
+        </div>
+    </div>
+    </div>
+
     <!-- ================= RANKING SINDICATOS ================= -->
     <h2>Participación por Sindicato</h2>
 
@@ -685,26 +710,6 @@
     </table>
 
 </div>
-
-<!-- Pantalla "VER" de aisitencia y estadisticas-->
-<div id="detalle-reunion-container"
-     class="acta-reunion"
-     style="display:none; margin-top:20px;">
-  <h3>Acta de reunión</h3>
-  <div id="detalle-reunion-header"></div>
-
-  <div class="acta-reunion-columns">
-    <div>
-      <h4>Asistentes</h4>
-      <ul id="detalle-reunion-asistentes"></ul>
-    </div>
-    <div>
-      <h4>Inasistentes</h4>
-      <ul id="detalle-reunion-ausentes"></ul>
-    </div>
-  </div>
-</div>
-
 
 <!-- Favicon -->
 <link rel="icon" href="data:,">

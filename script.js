@@ -5706,7 +5706,7 @@ async function cargarHistorialReuniones() {
 
 
 // ======================================================
-// 🔎 VER DETALLE DE REUNIÓN
+// 🔎 VER DETALLE DE REUNIÓN (ACTA EN MISMA PANTALLA)
 // ======================================================
 async function verDetalleReunion(reunionId) {
   try {
@@ -5751,23 +5751,18 @@ async function verDetalleReunion(reunionId) {
     const asistentes = detalle.filter(d => d.asistio);
     const ausentes   = detalle.filter(d => !d.asistio);
 
-    // 4) Pintar cabecera del acta
-    const headerEl      = document.getElementById("detalle-reunion-header");
-    const contenedorEl  = document.getElementById("detalle-reunion-container");
-    const ulAsistentes  = document.getElementById("detalle-reunion-asistentes");
-    const ulAusentes    = document.getElementById("detalle-reunion-ausentes");
+    // 4) Referencias DOM (wrapper + contenido)
+    const wrapperEl    = document.getElementById("detalle-reunion-wrapper");
+    const headerEl     = document.getElementById("detalle-reunion-header");
+    const ulAsistentes = document.getElementById("detalle-reunion-asistentes");
+    const ulAusentes   = document.getElementById("detalle-reunion-ausentes");
 
-    if (!headerEl || !contenedorEl || !ulAsistentes || !ulAusentes) {
+    if (!wrapperEl || !headerEl || !ulAsistentes || !ulAusentes) {
       console.warn("⚠️ Contenedores de detalle de reunión no encontrados en el DOM.");
-      // fallback mínimo: el alert viejo, por si acaso
-      let msg = "Participantes:\n\n";
-      asistentes.forEach(a => {
-        msg += `• ${a.socio_nombre} (${a.sindicato_nombre})\n`;
-      });
-      alert(msg);
       return;
     }
 
+    // 5) Cabecera del acta
     const fechaStr = acta.fecha_cierre
       ? new Date(acta.fecha_cierre).toLocaleString("es-CL")
       : "-";
@@ -5783,7 +5778,7 @@ async function verDetalleReunion(reunionId) {
          <strong>% Asistencia:</strong> ${acta.porcentaje_asistencia}%</p>
     `;
 
-    // 5) Listar asistentes
+    // 6) Listar asistentes
     ulAsistentes.innerHTML = "";
     asistentes.forEach(a => {
       const li = document.createElement("li");
@@ -5791,7 +5786,7 @@ async function verDetalleReunion(reunionId) {
       ulAsistentes.appendChild(li);
     });
 
-    // 6) Listar ausentes
+    // 7) Listar ausentes
     ulAusentes.innerHTML = "";
     ausentes.forEach(a => {
       const li = document.createElement("li");
@@ -5799,9 +5794,9 @@ async function verDetalleReunion(reunionId) {
       ulAusentes.appendChild(li);
     });
 
-    // 7) Mostrar bloque y hacer scroll
-    contenedorEl.style.display = "block";
-    contenedorEl.scrollIntoView({ behavior: "smooth", block: "start" });
+    // 8) Mostrar bloque de acta
+    wrapperEl.style.display = "block";
+
     console.log("✅ Acta mostrada correctamente");
 
   } catch (err) {
@@ -5810,6 +5805,23 @@ async function verDetalleReunion(reunionId) {
   }
 }
 
+// ======================================================
+// 🔙 CERRAR ACTA DE REUNIÓN
+// ======================================================
+function cerrarDetalleReunion() {
+  const wrapperEl = document.getElementById("detalle-reunion-wrapper");
+  if (wrapperEl) {
+    wrapperEl.style.display = "none";
+  }
+
+  const headerEl = document.getElementById("detalle-reunion-header");
+  const ulAsist  = document.getElementById("detalle-reunion-asistentes");
+  const ulAus    = document.getElementById("detalle-reunion-ausentes");
+
+  if (headerEl) headerEl.innerHTML = "";
+  if (ulAsist)  ulAsist.innerHTML  = "";
+  if (ulAus)    ulAus.innerHTML    = "";
+}
 
 // ****************************bienvenida*********************************
 document.addEventListener("DOMContentLoaded", function () {

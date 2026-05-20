@@ -628,32 +628,56 @@ input:focus, select:focus, textarea:focus,
 }
 
 /* ======================================================
-   📋 ACTA DE REUNIÓN – ESTILO MEC
+   📋 ACTA DE REUNIÓN – ESTILO MEC (misma pantalla)
    ====================================================== */
 
+.acta-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.acta-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #1e4620;
+  text-align: left;
+  text-shadow: none;
+}
+
+/* Botón pequeño (evita width:100% del botón global) */
+.btn-mini {
+  width: auto !important;
+  display: inline-block !important;
+  padding: 6px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  background: #6b7280;
+  border-radius: 6px;
+  box-shadow: none;
+}
+
+.btn-mini:hover {
+  background: #4b5563;
+}
+
+/* Caja del acta dentro del cajón blanco de .pantalla */
 .acta-reunion {
-  background: #f7fff3;               /* verde suave, igual que card-stat */
-  border-radius: 12px;
-  border-left: 6px solid #28a745;    /* identidad MEC */
-  padding: 12px 14px;
-  margin-top: 18px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
-  color: #1e4620;                    /* texto verde oscuro legible */
+  background: #f7fff3;                /* verde suave */
+  border-left: 4px solid #28a745;
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+  color: #333;
   font-size: 14px;
   line-height: 1.6;
 }
 
-.acta-reunion h3 {
-  margin: 0 0 8px 0;
-  font-size: 18px;
-  font-weight: 800;
-  text-align: left;
-  color: #1e4620;
-  text-shadow: none;
-}
-
 .acta-reunion h4 {
-  margin: 10px 0 6px 0;
+  margin: 6px 0;
   font-size: 15px;
   font-weight: 700;
   color: #1e4620;
@@ -663,16 +687,17 @@ input:focus, select:focus, textarea:focus,
   margin: 2px 0;
 }
 
+/* 2 columnas dentro del mismo ancho (se apilan en mobile) */
 .acta-reunion-columns {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   flex-wrap: wrap;
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
 .acta-reunion-columns > div {
   flex: 1;
-  min-width: 200px;
+  min-width: 180px;
 }
 
 .acta-reunion ul {
@@ -682,13 +707,13 @@ input:focus, select:focus, textarea:focus,
 
 .acta-reunion li {
   margin-bottom: 3px;
-  color: #333;   /* texto bien oscuro para máxima legibilidad */
 }
 
-/* mobile */
+/* Mobile: un poco más compacto */
 @media (max-width: 480px) {
   .acta-reunion {
     font-size: 13px;
-    padding: 10px 10px;
+    padding: 8px 9px;
   }
 }
+

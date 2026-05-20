@@ -5698,7 +5698,55 @@ async function cargarHistorialReuniones() {
     }
 }
 
+// ======================================================
+// 🔎 VER DETALLE DE REUNIÓN
+// ======================================================
+async function verDetalleReunion(reunionId) {
 
+    try {
+
+        const { data, error } = await supabase
+            .from("reunion_participante")
+            .select("*")
+            .eq("reunion_id", reunionId);
+
+        if (error) {
+            console.error("Error cargando detalle reunión:", error);
+            alert("Error cargando detalle.");
+            return;
+        }
+
+        if (!data || data.length === 0) {
+            alert("No hay participantes registrados.");
+            return;
+        }
+
+        const total = data.length;
+        const asistieron = data.filter(p => p.asistio === true).length;
+        const faltaron = total - asistieron;
+        const porcentaje = ((asistieron / total) * 100).toFixed(1);
+
+        // Armamos texto bonito
+        let lista = "";
+        data.forEach(p => {
+            lista += `${p.nombre} - ${p.asistio ? "✅ Asistió" : "❌ No asistió"}\n`;
+        });
+
+        alert(
+            "📋 DETALLE REUNIÓN\n\n" +
+            `Total participantes: ${total}\n` +
+            `Asistieron: ${asistieron}\n` +
+            `Inasistentes: ${faltaron}\n` +
+            `% Asistencia: ${porcentaje}%\n\n` +
+            "Participantes:\n" +
+            "----------------------\n" +
+            lista
+        );
+
+    } catch (err) {
+        console.error("Error inesperado detalle reunión:", err);
+    }
+}
 
 // ****************************bienvenida*********************************
 document.addEventListener("DOMContentLoaded", function () {

@@ -4029,40 +4029,48 @@ if (sindicatoSeleccionado === "AsistenciaEstadisticas") {
     return;
 }
 
-    // ======================================================
-    // 📊 CASO ESPECIAL: ASISTENCIA HISTÓRICA FEDERACIÓN
-    // ======================================================
-    if (sindicatoSeleccionado === "AsistenciaFederacion") {
+// ======================================================
+// 📊 CASO ESPECIAL: ASISTENCIA HISTÓRICA FEDERACIÓN
+// ======================================================
+if (sindicatoSeleccionado === "AsistenciaFederacion") {
 
-        // Validar contra TODAS las claves federación
-        const todasLasClaves = Object.values(claves);
+    // Validar contra TODAS las claves federación
+    const todasLasClaves = Object.values(claves);
 
-        if (!todasLasClaves.includes(claveIngresada)) {
-            mensajeError.innerText = "Clave incorrecta para Asistencia Federación.";
-            mensajeError.style.display = "block";
-            return;
-        }
+    if (!todasLasClaves.includes(claveIngresada)) {
+        mensajeError.innerText = "Clave incorrecta para Asistencia Federación.";
+        mensajeError.style.display = "block";
+        return;
+    }
 
-        // ✅ Acceso autorizado
-        cerrarModalClave();
-        mostrarPantalla("pantalla-asistencia-historica");
+    // ✅ Acceso autorizado
+    cerrarModalClave();
+    mostrarPantalla("pantalla-asistencia-historica");
 
-        // Cargar módulo (funciones se crearán ahora)
+    // ⏳ MUY IMPORTANTE:
+    // Esperar a que el DOM renderice la pantalla antes de cargar datos
+    setTimeout(() => {
+
         if (typeof cargarDashboardAsistencia === "function") {
             cargarDashboardAsistencia();
         }
+
         if (typeof cargarHistorialReuniones === "function") {
             cargarHistorialReuniones();
         }
+
         if (typeof cargarRankingSindicatos === "function") {
             cargarRankingSindicatos();
         }
+
         if (typeof cargarRankingDirectores === "function") {
             cargarRankingDirectores();
         }
 
-        return; // 🚨 IMPORTANTÍSIMO
-    }
+    }, 250);
+
+    return; // 🚨 IMPORTANTÍSIMO
+}
 
     // ======================================================
     // 🏢 FLUJO ORIGINAL – SINDICATOS (NO TOCAR)

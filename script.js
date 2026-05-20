@@ -5682,8 +5682,8 @@ async function cargarHistorialReuniones() {
                 <td>${reunion.moderador_nombre || "-"}</td>
                 <td>${reunion.porcentaje_asistencia}%</td>
                 <td>
-                    <button onclick="verDetalleReunion('${reunion.id}')">
-                        Ver detalle
+                    <button onclick="verDetalleReunion('${reunion.reunion.id}')">
+                        Ver
                     </button>
                 </td>
             `;

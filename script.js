@@ -5706,7 +5706,7 @@ async function verDetalleReunion(reunionId) {
     try {
 
         const { data, error } = await supabase
-            .from("reunion_participante")
+            .from("reunion_participantes")
             .select("*")
             .eq("reunion_id", reunionId);
 

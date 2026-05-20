@@ -584,31 +584,38 @@
 <!-- ===================================================== -->
 <div id="pantalla-asistencia-historica" class="pantalla" style="display:none;">
 
-    <h1>📊 Asistencia y Estadísticas Federación</h1>
+    <div class="boton-container">
+        <button onclick="mostrarPantalla('pantalla-archivosindical')">
+            ← Volver a Herramientas
+        </button>
+    </div>
+
+    <h1>📊 Asistencia y Estadísticas</h1>
     <p>Módulo de análisis histórico de participación en reuniones.</p>
 
     <!-- ================= KPIs ================= -->
     <h2>Dashboard General</h2>
-    <div id="dashboard-kpis" class="contenedor-kpis">
 
-        <div class="card-kpi">
-            <h3>% Asistencia promedio</h3>
-            <p id="kpi-asistencia-promedio">--</p>
+    <div class="dashboard-grid">
+
+        <div class="card-stat">
+            <h3>Asistencia promedio</h3>
+            <span id="stat-asistencia">--</span>
         </div>
 
-        <div class="card-kpi">
-            <h3>Total reuniones</h3>
-            <p id="kpi-total-reuniones">--</p>
+        <div class="card-stat">
+            <h3>Reuniones registradas</h3>
+            <span id="stat-reuniones">--</span>
         </div>
 
-        <div class="card-kpi">
+        <div class="card-stat">
             <h3>Promedio asistentes</h3>
-            <p id="kpi-promedio-asistentes">--</p>
+            <span id="stat-asistentes">--</span>
         </div>
 
-        <div class="card-kpi">
-            <h3>Última reunión</h3>
-            <p id="kpi-ultima-reunion">--</p>
+        <div class="card-stat">
+            <h3>Asistencia última reunión</h3>
+            <span id="stat-ultima">--</span>
         </div>
 
     </div>
@@ -617,6 +624,7 @@
 
     <!-- ================= HISTORIAL ================= -->
     <h2>Historial de reuniones</h2>
+
     <table class="tabla">
         <thead>
             <tr>
@@ -638,6 +646,7 @@
 
     <!-- ================= RANKING SINDICATOS ================= -->
     <h2>Participación por Sindicato</h2>
+
     <table class="tabla">
         <thead>
             <tr>
@@ -658,6 +667,7 @@
 
     <!-- ================= RANKING DIRECTORES ================= -->
     <h2>Asistencia Directores</h2>
+
     <table class="tabla">
         <thead>
             <tr>
@@ -675,7 +685,6 @@
     </table>
 
 </div>
-
 
 <!-- Favicon -->
 <link rel="icon" href="data:,">

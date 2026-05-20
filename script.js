@@ -6879,12 +6879,7 @@ async function abrirAsistenciaHistorica() {
 
         // 4️⃣ Clave válida → abrir módulo
         mostrarPantalla("pantalla-asistencia-historica");
-
-        // 5️⃣ Cargar datos del módulo (se crearán en el siguiente paso)
-        cargarDashboardAsistencia();
-        cargarHistorialReuniones();
-        cargarRankingSindicatos();
-        cargarRankingDirectores();
+        cargarAsistenciaHistorica();
 
     } catch (error) {
         console.error("Error acceso asistencia histórica:", error);
@@ -6892,8 +6887,174 @@ async function abrirAsistenciaHistorica() {
     }
 }
 
+// ======================================================
+// 📊 CARGAR ASISTENCIA HISTÓRICA (FUNCIÓN PRINCIPAL)
+// ======================================================
+async function cargarAsistenciaHistorica() {
 
+    console.log("📊 Cargando asistencia histórica...");
 
+    try {
+
+        // ==================================================
+        // 1️⃣ TRAER REUNIONES FINALIZADAS
+        // ==================================================
+        const { data: reuniones, error: errorReuniones } = await supabase
+            .from("reuniones")
+            .select("*")
+            .eq("estado", "finalizada")
+            .order("fecha_creacion", { ascending: false });
+
+        if (errorReuniones) throw errorReuniones;
+
+        if (!reuniones || reuniones.length === 0) {
+            console.warn("No hay reuniones finalizadas");
+            return;
+        }
+
+        const reunionesIds = reuniones.map(r => r.id);
+
+        // ==================================================
+        // 2️⃣ TRAER ASISTENTES DE TODAS LAS REUNIONES
+        // ==================================================
+        const { data: asistentes, error: errorAsistentes } = await supabase
+            .from("reunion_participantes")
+            .select(`
+                *,
+                socio:socio_id (
+                    id,
+                    nombre,
+                    rol,
+                    sindicato_id
+                )
+            `)
+            .in("reunion_id", reunionesIds);
+
+        if (errorAsistentes) throw errorAsistentes;
+
+        // ==================================================
+        // 3️⃣ TRAER SINDICATOS
+        // ==================================================
+        const { data: sindicatos } = await supabase
+            .from("sindicatos")
+            .select("*");
+
+        // ==================================================
+        // 4️⃣ CALCULAR KPI GENERALES
+        // ==================================================
+        const totalReuniones = reuniones.length;
+
+        let totalAsistencias = 0;
+        let totalPosiblesAsistencias = 0;
+
+        reuniones.forEach(reunion => {
+            const asistentesReunion = asistentes.filter(a => a.reunion_id === reunion.id);
+            totalAsistencias += asistentesReunion.length;
+            totalPosiblesAsistencias += reunion.total_socios;
+        });
+
+        const asistenciaPromedio = ((totalAsistencias / totalPosiblesAsistencias) * 100).toFixed(1);
+        const promedioAsistentes = Math.round(totalAsistencias / totalReuniones);
+        const ultimaReunion = reuniones[0].porcentaje_asistencia || 0;
+
+        // 👉 Pintar KPIs
+        document.getElementById("stat-asistencia").innerText = asistenciaPromedio + "%";
+        document.getElementById("stat-reuniones").innerText = totalReuniones;
+        document.getElementById("stat-asistentes").innerText = promedioAsistentes;
+        document.getElementById("stat-ultima").innerText = ultimaReunion + "%";
+
+        // ==================================================
+        // 5️⃣ LLENAR TABLA HISTORIAL REUNIONES
+        // ==================================================
+        const tbodyHistorial = document.getElementById("tabla-historial-reuniones");
+        tbodyHistorial.innerHTML = "";
+
+        reuniones.forEach(reunion => {
+            const fila = document.createElement("tr");
+
+            fila.innerHTML = `
+                <td>${new Date(reunion.fecha_creacion).toLocaleDateString()}</td>
+                <td>${reunion.nombre}</td>
+                <td>${reunion.moderador_nombre}</td>
+                <td><strong>${reunion.porcentaje_asistencia || 0}%</strong></td>
+                <td>
+                    <button onclick="verResumenReunion('${reunion.id}')">
+                        Ver resumen
+                    </button>
+                </td>
+            `;
+
+            tbodyHistorial.appendChild(fila);
+        });
+
+        // ==================================================
+        // 6️⃣ RANKING SINDICATOS
+        // ==================================================
+        const rankingSind = {};
+        sindicatos.forEach(s => {
+            rankingSind[s.id] = { nombre: s.nombre, asistio: 0, noAsistio: 0 };
+        });
+
+        asistentes.forEach(a => {
+            if (!a.socio) return;
+            const sid = a.socio.sindicato_id;
+            if (rankingSind[sid]) rankingSind[sid].asistio++;
+        });
+
+        const tbodySind = document.getElementById("tabla-ranking-sindicatos");
+        tbodySind.innerHTML = "";
+
+        Object.values(rankingSind).forEach(s => {
+            const total = s.asistio + s.noAsistio;
+            const porcentaje = total ? ((s.asistio / total) * 100).toFixed(1) : 0;
+
+            const fila = document.createElement("tr");
+            fila.innerHTML = `
+                <td>${s.nombre}</td>
+                <td>${s.asistio}</td>
+                <td>${s.noAsistio}</td>
+                <td><strong>${porcentaje}%</strong></td>
+            `;
+            tbodySind.appendChild(fila);
+        });
+
+        // ==================================================
+        // 7️⃣ RANKING DIRECTORES
+        // ==================================================
+        const rankingDirectores = {};
+
+        asistentes
+            .filter(a => a.socio && a.socio.rol === "director")
+            .forEach(a => {
+                const nombre = a.socio.nombre;
+                if (!rankingDirectores[nombre]) {
+                    rankingDirectores[nombre] = { asistio: 0 };
+                }
+                rankingDirectores[nombre].asistio++;
+            });
+
+        const tbodyDir = document.getElementById("tabla-ranking-directores");
+        tbodyDir.innerHTML = "";
+
+        Object.entries(rankingDirectores).forEach(([nombre, data]) => {
+            const porcentaje = ((data.asistio / totalReuniones) * 100).toFixed(1);
+
+            const fila = document.createElement("tr");
+            fila.innerHTML = `
+                <td>${nombre}</td>
+                <td>${totalReuniones}</td>
+                <td>${data.asistio}</td>
+                <td><strong>${porcentaje}%</strong></td>
+            `;
+            tbodyDir.appendChild(fila);
+        });
+
+        console.log("✅ Asistencia histórica cargada");
+
+    } catch (err) {
+        console.error("❌ Error cargando asistencia histórica", err);
+    }
+}
 
 
 // =========================================

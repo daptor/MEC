@@ -717,3 +717,53 @@ input:focus, select:focus, textarea:focus,
   }
 }
 
+/* ======================================================
+   📊 TABLAS ASISTENCIA – ESTILO MEC
+   ====================================================== */
+
+.tabla-asistencia {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.tabla-asistencia thead {
+  background: #fff9c4;      /* similar a encabezado-resultado */
+}
+
+.tabla-asistencia th,
+.tabla-asistencia td {
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+  text-align: left;
+  color: #333;
+}
+
+.tabla-asistencia th {
+  font-weight: 700;
+  color: #1e4620;
+}
+
+.tabla-asistencia tr:nth-child(even) td {
+  background: rgba(0,0,0,0.015);
+}
+
+.tabla-asistencia tr:hover td {
+  background: rgba(40,167,69,0.06);
+}
+
+/* Celda % centrada */
+.col-porcentaje {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Botón "Ver" compacto dentro de tabla */
+.btn-tabla-ver {
+  width: auto !important;
+  display: inline-block !important;
+  font-size: 12px;
+  padding: 4px 8px;
+  margin: 0;
+}

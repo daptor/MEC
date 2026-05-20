@@ -5823,6 +5823,183 @@ function cerrarDetalleReunion() {
   if (ulAus)    ulAus.innerHTML    = "";
 }
 
+// ======================================================
+// 📊 RANKING PARTICIPACIÓN POR SINDICATO
+// ======================================================
+async function cargarRankingSindicatos() {
+  try {
+    const tbody = document.getElementById("tabla-ranking-sindicatos");
+    if (!tbody) return;
+
+    tbody.innerHTML = "<tr><td colspan='4'>Cargando...</td></tr>";
+
+    // Usamos el detalle consolidado de todas las reuniones
+    const { data, error } = await supabase
+      .from("reunion_asistencia_detalle")
+      .select("sindicato_id, sindicato_nombre, asistio");
+
+    if (error) {
+      console.error("Error ranking sindicatos:", error);
+      tbody.innerHTML = "<tr><td colspan='4'>Error cargando datos</td></tr>";
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      tbody.innerHTML = "<tr><td colspan='4'>Sin datos aún</td></tr>";
+      return;
+    }
+
+    // Acumular por sindicato
+    const mapa = {};
+    data.forEach(r => {
+      const key = r.sindicato_id || "sin_sindicato";
+      if (!mapa[key]) {
+        mapa[key] = {
+          nombre: r.sindicato_nombre || "Sin sindicato",
+          total: 0,
+          asistencias: 0
+        };
+      }
+      mapa[key].total += 1;
+      if (r.asistio) mapa[key].asistencias += 1;
+    });
+
+    const filas = Object.values(mapa)
+      .map(s => {
+        const porcentaje = s.total
+          ? (s.asistencias / s.total) * 100
+          : 0;
+        return {
+          ...s,
+          inasistencias: s.total - s.asistencias,
+          porcentaje
+        };
+      })
+      // mejor a peor (como pediste)
+      .sort((a, b) => b.porcentaje - a.porcentaje);
+
+    tbody.innerHTML = "";
+
+    filas.forEach(s => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${s.nombre}</td>
+        <td>${s.asistencias}</td>
+        <td>${s.inasistencias}</td>
+        <td class="col-porcentaje"><strong>${s.porcentaje.toFixed(1)}%</strong></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+  } catch (err) {
+    console.error("Error inesperado ranking sindicatos:", err);
+  }
+}
+
+// ======================================================
+// 👔 RANKING ASISTENCIA DIRECTORES
+// ======================================================
+async function cargarRankingDirectores() {
+  try {
+    const tbody = document.getElementById("tabla-ranking-directores");
+    if (!tbody) return;
+
+    tbody.innerHTML = "<tr><td colspan='4'>Cargando...</td></tr>";
+
+    // 1) Detalle asistencia (todas las reuniones)
+    const { data: detalle, error: errDet } = await supabase
+      .from("reunion_asistencia_detalle")
+      .select("asistencia_id, socio_id, socio_nombre, asistio");
+
+    if (errDet) {
+      console.error("Error detalle directores:", errDet);
+      tbody.innerHTML = "<tr><td colspan='4'>Error cargando datos</td></tr>";
+      return;
+    }
+
+    if (!detalle || detalle.length === 0) {
+      tbody.innerHTML = "<tr><td colspan='4'>Sin datos aún</td></tr>";
+      return;
+    }
+
+    // 2) Traer roles para saber quién es director
+    const { data: socios, error: errSoc } = await supabase
+      .from("socios")
+      .select("id, rol");
+
+    if (errSoc) {
+      console.error("Error socios directores:", errSoc);
+      tbody.innerHTML = "<tr><td colspan='4'>Error cargando roles</td></tr>";
+      return;
+    }
+
+    const directoresSet = new Set(
+      (socios || [])
+        .filter(s => s.rol && s.rol.toUpperCase().startsWith("DIRECTOR_"))
+        .map(s => String(s.id))
+    );
+
+    if (directoresSet.size === 0) {
+      tbody.innerHTML = "<tr><td colspan='4'>No hay directores configurados</td></tr>";
+      return;
+    }
+
+    // 3) Acumular por director
+    const estadisticas = {};
+
+    detalle.forEach(r => {
+      const sid = String(r.socio_id);
+      if (!directoresSet.has(sid)) return;
+
+      if (!estadisticas[sid]) {
+        estadisticas[sid] = {
+          nombre: r.socio_nombre,
+          reuniones: new Set(),   // para contar reuniones únicas
+          asistencias: 0
+        };
+      }
+      estadisticas[sid].reuniones.add(r.asistencia_id);
+      if (r.asistio) estadisticas[sid].asistencias += 1;
+    });
+
+    const filas = Object.values(estadisticas)
+      .map(d => {
+        const totalReuniones = d.reuniones.size;
+        const porcentaje = totalReuniones
+          ? (d.asistencias / totalReuniones) * 100
+          : 0;
+        return {
+          nombre: d.nombre,
+          totalReuniones,
+          asistencias: d.asistencias,
+          porcentaje
+        };
+      })
+      .sort((a, b) => b.porcentaje - a.porcentaje); // mejor a peor
+
+    if (filas.length === 0) {
+      tbody.innerHTML = "<tr><td colspan='4'>Sin registros de directores</td></tr>";
+      return;
+    }
+
+    tbody.innerHTML = "";
+    filas.forEach(d => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${d.nombre}</td>
+        <td>${d.totalReuniones}</td>
+        <td>${d.asistencias}</td>
+        <td class="col-porcentaje"><strong>${d.porcentaje.toFixed(1)}%</strong></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+  } catch (err) {
+    console.error("Error inesperado ranking directores:", err);
+  }
+}
+
+
 // ****************************bienvenida*********************************
 document.addEventListener("DOMContentLoaded", function () {
     const intro = document.getElementById("introBienvenida");

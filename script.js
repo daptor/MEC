@@ -5556,67 +5556,86 @@ function msd2_cerrarSalaLocal() {
 }
 
 // ======================================================
-// 📊 DASHBOARD ASISTENCIA - KPIs PRINCIPALES
+// 📊 DASHBOARD ASISTENCIA - KPIs PRINCIPALES (ROBUSTO)
 // ======================================================
 async function cargarDashboardAsistencia() {
 
     try {
 
+        console.log("📊 Cargando dashboard de asistencia...");
+
+        // ==================================================
+        // 🔒 VERIFICAR QUE LA PANTALLA EXISTA EN EL DOM
+        // (evita error cuando se ejecuta antes de mostrarla)
+        // ==================================================
+        const elTotalReuniones   = document.getElementById("kpi-total-reuniones");
+        const elAsistenciaProm   = document.getElementById("kpi-asistencia-promedio");
+        const elPromAsistentes   = document.getElementById("kpi-promedio-asistentes");
+        const elUltimaReunion    = document.getElementById("kpi-ultima-reunion");
+
+        if (!elTotalReuniones || !elAsistenciaProm || !elPromAsistentes || !elUltimaReunion) {
+            console.warn("⚠️ KPIs aún no están en pantalla. Se cancela carga dashboard.");
+            return;
+        }
+
+        // ==================================================
+        // 📥 CONSULTA SUPABASE
+        // ==================================================
         const { data, error } = await supabase
             .from("reunion_asistencia")
             .select("*")
             .order("fecha_cierre", { ascending: false });
 
         if (error) {
-            console.error("Error cargando dashboard asistencia:", error);
+            console.error("❌ Error cargando dashboard asistencia:", error);
             return;
         }
 
-        if (!data || data.length === 0) return;
+        if (!data || data.length === 0) {
+            console.warn("⚠️ No existen registros de asistencia aún.");
+            elTotalReuniones.innerText = "0";
+            elAsistenciaProm.innerText = "0%";
+            elPromAsistentes.innerText = "0";
+            elUltimaReunion.innerText  = "0%";
+            return;
+        }
 
-        // ==============================
-        // TOTAL REUNIONES
-        // ==============================
+        // ==================================================
+        // 📊 TOTAL REUNIONES
+        // ==================================================
         const totalReuniones = data.length;
-        document.getElementById("kpi-total-reuniones").innerText = totalReuniones;
+        elTotalReuniones.innerText = totalReuniones;
 
-        // ==============================
-        // % ASISTENCIA PROMEDIO
-        // ==============================
+        // ==================================================
+        // 📊 % ASISTENCIA PROMEDIO
+        // ==================================================
         const sumaPorcentajes = data.reduce((acc, r) =>
-            acc + Number(r.porcentaje_asistencia), 0);
+            acc + Number(r.porcentaje_asistencia || 0), 0);
 
-        const promedioAsistencia =
-            (sumaPorcentajes / totalReuniones).toFixed(1);
+        const promedioAsistencia = (sumaPorcentajes / totalReuniones).toFixed(1);
+        elAsistenciaProm.innerText = promedioAsistencia + "%";
 
-        document.getElementById("kpi-asistencia-promedio").innerText =
-            promedioAsistencia + "%";
-
-        // ==============================
-        // PROMEDIO ASISTENTES
-        // ==============================
+        // ==================================================
+        // 📊 PROMEDIO ASISTENTES
+        // ==================================================
         const sumaAsistentes = data.reduce((acc, r) =>
-            acc + Number(r.total_asistentes), 0);
+            acc + Number(r.total_asistentes || 0), 0);
 
-        const promedioAsistentes =
-            Math.round(sumaAsistentes / totalReuniones);
+        const promedioAsistentes = Math.round(sumaAsistentes / totalReuniones);
+        elPromAsistentes.innerText = promedioAsistentes;
 
-        document.getElementById("kpi-promedio-asistentes").innerText =
-            promedioAsistentes;
-
-        // ==============================
-        // ÚLTIMA REUNIÓN
-        // ==============================
+        // ==================================================
+        // 📊 ÚLTIMA REUNIÓN
+        // ==================================================
         const ultima = data[0];
+        elUltimaReunion.innerText = (ultima.porcentaje_asistencia || 0) + "%";
 
-        document.getElementById("kpi-ultima-reunion").innerText =
-            ultima.porcentaje_asistencia + "%";
+        console.log("✅ Dashboard asistencia cargado correctamente");
 
     } catch (err) {
-        console.error("Error inesperado dashboard:", err);
+        console.error("💥 Error inesperado dashboard:", err);
     }
 }
-
 
 // ****************************bienvenida*********************************
 document.addEventListener("DOMContentLoaded", function () {

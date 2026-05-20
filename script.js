@@ -4010,6 +4010,60 @@ async function verificarClave() {
         return; // 🚨 evita que siga la lógica de sindicatos normales
     }
 
+// ======================================================
+// 📊 ACCESO ASISTENCIA Y ESTADÍSTICAS
+// ======================================================
+if (sindicatoSeleccionado === "AsistenciaEstadisticas") {
+
+    console.log("📊 Acceso correcto → Asistencia y Estadísticas");
+
+    // Cerramos modal de clave
+    document.getElementById("modal-clave").classList.add("oculto");
+
+    // Limpiamos input
+    document.getElementById("clave-input").value = "";
+
+    // Abrimos nueva pantalla
+    mostrarPantalla("pantalla-asistencia-estadisticas");
+
+    return;
+}
+
+    // ======================================================
+    // 📊 CASO ESPECIAL: ASISTENCIA HISTÓRICA FEDERACIÓN
+    // ======================================================
+    if (sindicatoSeleccionado === "AsistenciaFederacion") {
+
+        // Validar contra TODAS las claves federación
+        const todasLasClaves = Object.values(claves);
+
+        if (!todasLasClaves.includes(claveIngresada)) {
+            mensajeError.innerText = "Clave incorrecta para Asistencia Federación.";
+            mensajeError.style.display = "block";
+            return;
+        }
+
+        // ✅ Acceso autorizado
+        cerrarModalClave();
+        mostrarPantalla("pantalla-asistencia-historica");
+
+        // Cargar módulo (funciones se crearán ahora)
+        if (typeof cargarDashboardAsistencia === "function") {
+            cargarDashboardAsistencia();
+        }
+        if (typeof cargarHistorialReuniones === "function") {
+            cargarHistorialReuniones();
+        }
+        if (typeof cargarRankingSindicatos === "function") {
+            cargarRankingSindicatos();
+        }
+        if (typeof cargarRankingDirectores === "function") {
+            cargarRankingDirectores();
+        }
+
+        return; // 🚨 IMPORTANTÍSIMO
+    }
+
     // ======================================================
     // 🏢 FLUJO ORIGINAL – SINDICATOS (NO TOCAR)
     // ======================================================
@@ -4600,8 +4654,6 @@ async function generarAsistenciaReunion_v2(reunionId) {
     throw err;
   }
 }
-
-
 
 // ------------------------------------------------------
 // ENTRAR A LA SALA (FIX REALTIME DEFINITIVO)
@@ -5502,6 +5554,69 @@ function msd2_cerrarSalaLocal() {
     "✅ Sala cerrada localmente"
   );
 }
+
+// ======================================================
+// 📊 DASHBOARD ASISTENCIA - KPIs PRINCIPALES
+// ======================================================
+async function cargarDashboardAsistencia() {
+
+    try {
+
+        const { data, error } = await supabase
+            .from("reunion_asistencia")
+            .select("*")
+            .order("fecha_cierre", { ascending: false });
+
+        if (error) {
+            console.error("Error cargando dashboard asistencia:", error);
+            return;
+        }
+
+        if (!data || data.length === 0) return;
+
+        // ==============================
+        // TOTAL REUNIONES
+        // ==============================
+        const totalReuniones = data.length;
+        document.getElementById("kpi-total-reuniones").innerText = totalReuniones;
+
+        // ==============================
+        // % ASISTENCIA PROMEDIO
+        // ==============================
+        const sumaPorcentajes = data.reduce((acc, r) =>
+            acc + Number(r.porcentaje_asistencia), 0);
+
+        const promedioAsistencia =
+            (sumaPorcentajes / totalReuniones).toFixed(1);
+
+        document.getElementById("kpi-asistencia-promedio").innerText =
+            promedioAsistencia + "%";
+
+        // ==============================
+        // PROMEDIO ASISTENTES
+        // ==============================
+        const sumaAsistentes = data.reduce((acc, r) =>
+            acc + Number(r.total_asistentes), 0);
+
+        const promedioAsistentes =
+            Math.round(sumaAsistentes / totalReuniones);
+
+        document.getElementById("kpi-promedio-asistentes").innerText =
+            promedioAsistentes;
+
+        // ==============================
+        // ÚLTIMA REUNIÓN
+        // ==============================
+        const ultima = data[0];
+
+        document.getElementById("kpi-ultima-reunion").innerText =
+            ultima.porcentaje_asistencia + "%";
+
+    } catch (err) {
+        console.error("Error inesperado dashboard:", err);
+    }
+}
+
 
 // ****************************bienvenida*********************************
 document.addEventListener("DOMContentLoaded", function () {
@@ -6739,6 +6854,47 @@ async function verBoletaRendicion(path) {
   }
 })();
 
+// ======================================================
+// 📊 ABRIR ASISTENCIA HISTÓRICA (Federación)
+// ======================================================
+async function abrirAsistenciaHistorica() {
+
+    try {
+
+        // 1️⃣ Obtener claves desde Vercel (igual que reunión)
+        const claves = await obtenerClaves();
+
+        // 2️⃣ Pedir clave al usuario
+        const claveIngresada = prompt("Ingrese clave Federación:");
+
+        if (!claveIngresada) return;
+
+        // 3️⃣ Validar clave contra todas las claves federación
+        const todasLasClaves = Object.values(claves);
+
+        if (!todasLasClaves.includes(claveIngresada)) {
+            alert("❌ Clave incorrecta");
+            return;
+        }
+
+        // 4️⃣ Clave válida → abrir módulo
+        mostrarPantalla("pantalla-asistencia-historica");
+
+        // 5️⃣ Cargar datos del módulo (se crearán en el siguiente paso)
+        cargarDashboardAsistencia();
+        cargarHistorialReuniones();
+        cargarRankingSindicatos();
+        cargarRankingDirectores();
+
+    } catch (error) {
+        console.error("Error acceso asistencia histórica:", error);
+        alert("Error al validar clave.");
+    }
+}
+
+
+
+
 
 // =========================================
 // 💰 FREEMIUM — MOSTRAR RESULTADO DEL ANÁLISIS
@@ -6879,3 +7035,4 @@ function actualizarCandadosUI() {
     });
 }
 
+//-- 19 de mayo 2026 ok

@@ -344,7 +344,7 @@
       <button onclick="mostrarPantalla('menu-principal')">↩ Menú</button>
   </div>
 
-  <!-- Nueva Pantalla archivos sindical -->
+  <!-- Nueva Pantalla HERRAMIENTAS -->
   <div id="pantalla-archivosindical" class="pantalla" style="display: none;">
       <h1>Herramientas</h1>
       <p>Archivo Sindical, Rendición de viáticos de Federación y Acceso Reunión.</p>
@@ -361,6 +361,7 @@
           <option value="Trebol">Sindicato Trebol</option>
           <option value="ReunionFederacion">⏳ Reunión Federación</option>
           <option value="RendicionFederacion">💲 Rendición Federación</option>
+          <option value="AsistenciaFederacion">📊 Asistencia y estadísticas</option>
           </select>
  
       <!-- Modal para ingresar la clave -->
@@ -576,6 +577,103 @@
          style="font-size:14px; color:#b91c1c;">
     </div>
     <button onclick="mostrarPantalla('menu-principal')">↩ Menú</button>
+</div>
+
+<!-- ===================================================== -->
+<!-- 📊 PANTALLA ASISTENCIA HISTÓRICA -->
+<!-- ===================================================== -->
+<div id="pantalla-asistencia-historica" class="pantalla" style="display:none;">
+
+    <h1>📊 Asistencia y Estadísticas Federación</h1>
+    <p>Módulo de análisis histórico de participación en reuniones.</p>
+
+    <!-- ================= KPIs ================= -->
+    <h2>Dashboard General</h2>
+    <div id="dashboard-kpis" class="contenedor-kpis">
+
+        <div class="card-kpi">
+            <h3>% Asistencia promedio</h3>
+            <p id="kpi-asistencia-promedio">--</p>
+        </div>
+
+        <div class="card-kpi">
+            <h3>Total reuniones</h3>
+            <p id="kpi-total-reuniones">--</p>
+        </div>
+
+        <div class="card-kpi">
+            <h3>Promedio asistentes</h3>
+            <p id="kpi-promedio-asistentes">--</p>
+        </div>
+
+        <div class="card-kpi">
+            <h3>Última reunión</h3>
+            <p id="kpi-ultima-reunion">--</p>
+        </div>
+
+    </div>
+
+    <hr>
+
+    <!-- ================= HISTORIAL ================= -->
+    <h2>Historial de reuniones</h2>
+    <table class="tabla">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Reunión</th>
+                <th>Moderador</th>
+                <th>% Asistencia</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody id="tabla-historial-reuniones">
+            <tr>
+                <td colspan="5">Cargando...</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <hr>
+
+    <!-- ================= RANKING SINDICATOS ================= -->
+    <h2>Participación por Sindicato</h2>
+    <table class="tabla">
+        <thead>
+            <tr>
+                <th>Sindicato</th>
+                <th>Asistencias</th>
+                <th>Inasistencias</th>
+                <th>% Participación</th>
+            </tr>
+        </thead>
+        <tbody id="tabla-ranking-sindicatos">
+            <tr>
+                <td colspan="4">Cargando...</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <hr>
+
+    <!-- ================= RANKING DIRECTORES ================= -->
+    <h2>Asistencia Directores</h2>
+    <table class="tabla">
+        <thead>
+            <tr>
+                <th>Director</th>
+                <th>Reuniones</th>
+                <th>Asistió</th>
+                <th>% Asistencia</th>
+            </tr>
+        </thead>
+        <tbody id="tabla-ranking-directores">
+            <tr>
+                <td colspan="4">Cargando...</td>
+            </tr>
+        </tbody>
+    </table>
+
 </div>
 
 

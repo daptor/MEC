@@ -5706,61 +5706,41 @@ async function cargarHistorialReuniones() {
 
 
 // ======================================================
-// 🔎 VER DETALLE DE REUNIÓN (MODAL + FALLBACK SEGURO)
+// 🔎 VER DETALLE DE REUNIÓN
 // ======================================================
 async function verDetalleReunion(reunionId) {
 
-    const { data, error } = await supabase
-        .from("reunion_participantes")
-        .select("*")
-        .eq("reunion_id", String(reunionId));
+    try {
 
-    if (error || !data) {
-        alert("Error cargando detalle.");
-        return;
-    }
+        console.log("📌 Cargando detalle reunión:", reunionId);
 
-    const tbody = document.getElementById("modal-reunion-body");
-    const modal = document.getElementById("modal-reunion-detalle");
+        const { data, error } = await supabase
+            .from("reunion_participantes")
+            .select("*")
+            .eq("reunion_id", String(reunionId));
 
-    if (!tbody || !modal) {
-        alert("ERROR: modal no existe en DOM");
-        return;
-    }
-
-    // 🔥 LIMPIAR ANTES DE MOSTRAR
-    tbody.innerHTML = "";
-
-    if (data.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="2">No hay participantes</td>
-            </tr>
-        `;
-    } else {
-        for (const p of data) {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td>${p.socio_nombre ?? "-"}</td>
-                <td>${p.sindicato_nombre ?? "-"}</td>
-            `;
-            tbody.appendChild(tr);
+        if (error) {
+            console.error("Error cargando detalle reunión:", error);
+            alert("Error cargando detalle.");
+            return;
         }
+
+        if (!data || data.length === 0) {
+            alert("No hay participantes registrados.");
+            return;
+        }
+
+        let mensaje = "Participantes:\n\n";
+
+        data.forEach(p => {
+            mensaje += `• ${p.socio_nombre} (${p.sindicato_nombre})\n`;
+        });
+
+        alert(mensaje);
+
+    } catch (err) {
+        console.error("Error inesperado detalle reunión:", err);
     }
-
-    // 🔥 IMPORTANTE: mostrar DESPUÉS del render
-    requestAnimationFrame(() => {
-        modal.style.display = "block";
-    });
-}
-
-
-// ======================================================
-// 🪟 MODAL CONTROL
-// ======================================================
-function cerrarModalReunion() {
-    const modal = document.getElementById("modal-reunion-detalle");
-    if (modal) modal.style.display = "none";
 }
 
 // ****************************bienvenida*********************************

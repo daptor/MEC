@@ -5717,39 +5717,51 @@ async function verDetalleReunion(reunionId) {
             .select("*")
             .eq("reunion_id", String(reunionId));
 
-        if (error || !data) {
+        if (error) {
             alert("Error cargando detalle.");
             return;
         }
 
-        if (data.length === 0) {
-            alert("No hay participantes registrados.");
-            return;
+        const tbody = document.getElementById("modal-reunion-body");
+        tbody.innerHTML = "";
+
+        if (!data || data.length === 0) {
+
+            const tr = document.createElement("tr");
+
+            tr.innerHTML = `
+                <td colspan="2">No hay participantes registrados</td>
+            `;
+
+            tbody.appendChild(tr);
+
+        } else {
+
+            data.forEach(p => {
+
+                const tr = document.createElement("tr");
+
+                tr.innerHTML = `
+                    <td>${p.socio_nombre ?? "-"}</td>
+                    <td>${p.sindicato_nombre ?? "-"}</td>
+                `;
+
+                tbody.appendChild(tr);
+            });
         }
 
-        let html = "";
-
-        data.forEach(p => {
-            html += `
-                <tr>
-                    <td>${p.socio_nombre}</td>
-                    <td>${p.sindicato_nombre}</td>
-                </tr>
-            `;
-        });
-
-        mostrarModalReunionDetalle(html);
+        document.getElementById("modal-reunion-detalle").style.display = "block";
 
     } catch (err) {
         alert("Error inesperado.");
     }
 }
 
+
 // ======================================================
-// 🪟 MODAL REUNIÓN (ESTO VA DESPUÉS)
+// 🪟 MODAL REUNIÓN
 // ======================================================
-function mostrarModalReunionDetalle(html) {
-    document.getElementById("modal-reunion-body").innerHTML = html;
+function mostrarModalReunionDetalle() {
     document.getElementById("modal-reunion-detalle").style.display = "block";
 }
 

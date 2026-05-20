@@ -5706,41 +5706,55 @@ async function cargarHistorialReuniones() {
 
 
 // ======================================================
-// 🔎 VER DETALLE DE REUNIÓN
+// 🔎 VER DETALLE DE REUNIÓN (MODAL)
 // ======================================================
 async function verDetalleReunion(reunionId) {
 
     try {
-
-        console.log("📌 Cargando detalle reunión:", reunionId);
 
         const { data, error } = await supabase
             .from("reunion_participantes")
             .select("*")
             .eq("reunion_id", String(reunionId));
 
-        if (error) {
-            console.error("Error cargando detalle reunión:", error);
+        if (error || !data) {
             alert("Error cargando detalle.");
             return;
         }
 
-        if (!data || data.length === 0) {
+        if (data.length === 0) {
             alert("No hay participantes registrados.");
             return;
         }
 
-        let mensaje = "Participantes:\n\n";
+        let html = "";
 
         data.forEach(p => {
-            mensaje += `• ${p.socio_nombre} (${p.sindicato_nombre})\n`;
+            html += `
+                <tr>
+                    <td>${p.socio_nombre}</td>
+                    <td>${p.sindicato_nombre}</td>
+                </tr>
+            `;
         });
 
-        alert(mensaje);
+        mostrarModalReunionDetalle(html);
 
     } catch (err) {
-        console.error("Error inesperado detalle reunión:", err);
+        alert("Error inesperado.");
     }
+}
+
+// ======================================================
+// 🪟 MODAL REUNIÓN (ESTO VA DESPUÉS)
+// ======================================================
+function mostrarModalReunionDetalle(html) {
+    document.getElementById("modal-reunion-body").innerHTML = html;
+    document.getElementById("modal-reunion-detalle").style.display = "block";
+}
+
+function cerrarModalReunion() {
+    document.getElementById("modal-reunion-detalle").style.display = "none";
 }
 
 // ****************************bienvenida*********************************

@@ -686,6 +686,72 @@
 
 </div>
 
+<!-- ======================================================
+🔎 MODAL DETALLE REUNIÓN (ESTILO MEC)
+====================================================== -->
+<div id="modal-reunion-detalle"
+     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999;">
+
+    <div style="
+        background:#ffffff;
+        width:92%;
+        max-width:750px;
+        margin:60px auto;
+        padding:20px;
+        border-radius:12px;
+        box-shadow:0 6px 18px rgba(0,0,0,0.25);
+        border-left:6px solid #28a745;
+        font-family: Arial, sans-serif;
+    ">
+
+        <h2 style="
+            margin:0 0 12px 0;
+            font-size:18px;
+            font-weight:800;
+            color:#1e4620;
+        ">
+            📋 Participantes de la reunión
+        </h2>
+
+        <table style="
+            width:100%;
+            border-collapse:collapse;
+            margin-top:10px;
+            font-size:14px;
+        ">
+
+            <thead>
+                <tr style="background:#f7fff3; color:#1e4620;">
+                    <th style="padding:10px; text-align:left;">Nombre</th>
+                    <th style="padding:10px; text-align:left;">Sindicato</th>
+                </tr>
+            </thead>
+
+            <tbody id="modal-reunion-body">
+                <tr>
+                    <td colspan="2" style="padding:10px;">Cargando...</td>
+                </tr>
+            </tbody>
+
+        </table>
+
+        <div style="text-align:right; margin-top:15px;">
+            <button onclick="cerrarModalReunion()" style="
+                background:#28a745;
+                color:white;
+                border:none;
+                padding:8px 14px;
+                border-radius:8px;
+                font-weight:700;
+                cursor:pointer;
+            ">
+                Cerrar
+            </button>
+        </div>
+
+    </div>
+</div>
+
 <!-- Favicon -->
 <link rel="icon" href="data:,">
 

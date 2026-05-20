@@ -426,33 +426,38 @@
         <hr>
 
         <!-- HABLANDO AHORA: reloj único y grande -->
-        <h3>🗣 Hablando ahora</h3>
-        <p id="msd2-hablando-nombre"
-           style="font-weight:bold; margin-bottom:6px;">
-            (Nadie está interviniendo)
-        </p>
+<h3>🗣 Hablando ahora</h3>
+<p id="msd2-hablando-nombre"
+   style="font-weight:bold; margin-bottom:6px;">
+    (Nadie está interviniendo)
+</p>
 
-        <div
-            id="msd2-hablando-display"
-            style="font-size:56px; font-weight:bold; margin:6px 0;"
-        >
-            00:00
-        </div>
+<div
+    id="msd2-hablando-display"
+    style="font-size:56px; font-weight:bold; margin:6px 0;"
+>
+    00:00
+</div>
 
-        <!-- Duración base de intervención -->
-        <div style="margin-top:8px; margin-bottom:8px;">
-            <label for="msd2-duracion-min">
-                Duración de intervención (minutos):
-            </label>
-            <input
-                id="msd2-duracion-min"
-                type="number"
-                min="1"
-                max="60"
-                value="3"
-                style="width:80px; margin-left:8px;"
-            />
-        </div>
+<!-- AVISO ORADOR (nuevo) -->
+<div id="msd2-aviso-orador"
+     style="display:none; font-size:13px; color:#1e4620; margin-top:6px;">
+</div>
+
+<!-- Duración base de intervención -->
+<div style="margin-top:8px; margin-bottom:8px;">
+    <label for="msd2-duracion-min">
+        Duración de intervención (minutos):
+    </label>
+    <input
+        id="msd2-duracion-min"
+        type="number"
+        min="1"
+        max="60"
+        value="3"
+        style="width:80px; margin-left:8px;"
+    />
+</div>
 
         <!-- Controles de tiempo (solo moderador real los verá) -->
         <div

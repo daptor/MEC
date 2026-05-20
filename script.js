@@ -5706,7 +5706,7 @@ async function verDetalleReunion(reunionId) {
     try {
 
         const { data, error } = await supabase
-            .from("reunion_participantes")
+            .from("reunion_participantes") // ✅ NOMBRE CORRECTO
             .select("*")
             .eq("reunion_id", reunionId);
 
@@ -5717,34 +5717,23 @@ async function verDetalleReunion(reunionId) {
         }
 
         if (!data || data.length === 0) {
-            alert("No hay participantes registrados.");
+            alert("No hay asistentes registrados.");
             return;
         }
 
-        const total = data.length;
-        const asistieron = data.filter(p => p.asistio === true).length;
-        const faltaron = total - asistieron;
-        const porcentaje = ((asistieron / total) * 100).toFixed(1);
+        // 👉 Construir listado simple
+        let listado = "👥 Asistentes:\n\n";
 
-        // Armamos texto bonito
-        let lista = "";
         data.forEach(p => {
-            lista += `${p.nombre} - ${p.asistio ? "✅ Asistió" : "❌ No asistió"}\n`;
+            const rol = p.es_moderador ? "🧑‍⚖️ Moderador" : "👤 Participante";
+            listado += `${p.socio_nombre} (${p.sindicato_nombre}) - ${rol}\n`;
         });
 
-        alert(
-            "📋 DETALLE REUNIÓN\n\n" +
-            `Total participantes: ${total}\n` +
-            `Asistieron: ${asistieron}\n` +
-            `Inasistentes: ${faltaron}\n` +
-            `% Asistencia: ${porcentaje}%\n\n` +
-            "Participantes:\n" +
-            "----------------------\n" +
-            lista
-        );
+        alert(listado);
 
     } catch (err) {
         console.error("Error inesperado detalle reunión:", err);
+        alert("Error inesperado.");
     }
 }
 

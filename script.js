@@ -5709,39 +5709,107 @@ async function cargarHistorialReuniones() {
 // 🔎 VER DETALLE DE REUNIÓN
 // ======================================================
 async function verDetalleReunion(reunionId) {
+  try {
+    console.log("📌 Cargando ACTA de reunión:", reunionId);
 
-    try {
+    // 1) Buscar el acta correspondiente a esa reunión
+    const { data: acta, error: errActa } = await supabase
+      .from("reunion_asistencia")
+      .select("*")
+      .eq("reunion_id", reunionId)
+      .maybeSingle();
 
-        console.log("📌 Cargando detalle reunión:", reunionId);
-
-        const { data, error } = await supabase
-            .from("reunion_participantes")
-            .select("*")
-            .eq("reunion_id", String(reunionId));
-
-        if (error) {
-            console.error("Error cargando detalle reunión:", error);
-            alert("Error cargando detalle.");
-            return;
-        }
-
-        if (!data || data.length === 0) {
-            alert("No hay participantes registrados.");
-            return;
-        }
-
-        let mensaje = "Participantes:\n\n";
-
-        data.forEach(p => {
-            mensaje += `• ${p.socio_nombre} (${p.sindicato_nombre})\n`;
-        });
-
-        alert(mensaje);
-
-    } catch (err) {
-        console.error("Error inesperado detalle reunión:", err);
+    if (errActa) {
+      console.error("Error cargando acta:", errActa);
+      alert("Error cargando acta de la reunión.");
+      return;
     }
+
+    if (!acta) {
+      alert("No se encontró acta para esta reunión (aún no se cerró correctamente).");
+      return;
+    }
+
+    // 2) Traer el detalle socio x socio (asistió / no asistió)
+    const { data: detalle, error: errDet } = await supabase
+      .from("reunion_asistencia_detalle")
+      .select("*")
+      .eq("asistencia_id", acta.id);
+
+    if (errDet) {
+      console.error("Error cargando detalle acta:", errDet);
+      alert("Error cargando detalle de la reunión.");
+      return;
+    }
+
+    if (!detalle || detalle.length === 0) {
+      alert("Acta sin detalle de socios.");
+      return;
+    }
+
+    // 3) Separar asistentes y ausentes
+    const asistentes = detalle.filter(d => d.asistio);
+    const ausentes   = detalle.filter(d => !d.asistio);
+
+    // 4) Pintar cabecera del acta
+    const headerEl      = document.getElementById("detalle-reunion-header");
+    const contenedorEl  = document.getElementById("detalle-reunion-container");
+    const ulAsistentes  = document.getElementById("detalle-reunion-asistentes");
+    const ulAusentes    = document.getElementById("detalle-reunion-ausentes");
+
+    if (!headerEl || !contenedorEl || !ulAsistentes || !ulAusentes) {
+      console.warn("⚠️ Contenedores de detalle de reunión no encontrados en el DOM.");
+      // fallback mínimo: el alert viejo, por si acaso
+      let msg = "Participantes:\n\n";
+      asistentes.forEach(a => {
+        msg += `• ${a.socio_nombre} (${a.sindicato_nombre})\n`;
+      });
+      alert(msg);
+      return;
+    }
+
+    const fechaStr = acta.fecha_cierre
+      ? new Date(acta.fecha_cierre).toLocaleString("es-CL")
+      : "-";
+
+    headerEl.innerHTML = `
+      <p><strong>Reunión:</strong> ${acta.nombre_reunion || ""}</p>
+      <p><strong>Código:</strong> ${acta.codigo_reunion || ""}</p>
+      <p><strong>Moderador:</strong> ${acta.moderador_nombre || "-"}</p>
+      <p><strong>Fecha cierre:</strong> ${fechaStr}</p>
+      <p><strong>Total socios:</strong> ${acta.total_socios}</p>
+      <p><strong>Asistentes:</strong> ${acta.total_asistentes} | 
+         <strong>Inasistentes:</strong> ${acta.total_inasistentes} | 
+         <strong>% Asistencia:</strong> ${acta.porcentaje_asistencia}%</p>
+    `;
+
+    // 5) Listar asistentes
+    ulAsistentes.innerHTML = "";
+    asistentes.forEach(a => {
+      const li = document.createElement("li");
+      li.textContent = `${a.socio_nombre} (${a.sindicato_nombre})`;
+      ulAsistentes.appendChild(li);
+    });
+
+    // 6) Listar ausentes
+    ulAusentes.innerHTML = "";
+    ausentes.forEach(a => {
+      const li = document.createElement("li");
+      li.textContent = `${a.socio_nombre} (${a.sindicato_nombre})`;
+      ulAusentes.appendChild(li);
+    });
+
+    // 7) Mostrar bloque
+    contenedorEl.style.display = "block";
+
+    console.log("✅ Acta mostrada correctamente");
+
+  } catch (err) {
+    console.error("❌ Error inesperado en verDetalleReunion:", err);
+    alert("Error inesperado cargando detalle.");
+  }
 }
+
 
 // ****************************bienvenida*********************************
 document.addEventListener("DOMContentLoaded", function () {

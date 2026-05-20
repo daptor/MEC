@@ -4034,7 +4034,6 @@ if (sindicatoSeleccionado === "AsistenciaEstadisticas") {
 // ======================================================
 if (sindicatoSeleccionado === "AsistenciaFederacion") {
 
-    // Validar contra TODAS las claves federación
     const todasLasClaves = Object.values(claves);
 
     if (!todasLasClaves.includes(claveIngresada)) {
@@ -4043,33 +4042,28 @@ if (sindicatoSeleccionado === "AsistenciaFederacion") {
         return;
     }
 
-    // ✅ Acceso autorizado
     cerrarModalClave();
     mostrarPantalla("pantalla-asistencia-historica");
 
-    // ⏳ MUY IMPORTANTE:
-    // Esperar a que el DOM renderice la pantalla antes de cargar datos
+    // ⏳ Esperar a que MEC renderice la pantalla
     setTimeout(() => {
 
         if (typeof cargarDashboardAsistencia === "function") {
             cargarDashboardAsistencia();
         }
-
         if (typeof cargarHistorialReuniones === "function") {
             cargarHistorialReuniones();
         }
-
         if (typeof cargarRankingSindicatos === "function") {
             cargarRankingSindicatos();
         }
-
         if (typeof cargarRankingDirectores === "function") {
             cargarRankingDirectores();
         }
 
-    }, 250);
+    }, 300); // mismo patrón usado en Reunión Federación
 
-    return; // 🚨 IMPORTANTÍSIMO
+    return;
 }
 
     // ======================================================

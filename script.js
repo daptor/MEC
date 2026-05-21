@@ -5213,11 +5213,8 @@ canal.on(
   },
 
   async (payload) => {
-
     console.log("🔥 UPDATE REUNION RECIBIDO:", payload);
-
     const r = payload.new;
-
     if (!r) {
       console.warn("⚠️ Payload reunión vacío");
       return;
@@ -5280,6 +5277,23 @@ canal.on(
 
     if (r.orador_actual_id) {
 
+      // ✅ Evitar reprocesar mismo orador realtime
+      if (
+        window.msd2_ultimoOradorProcesado ===
+        r.orador_actual_id
+      ) {
+
+        console.warn(
+          "⚠️ Orador realtime ya procesado"
+        );
+
+        return;
+      }
+
+      // ✅ Marcar orador ya procesado
+      window.msd2_ultimoOradorProcesado =
+        r.orador_actual_id;
+
       console.log(
         "🗣 Nuevo orador:",
         r.orador_actual_id
@@ -5317,6 +5331,10 @@ canal.on(
 
     } else {
 
+      // ✅ Liberar bloqueo realtime
+      window.msd2_ultimoOradorProcesado =
+        null;
+
       console.log("🛑 Sin orador activo");
 
       if (el) {
@@ -5324,7 +5342,6 @@ canal.on(
           "(Nadie está interviniendo)";
       }
     }
-
 
     // ------------------------------------------------------
     // ⏱ CONTROL RELOJ GLOBAL

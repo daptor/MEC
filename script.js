@@ -5865,12 +5865,12 @@ async function cargarAudiosReunion(reunionId) {
 
       if (intervencion.audio_path) {
 
-        const { data: publicUrlData } = supabase
-          .storage
-          .from("reunion_intervenciones")
-          .getPublicUrl(intervencion.audio_path);
+        const { data, error } = await supabase
+        .storage
+        .from("reunion_intervenciones")
+        .createSignedUrl(intervencion.audio_path, 3600);
 
-        audioUrl = publicUrlData?.publicUrl || "";
+        const audioUrl = data?.signedUrl || "";
       }
 
       html += `

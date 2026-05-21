@@ -5861,17 +5861,7 @@ async function cargarAudiosReunion(reunionId) {
       // ==================================================
       // 🔗 GENERAR URL PÚBLICA SUPABASE STORAGE
       // ==================================================
-      let audioUrl = "";
-
-      if (intervencion.audio_path) {
-
-        const { data: publicUrlData } = supabase
-          .storage
-          .from("reunion_intervenciones")
-          .getPublicUrl(intervencion.audio_path);
-
-        audioUrl = publicUrlData?.publicUrl || "";
-      }
+if (intervencion.audio_path) {
 
       html += `
         <div style="

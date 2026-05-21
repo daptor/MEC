@@ -5816,6 +5816,7 @@ async function verDetalleReunion(reunionId) {
 // ======================================================
 async function cargarAudiosReunion(reunionId) {
   try {
+
     console.log("🎙 Cargando audios reunión:", reunionId);
 
     const contenedor = document.getElementById("detalle-reunion-audios");
@@ -5825,9 +5826,7 @@ async function cargarAudiosReunion(reunionId) {
       return;
     }
 
-    contenedor.innerHTML = `
-      <p>Cargando intervenciones...</p>
-    `;
+    contenedor.innerHTML = `<p>Cargando intervenciones...</p>`;
 
     const { data, error } = await supabase
       .from("reunion_intervenciones")
@@ -5837,40 +5836,41 @@ async function cargarAudiosReunion(reunionId) {
 
     if (error) {
       console.error("❌ Error cargando audios:", error);
-
-      contenedor.innerHTML = `
-        <p style="color:red;">
-          Error cargando intervenciones.
-        </p>
-      `;
-
+      contenedor.innerHTML = `<p style="color:red;">Error cargando intervenciones.</p>`;
       return;
     }
 
     if (!data || data.length === 0) {
-      contenedor.innerHTML = `
-        <p>No existen intervenciones grabadas.</p>
-      `;
+      contenedor.innerHTML = `<p>No existen intervenciones grabadas.</p>`;
       return;
     }
 
     let html = "";
 
-    data.forEach(intervencion => {
+    for (const intervencion of data) {
 
       // ==================================================
-      // 🔗 GENERAR URL PÚBLICA SUPABASE STORAGE
+      // 🔗 GENERAR URL FIRMADA SUPABASE STORAGE
       // ==================================================
+
       let audioUrl = "";
 
       if (intervencion.audio_path) {
 
-        const { data, error } = await supabase
-        .storage
-        .from("reunion_intervenciones")
-        .createSignedUrl(intervencion.audio_path, 3600);
+        const { data: signedData, error: signedError } = await supabase
+          .storage
+          .from("reunion_intervenciones")
+          .createSignedUrl(intervencion.audio_path, 3600);
 
-        const audioUrl = data?.signedUrl || "";
+        if (signedError) {
+          console.error("❌ Error signedUrl:", signedError);
+          audioUrl = "";
+        } else {
+          audioUrl = signedData?.signedUrl || "";
+        }
+
+      } else {
+        audioUrl = "";
       }
 
       html += `
@@ -5889,14 +5889,12 @@ async function cargarAudiosReunion(reunionId) {
           <br><br>
 
           <audio controls style="width:100%;">
-            <source
-              src="${audioUrl}"
-              type="audio/webm">
+            <source src="${audioUrl}" type="audio/webm">
           </audio>
 
         </div>
       `;
-    });
+    }
 
     contenedor.innerHTML = html;
 
@@ -5904,10 +5902,8 @@ async function cargarAudiosReunion(reunionId) {
 
   } catch (err) {
 
-    console.error(
-      "❌ Error inesperado cargando audios:",
-      err
-    );
+    console.error("❌ Error inesperado cargando audios:", err);
+
   }
 }
 

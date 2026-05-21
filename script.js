@@ -6153,28 +6153,6 @@ async function guardarIntervencionAudio(blob, reunionId) {
     const socio = window.usuarioFederacion;
 
     // ==================================================
-    // 🔢 Obtener ÚLTIMO ORDEN REAL de esta reunión
-    // ==================================================
-    const { data: ultimaIntervencion, error: errOrden } = await supabase
-      .from("reunion_intervenciones")
-      .select("orden")
-      .eq("reunion_id", reunionId)
-      .order("orden", { ascending: false })
-      .limit(1);
-
-    if (errOrden) {
-      console.error("❌ Error obteniendo último orden:", errOrden);
-      return;
-    }
-    const orden = (
-      ultimaIntervencion &&
-      ultimaIntervencion.length > 0
-    )
-      ? ultimaIntervencion[0].orden + 1
-      : 1;
-    console.log("🔢 Nuevo orden intervención:", orden);
-
-    // ==================================================
     // ☁️ SUBIR AUDIO STORAGE
     // ==================================================
     const BUCKET = "reunion_intervenciones";
@@ -6201,17 +6179,15 @@ async function guardarIntervencionAudio(blob, reunionId) {
     console.log("☁️ Audio subido correctamente:", path);
 
     // ==================================================
-    // 🗂 INSERT BD
+    // 🗂 INSERT SEGURO VIA RPC
     // ==================================================
     const { error: errInsert } = await supabase
-      .from("reunion_intervenciones")
-      .insert([{
-        reunion_id: reunionId,
-        socio_id: socio.socio_id,
-        socio_nombre: socio.nombre,
-        orden: orden,
-        audio_path: path
-      }]);
+    .rpc("insertar_intervencion_segura", {
+        p_reunion_id: reunionId,
+        p_socio_id: socio.socio_id,
+        p_socio_nombre: socio.nombre,
+        p_audio_path: path
+    });
 
     if (errInsert) {
       console.error("❌ Error registrando intervención:", errInsert);

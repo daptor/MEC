@@ -5686,10 +5686,7 @@ async function cargarHistorialReuniones() {
                 ? new Date(reunion.fecha_cierre).toLocaleDateString("es-CL")
                 : "-";
 
-            // 🔥 FIX REAL: usar SOLO UUID si existe
-            const reunionId = reunion.reunion_id ?? reunion.id;
-
-            console.log("REUNION OBJ:", reunion);
+            const reunionId = reunion.reunion_id;
 
             fila.innerHTML = `
                 <td>${fecha}</td>
@@ -5711,200 +5708,167 @@ async function cargarHistorialReuniones() {
     }
 }
 
+
 // ======================================================
-// 🔎 VER DETALLE DE REUNIÓN (ACTA EN MISMA PANTALLA)
+// 🔎 VER DETALLE DE REUNIÓN
 // ======================================================
 async function verDetalleReunion(reunionId) {
-  try {
-    console.log("📌 Cargando ACTA de reunión:", reunionId);
 
-    // 1) Buscar el acta correspondiente a esa reunión
-    const { data: acta, error: errActa } = await supabase
-      .from("reunion_asistencia")
-      .select("*")
-      .eq("reunion_id", reunionId)
-      .maybeSingle();
+    try {
 
-    if (errActa) {
-      console.error("Error cargando acta:", errActa);
-      alert("Error cargando acta de la reunión.");
-      return;
+        const { data: acta, error: errActa } = await supabase
+            .from("reunion_asistencia")
+            .select("*")
+            .eq("reunion_id", reunionId)
+            .maybeSingle();
+
+        if (errActa) {
+            console.error(errActa);
+            alert("Error cargando acta.");
+            return;
+        }
+
+        if (!acta) {
+            alert("No se encontró acta.");
+            return;
+        }
+
+        const { data: detalle, error: errDet } = await supabase
+            .from("reunion_asistencia_detalle")
+            .select("*")
+            .eq("asistencia_id", acta.id);
+
+        if (errDet) {
+            console.error(errDet);
+            alert("Error cargando detalle.");
+            return;
+        }
+
+        const asistentes = detalle.filter(d => d.asistio);
+        const ausentes = detalle.filter(d => !d.asistio);
+
+        const wrapperEl = document.getElementById("detalle-reunion-wrapper");
+        const headerEl = document.getElementById("detalle-reunion-header");
+        const ulAsistentes = document.getElementById("detalle-reunion-asistentes");
+        const ulAusentes = document.getElementById("detalle-reunion-ausentes");
+
+        if (!wrapperEl || !headerEl || !ulAsistentes || !ulAusentes) return;
+
+        const fechaStr = acta.fecha_cierre
+            ? new Date(acta.fecha_cierre).toLocaleString("es-CL")
+            : "-";
+
+        headerEl.innerHTML = `
+            <p><strong>Reunión:</strong> ${acta.nombre_reunion || ""}</p>
+            <p><strong>Código:</strong> ${acta.codigo_reunion || ""}</p>
+            <p><strong>Moderador:</strong> ${acta.moderador_nombre || "-"}</p>
+            <p><strong>Fecha cierre:</strong> ${fechaStr}</p>
+            <p><strong>Total socios:</strong> ${acta.total_socios}</p>
+            <p><strong>Asistentes:</strong> ${acta.total_asistentes} |
+               <strong>Inasistentes:</strong> ${acta.total_inasistentes} |
+               <strong>% Asistencia:</strong> ${acta.porcentaje_asistencia}%</p>
+        `;
+
+        ulAsistentes.innerHTML = "";
+        asistentes.forEach(a => {
+            const li = document.createElement("li");
+            li.textContent = `${a.socio_nombre} (${a.sindicato_nombre})`;
+            ulAsistentes.appendChild(li);
+        });
+
+        ulAusentes.innerHTML = "";
+        ausentes.forEach(a => {
+            const li = document.createElement("li");
+            li.textContent = `${a.socio_nombre} (${a.sindicato_nombre})`;
+            ulAusentes.appendChild(li);
+        });
+
+        wrapperEl.style.display = "block";
+
+        await cargarAudiosReunion(reunionId);
+
+    } catch (err) {
+        console.error(err);
+        alert("Error inesperado.");
     }
-
-    if (!acta) {
-      alert("No se encontró acta para esta reunión (aún no se cerró correctamente).");
-      return;
-    }
-
-    // 2) Traer el detalle socio x socio (asistió / no asistió)
-    const { data: detalle, error: errDet } = await supabase
-      .from("reunion_asistencia_detalle")
-      .select("*")
-      .eq("asistencia_id", acta.id);
-
-    if (errDet) {
-      console.error("Error cargando detalle acta:", errDet);
-      alert("Error cargando detalle de la reunión.");
-      return;
-    }
-
-    if (!detalle || detalle.length === 0) {
-      alert("Acta sin detalle de socios.");
-      return;
-    }
-
-    // 3) Separar asistentes y ausentes
-    const asistentes = detalle.filter(d => d.asistio);
-    const ausentes   = detalle.filter(d => !d.asistio);
-
-    // 4) Referencias DOM (wrapper + contenido)
-    const wrapperEl    = document.getElementById("detalle-reunion-wrapper");
-    const headerEl     = document.getElementById("detalle-reunion-header");
-    const ulAsistentes = document.getElementById("detalle-reunion-asistentes");
-    const ulAusentes   = document.getElementById("detalle-reunion-ausentes");
-
-    if (!wrapperEl || !headerEl || !ulAsistentes || !ulAusentes) {
-      console.warn("⚠️ Contenedores de detalle de reunión no encontrados en el DOM.");
-      return;
-    }
-
-    // 5) Cabecera del acta
-    const fechaStr = acta.fecha_cierre
-      ? new Date(acta.fecha_cierre).toLocaleString("es-CL")
-      : "-";
-
-    headerEl.innerHTML = `
-      <p><strong>Reunión:</strong> ${acta.nombre_reunion || ""}</p>
-      <p><strong>Código:</strong> ${acta.codigo_reunion || ""}</p>
-      <p><strong>Moderador:</strong> ${acta.moderador_nombre || "-"}</p>
-      <p><strong>Fecha cierre:</strong> ${fechaStr}</p>
-      <p><strong>Total socios:</strong> ${acta.total_socios}</p>
-      <p><strong>Asistentes:</strong> ${acta.total_asistentes} | 
-         <strong>Inasistentes:</strong> ${acta.total_inasistentes} | 
-         <strong>% Asistencia:</strong> ${acta.porcentaje_asistencia}%</p>
-    `;
-
-    // 6) Listar asistentes
-    ulAsistentes.innerHTML = "";
-    asistentes.forEach(a => {
-      const li = document.createElement("li");
-      li.textContent = `${a.socio_nombre} (${a.sindicato_nombre})`;
-      ulAsistentes.appendChild(li);
-    });
-
-    // 7) Listar ausentes
-    ulAusentes.innerHTML = "";
-    ausentes.forEach(a => {
-      const li = document.createElement("li");
-      li.textContent = `${a.socio_nombre} (${a.sindicato_nombre})`;
-      ulAusentes.appendChild(li);
-    });
-
-    // 8) Mostrar bloque de acta
-    wrapperEl.style.display = "block";
-    await cargarAudiosReunion(reunionId);
-    console.log("✅ Acta mostrada correctamente");
-
-  } catch (err) {
-    console.error("❌ Error inesperado en verDetalleReunion:", err);
-    alert("Error inesperado cargando detalle.");
-  }
 }
+
 
 // ======================================================
 // 🎙 CARGAR AUDIOS DE REUNIÓN
 // ======================================================
 async function cargarAudiosReunion(reunionId) {
-  try {
 
-    console.log("🎙 Cargando audios reunión:", reunionId);
+    try {
 
-    const contenedor = document.getElementById("detalle-reunion-audios");
+        const contenedor = document.getElementById("detalle-reunion-audios");
+        if (!contenedor) return;
 
-    if (!contenedor) {
-      console.warn("⚠️ No existe contenedor detalle-reunion-audios");
-      return;
-    }
+        contenedor.innerHTML = "<p>Cargando intervenciones...</p>";
 
-    contenedor.innerHTML = `<p>Cargando intervenciones...</p>`;
+        const { data, error } = await supabase
+            .from("reunion_intervenciones")
+            .select("*")
+            .eq("reunion_id", reunionId)
+            .order("orden", { ascending: true });
 
-    const { data, error } = await supabase
-      .from("reunion_intervenciones")
-      .select("*")
-      .eq("reunion_id", reunionId)
-      .order("fecha", { ascending: true });
-
-    if (error) {
-      console.error("❌ Error cargando audios:", error);
-      contenedor.innerHTML = `<p style="color:red;">Error cargando intervenciones.</p>`;
-      return;
-    }
-
-    if (!data || data.length === 0) {
-      contenedor.innerHTML = `<p>No existen intervenciones grabadas.</p>`;
-      return;
-    }
-
-    let html = "";
-
-    for (const intervencion of data) {
-
-      // ==================================================
-      // 🔗 GENERAR URL FIRMADA SUPABASE STORAGE
-      // ==================================================
-
-      let audioUrl = "";
-
-      if (intervencion.audio_path) {
-
-        const { data: signedData, error: signedError } = await supabase
-          .storage
-          .from("reunion_intervenciones")
-          .createSignedUrl(intervencion.audio_path, 3600);
-
-        if (signedError) {
-          console.error("❌ Error signedUrl:", signedError);
-          audioUrl = "";
-        } else {
-          audioUrl = signedData?.signedUrl || "";
+        if (error) {
+            console.error(error);
+            contenedor.innerHTML = "<p>Error cargando intervenciones.</p>";
+            return;
         }
 
-      } else {
-        audioUrl = "";
-      }
+        if (!data || data.length === 0) {
+            contenedor.innerHTML = "<p>No existen intervenciones grabadas.</p>";
+            return;
+        }
 
-      html += `
-        <div style="
-          border:1px solid #ddd;
-          border-radius:10px;
-          padding:12px;
-          margin-bottom:12px;
-          background:#f8f8f8;
-        ">
+        let html = "";
 
-          <strong>
-            🎤 ${intervencion.socio_nombre || "Socio"}
-          </strong>
+        for (const intervencion of data) {
 
-          <br><br>
+            let audioUrl = "";
 
-          <audio controls style="width:100%;">
-            <source src="${audioUrl}" type="audio/webm">
-          </audio>
+            if (intervencion.audio_path) {
 
-        </div>
-      `;
+                const { data: signedData } = await supabase
+                    .storage
+                    .from("reunion_intervenciones")
+                    .createSignedUrl(intervencion.audio_path, 3600);
+
+                audioUrl = signedData?.signedUrl || "";
+            }
+
+            html += `
+                <div style="
+                    border:1px solid #ddd;
+                    border-radius:10px;
+                    padding:12px;
+                    margin-bottom:12px;
+                    background:#f8f8f8;
+                ">
+
+                    <strong>🎤 ${intervencion.socio_nombre || "Socio"}</strong>
+
+                    <br><br>
+
+                    ${
+                        audioUrl
+                            ? `<audio controls style="width:100%;">
+                                 <source src="${audioUrl}" type="audio/webm">
+                               </audio>`
+                            : ""
+                    }
+
+                </div>
+            `;
+        }
+
+        contenedor.innerHTML = html;
+
+    } catch (err) {
+        console.error("❌ Error inesperado cargando audios:", err);
     }
-
-    contenedor.innerHTML = html;
-
-    console.log("✅ Audios cargados:", data.length);
-
-  } catch (err) {
-
-    console.error("❌ Error inesperado cargando audios:", err);
-
-  }
 }
 
 // ======================================================

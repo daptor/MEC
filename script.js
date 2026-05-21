@@ -5817,6 +5817,7 @@ async function verDetalleReunion(reunionId) {
 async function cargarAudiosReunion(reunionId) {
   try {
     console.log("🎙 Cargando audios reunión:", reunionId);
+
     const contenedor = document.getElementById("detalle-reunion-audios");
 
     if (!contenedor) {
@@ -5836,11 +5837,13 @@ async function cargarAudiosReunion(reunionId) {
 
     if (error) {
       console.error("❌ Error cargando audios:", error);
+
       contenedor.innerHTML = `
         <p style="color:red;">
           Error cargando intervenciones.
         </p>
       `;
+
       return;
     }
 
@@ -5855,6 +5858,21 @@ async function cargarAudiosReunion(reunionId) {
 
     data.forEach(intervencion => {
 
+      // ==================================================
+      // 🔗 GENERAR URL PÚBLICA SUPABASE STORAGE
+      // ==================================================
+      let audioUrl = "";
+
+      if (intervencion.audio_path) {
+
+        const { data: publicUrlData } = supabase
+          .storage
+          .from("reunion-audios")
+          .getPublicUrl(intervencion.audio_path);
+
+        audioUrl = publicUrlData?.publicUrl || "";
+      }
+
       html += `
         <div style="
           border:1px solid #ddd;
@@ -5863,23 +5881,33 @@ async function cargarAudiosReunion(reunionId) {
           margin-bottom:12px;
           background:#f8f8f8;
         ">
+
           <strong>
-            🎤 ${intervencion.nombre_socio || "Socio"}
+            🎤 ${intervencion.socio_nombre || "Socio"}
           </strong>
+
           <br><br>
+
           <audio controls style="width:100%;">
             <source
-              src="${intervencion.audio_url}"
+              src="${audioUrl}"
               type="audio/webm">
           </audio>
+
         </div>
       `;
     });
 
     contenedor.innerHTML = html;
+
     console.log("✅ Audios cargados:", data.length);
+
   } catch (err) {
-    console.error("❌ Error inesperado cargando audios:", err);
+
+    console.error(
+      "❌ Error inesperado cargando audios:",
+      err
+    );
   }
 }
 
@@ -7988,4 +8016,4 @@ function actualizarCandadosUI() {
     });
 }
 
-//-- 19 de mayo 2026 ok
+//-- 20 de mayo 2026 

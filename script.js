@@ -6246,74 +6246,163 @@ async function guardarIntervencionAudio(blob, reunionId) {
     const socio = window.usuarioFederacion;
 
 // ==================================================
-// 🔢 Calcular siguiente orden REAL seguro
+// 💾 GUARDAR INTERVENCIÓN AUDIO
 // ==================================================
 
-const { data: ultimaIntervencion, error: errOrden } = await supabase
-  .from("reunion_intervenciones")
-  .select("orden")
-  .eq("reunion_id", reunionId)
-  .order("orden", { ascending: false })
-  .limit(1)
-  .maybeSingle();
+async function guardarIntervencionAudio(
+  blob,
+  reunionId,
+  socio
+) {
 
-if (errOrden) {
+  try {
 
-  console.warn(
-    "⚠️ Error obteniendo último orden:",
-    errOrden
-  );
-}
+    // ==================================================
+    // 🔢 CALCULAR SIGUIENTE ORDEN REAL SEGURO
+    // ==================================================
 
-const orden = ultimaIntervencion
-  ? (ultimaIntervencion.orden + 1)
-  : 1;
+    const {
+      data: ultimaIntervencion,
+      error: errOrden
+    } = await supabase
+      .from("reunion_intervenciones")
+      .select("orden")
+      .eq("reunion_id", reunionId)
+      .order("orden", {
+        ascending: false
+      })
+      .limit(1)
+      .maybeSingle();
 
-    // 2) subir a Storage
-    const BUCKET = "reunion_intervenciones";
+    if (errOrden) {
+
+      console.error(
+        "❌ Error obteniendo último orden:",
+        errOrden
+      );
+
+      return;
+    }
+
+    const siguienteOrden =
+      (ultimaIntervencion?.orden || 0) + 1;
+
+    console.log(
+      "🔢 Siguiente orden calculado:",
+      siguienteOrden
+    );
+
+    // ==================================================
+    // 📦 SUBIR AUDIO A STORAGE
+    // ==================================================
+
+    const BUCKET =
+      "reunion_intervenciones";
+
     const ts = Date.now();
-    const safeNombre = (socio.nombre || "socio")
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // sin tildes
-      .replace(/[^a-zA-Z0-9_\-]/g, "_"); // limpio
-    const path = `${reunionId}/${socio.socio_id}/${ts}_${safeNombre}.webm`;
 
-    const { error: errUp } = await supabase
+    const safeNombre =
+      (socio.nombre || "socio")
+
+        .normalize("NFD")
+
+        .replace(
+          /[\u0300-\u036f]/g,
+          ""
+        )
+
+        .replace(
+          /[^a-zA-Z0-9_\-]/g,
+          "_"
+        );
+
+    const path =
+      `${reunionId}/` +
+      `${socio.socio_id}/` +
+      `${ts}_${safeNombre}.webm`;
+
+    const {
+      error: errUp
+    } = await supabase
       .storage
       .from(BUCKET)
-      .upload(path, blob, {
-        cacheControl: "3600",
-        upsert: false,
-        contentType: "audio/webm"
-      });
+      .upload(
+        path,
+        blob,
+        {
+          cacheControl: "3600",
+          upsert: false,
+          contentType:
+            "audio/webm"
+        }
+      );
 
     if (errUp) {
-      console.error("❌ Error subiendo audio intervención:", errUp);
+
+      console.error(
+        "❌ Error subiendo audio intervención:",
+        errUp
+      );
+
       return;
     }
 
-    // 3) insertar registro en reunion_intervenciones
-    const { error: errIns } = await supabase
+    console.log(
+      "✅ Audio subido correctamente:",
+      path
+    );
+
+    // ==================================================
+    // 📝 INSERTAR INTERVENCIÓN EN BD
+    // ==================================================
+
+    const {
+      error: errIns
+    } = await supabase
       .from("reunion_intervenciones")
-      .insert([{
-        reunion_id: reunionId,
-        socio_id: socio.socio_id,
-        socio_nombre: socio.nombre,
-        orden: orden,
-        audio_path: path
-      }]);
+      .insert([
+        {
+          reunion_id:
+            reunionId,
+
+          socio_id:
+            socio.socio_id,
+
+          socio_nombre:
+            socio.nombre,
+
+          orden:
+            siguienteOrden,
+
+          audio_path:
+            path
+        }
+      ]);
 
     if (errIns) {
-      console.error("❌ Error registrando intervención en BD:", errIns);
+
+      console.error(
+        "❌ Error registrando intervención en BD:",
+        errIns
+      );
+
       return;
     }
 
-    console.log("✅ Intervención registrada correctamente (orden:", orden, ")");
+    console.log(
+      "✅ Intervención registrada correctamente (orden:",
+      siguienteOrden,
+      ")"
+    );
 
   } catch (err) {
-    console.error("❌ Error guardarIntervencionAudio:", err);
+
+    console.error(
+      "❌ Error guardarIntervencionAudio:",
+      err
+    );
   }
 }
-
 
 
 

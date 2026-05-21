@@ -5329,22 +5329,17 @@ canal.on(
     // ------------------------------------------------------
     // ⏱ CONTROL RELOJ GLOBAL
     // ------------------------------------------------------
-    if (r.reloj_activo) {
+        if (r.reloj_activo) {
 
-      console.log(
-        "▶ Iniciando timer realtime"
-      );
-
-      msd2_iniciarTimerLocal();
-
-    } else {
-
-      console.log(
-        "⏸ Deteniendo timer realtime"
-      );
-
-      msd2_detenerTimer();
-    }
+        // 🔥 evitar recrear timer ya activo
+        if (!window.msd2_estado.running) {
+            console.log("▶ Iniciando timer realtime");
+            msd2_iniciarTimerLocal();
+        }
+        } else {
+        console.log("⏸ Deteniendo timer realtime");
+        msd2_detenerTimer();
+        }
 
 
     // ------------------------------------------------------

@@ -6039,11 +6039,21 @@ function msd2_esOradorActual(payloadReunion) {
 async function iniciarGrabacionOrador(reunionPayload) {
   try {
 
-    // 🚫 Evitar duplicar grabaciones
-    if (window.msd2_grabacion.grabando) {return;}
-
     // 🚫 Solo el orador actual graba
-    if (!msd2_esOradorActual(reunionPayload)) {return;}
+    if (!msd2_esOradorActual(reunionPayload)) {
+      return;
+    }
+
+    // 🚫 Lock anti-duplicación
+    if (
+      window.msd2_grabacion.grabando ||
+      window.msd2_grabacion.iniciando
+    ) {
+      return;
+    }
+
+    // 🔒 ACTIVAR LOCK INMEDIATAMENTE
+    window.msd2_grabacion.iniciando = true;
 
     console.log("🎙 Iniciando grabación intervención...");
 
@@ -6058,11 +6068,16 @@ async function iniciarGrabacionOrador(reunionPayload) {
     window.msd2_grabacion.grabando = true;
     window.msd2_grabacion.reunionId = reunionPayload.id;
 
+    // 🔓 liberar lock inicio
+    window.msd2_grabacion.iniciando = false;
+
     // =========================================
     // 📦 Captura chunks audio
     // =========================================
     mediaRecorder.ondataavailable = (e) => {
-      if (e.data && e.data.size > 0) {window.msd2_grabacion.chunks.push(e.data);}
+      if (e.data && e.data.size > 0) {
+        window.msd2_grabacion.chunks.push(e.data);
+      }
     };
 
     // =========================================
@@ -6070,7 +6085,10 @@ async function iniciarGrabacionOrador(reunionPayload) {
     // =========================================
     mediaRecorder.onstop = async () => {
 
-      try {console.log("🛑 Grabación detenida, procesando Blob...");
+      try {
+
+        console.log("🛑 Grabación detenida, procesando Blob...");
+
         const blob = new Blob(
           window.msd2_grabacion.chunks,
           { type: "audio/webm" }
@@ -6081,38 +6099,46 @@ async function iniciarGrabacionOrador(reunionPayload) {
           return;
         }
 
-        // 💾 Guardar intervención
         await guardarIntervencionAudio(
           blob,
           window.msd2_grabacion.reunionId
         );
 
       } catch (err) {
+
         console.error("❌ Error post-procesando grabación:", err);
+
       } finally {
 
-        // 🧹 Limpieza completa estado grabación
         window.msd2_grabacion.chunks = [];
         window.msd2_grabacion.mediaRecorder = null;
         window.msd2_grabacion.grabando = false;
+        window.msd2_grabacion.iniciando = false;
         window.msd2_grabacion.reunionId = null;
       }
     };
 
-    // ▶️ Iniciar recorder
     mediaRecorder.start();
+
     console.log("✅ MediaRecorder.start() OK");
 
-    // 📢 Aviso visual
     const aviso = document.getElementById("msd2-aviso-orador");
+
     if (aviso) {
       aviso.textContent = "🎙 Estás interviniendo (audio grabándose)";
       aviso.style.display = "block";
     }
+
   } catch (err) {
+
+    // 🔓 liberar lock si falla permiso micro
+    window.msd2_grabacion.iniciando = false;
+    window.msd2_grabacion.grabando = false;
+
     console.error("❌ No se pudo iniciar grabación:", err);
   }
 }
+
 
 // ======================================================
 // ⏹ Detener grabación

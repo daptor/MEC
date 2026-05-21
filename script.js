@@ -6024,19 +6024,28 @@ window.msd2_grabacion = {
   mediaRecorder: null,
   chunks: [],
   grabando: false,
-  reunionId: null
+  iniciando: false,
+  guardando: false,
+  reunionId: null,
+  intervencionId: null
 };
 
 // ✅ Saber si este cliente es el orador actual
 function msd2_esOradorActual(payloadReunion) {
+
   if (!window.usuarioFederacion) return false;
+
   if (!payloadReunion?.orador_actual_id) return false;
 
-  return String(window.usuarioFederacion.socio_id) === String(payloadReunion.orador_actual_id);
+  return (
+    String(window.usuarioFederacion.socio_id) ===
+    String(payloadReunion.orador_actual_id)
+  );
 }
 
 // 🎬 Iniciar grabación en el cliente del orador
 async function iniciarGrabacionOrador(reunionPayload) {
+
   try {
 
     // 🚫 Solo el orador actual graba
@@ -6044,7 +6053,7 @@ async function iniciarGrabacionOrador(reunionPayload) {
       return;
     }
 
-    // 🚫 Lock anti-duplicación
+    // 🚫 Lock anti duplicación
     if (
       window.msd2_grabacion.grabando ||
       window.msd2_grabacion.iniciando
@@ -6052,7 +6061,7 @@ async function iniciarGrabacionOrador(reunionPayload) {
       return;
     }
 
-    // 🔒 ACTIVAR LOCK INMEDIATAMENTE
+    // 🔒 Activar lock inmediatamente
     window.msd2_grabacion.iniciando = true;
 
     console.log("🎙 Iniciando grabación intervención...");
@@ -6063,10 +6072,16 @@ async function iniciarGrabacionOrador(reunionPayload) {
 
     const mediaRecorder = new MediaRecorder(stream);
 
+    // ==================================================
+    // 🔑 NUEVA INTERVENCIÓN ÚNICA
+    // ==================================================
+    const intervencionId = crypto.randomUUID();
+
     window.msd2_grabacion.mediaRecorder = mediaRecorder;
     window.msd2_grabacion.chunks = [];
     window.msd2_grabacion.grabando = true;
     window.msd2_grabacion.reunionId = reunionPayload.id;
+    window.msd2_grabacion.intervencionId = intervencionId;
 
     // 🔓 liberar lock inicio
     window.msd2_grabacion.iniciando = false;
@@ -6075,6 +6090,7 @@ async function iniciarGrabacionOrador(reunionPayload) {
     // 📦 Captura chunks audio
     // =========================================
     mediaRecorder.ondataavailable = (e) => {
+
       if (e.data && e.data.size > 0) {
         window.msd2_grabacion.chunks.push(e.data);
       }
@@ -6095,26 +6111,37 @@ async function iniciarGrabacionOrador(reunionPayload) {
         );
 
         if (!blob || blob.size === 0) {
-          console.warn("⚠️ Blob vacío, no se guarda intervención.");
+
+          console.warn(
+            "⚠️ Blob vacío, no se guarda intervención."
+          );
+
           return;
         }
 
         await guardarIntervencionAudio(
           blob,
-          window.msd2_grabacion.reunionId
+          window.msd2_grabacion.reunionId,
+          window.msd2_grabacion.intervencionId
         );
 
       } catch (err) {
 
-        console.error("❌ Error post-procesando grabación:", err);
+        console.error(
+          "❌ Error post-procesando grabación:",
+          err
+        );
 
       } finally {
 
+        // 🧹 limpiar estado
         window.msd2_grabacion.chunks = [];
         window.msd2_grabacion.mediaRecorder = null;
         window.msd2_grabacion.grabando = false;
         window.msd2_grabacion.iniciando = false;
+        window.msd2_grabacion.guardando = false;
         window.msd2_grabacion.reunionId = null;
+        window.msd2_grabacion.intervencionId = null;
       }
     };
 
@@ -6122,10 +6149,15 @@ async function iniciarGrabacionOrador(reunionPayload) {
 
     console.log("✅ MediaRecorder.start() OK");
 
-    const aviso = document.getElementById("msd2-aviso-orador");
+    const aviso = document.getElementById(
+      "msd2-aviso-orador"
+    );
 
     if (aviso) {
-      aviso.textContent = "🎙 Estás interviniendo (audio grabándose)";
+
+      aviso.textContent =
+        "🎙 Estás interviniendo (audio grabándose)";
+
       aviso.style.display = "block";
     }
 
@@ -6135,7 +6167,10 @@ async function iniciarGrabacionOrador(reunionPayload) {
     window.msd2_grabacion.iniciando = false;
     window.msd2_grabacion.grabando = false;
 
-    console.error("❌ No se pudo iniciar grabación:", err);
+    console.error(
+      "❌ No se pudo iniciar grabación:",
+      err
+    );
   }
 }
 
@@ -6144,51 +6179,104 @@ async function iniciarGrabacionOrador(reunionPayload) {
 // ⏹ Detener grabación
 // ======================================================
 function detenerYGuardarGrabacion() {
+
   try {
+
+    // 🚫 No existe grabación activa
     if (
       !window.msd2_grabacion.grabando ||
       !window.msd2_grabacion.mediaRecorder
     ) {
       return;
     }
-    console.log("⏹ Solicitando stop() al MediaRecorder...");
+
+    // 🚫 Evitar doble stop()
+    if (
+      window.msd2_grabacion.mediaRecorder.state === "inactive"
+    ) {
+      return;
+    }
+
+    console.log(
+      "⏹ Solicitando stop() al MediaRecorder..."
+    );
+
     window.msd2_grabacion.mediaRecorder.stop();
 
     // 📢 ocultar aviso
-    const aviso = document.getElementById("msd2-aviso-orador");
+    const aviso = document.getElementById(
+      "msd2-aviso-orador"
+    );
+
     if (aviso) {
+
       aviso.textContent = "";
       aviso.style.display = "none";
     }
+
   } catch (err) {
-    console.error("❌ Error deteniendo grabación:", err);
+
+    console.error(
+      "❌ Error deteniendo grabación:",
+      err
+    );
   }
 }
 
 // ======================================================
 // 💾 Guardar intervención en Storage + BD
 // ======================================================
-async function guardarIntervencionAudio(blob, reunionId) {
+async function guardarIntervencionAudio(
+  blob,
+  reunionId,
+  intervencionId
+) {
+
   try {
 
-    // 🚫 Validar usuario
-    if (!window.usuarioFederacion ||!window.usuarioFederacion.socio_id) {
-      console.warn("⚠️ Usuario federación no disponible.");
+    // 🚫 Lock anti doble guardado
+    if (window.msd2_grabacion.guardando) {
+
+      console.warn(
+        "⚠️ Ya existe un guardado en proceso."
+      );
+
       return;
     }
+
+    // 🔒 activar lock
+    window.msd2_grabacion.guardando = true;
+
+    // 🚫 Validar usuario
+    if (
+      !window.usuarioFederacion ||
+      !window.usuarioFederacion.socio_id
+    ) {
+
+      console.warn(
+        "⚠️ Usuario federación no disponible."
+      );
+
+      return;
+    }
+
     const socio = window.usuarioFederacion;
 
     // ==================================================
     // ☁️ SUBIR AUDIO STORAGE
     // ==================================================
     const BUCKET = "reunion_intervenciones";
+
     const ts = Date.now();
+
     const safeNombre = (socio.nombre || "socio")
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-zA-Z0-9_\-]/g, "_");
 
-    const path = `${reunionId}/${socio.socio_id}/${ts}_${safeNombre}.webm`;
+    const path =
+      `${reunionId}/${socio.socio_id}/${intervencionId}_${ts}_${safeNombre}.webm`;
+
     const { error: errUpload } = await supabase
       .storage
       .from(BUCKET)
@@ -6199,29 +6287,60 @@ async function guardarIntervencionAudio(blob, reunionId) {
       });
 
     if (errUpload) {
-      console.error("❌ Error subiendo audio:", errUpload);
+
+      console.error(
+        "❌ Error subiendo audio:",
+        errUpload
+      );
+
       return;
     }
-    console.log("☁️ Audio subido correctamente:", path);
+
+    console.log(
+      "☁️ Audio subido correctamente:",
+      path
+    );
 
     // ==================================================
-    // 🗂 INSERT SEGURO VIA RPC
+    // 🗂 INSERT IDEMPOTENTE VIA RPC
     // ==================================================
     const { error: errInsert } = await supabase
-    .rpc("insertar_intervencion_segura", {
+      .rpc("insertar_intervencion_segura", {
+
+        p_intervencion_id: intervencionId,
         p_reunion_id: reunionId,
         p_socio_id: socio.socio_id,
         p_socio_nombre: socio.nombre,
         p_audio_path: path
-    });
+
+      });
 
     if (errInsert) {
-      console.error("❌ Error registrando intervención:", errInsert);
+
+      console.error(
+        "❌ Error registrando intervención:",
+        errInsert
+      );
+
       return;
     }
-    console.log(`✅ Intervención registrada correctamente (orden: ${orden})`);
+
+    console.log(
+      "✅ Intervención registrada:",
+      intervencionId
+    );
+
   } catch (err) {
-    console.error("❌ Error guardarIntervencionAudio:", err);
+
+    console.error(
+      "❌ Error guardarIntervencionAudio:",
+      err
+    );
+
+  } finally {
+
+    // 🔓 liberar lock guardado
+    window.msd2_grabacion.guardando = false;
   }
 }
 

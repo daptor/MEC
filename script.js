@@ -5858,48 +5858,58 @@ async function cargarAudiosReunion(reunionId) {
 
     data.forEach(intervencion => {
 
-      // ==================================================
-      // 🔗 GENERAR URL PÚBLICA SUPABASE STORAGE
-      // ==================================================
+// ==================================================
+// 🔗 GENERAR URL PÚBLICA SUPABASE STORAGE
+// ==================================================
+
+let audioUrl = "";
+
 if (intervencion.audio_path) {
 
-      html += `
-        <div style="
-          border:1px solid #ddd;
-          border-radius:10px;
-          padding:12px;
-          margin-bottom:12px;
-          background:#f8f8f8;
-        ">
+  console.log("🧠 AUDIO PATH:", intervencion.audio_path);
 
-          <strong>
-            🎤 ${intervencion.socio_nombre || "Socio"}
-          </strong>
+  const { data } = supabase
+    .storage
+    .from("reunion_intervenciones") // ✔ bucket correcto (IMPORTANTE)
+    .getPublicUrl(intervencion.audio_path);
 
-          <br><br>
+  audioUrl = data?.publicUrl || "";
 
-          <audio controls style="width:100%;">
-            <source
-              src="${audioUrl}"
-              type="audio/webm">
-          </audio>
-
-        </div>
-      `;
-    });
-
-    contenedor.innerHTML = html;
-
-    console.log("✅ Audios cargados:", data.length);
-
-  } catch (err) {
-
-    console.error(
-      "❌ Error inesperado cargando audios:",
-      err
-    );
-  }
+  console.log("🔗 AUDIO URL:", audioUrl);
 }
+
+// ==================================================
+// 🎧 RENDER INTERVENCIÓN
+// ==================================================
+
+html += `
+  <div style="
+    border:1px solid #ddd;
+    border-radius:10px;
+    padding:12px;
+    margin-bottom:12px;
+    background:#f8f8f8;
+  ">
+
+    <strong>
+      🎤 ${intervencion.socio_nombre || "Socio"}
+    </strong>
+
+    <br><br>
+
+    ${
+      audioUrl
+        ? `
+          <audio controls style="width:100%;">
+            <source src="${audioUrl}" type="audio/webm">
+            Tu navegador no soporta audio HTML5.
+          </audio>
+        `
+        : `<p style="color:#888;">⚠️ Audio no disponible</p>`
+    }
+
+  </div>
+`;
 
 // ======================================================
 // 🔙 CERRAR ACTA DE REUNIÓN

@@ -5867,7 +5867,7 @@ async function cargarAudiosReunion(reunionId) {
 
         const { data: publicUrlData } = supabase
           .storage
-          .from("reunion-audios")
+          .from("reunion-intervenciones")
           .getPublicUrl(intervencion.audio_path);
 
         audioUrl = publicUrlData?.publicUrl || "";

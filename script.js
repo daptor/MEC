@@ -5832,7 +5832,7 @@ async function cargarAudiosReunion(reunionId) {
       .from("reunion_intervenciones")
       .select("*")
       .eq("reunion_id", reunionId)
-      .order("fecha_inicio", { ascending: true });
+      .order("fecha", { ascending: true });
 
     if (error) {
       console.error("❌ Error cargando audios:", error);

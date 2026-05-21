@@ -5325,7 +5325,6 @@ canal.on(
       }
     }
 
-
     // ------------------------------------------------------
     // ⏱ CONTROL RELOJ GLOBAL
     // ------------------------------------------------------
@@ -5340,7 +5339,6 @@ canal.on(
         console.log("⏸ Deteniendo timer realtime");
         msd2_detenerTimer();
         }
-
 
     // ------------------------------------------------------
     // 🖥 ACTUALIZAR DISPLAY
@@ -5804,12 +5802,84 @@ async function verDetalleReunion(reunionId) {
 
     // 8) Mostrar bloque de acta
     wrapperEl.style.display = "block";
-
+    await cargarAudiosReunion(reunionId);
     console.log("✅ Acta mostrada correctamente");
 
   } catch (err) {
     console.error("❌ Error inesperado en verDetalleReunion:", err);
     alert("Error inesperado cargando detalle.");
+  }
+}
+
+// ======================================================
+// 🎙 CARGAR AUDIOS DE REUNIÓN
+// ======================================================
+async function cargarAudiosReunion(reunionId) {
+  try {
+    console.log("🎙 Cargando audios reunión:", reunionId);
+    const contenedor = document.getElementById("detalle-reunion-audios");
+
+    if (!contenedor) {
+      console.warn("⚠️ No existe contenedor detalle-reunion-audios");
+      return;
+    }
+
+    contenedor.innerHTML = `
+      <p>Cargando intervenciones...</p>
+    `;
+
+    const { data, error } = await supabase
+      .from("reunion_intervenciones")
+      .select("*")
+      .eq("reunion_id", reunionId)
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      console.error("❌ Error cargando audios:", error);
+      contenedor.innerHTML = `
+        <p style="color:red;">
+          Error cargando intervenciones.
+        </p>
+      `;
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      contenedor.innerHTML = `
+        <p>No existen intervenciones grabadas.</p>
+      `;
+      return;
+    }
+
+    let html = "";
+
+    data.forEach(intervencion => {
+
+      html += `
+        <div style="
+          border:1px solid #ddd;
+          border-radius:10px;
+          padding:12px;
+          margin-bottom:12px;
+          background:#f8f8f8;
+        ">
+          <strong>
+            🎤 ${intervencion.nombre_socio || "Socio"}
+          </strong>
+          <br><br>
+          <audio controls style="width:100%;">
+            <source
+              src="${intervencion.audio_url}"
+              type="audio/webm">
+          </audio>
+        </div>
+      `;
+    });
+
+    contenedor.innerHTML = html;
+    console.log("✅ Audios cargados:", data.length);
+  } catch (err) {
+    console.error("❌ Error inesperado cargando audios:", err);
   }
 }
 

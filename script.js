@@ -6123,7 +6123,19 @@ async function iniciarGrabacionOrador(reunionPayload) {
       audio: true
     });
 
-    const mediaRecorder = new MediaRecorder(stream);
+    // ======================================================
+    // 🔥 FIX COMPATIBILIDAD CELULAR (MEC)
+    // ======================================================
+
+    let mimeType = "audio/webm";
+
+    if (!MediaRecorder.isTypeSupported(mimeType)) {
+      mimeType = "audio/mp4";
+    }
+
+    const mediaRecorder = new MediaRecorder(stream, { mimeType });
+
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
     // ==================================================
     // 🔑 NUEVA INTERVENCIÓN ÚNICA
@@ -6159,16 +6171,17 @@ async function iniciarGrabacionOrador(reunionPayload) {
         console.log("🛑 Grabación detenida, procesando Blob...");
 
         const blob = new Blob(
-          window.msd2_grabacion.chunks,
-          { type: "audio/webm" }
+          window.msd2_grabacion.chunks || [],
+          { type: mimeType }
         );
 
         if (!blob || blob.size === 0) {
+          console.warn("⚠️ Blob vacío, no se guarda intervención.");
+          return;
+        }
 
-          console.warn(
-            "⚠️ Blob vacío, no se guarda intervención."
-          );
-
+        if (!window.msd2_grabacion.reunionId || !window.msd2_grabacion.intervencionId) {
+          console.warn("⚠️ Faltan IDs, no se guarda intervención.");
           return;
         }
 
@@ -6198,13 +6211,20 @@ async function iniciarGrabacionOrador(reunionPayload) {
       }
     };
 
-    mediaRecorder.start();
+    // ======================================================
+    // ▶ START (FIX CRÍTICO MÓVIL)
+    // ======================================================
+
+    if (isMobile) {
+      console.log("📱 Móvil detectado → start(1000ms)");
+      mediaRecorder.start(1000);
+    } else {
+      mediaRecorder.start();
+    }
 
     console.log("✅ MediaRecorder.start() OK");
 
-    const aviso = document.getElementById(
-      "msd2-aviso-orador"
-    );
+    const aviso = document.getElementById("msd2-aviso-orador");
 
     if (aviso) {
 

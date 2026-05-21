@@ -6016,9 +6016,9 @@ if (directoresSet.size === 0) {
   }
 }
 
-// ======================================================
+// ======================================================================================
 // 🎙 GRABACIÓN DE INTERVENCIÓN (lado cliente del orador)
-// ======================================================
+// ======================================================================================
 
 window.msd2_grabacion = {
   mediaRecorder: null,
@@ -6031,49 +6031,67 @@ window.msd2_grabacion = {
 function msd2_esOradorActual(payloadReunion) {
   if (!window.usuarioFederacion) return false;
   if (!payloadReunion?.orador_actual_id) return false;
+
   return String(window.usuarioFederacion.socio_id) === String(payloadReunion.orador_actual_id);
 }
 
 // 🎬 Iniciar grabación en el cliente del orador
 async function iniciarGrabacionOrador(reunionPayload) {
   try {
-    // Si ya está grabando, no duplicar
-    if (window.msd2_grabacion.grabando) return;
 
-    if (!msd2_esOradorActual(reunionPayload)) return;
+    // 🚫 Evitar duplicar grabaciones
+    if (window.msd2_grabacion.grabando) {return;}
+
+    // 🚫 Solo el orador actual graba
+    if (!msd2_esOradorActual(reunionPayload)) {return;}
 
     console.log("🎙 Iniciando grabación intervención...");
 
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: true
+    });
 
     const mediaRecorder = new MediaRecorder(stream);
+
     window.msd2_grabacion.mediaRecorder = mediaRecorder;
     window.msd2_grabacion.chunks = [];
     window.msd2_grabacion.grabando = true;
     window.msd2_grabacion.reunionId = reunionPayload.id;
 
+    // =========================================
+    // 📦 Captura chunks audio
+    // =========================================
     mediaRecorder.ondataavailable = (e) => {
-      if (e.data && e.data.size > 0) {
-        window.msd2_grabacion.chunks.push(e.data);
-      }
+      if (e.data && e.data.size > 0) {window.msd2_grabacion.chunks.push(e.data);}
     };
 
+    // =========================================
+    // 🛑 Al detener grabación
+    // =========================================
     mediaRecorder.onstop = async () => {
-      try {
-        console.log("🛑 Grabación detenida, procesando Blob...");
-        const blob = new Blob(window.msd2_grabacion.chunks, { type: "audio/webm" });
+
+      try {console.log("🛑 Grabación detenida, procesando Blob...");
+        const blob = new Blob(
+          window.msd2_grabacion.chunks,
+          { type: "audio/webm" }
+        );
 
         if (!blob || blob.size === 0) {
-          console.warn("⚠️ Blob de audio vacío, no se guarda intervención.");
+          console.warn("⚠️ Blob vacío, no se guarda intervención.");
           return;
         }
 
-        // Subir y registrar intervención
-        await guardarIntervencionAudio(blob, window.msd2_grabacion.reunionId);
+        // 💾 Guardar intervención
+        await guardarIntervencionAudio(
+          blob,
+          window.msd2_grabacion.reunionId
+        );
 
       } catch (err) {
         console.error("❌ Error post-procesando grabación:", err);
       } finally {
+
+        // 🧹 Limpieza completa estado grabación
         window.msd2_grabacion.chunks = [];
         window.msd2_grabacion.mediaRecorder = null;
         window.msd2_grabacion.grabando = false;
@@ -6081,73 +6099,93 @@ async function iniciarGrabacionOrador(reunionPayload) {
       }
     };
 
+    // ▶️ Iniciar recorder
     mediaRecorder.start();
     console.log("✅ MediaRecorder.start() OK");
 
-    // Aviso visual simple
+    // 📢 Aviso visual
     const aviso = document.getElementById("msd2-aviso-orador");
     if (aviso) {
       aviso.textContent = "🎙 Estás interviniendo (audio grabándose)";
       aviso.style.display = "block";
     }
-
   } catch (err) {
-    console.error("❌ No se pudo iniciar grabación de audio:", err);
+    console.error("❌ No se pudo iniciar grabación:", err);
   }
 }
 
-// ⏹ Detener y disparar guardado (se llamará cuando termine el turno)
+// ======================================================
+// ⏹ Detener grabación
+// ======================================================
 function detenerYGuardarGrabacion() {
   try {
-    if (!window.msd2_grabacion.grabando || !window.msd2_grabacion.mediaRecorder) {
+    if (
+      !window.msd2_grabacion.grabando ||
+      !window.msd2_grabacion.mediaRecorder
+    ) {
       return;
     }
-
     console.log("⏹ Solicitando stop() al MediaRecorder...");
     window.msd2_grabacion.mediaRecorder.stop();
 
+    // 📢 ocultar aviso
     const aviso = document.getElementById("msd2-aviso-orador");
     if (aviso) {
       aviso.textContent = "";
       aviso.style.display = "none";
     }
-
   } catch (err) {
     console.error("❌ Error deteniendo grabación:", err);
   }
 }
 
-// 💾 Subir Blob a Storage y registrar en reunion_intervenciones
+// ======================================================
+// 💾 Guardar intervención en Storage + BD
+// ======================================================
 async function guardarIntervencionAudio(blob, reunionId) {
   try {
-    if (!window.usuarioFederacion || !window.usuarioFederacion.socio_id) {
-      console.warn("⚠️ Usuario federación no cargado, no se guarda intervención.");
+
+    // 🚫 Validar usuario
+    if (!window.usuarioFederacion ||!window.usuarioFederacion.socio_id) {
+      console.warn("⚠️ Usuario federación no disponible.");
       return;
     }
-
     const socio = window.usuarioFederacion;
 
-    // 1) calcular orden = (count + 1)
-    const { count, error: errCount } = await supabase
+    // ==================================================
+    // 🔢 Obtener ÚLTIMO ORDEN REAL de esta reunión
+    // ==================================================
+    const { data: ultimaIntervencion, error: errOrden } = await supabase
       .from("reunion_intervenciones")
-      .select("*", { count: "exact", head: true })
-      .eq("reunion_id", reunionId);
+      .select("orden")
+      .eq("reunion_id", reunionId)
+      .order("orden", { ascending: false })
+      .limit(1);
 
-    if (errCount) {
-      console.warn("⚠️ Error obteniendo orden intervención:", errCount);
+    if (errOrden) {
+      console.error("❌ Error obteniendo último orden:", errOrden);
+      return;
     }
+    const orden = (
+      ultimaIntervencion &&
+      ultimaIntervencion.length > 0
+    )
+      ? ultimaIntervencion[0].orden + 1
+      : 1;
+    console.log("🔢 Nuevo orden intervención:", orden);
 
-    const orden = (count || 0) + 1;
-
-    // 2) subir a Storage
+    // ==================================================
+    // ☁️ SUBIR AUDIO STORAGE
+    // ==================================================
     const BUCKET = "reunion_intervenciones";
     const ts = Date.now();
     const safeNombre = (socio.nombre || "socio")
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // sin tildes
-      .replace(/[^a-zA-Z0-9_\-]/g, "_"); // limpio
-    const path = `${reunionId}/${socio.socio_id}/${ts}_${safeNombre}.webm`;
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9_\-]/g, "_");
 
-    const { error: errUp } = await supabase
+    const path = `${reunionId}/${socio.socio_id}/${ts}_${safeNombre}.webm`;
+    const { error: errUpload } = await supabase
       .storage
       .from(BUCKET)
       .upload(path, blob, {
@@ -6156,13 +6194,16 @@ async function guardarIntervencionAudio(blob, reunionId) {
         contentType: "audio/webm"
       });
 
-    if (errUp) {
-      console.error("❌ Error subiendo audio intervención:", errUp);
+    if (errUpload) {
+      console.error("❌ Error subiendo audio:", errUpload);
       return;
     }
+    console.log("☁️ Audio subido correctamente:", path);
 
-    // 3) insertar registro en reunion_intervenciones
-    const { error: errIns } = await supabase
+    // ==================================================
+    // 🗂 INSERT BD
+    // ==================================================
+    const { error: errInsert } = await supabase
       .from("reunion_intervenciones")
       .insert([{
         reunion_id: reunionId,
@@ -6172,19 +6213,15 @@ async function guardarIntervencionAudio(blob, reunionId) {
         audio_path: path
       }]);
 
-    if (errIns) {
-      console.error("❌ Error registrando intervención en BD:", errIns);
+    if (errInsert) {
+      console.error("❌ Error registrando intervención:", errInsert);
       return;
     }
-
-    console.log("✅ Intervención registrada correctamente (orden:", orden, ")");
-
+    console.log(`✅ Intervención registrada correctamente (orden: ${orden})`);
   } catch (err) {
     console.error("❌ Error guardarIntervencionAudio:", err);
   }
 }
-
-
 
 
 // ****************************bienvenida*********************************

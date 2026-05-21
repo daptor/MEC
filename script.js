@@ -6228,17 +6228,29 @@ async function guardarIntervencionAudio(blob, reunionId) {
 
     const socio = window.usuarioFederacion;
 
-    // 1) calcular orden = (count + 1)
-    const { count, error: errCount } = await supabase
-      .from("reunion_intervenciones")
-      .select("*", { count: "exact", head: true })
-      .eq("reunion_id", reunionId);
+// ==================================================
+// 🔢 Calcular siguiente orden REAL seguro
+// ==================================================
 
-    if (errCount) {
-      console.warn("⚠️ Error obteniendo orden intervención:", errCount);
-    }
+const { data: ultimaIntervencion, error: errOrden } = await supabase
+  .from("reunion_intervenciones")
+  .select("orden")
+  .eq("reunion_id", reunionId)
+  .order("orden", { ascending: false })
+  .limit(1)
+  .maybeSingle();
 
-    const orden = (count || 0) + 1;
+if (errOrden) {
+
+  console.warn(
+    "⚠️ Error obteniendo último orden:",
+    errOrden
+  );
+}
+
+const orden = ultimaIntervencion
+  ? (ultimaIntervencion.orden + 1)
+  : 1;
 
     // 2) subir a Storage
     const BUCKET = "reunion_intervenciones";

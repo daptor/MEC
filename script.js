@@ -6083,7 +6083,135 @@ window.msd2_grabacion = {
   intervencionId: null
 };
 
+// ======================================================
+// 🎙 ACTIVAR MICRÓFONO MANUALMENTE (FIX CELULAR)
+// ======================================================
+
+async function activarMicrofonoMEC() {
+
+  try {
+
+    if (
+      !navigator.mediaDevices ||
+      !navigator.mediaDevices.getUserMedia
+    ) {
+
+      alert(
+        "⚠️ Este dispositivo no soporta grabación de audio."
+      );
+
+      return;
+    }
+
+    // ======================================================
+    // 🧹 CERRAR STREAM ANTERIOR SI EXISTE
+    // ======================================================
+
+    if (window.msd2_streamMicrofono) {
+
+      try {
+
+        window.msd2_streamMicrofono
+          .getTracks()
+          .forEach(track => track.stop());
+
+      } catch (e) {
+
+        console.warn(
+          "⚠️ No se pudo cerrar stream anterior:",
+          e
+        );
+      }
+    }
+
+    // ======================================================
+    // 🎙 SOLICITAR PERMISO REAL AL CELULAR
+    // ======================================================
+
+    const stream =
+      await navigator.mediaDevices.getUserMedia({
+
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        },
+
+        video: false
+
+      });
+
+    // ======================================================
+    // 🔥 VALIDAR TRACKS AUDIO
+    // ======================================================
+
+    const audioTracks =
+      stream.getAudioTracks();
+
+    if (
+      !audioTracks ||
+      audioTracks.length === 0
+    ) {
+
+      alert(
+        "⚠️ El dispositivo no entregó acceso al micrófono."
+      );
+
+      return;
+    }
+
+    // ======================================================
+    // 💾 GUARDAR STREAM GLOBAL
+    // ======================================================
+
+    window.msd2_streamMicrofono = stream;
+
+    // ======================================================
+    // 🔥 DETECTAR TRACK CERRADO
+    // ======================================================
+
+    stream.getTracks().forEach(track => {
+
+      track.onended = () => {
+
+        console.warn(
+          "⚠️ Track micrófono finalizado."
+        );
+
+        window.msd2_streamMicrofono = null;
+
+        window.msd2_microfonoHabilitado = false;
+      };
+
+    });
+
+    window.msd2_microfonoHabilitado = true;
+
+    console.log(
+      "✅ Micrófono activado correctamente"
+    );
+
+    alert(
+      "✅ Micrófono activado correctamente."
+    );
+
+  } catch (err) {
+
+    console.error(
+      "❌ Error acceso micrófono:",
+      err
+    );
+
+    alert(
+      "❌ No fue posible acceder al micrófono del dispositivo."
+    );
+  }
+}
+
+// ======================================================
 // ✅ Saber si este cliente es el orador actual
+// ======================================================
+
 function msd2_esOradorActual(payloadReunion) {
 
   if (!window.usuarioFederacion) return false;
@@ -6096,17 +6224,22 @@ function msd2_esOradorActual(payloadReunion) {
   );
 }
 
+// ======================================================
 // 🎬 Iniciar grabación en el cliente del orador
+// ======================================================
+
 async function iniciarGrabacionOrador(reunionPayload) {
 
   try {
 
     // 🚫 Solo el orador actual graba
+
     if (!msd2_esOradorActual(reunionPayload)) {
       return;
     }
 
     // 🚫 Lock anti duplicación
+
     if (
       window.msd2_grabacion.grabando ||
       window.msd2_grabacion.iniciando
@@ -6115,21 +6248,24 @@ async function iniciarGrabacionOrador(reunionPayload) {
     }
 
     // 🔒 Activar lock inmediatamente
+
     window.msd2_grabacion.iniciando = true;
 
-    console.log("🎙 Iniciando grabación intervención...");
+    console.log(
+      "🎙 Iniciando grabación intervención..."
+    );
 
     // ======================================================
-    // 📱 FIX PERMISOS Y COMPATIBILIDAD MÓVIL
+    // 📱 FIX CELULAR
+    // OBLIGAR ACTIVACIÓN MANUAL PREVIA
     // ======================================================
 
     if (
-      !navigator.mediaDevices ||
-      !navigator.mediaDevices.getUserMedia
+      !window.msd2_streamMicrofono
     ) {
 
       alert(
-        "⚠️ Este dispositivo no soporta grabación de audio."
+        "⚠️ Primero debes activar el micrófono."
       );
 
       window.msd2_grabacion.iniciando = false;
@@ -6137,13 +6273,55 @@ async function iniciarGrabacionOrador(reunionPayload) {
       return;
     }
 
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true
-      }
-    });
+    // ======================================================
+    // 🎙 REUTILIZAR STREAM YA AUTORIZADO
+    // ======================================================
+
+    const stream =
+      window.msd2_streamMicrofono;
+
+    // ======================================================
+    // 🔥 VALIDAR STREAM MUERTO
+    // ======================================================
+
+    if (!stream.active) {
+
+      alert(
+        "⚠️ El micrófono del celular ya no está activo. Debes volver a activarlo."
+      );
+
+      window.msd2_streamMicrofono = null;
+
+      window.msd2_microfonoHabilitado = false;
+
+      window.msd2_grabacion.iniciando = false;
+
+      return;
+    }
+
+    // ======================================================
+    // 🔥 VALIDAR TRACKS ACTIVOS
+    // ======================================================
+
+    const tracksActivos =
+      stream.getAudioTracks().filter(
+        track => track.readyState === "live"
+      );
+
+    if (tracksActivos.length === 0) {
+
+      alert(
+        "⚠️ El micrófono ya no está disponible. Debes volver a activarlo."
+      );
+
+      window.msd2_streamMicrofono = null;
+
+      window.msd2_microfonoHabilitado = false;
+
+      window.msd2_grabacion.iniciando = false;
+
+      return;
+    }
 
     // ======================================================
     // 🔥 FIX COMPATIBILIDAD CELULAR (MEC)
@@ -6157,16 +6335,21 @@ async function iniciarGrabacionOrador(reunionPayload) {
       )
     ) {
 
-      mimeType = "audio/webm;codecs=opus";
+      mimeType =
+        "audio/webm;codecs=opus";
 
     } else if (
-      MediaRecorder.isTypeSupported("audio/webm")
+      MediaRecorder.isTypeSupported(
+        "audio/webm"
+      )
     ) {
 
       mimeType = "audio/webm";
 
     } else if (
-      MediaRecorder.isTypeSupported("audio/mp4")
+      MediaRecorder.isTypeSupported(
+        "audio/mp4"
+      )
     ) {
 
       mimeType = "audio/mp4";
@@ -6177,7 +6360,10 @@ async function iniciarGrabacionOrador(reunionPayload) {
     }
 
     const mediaRecorder = mimeType
-      ? new MediaRecorder(stream, { mimeType })
+      ? new MediaRecorder(
+          stream,
+          { mimeType }
+        )
       : new MediaRecorder(stream);
 
     const isMobile =
@@ -6189,16 +6375,27 @@ async function iniciarGrabacionOrador(reunionPayload) {
     // 🔑 NUEVA INTERVENCIÓN ÚNICA
     // ==================================================
 
-    const intervencionId = crypto.randomUUID();
+    const intervencionId =
+      crypto.randomUUID();
 
-    window.msd2_grabacion.mediaRecorder = mediaRecorder;
+    window.msd2_grabacion.mediaRecorder =
+      mediaRecorder;
+
     window.msd2_grabacion.chunks = [];
-    window.msd2_grabacion.grabando = true;
-    window.msd2_grabacion.reunionId = reunionPayload.id;
-    window.msd2_grabacion.intervencionId = intervencionId;
+
+    window.msd2_grabacion.grabando =
+      true;
+
+    window.msd2_grabacion.reunionId =
+      reunionPayload.id;
+
+    window.msd2_grabacion.intervencionId =
+      intervencionId;
 
     // 🔓 liberar lock inicio
-    window.msd2_grabacion.iniciando = false;
+
+    window.msd2_grabacion.iniciando =
+      false;
 
     // =========================================
     // 📦 Captura chunks audio
@@ -6213,7 +6410,9 @@ async function iniciarGrabacionOrador(reunionPayload) {
           e.data.size
         );
 
-        window.msd2_grabacion.chunks.push(e.data);
+        window.msd2_grabacion.chunks.push(
+          e.data
+        );
       }
     };
 
@@ -6262,7 +6461,8 @@ async function iniciarGrabacionOrador(reunionPayload) {
           chunks,
           {
             type:
-              mimeType || "audio/webm"
+              mimeType ||
+              "audio/webm"
           }
         );
 
@@ -6271,7 +6471,10 @@ async function iniciarGrabacionOrador(reunionPayload) {
           blob.size
         );
 
-        if (!blob || blob.size === 0) {
+        if (
+          !blob ||
+          blob.size === 0
+        ) {
 
           console.warn(
             "⚠️ Blob vacío, no se guarda intervención."
@@ -6307,25 +6510,27 @@ async function iniciarGrabacionOrador(reunionPayload) {
 
       } finally {
 
-        // 🧹 detener tracks micrófono
-
-        try {
-
-          stream.getTracks().forEach(track => {
-            track.stop();
-          });
-
-        } catch (_) {}
-
         // 🧹 limpiar estado
 
         window.msd2_grabacion.chunks = [];
-        window.msd2_grabacion.mediaRecorder = null;
-        window.msd2_grabacion.grabando = false;
-        window.msd2_grabacion.iniciando = false;
-        window.msd2_grabacion.guardando = false;
-        window.msd2_grabacion.reunionId = null;
-        window.msd2_grabacion.intervencionId = null;
+
+        window.msd2_grabacion.mediaRecorder =
+          null;
+
+        window.msd2_grabacion.grabando =
+          false;
+
+        window.msd2_grabacion.iniciando =
+          false;
+
+        window.msd2_grabacion.guardando =
+          false;
+
+        window.msd2_grabacion.reunionId =
+          null;
+
+        window.msd2_grabacion.intervencionId =
+          null;
       }
     };
 
@@ -6346,11 +6551,14 @@ async function iniciarGrabacionOrador(reunionPayload) {
       mediaRecorder.start();
     }
 
-    console.log("✅ MediaRecorder.start() OK");
-
-    const aviso = document.getElementById(
-      "msd2-aviso-orador"
+    console.log(
+      "✅ MediaRecorder.start() OK"
     );
+
+    const aviso =
+      document.getElementById(
+        "msd2-aviso-orador"
+      );
 
     if (aviso) {
 
@@ -6364,8 +6572,11 @@ async function iniciarGrabacionOrador(reunionPayload) {
 
     // 🔓 liberar lock si falla permiso micro
 
-    window.msd2_grabacion.iniciando = false;
-    window.msd2_grabacion.grabando = false;
+    window.msd2_grabacion.iniciando =
+      false;
+
+    window.msd2_grabacion.grabando =
+      false;
 
     console.error(
       "❌ No se pudo iniciar grabación:",
@@ -6400,7 +6611,9 @@ function detenerYGuardarGrabacion() {
 
     // 🚫 Evitar doble stop()
 
-    if (recorder.state === "inactive") {
+    if (
+      recorder.state === "inactive"
+    ) {
       return;
     }
 
@@ -6441,7 +6654,10 @@ function detenerYGuardarGrabacion() {
 
         try {
 
-          if (recorder.state !== "inactive") {
+          if (
+            recorder.state !==
+            "inactive"
+          ) {
 
             recorder.stop();
           }
@@ -6465,13 +6681,15 @@ function detenerYGuardarGrabacion() {
 
     // 📢 ocultar aviso
 
-    const aviso = document.getElementById(
-      "msd2-aviso-orador"
-    );
+    const aviso =
+      document.getElementById(
+        "msd2-aviso-orador"
+      );
 
     if (aviso) {
 
       aviso.textContent = "";
+
       aviso.style.display = "none";
     }
 
@@ -6485,8 +6703,27 @@ function detenerYGuardarGrabacion() {
 }
 
 // ======================================================
+// 🎙 BOTÓN ACTIVAR MICRÓFONO
+// ======================================================
+
+document.addEventListener(
+  "click",
+  async (e) => {
+
+    if (
+      e.target.id ===
+      "btnActivarMicrofonoMEC"
+    ) {
+
+      await activarMicrofonoMEC();
+    }
+  }
+);
+
+// ======================================================
 // 💾 Guardar intervención en Storage + BD
 // ======================================================
+
 async function guardarIntervencionAudio(
   blob,
   reunionId,
@@ -6496,6 +6733,7 @@ async function guardarIntervencionAudio(
   try {
 
     // 🚫 Lock anti doble guardado
+
     if (window.msd2_grabacion.guardando) {
 
       console.warn(
@@ -6506,9 +6744,11 @@ async function guardarIntervencionAudio(
     }
 
     // 🔒 activar lock
+
     window.msd2_grabacion.guardando = true;
 
     // 🚫 Validar usuario
+
     if (
       !window.usuarioFederacion ||
       !window.usuarioFederacion.socio_id
@@ -6526,11 +6766,14 @@ async function guardarIntervencionAudio(
     // ==================================================
     // ☁️ SUBIR AUDIO STORAGE
     // ==================================================
-    const BUCKET = "reunion_intervenciones";
+
+    const BUCKET =
+      "reunion_intervenciones";
 
     const ts = Date.now();
 
-    const safeNombre = (socio.nombre || "socio")
+    const safeNombre =
+      (socio.nombre || "socio")
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-zA-Z0-9_\-]/g, "_");
@@ -6538,7 +6781,8 @@ async function guardarIntervencionAudio(
     const path =
       `${reunionId}/${socio.socio_id}/${intervencionId}_${ts}_${safeNombre}.webm`;
 
-    const { error: errUpload } = await supabase
+    const { error: errUpload } =
+      await supabase
       .storage
       .from(BUCKET)
       .upload(path, blob, {
@@ -6565,14 +6809,25 @@ async function guardarIntervencionAudio(
     // ==================================================
     // 🗂 INSERT IDEMPOTENTE VIA RPC
     // ==================================================
-    const { error: errInsert } = await supabase
+
+    const { error: errInsert } =
+      await supabase
       .rpc("insertar_intervencion_segura", {
 
-        p_intervencion_id: intervencionId,
-        p_reunion_id: reunionId,
-        p_socio_id: socio.socio_id,
-        p_socio_nombre: socio.nombre,
-        p_audio_path: path
+        p_intervencion_id:
+          intervencionId,
+
+        p_reunion_id:
+          reunionId,
+
+        p_socio_id:
+          socio.socio_id,
+
+        p_socio_nombre:
+          socio.nombre,
+
+        p_audio_path:
+          path
 
       });
 
@@ -6601,6 +6856,7 @@ async function guardarIntervencionAudio(
   } finally {
 
     // 🔓 liberar lock guardado
+
     window.msd2_grabacion.guardando = false;
   }
 }

@@ -6663,22 +6663,15 @@ async function iniciarGrabacionOrador(reunionPayload) {
       }
     };
 
-    // ======================================================
-    // ▶ START (FIX CRÍTICO MÓVIL)
-    // ======================================================
+// ======================================================
+// ▶ START UNIVERSAL ESTABLE
+// ======================================================
 
-    if (isMobile) {
+console.log(
+  "🎙 MediaRecorder.start() universal"
+);
 
-      console.log(
-        "📱 Móvil detectado → start(1000)"
-      );
-
-      mediaRecorder.start(1000);
-
-    } else {
-
-      mediaRecorder.start();
-    }
+mediaRecorder.start();
 
     console.log(
       "✅ MediaRecorder.start() OK"
@@ -6759,53 +6752,20 @@ function detenerYGuardarGrabacion() {
         navigator.userAgent
       );
 
-    if (esMovil) {
+    // ======================================================
+    // ⏹ STOP UNIVERSAL ESTABLE
+    // ======================================================
 
-      console.log(
-        "📱 requestData() antes de stop()"
-      );
+    try {
 
-      try {
+    recorder.stop();
 
-        recorder.requestData();
+    } catch (err) {
 
-      } catch (e) {
-
-        console.warn(
-          "⚠️ requestData no soportado:",
-          e
-        );
-      }
-
-      // 🔥 esperar último chunk móvil
-
-      setTimeout(() => {
-
-        try {
-
-          if (
-            recorder.state !==
-            "inactive"
-          ) {
-
-            recorder.stop();
-          }
-
-        } catch (err) {
-
-          console.error(
-            "❌ Error stop móvil:",
-            err
-          );
-        }
-
-      }, 1200);
-
-    } else {
-
-      // 💻 Desktop normal
-
-      recorder.stop();
+    console.error(
+        "❌ Error stop recorder:",
+        err
+    );
     }
 
     // 📢 ocultar aviso

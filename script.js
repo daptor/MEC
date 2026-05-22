@@ -6119,27 +6119,76 @@ async function iniciarGrabacionOrador(reunionPayload) {
 
     console.log("🎙 Iniciando grabación intervención...");
 
+    // ======================================================
+    // 📱 FIX PERMISOS Y COMPATIBILIDAD MÓVIL
+    // ======================================================
+
+    if (
+      !navigator.mediaDevices ||
+      !navigator.mediaDevices.getUserMedia
+    ) {
+
+      alert(
+        "⚠️ Este dispositivo no soporta grabación de audio."
+      );
+
+      window.msd2_grabacion.iniciando = false;
+
+      return;
+    }
+
     const stream = await navigator.mediaDevices.getUserMedia({
-      audio: true
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true
+      }
     });
 
     // ======================================================
     // 🔥 FIX COMPATIBILIDAD CELULAR (MEC)
     // ======================================================
 
-    let mimeType = "audio/webm";
+    let mimeType = "";
 
-    if (!MediaRecorder.isTypeSupported(mimeType)) {
+    if (
+      MediaRecorder.isTypeSupported(
+        "audio/webm;codecs=opus"
+      )
+    ) {
+
+      mimeType = "audio/webm;codecs=opus";
+
+    } else if (
+      MediaRecorder.isTypeSupported("audio/webm")
+    ) {
+
+      mimeType = "audio/webm";
+
+    } else if (
+      MediaRecorder.isTypeSupported("audio/mp4")
+    ) {
+
       mimeType = "audio/mp4";
+
+    } else {
+
+      mimeType = "";
     }
 
-    const mediaRecorder = new MediaRecorder(stream, { mimeType });
+    const mediaRecorder = mimeType
+      ? new MediaRecorder(stream, { mimeType })
+      : new MediaRecorder(stream);
 
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isMobile =
+      /Android|iPhone|iPad|iPod/i.test(
+        navigator.userAgent
+      );
 
     // ==================================================
     // 🔑 NUEVA INTERVENCIÓN ÚNICA
     // ==================================================
+
     const intervencionId = crypto.randomUUID();
 
     window.msd2_grabacion.mediaRecorder = mediaRecorder;
@@ -6154,34 +6203,92 @@ async function iniciarGrabacionOrador(reunionPayload) {
     // =========================================
     // 📦 Captura chunks audio
     // =========================================
+
     mediaRecorder.ondataavailable = (e) => {
 
       if (e.data && e.data.size > 0) {
+
+        console.log(
+          "📦 Chunk recibido:",
+          e.data.size
+        );
+
         window.msd2_grabacion.chunks.push(e.data);
       }
     };
 
     // =========================================
+    // ❌ Error MediaRecorder
+    // =========================================
+
+    mediaRecorder.onerror = (event) => {
+
+      console.error(
+        "❌ MediaRecorder error:",
+        event
+      );
+    };
+
+    // =========================================
     // 🛑 Al detener grabación
     // =========================================
+
     mediaRecorder.onstop = async () => {
 
       try {
 
-        console.log("🛑 Grabación detenida, procesando Blob...");
-
-        const blob = new Blob(
-          window.msd2_grabacion.chunks || [],
-          { type: mimeType }
+        console.log(
+          "🛑 Grabación detenida, procesando Blob..."
         );
 
-        if (!blob || blob.size === 0) {
-          console.warn("⚠️ Blob vacío, no se guarda intervención.");
+        const chunks =
+          window.msd2_grabacion.chunks || [];
+
+        console.log(
+          "📦 Total chunks:",
+          chunks.length
+        );
+
+        if (chunks.length === 0) {
+
+          console.warn(
+            "⚠️ No existen chunks de audio."
+          );
+
           return;
         }
 
-        if (!window.msd2_grabacion.reunionId || !window.msd2_grabacion.intervencionId) {
-          console.warn("⚠️ Faltan IDs, no se guarda intervención.");
+        const blob = new Blob(
+          chunks,
+          {
+            type:
+              mimeType || "audio/webm"
+          }
+        );
+
+        console.log(
+          "🎧 Blob generado:",
+          blob.size
+        );
+
+        if (!blob || blob.size === 0) {
+
+          console.warn(
+            "⚠️ Blob vacío, no se guarda intervención."
+          );
+
+          return;
+        }
+
+        if (
+          !window.msd2_grabacion.reunionId ||
+          !window.msd2_grabacion.intervencionId
+        ) {
+
+          console.warn(
+            "⚠️ Faltan IDs, no se guarda intervención."
+          );
+
           return;
         }
 
@@ -6200,7 +6307,18 @@ async function iniciarGrabacionOrador(reunionPayload) {
 
       } finally {
 
+        // 🧹 detener tracks micrófono
+
+        try {
+
+          stream.getTracks().forEach(track => {
+            track.stop();
+          });
+
+        } catch (_) {}
+
         // 🧹 limpiar estado
+
         window.msd2_grabacion.chunks = [];
         window.msd2_grabacion.mediaRecorder = null;
         window.msd2_grabacion.grabando = false;
@@ -6216,15 +6334,23 @@ async function iniciarGrabacionOrador(reunionPayload) {
     // ======================================================
 
     if (isMobile) {
-      console.log("📱 Móvil detectado → start(1000ms)");
+
+      console.log(
+        "📱 Móvil detectado → start(1000)"
+      );
+
       mediaRecorder.start(1000);
+
     } else {
+
       mediaRecorder.start();
     }
 
     console.log("✅ MediaRecorder.start() OK");
 
-    const aviso = document.getElementById("msd2-aviso-orador");
+    const aviso = document.getElementById(
+      "msd2-aviso-orador"
+    );
 
     if (aviso) {
 
@@ -6237,6 +6363,7 @@ async function iniciarGrabacionOrador(reunionPayload) {
   } catch (err) {
 
     // 🔓 liberar lock si falla permiso micro
+
     window.msd2_grabacion.iniciando = false;
     window.msd2_grabacion.grabando = false;
 
@@ -6244,17 +6371,23 @@ async function iniciarGrabacionOrador(reunionPayload) {
       "❌ No se pudo iniciar grabación:",
       err
     );
+
+    alert(
+      "⚠️ No fue posible acceder al micrófono del dispositivo."
+    );
   }
 }
 
 // ======================================================
 // ⏹ Detener grabación
 // ======================================================
+
 function detenerYGuardarGrabacion() {
 
   try {
 
     // 🚫 No existe grabación activa
+
     if (
       !window.msd2_grabacion.grabando ||
       !window.msd2_grabacion.mediaRecorder
@@ -6266,6 +6399,7 @@ function detenerYGuardarGrabacion() {
       window.msd2_grabacion.mediaRecorder;
 
     // 🚫 Evitar doble stop()
+
     if (recorder.state === "inactive") {
       return;
     }
@@ -6302,11 +6436,13 @@ function detenerYGuardarGrabacion() {
       }
 
       // 🔥 esperar último chunk móvil
+
       setTimeout(() => {
 
         try {
 
           if (recorder.state !== "inactive") {
+
             recorder.stop();
           }
 
@@ -6318,15 +6454,17 @@ function detenerYGuardarGrabacion() {
           );
         }
 
-      }, 700);
+      }, 1200);
 
     } else {
 
       // 💻 Desktop normal
+
       recorder.stop();
     }
 
     // 📢 ocultar aviso
+
     const aviso = document.getElementById(
       "msd2-aviso-orador"
     );
@@ -6345,7 +6483,6 @@ function detenerYGuardarGrabacion() {
     );
   }
 }
-
 
 // ======================================================
 // 💾 Guardar intervención en Storage + BD

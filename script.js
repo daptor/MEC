@@ -6247,7 +6247,6 @@ async function iniciarGrabacionOrador(reunionPayload) {
   }
 }
 
-
 // ======================================================
 // ⏹ Detener grabación
 // ======================================================
@@ -6263,10 +6262,11 @@ function detenerYGuardarGrabacion() {
       return;
     }
 
+    const recorder =
+      window.msd2_grabacion.mediaRecorder;
+
     // 🚫 Evitar doble stop()
-    if (
-      window.msd2_grabacion.mediaRecorder.state === "inactive"
-    ) {
+    if (recorder.state === "inactive") {
       return;
     }
 
@@ -6274,7 +6274,57 @@ function detenerYGuardarGrabacion() {
       "⏹ Solicitando stop() al MediaRecorder..."
     );
 
-    window.msd2_grabacion.mediaRecorder.stop();
+    // ======================================================
+    // 📱 FIX REAL PARA CELULAR
+    // ======================================================
+
+    const esMovil =
+      /Android|iPhone|iPad|iPod/i.test(
+        navigator.userAgent
+      );
+
+    if (esMovil) {
+
+      console.log(
+        "📱 requestData() antes de stop()"
+      );
+
+      try {
+
+        recorder.requestData();
+
+      } catch (e) {
+
+        console.warn(
+          "⚠️ requestData no soportado:",
+          e
+        );
+      }
+
+      // 🔥 esperar último chunk móvil
+      setTimeout(() => {
+
+        try {
+
+          if (recorder.state !== "inactive") {
+            recorder.stop();
+          }
+
+        } catch (err) {
+
+          console.error(
+            "❌ Error stop móvil:",
+            err
+          );
+        }
+
+      }, 700);
+
+    } else {
+
+      // 💻 Desktop normal
+      recorder.stop();
+    }
 
     // 📢 ocultar aviso
     const aviso = document.getElementById(
@@ -6295,6 +6345,7 @@ function detenerYGuardarGrabacion() {
     );
   }
 }
+
 
 // ======================================================
 // 💾 Guardar intervención en Storage + BD

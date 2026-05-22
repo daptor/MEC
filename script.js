@@ -5708,7 +5708,6 @@ async function cargarHistorialReuniones() {
     }
 }
 
-
 // ======================================================
 // 🔎 VER DETALLE DE REUNIÓN
 // ======================================================
@@ -5746,7 +5745,6 @@ async function verDetalleReunion(reunionId) {
 
         const asistentes = detalle.filter(d => d.asistio);
         const ausentes = detalle.filter(d => !d.asistio);
-
         const wrapperEl = document.getElementById("detalle-reunion-wrapper");
         const headerEl = document.getElementById("detalle-reunion-header");
         const ulAsistentes = document.getElementById("detalle-reunion-asistentes");
@@ -6069,6 +6067,19 @@ if (directoresSet.size === 0) {
   }
 }
 
+// ======================================================
+// 🎙 ENGINE GLOBAL AUDIO MEC
+// ======================================================
+
+window.mecAudio = {
+  stream: null,
+  permiso: false,
+  inicializado: false,
+  reconectando: false,
+  ultimoUso: null,
+  tracksActivos: 0
+};
+
 // ======================================================================================
 // 🎙 GRABACIÓN DE INTERVENCIÓN (lado cliente del orador)
 // ======================================================================================
@@ -6084,57 +6095,75 @@ window.msd2_grabacion = {
 };
 
 // ======================================================
-// 🎙 ACTIVAR MICRÓFONO MANUALMENTE (FIX CELULAR)
+// 🎙 ACTIVAR MICRÓFONO MEC (ENGINE PERSISTENTE)
 // ======================================================
 
 async function activarMicrofonoMEC() {
 
   try {
 
+    // ======================================================
+    // 🔥 VALIDAR SOPORTE
+    // ======================================================
+
     if (
       !navigator.mediaDevices ||
       !navigator.mediaDevices.getUserMedia
     ) {
 
-      alert(
+      console.warn(
         "⚠️ Este dispositivo no soporta grabación de audio."
       );
 
-      return;
+      return null;
     }
 
     // ======================================================
-    // 🧹 CERRAR STREAM ANTERIOR SI EXISTE
+    // ♻️ REUTILIZAR STREAM EXISTENTE
     // ======================================================
 
-    if (window.msd2_streamMicrofono) {
+    if (
+      window.mecAudio &&
+      window.mecAudio.stream &&
+      window.mecAudio.stream.active
+    ) {
 
-      try {
+      const tracks =
+        window.mecAudio.stream
+          .getAudioTracks()
+          .filter(
+            t => t.readyState === "live"
+          );
 
-        window.msd2_streamMicrofono
-          .getTracks()
-          .forEach(track => track.stop());
+      if (tracks.length > 0) {
 
-      } catch (e) {
-
-        console.warn(
-          "⚠️ No se pudo cerrar stream anterior:",
-          e
+        console.log(
+          "♻️ Reutilizando stream persistente"
         );
+
+        return window.mecAudio.stream;
       }
     }
 
     // ======================================================
-    // 🎙 SOLICITAR PERMISO REAL AL CELULAR
+    // 🆕 SOLICITAR STREAM NUEVO
     // ======================================================
+
+    console.log(
+      "🎙 Solicitando acceso real al micrófono..."
+    );
 
     const stream =
       await navigator.mediaDevices.getUserMedia({
 
         audio: {
+
           echoCancellation: true,
+
           noiseSuppression: true,
+
           autoGainControl: true
+
         },
 
         video: false
@@ -6153,47 +6182,154 @@ async function activarMicrofonoMEC() {
       audioTracks.length === 0
     ) {
 
-      alert(
+      console.warn(
         "⚠️ El dispositivo no entregó acceso al micrófono."
       );
 
-      return;
+      return null;
+    }
+
+    // ======================================================
+    // 💾 CREAR ENGINE SI NO EXISTE
+    // ======================================================
+
+    if (!window.mecAudio) {
+
+      window.mecAudio = {
+
+        stream: null,
+
+        permiso: false,
+
+        inicializado: false,
+
+        reconectando: false,
+
+        ultimoUso: null,
+
+        tracksActivos: 0
+
+      };
     }
 
     // ======================================================
     // 💾 GUARDAR STREAM GLOBAL
     // ======================================================
 
-    window.msd2_streamMicrofono = stream;
+    window.mecAudio.stream = stream;
+
+    window.mecAudio.permiso = true;
+
+    window.mecAudio.inicializado = true;
+
+    window.mecAudio.ultimoUso = Date.now();
+
+    window.mecAudio.tracksActivos =
+      audioTracks.length;
 
     // ======================================================
-    // 🔥 DETECTAR TRACK CERRADO
+    // 🔁 COMPATIBILIDAD LEGACY MEC
+    // ======================================================
+
+    window.msd2_streamMicrofono =
+      stream;
+
+    window.msd2_microfonoHabilitado =
+      true;
+
+    // ======================================================
+    // 🔥 DETECTAR TRACK FINALIZADO
     // ======================================================
 
     stream.getTracks().forEach(track => {
 
-      track.onended = () => {
+      track.onended = async () => {
 
         console.warn(
           "⚠️ Track micrófono finalizado."
         );
 
-        window.msd2_streamMicrofono = null;
+        // ==========================================
+        // 🧹 LIMPIAR ENGINE
+        // ==========================================
 
-        window.msd2_microfonoHabilitado = false;
+        if (window.mecAudio) {
+
+          window.mecAudio.stream = null;
+
+          window.mecAudio.permiso = false;
+
+          window.mecAudio.inicializado = false;
+        }
+
+        window.msd2_streamMicrofono =
+          null;
+
+        window.msd2_microfonoHabilitado =
+          false;
+
+        // ==========================================
+        // 🔄 RECOVERY SUAVE ANDROID
+        // ==========================================
+
+        try {
+
+          if (
+            window.mecAudio &&
+            !window.mecAudio.reconectando
+          ) {
+
+            window.mecAudio.reconectando =
+              true;
+
+            console.log(
+              "🔄 Intentando reconexión automática..."
+            );
+
+            setTimeout(async () => {
+
+              try {
+
+                await activarMicrofonoMEC();
+
+              } catch (err) {
+
+                console.error(
+                  "❌ Error reconectando micrófono:",
+                  err
+                );
+
+              } finally {
+
+                if (window.mecAudio) {
+
+                  window.mecAudio.reconectando =
+                    false;
+                }
+              }
+
+            }, 1500);
+          }
+
+        } catch (err) {
+
+          console.error(
+            "❌ Error recovery audio:",
+            err
+          );
+        }
       };
-
     });
 
-    window.msd2_microfonoHabilitado = true;
+    // ======================================================
+    // ✅ OK
+    // ======================================================
 
     console.log(
       "✅ Micrófono activado correctamente"
     );
 
-    alert(
-      "✅ Micrófono activado correctamente."
-    );
+    return stream;
 
   } catch (err) {
 
@@ -6202,9 +6338,7 @@ async function activarMicrofonoMEC() {
       err
     );
 
-    alert(
-      "❌ No fue posible acceder al micrófono del dispositivo."
-    );
+    return null;
   }
 }
 
@@ -6256,47 +6390,30 @@ async function iniciarGrabacionOrador(reunionPayload) {
     );
 
     // ======================================================
-    // 📱 FIX CELULAR
-    // OBLIGAR ACTIVACIÓN MANUAL PREVIA
-    // ======================================================
-
-    if (
-      !window.msd2_streamMicrofono
-    ) {
-
-      alert(
-        "⚠️ Primero debes activar el micrófono."
-      );
-
-      window.msd2_grabacion.iniciando = false;
-
-      return;
-    }
-
-    // ======================================================
-    // 🎙 REUTILIZAR STREAM YA AUTORIZADO
+    // 🎙 ASEGURAR AUDIO ENGINE
     // ======================================================
 
     const stream =
-      window.msd2_streamMicrofono;
+    await activarMicrofonoMEC();
+
+    if (!stream) {
+    console.warn(
+        "⚠️ No existe stream de audio disponible."
+    );
+    window.msd2_grabacion.iniciando = false;
+    return;
+    }
 
     // ======================================================
     // 🔥 VALIDAR STREAM MUERTO
     // ======================================================
-
     if (!stream.active) {
-
-      alert(
-        "⚠️ El micrófono del celular ya no está activo. Debes volver a activarlo."
-      );
-
-      window.msd2_streamMicrofono = null;
-
-      window.msd2_microfonoHabilitado = false;
-
-      window.msd2_grabacion.iniciando = false;
-
-      return;
+    console.warn(
+        "⚠️ Stream inactivo."
+    );
+    window.mecAudio.stream = null;
+    window.msd2_grabacion.iniciando = false;
+    return;
     }
 
     // ======================================================
@@ -6309,18 +6426,12 @@ async function iniciarGrabacionOrador(reunionPayload) {
       );
 
     if (tracksActivos.length === 0) {
-
-      alert(
-        "⚠️ El micrófono ya no está disponible. Debes volver a activarlo."
-      );
-
-      window.msd2_streamMicrofono = null;
-
-      window.msd2_microfonoHabilitado = false;
-
-      window.msd2_grabacion.iniciando = false;
-
-      return;
+    console.warn(
+        "⚠️ No existen tracks activos."
+    );
+    window.mecAudio.stream = null;
+    window.msd2_grabacion.iniciando = false;
+    return;
     }
 
     // ======================================================
@@ -6357,6 +6468,24 @@ async function iniciarGrabacionOrador(reunionPayload) {
     } else {
 
       mimeType = "";
+    }
+
+    // ======================================================
+    // 🔥 VALIDAR SOPORTE MediaRecorder
+    // ======================================================
+
+    if (
+      typeof MediaRecorder === "undefined"
+    ) {
+
+      console.error(
+        "❌ MediaRecorder no soportado."
+      );
+
+      window.msd2_grabacion.iniciando =
+        false;
+
+      return;
     }
 
     const mediaRecorder = mimeType
@@ -6583,8 +6712,8 @@ async function iniciarGrabacionOrador(reunionPayload) {
       err
     );
 
-    alert(
-      "⚠️ No fue posible acceder al micrófono del dispositivo."
+    console.error(
+    "⚠️ No fue posible acceder al micrófono."
     );
   }
 }
@@ -6718,6 +6847,49 @@ document.addEventListener(
       await activarMicrofonoMEC();
     }
   }
+);
+
+// ======================================================
+// 📱 ANDROID BACKGROUND / FOREGROUND
+// ======================================================
+
+    document.addEventListener(
+    "visibilitychange",
+    async () => {
+
+        try {
+
+        if (
+            document.visibilityState ===
+            "visible"
+        ) {
+
+            console.log(
+            "👁 App visible nuevamente"
+            );
+
+            if (
+            !window.mecAudio ||
+            !window.mecAudio.stream ||
+            !window.mecAudio.stream.active
+            ) {
+
+            console.warn(
+                "⚠️ Stream perdido en background."
+            );
+
+            await activarMicrofonoMEC();
+            }
+        }
+
+        } catch (err) {
+
+        console.error(
+            "❌ Error visibilitychange:",
+            err
+        );
+        }
+    }
 );
 
 // ======================================================

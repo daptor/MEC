@@ -16,7 +16,7 @@ export default function handler(req, res) {
     [process.env.CLAVE_PLAZANORTE]: { role: "DIRECTOR_5", director_code: process.env.DIRECTOR_5 || "DIRECTOR_5" },
     [process.env.CLAVE_PUERTOMONTT]: { role: "DIRECTOR_6", director_code: process.env.DIRECTOR_6 || "DIRECTOR_6" },
     [process.env.CLAVE_RANCAGUA]: { role: "DIRECTOR_7", director_code: process.env.DIRECTOR_7 || "DIRECTOR_7" },
-    [process.env.CLAVE_TREBOL]: { role: "OTRO", director_code: process.env.DIRECTOR_7 || "OTRO" }
+    [process.env.CLAVE_TREBOL]: { role: "DIRECTOR_8", director_code: process.env.DIRECTOR_8 || "DIRECTOR_8" }
   };
 
   const entry = mapping[clave];

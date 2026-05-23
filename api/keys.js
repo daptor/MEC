@@ -17,6 +17,7 @@ export default function handler(req, res) {
         DIRECTOR_4: process.env.DIRECTOR_4,
         DIRECTOR_5: process.env.DIRECTOR_5,
         DIRECTOR_6: process.env.DIRECTOR_6,
-        DIRECTOR_7: process.env.DIRECTOR_7
+        DIRECTOR_7: process.env.DIRECTOR_7,
+        DIRECTOR_8: process.env.DIRECTOR_8
     });
 }

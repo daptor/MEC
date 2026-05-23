@@ -3972,8 +3972,8 @@ async function verificarClave() {
         if (claveIngresada === claves.ADMIN_KEY) {
             esTesorero = true;
         } else {
-            // DIRECTORES 1..7
-            for (let i = 1; i <= 7; i++) {
+            // DIRECTORES 1..8
+            for (let i = 1; i <= 8; i++) {
                 const keyName = `DIRECTOR_${i}`;
                 if (claveIngresada === claves[keyName]) {
                     directorCodigo = `DIRECTOR_${i}`;

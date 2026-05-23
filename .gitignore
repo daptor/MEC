@@ -1,0 +1,19 @@
+# Ignorar dependencias locales (si alguna vez usas Node.js o similar)
+node_modules/
+
+# Ignorar archivos de configuración de entorno
+.env
+
+# Ignorar archivos de log
+*.log
+
+# Ignorar archivos de caché
+*.cache
+
+# Ignorar archivos de configuración de IDEs
+.vscode/
+.idea/
+
+# Ignorar archivos generados durante el build (si existe una carpeta build o dist)
+dist/
+build/

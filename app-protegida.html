@@ -608,11 +608,12 @@
 
   <!-- Título principal -->
   <h1>📊 Asistencia y Estadísticas</h1>
-  <p>Módulo de análisis histórico de participación en reuniones.</p>
+
+  <p class="mec-dashboard-subtitulo">
+    Módulo de análisis histórico de participación en reuniones.
+  </p>
 
   <!-- ================= KPIs ================= -->
-  <h2>Dashboard General</h2>
-
   <div class="dashboard-grid">
 
     <div class="card-stat">
@@ -637,32 +638,41 @@
 
   </div>
 
-  <hr>
-
   <!-- ================= HISTORIAL ================= -->
-  <h3>Historial de reuniones</h3>
-  <table class="tabla-asistencia">
-    <thead>
-      <tr>
-        <th>Fecha</th>
-        <th>Reunión</th>
-        <th>Moderador</th>
-        <th class="col-porcentaje">% Asistencia</th>
-        <th>Acción</th>
-      </tr>
-    </thead>
-    <tbody id="tabla-historial-reuniones">
-      <tr><td colspan="5">Cargando...</td></tr>
-    </tbody>
-  </table>
+  <div class="mec-seccion-card">
 
-  <hr>
+    <div class="mec-seccion-header">
+      <h3>📅 Historial de reuniones</h3>
+    </div>
 
-  <!-- ================= ACTA (VER) ================= -->
-  <div id="detalle-reunion-wrapper" style="display:none; margin-top:10px;">
+    <table class="tabla-asistencia">
+
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Reunión</th>
+          <th>Moderador</th>
+          <th class="col-porcentaje">% Asistencia</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+
+      <tbody id="tabla-historial-reuniones">
+        <tr><td colspan="5">Cargando...</td></tr>
+      </tbody>
+
+    </table>
+
+  </div>
+
+  <!-- ================= ACTA ================= -->
+  <div id="detalle-reunion-wrapper" class="mec-seccion-card" style="display:none;">
 
     <div class="acta-header-row">
-      <h3 class="acta-title">Acta de reunión</h3>
+
+      <h3 class="acta-title">
+        Acta de reunión
+      </h3>
 
       <button
         type="button"
@@ -670,73 +680,94 @@
         onclick="cerrarDetalleReunion()">
         Cerrar acta
       </button>
+
     </div>
+
     <div id="detalle-reunion-container" class="acta-reunion">
-      <!-- CABECERA -->
+
       <div id="detalle-reunion-header"></div>
-      <!-- COLUMNAS -->
+
       <div class="acta-reunion-columns">
-        <!-- ASISTENTES -->
+
         <div>
           <h4>Asistentes</h4>
           <ul id="detalle-reunion-asistentes"></ul>
         </div>
-        <!-- INASISTENTES -->
+
         <div>
           <h4>Inasistentes</h4>
           <ul id="detalle-reunion-ausentes"></ul>
         </div>
+
       </div>
-      <!-- AUDIOS -->
+
       <div style="margin-top:25px;">
 
         <h4>🎙 Intervenciones grabadas</h4>
 
         <div id="detalle-reunion-audios">
-
           <p>No hay audios cargados.</p>
         </div>
+
       </div>
+
     </div>
+
   </div>
 
-  <hr>
+  <!-- ================= SINDICATOS ================= -->
+  <div class="mec-seccion-card">
 
-  <!-- ================= RANKING SINDICATOS ================= -->
-  <h3>Participación por Sindicato</h3>
-  <table class="tabla-asistencia">
-    <thead>
-      <tr>
-        <th>Sindicato</th>
-        <th>Asistencias</th>
-        <th>Inasistencias</th>
-        <th class="col-porcentaje">% Participación</th>
-      </tr>
-    </thead>
-    <tbody id="tabla-ranking-sindicatos">
-      <tr><td colspan="4">Cargando...</td></tr>
-    </tbody>
-  </table>
+    <div class="mec-seccion-header">
+      <h3>🏢 Participación por Sindicato</h3>
+    </div>
 
-  <hr>
+    <table class="tabla-asistencia">
 
-  <!-- ================= RANKING DIRECTORES ================= -->
-  <h3>Asistencia Directores</h3>
-  <table class="tabla-asistencia">
-    <thead>
-      <tr>
-        <th>Director</th>
-        <th>Reuniones</th>
-        <th>Asistió</th>
-        <th class="col-porcentaje">% Asistencia</th>
-      </tr>
-    </thead>
-    <tbody id="tabla-ranking-directores">
-      <tr><td colspan="4">Cargando...</td></tr>
-    </tbody>
-  </table>
+      <thead>
+        <tr>
+          <th>Sindicato</th>
+          <th>Asistencias</th>
+          <th>Inasistencias</th>
+          <th class="col-porcentaje">% Participación</th>
+        </tr>
+      </thead>
+
+      <tbody id="tabla-ranking-sindicatos">
+        <tr><td colspan="4">Cargando...</td></tr>
+      </tbody>
+
+    </table>
+
+  </div>
+
+  <!-- ================= DIRECTORES ================= -->
+  <div class="mec-seccion-card">
+
+    <div class="mec-seccion-header">
+      <h3>👥 Asistencia Directores</h3>
+    </div>
+
+    <table class="tabla-asistencia">
+
+      <thead>
+        <tr>
+          <th>Director</th>
+          <th>Reuniones</th>
+          <th>Asistió</th>
+          <th class="col-porcentaje">% Asistencia</th>
+        </tr>
+      </thead>
+
+      <tbody id="tabla-ranking-directores">
+        <tr><td colspan="4">Cargando...</td></tr>
+      </tbody>
+
+    </table>
+
+  </div>
+
 </div>
-
 
 <!-- Favicon -->
 <link rel="icon" href="data:,">

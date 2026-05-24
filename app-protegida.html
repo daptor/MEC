@@ -665,55 +665,115 @@
 
   </div>
 
-  <!-- ================= ACTA ================= -->
-  <div id="detalle-reunion-wrapper" class="mec-seccion-card" style="display:none;">
+<!-- ================= ACTA ================= -->
+<div id="detalle-reunion-wrapper"
+     class="mec-seccion-card"
+     style="display:none;">
 
     <div class="acta-header-row">
 
-      <h3 class="acta-title">
-        Acta de reunión
-      </h3>
+        <h3 class="acta-title">
+            📄 Acta de reunión
+        </h3>
 
-      <button
-        type="button"
-        class="btn-mini"
-        onclick="cerrarDetalleReunion()">
-        Cerrar acta
-      </button>
+        <div class="acta-header-actions">
+
+            <button
+                type="button"
+                class="btn-mini"
+                onclick="toggleActaContenido()"
+                id="btnToggleActa">
+                Ocultar
+            </button>
+
+            <button
+                type="button"
+                class="btn-mini"
+                onclick="cerrarDetalleReunion()">
+                Cerrar
+            </button>
+
+        </div>
 
     </div>
 
-    <div id="detalle-reunion-container" class="acta-reunion">
+    <!-- CONTENIDO COLAPSABLE -->
+    <div id="acta-contenido-expandible">
 
-      <div id="detalle-reunion-header"></div>
+        <div id="detalle-reunion-container" class="acta-reunion">
 
-      <div class="acta-reunion-columns">
+            <!-- CABECERA -->
+            <div id="detalle-reunion-header"></div>
 
-        <div>
-          <h4>Asistentes</h4>
-          <ul id="detalle-reunion-asistentes"></ul>
+            <!-- COLUMNAS -->
+            <div class="acta-reunion-columns">
+
+                <!-- ASISTENTES -->
+                <div class="acta-bloque-lista">
+
+                    <div class="acta-subtitulo-row">
+
+                        <h4>✅ Asistentes</h4>
+
+                        <button
+                            class="btn-mini"
+                            onclick="toggleListaActa('detalle-reunion-asistentes', this)">
+                            Ocultar
+                        </button>
+
+                    </div>
+
+                    <ul id="detalle-reunion-asistentes"></ul>
+
+                </div>
+
+                <!-- INASISTENTES -->
+                <div class="acta-bloque-lista">
+
+                    <div class="acta-subtitulo-row">
+
+                        <h4>❌ Inasistentes</h4>
+
+                        <button
+                            class="btn-mini"
+                            onclick="toggleListaActa('detalle-reunion-ausentes', this)">
+                            Ocultar
+                        </button>
+
+                    </div>
+
+                    <ul id="detalle-reunion-ausentes"></ul>
+
+                </div>
+
+            </div>
+
+            <!-- AUDIOS -->
+            <div class="acta-audios-box">
+
+                <div class="acta-subtitulo-row">
+
+                    <h4>🎙 Intervenciones grabadas</h4>
+
+                    <button
+                        class="btn-mini"
+                        onclick="toggleListaActa('detalle-reunion-audios', this)">
+                        Ocultar
+                    </button>
+
+                </div>
+
+                <div id="detalle-reunion-audios">
+                    <p>No hay audios cargados.</p>
+                </div>
+
+            </div>
+
         </div>
-
-        <div>
-          <h4>Inasistentes</h4>
-          <ul id="detalle-reunion-ausentes"></ul>
-        </div>
-
-      </div>
-
-      <div style="margin-top:25px;">
-
-        <h4>🎙 Intervenciones grabadas</h4>
-
-        <div id="detalle-reunion-audios">
-          <p>No hay audios cargados.</p>
-        </div>
-
-      </div>
 
     </div>
 
-  </div>
+</div>
 
   <!-- ================= SINDICATOS ================= -->
   <div class="mec-seccion-card">

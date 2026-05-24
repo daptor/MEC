@@ -1719,6 +1719,52 @@ document.getElementById("select-sindicato")?.addEventListener("change", mostrarC
 document.getElementById("ingresarBtn")?.addEventListener("click", verificarClave);
 });
 
+// ======================================================
+// 📄 ACTA ESCALABLE
+// ======================================================
+
+function toggleActaContenido() {
+
+    const contenido =
+        document.getElementById(
+            "acta-contenido-expandible"
+        );
+
+    const btn =
+        document.getElementById(
+            "btnToggleActa"
+        );
+
+    if (!contenido || !btn) return;
+
+    const oculto =
+        contenido.style.display === "none";
+
+    contenido.style.display =
+        oculto ? "block" : "none";
+
+    btn.textContent =
+        oculto ? "Ocultar" : "Mostrar";
+}
+
+function toggleListaActa(id, boton) {
+
+    const lista =
+        document.getElementById(id);
+
+    if (!lista) return;
+
+    const oculto =
+        lista.style.display === "none";
+
+    lista.style.display =
+        oculto ? "block" : "none";
+
+    boton.textContent =
+        oculto ? "Ocultar" : "Mostrar";
+}
+
+
 // ****************************bienvenida*********************************
 document.addEventListener("DOMContentLoaded", function () {
     const intro = document.getElementById("introBienvenida");

@@ -796,3 +796,46 @@ input:focus, select:focus, textarea:focus,
     color:#4b5563;
     margin-bottom:18px;
 }
+
+/* ====================================================== */
+/* 📄 ACTA ESCALABLE */
+/* ====================================================== */
+
+.acta-header-actions{
+    display:flex;
+    gap:8px;
+}
+
+.acta-subtitulo-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    margin-bottom:8px;
+}
+
+.acta-bloque-lista{
+    background:#f8fff6;
+    border-radius:10px;
+    padding:10px;
+}
+
+.acta-audios-box{
+    margin-top:20px;
+    background:#f8fff6;
+    border-radius:10px;
+    padding:12px;
+}
+
+#detalle-reunion-asistentes,
+#detalle-reunion-ausentes{
+    max-height:220px;
+    overflow-y:auto;
+    padding-right:6px;
+}
+
+#detalle-reunion-audios{
+    max-height:300px;
+    overflow-y:auto;
+    padding-right:6px;
+}

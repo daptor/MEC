@@ -648,12 +648,13 @@
         <button
             class="btn-mini"
             onclick="toggleHistorialReuniones(this)">
-            Ocultar
+            Mostrar
         </button>
 
     </div>
 
-    <div id="historial-reuniones-contenido">
+    <div id="historial-reuniones-contenido"
+         style="display:none;">
 
         <table class="tabla-asistencia">
 
@@ -695,7 +696,7 @@
                 class="btn-mini"
                 onclick="toggleActaContenido()"
                 id="btnToggleActa">
-                Ocultar
+                Mostrar
             </button>
 
             <button
@@ -710,9 +711,11 @@
     </div>
 
     <!-- CONTENIDO COLAPSABLE -->
-    <div id="acta-contenido-expandible">
+    <div id="acta-contenido-expandible"
+         style="display:none;">
 
-        <div id="detalle-reunion-container" class="acta-reunion">
+        <div id="detalle-reunion-container"
+             class="acta-reunion">
 
             <!-- CABECERA -->
             <div id="detalle-reunion-header"></div>
@@ -730,12 +733,13 @@
                         <button
                             class="btn-mini"
                             onclick="toggleListaActa('detalle-reunion-asistentes', this)">
-                            Ocultar
+                            Mostrar
                         </button>
 
                     </div>
 
-                    <ul id="detalle-reunion-asistentes"></ul>
+                    <ul id="detalle-reunion-asistentes"
+                        style="display:none;"></ul>
 
                 </div>
 
@@ -749,12 +753,13 @@
                         <button
                             class="btn-mini"
                             onclick="toggleListaActa('detalle-reunion-ausentes', this)">
-                            Ocultar
+                            Mostrar
                         </button>
 
                     </div>
 
-                    <ul id="detalle-reunion-ausentes"></ul>
+                    <ul id="detalle-reunion-ausentes"
+                        style="display:none;"></ul>
 
                 </div>
 
@@ -770,13 +775,16 @@
                     <button
                         class="btn-mini"
                         onclick="toggleListaActa('detalle-reunion-audios', this)">
-                        Ocultar
+                        Mostrar
                     </button>
 
                 </div>
 
-                <div id="detalle-reunion-audios">
+                <div id="detalle-reunion-audios"
+                     style="display:none;">
+
                     <p>No hay audios cargados.</p>
+
                 </div>
 
             </div>
@@ -797,12 +805,13 @@
         <button
             class="btn-mini"
             onclick="toggleRankingSindicato(this)">
-            Ocultar
+            Mostrar
         </button>
 
     </div>
 
-    <div id="ranking-sindicato-contenido">
+    <div id="ranking-sindicato-contenido"
+         style="display:none;">
 
         <div class="tabla-scroll-control">
 
@@ -839,12 +848,13 @@
         <button
             class="btn-mini"
             onclick="toggleRankingDirectores(this)">
-            Ocultar
+            Mostrar
         </button>
 
     </div>
 
-    <div id="ranking-directores-contenido">
+    <div id="ranking-directores-contenido"
+         style="display:none;">
 
         <div class="tabla-scroll-control">
 

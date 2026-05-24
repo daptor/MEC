@@ -1630,162 +1630,22 @@ if (sindicatoSeleccionado === "AsistenciaFederacion") {
 
 
     // ⏳ Esperar a que MEC renderice la pantalla
-setTimeout(async () => {
+    setTimeout(() => {
 
-    if (typeof cargarDashboardAsistencia === "function") {
-        await cargarDashboardAsistencia();
-    }
+        if (typeof cargarDashboardAsistencia === "function") {
+            cargarDashboardAsistencia();
+        }
+        if (typeof cargarHistorialReuniones === "function") {
+            cargarHistorialReuniones();
+        }
+        if (typeof cargarRankingSindicatos === "function") {
+            cargarRankingSindicatos();
+        }
+        if (typeof cargarRankingDirectores === "function") {
+            cargarRankingDirectores();
+        }
 
-    if (typeof cargarHistorialReuniones === "function") {
-        await cargarHistorialReuniones();
-    }
-
-    if (typeof cargarRankingSindicatos === "function") {
-        await cargarRankingSindicatos();
-    }
-
-    if (typeof cargarRankingDirectores === "function") {
-        await cargarRankingDirectores();
-    }
-
-// ======================================================
-// 📊 INICIAR TODO CERRADO
-// ======================================================
-
-const dashboard =
-    document.getElementById(
-        "dashboard-asistencia-contenido"
-    );
-
-const historial =
-    document.getElementById(
-        "historial-reuniones-contenido"
-    );
-
-const rankingSindicato =
-    document.getElementById(
-        "ranking-sindicato-contenido"
-    );
-
-const rankingDirectores =
-    document.getElementById(
-        "ranking-directores-contenido"
-    );
-
-// ======================================================
-// 📄 ACTA REUNIÓN
-// ======================================================
-
-const actaContenido =
-    document.getElementById(
-        "acta-contenido-expandible"
-    );
-
-const btnActa =
-    document.getElementById(
-        "btnToggleActa"
-    );
-
-// ======================================================
-// ✅ LISTAS INTERNAS ACTA
-// ======================================================
-
-const asistentes =
-    document.getElementById(
-        "detalle-reunion-asistentes"
-    );
-
-const ausentes =
-    document.getElementById(
-        "detalle-reunion-ausentes"
-    );
-
-const audios =
-    document.getElementById(
-        "detalle-reunion-audios"
-    );
-
-// ======================================================
-// 🔒 OCULTAR TODO
-// ======================================================
-
-if (dashboard)
-    dashboard.style.display = "none";
-
-if (historial)
-    historial.style.display = "none";
-
-if (rankingSindicato)
-    rankingSindicato.style.display = "none";
-
-if (rankingDirectores)
-    rankingDirectores.style.display = "none";
-
-if (actaContenido)
-    actaContenido.style.display = "none";
-
-if (asistentes)
-    asistentes.style.display = "none";
-
-if (ausentes)
-    ausentes.style.display = "none";
-
-if (audios)
-    audios.style.display = "none";
-
-// ======================================================
-// 🔘 BOTONES PRINCIPALES
-// ======================================================
-
-const btnDashboard =
-    document.getElementById(
-        "btnToggleDashboard"
-    );
-
-const btnHistorial =
-    document.getElementById(
-        "btnToggleHistorial"
-    );
-
-const btnRankingSindicato =
-    document.getElementById(
-        "btnToggleRankingSindicato"
-    );
-
-const btnRankingDirectores =
-    document.getElementById(
-        "btnToggleRankingDirectores"
-    );
-
-if (btnDashboard)
-    btnDashboard.textContent = "Mostrar";
-
-if (btnHistorial)
-    btnHistorial.textContent = "Mostrar";
-
-if (btnRankingSindicato)
-    btnRankingSindicato.textContent = "Mostrar";
-
-if (btnRankingDirectores)
-    btnRankingDirectores.textContent = "Mostrar";
-
-if (btnActa)
-    btnActa.textContent = "Mostrar";
-
-// ======================================================
-// 🔘 BOTONES INTERNOS ACTA
-// ======================================================
-
-const botonesMostrar =
-    document.querySelectorAll(
-        ".btn-toggle-lista"
-    );
-
-botonesMostrar.forEach(btn => {
-    btn.textContent = "Mostrar";
-});
-
-}, 300);
+    }, 300); // mismo patrón usado en Reunión Federación
 
     return;
 }

@@ -1787,6 +1787,52 @@ function toggleHistorialReuniones(boton) {
         oculto ? "Ocultar" : "Mostrar";
 }
 
+// ======================================================
+// 🏢 RANKING SINDICATOS
+// ======================================================
+
+function toggleRankingSindicato(boton) {
+
+    const contenedor =
+        document.getElementById(
+            "ranking-sindicato-contenido"
+        );
+
+    if (!contenedor) return;
+
+    const oculto =
+        contenedor.style.display === "none";
+
+    contenedor.style.display =
+        oculto ? "block" : "none";
+
+    boton.textContent =
+        oculto ? "Ocultar" : "Mostrar";
+}
+
+// ======================================================
+// 👥 RANKING DIRECTORES
+// ======================================================
+
+function toggleRankingDirectores(boton) {
+
+    const contenedor =
+        document.getElementById(
+            "ranking-directores-contenido"
+        );
+
+    if (!contenedor) return;
+
+    const oculto =
+        contenedor.style.display === "none";
+
+    contenedor.style.display =
+        oculto ? "block" : "none";
+
+    boton.textContent =
+        oculto ? "Ocultar" : "Mostrar";
+}
+
 // ****************************bienvenida*********************************
 document.addEventListener("DOMContentLoaded", function () {
     const intro = document.getElementById("introBienvenida");

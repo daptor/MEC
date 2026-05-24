@@ -854,3 +854,19 @@ input:focus, select:focus, textarea:focus,
 #historial-reuniones-contenido{
     overflow:hidden;
 }
+
+/* ====================================================== */
+/* 📊 TABLAS ESCALABLES */
+/* ====================================================== */
+
+.tabla-scroll-control{
+    max-height:320px;
+    overflow-y:auto;
+    overflow-x:auto;
+    border-radius:10px;
+}
+
+#ranking-sindicato-contenido,
+#ranking-directores-contenido{
+    overflow:hidden;
+}

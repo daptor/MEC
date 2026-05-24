@@ -787,57 +787,87 @@
 
 </div>
 
-  <!-- ================= SINDICATOS ================= -->
-  <div class="mec-seccion-card">
+<!-- ================= SINDICATOS ================= -->
+<div class="mec-seccion-card">
 
-    <div class="mec-seccion-header">
-      <h3>🏢 Participación por Sindicato</h3>
+    <div class="mec-seccion-header historial-header-row">
+
+        <h3>🏢 Participación por Sindicato</h3>
+
+        <button
+            class="btn-mini"
+            onclick="toggleRankingSindicato(this)">
+            Ocultar
+        </button>
+
     </div>
 
-    <table class="tabla-asistencia">
+    <div id="ranking-sindicato-contenido">
 
-      <thead>
-        <tr>
-          <th>Sindicato</th>
-          <th>Asistencias</th>
-          <th>Inasistencias</th>
-          <th class="col-porcentaje">% Participación</th>
-        </tr>
-      </thead>
+        <div class="tabla-scroll-control">
 
-      <tbody id="tabla-ranking-sindicatos">
-        <tr><td colspan="4">Cargando...</td></tr>
-      </tbody>
+            <table class="tabla-asistencia">
 
-    </table>
+                <thead>
+                    <tr>
+                        <th>Sindicato</th>
+                        <th>Asistencias</th>
+                        <th>Inasistencias</th>
+                        <th class="col-porcentaje">% Participación</th>
+                    </tr>
+                </thead>
 
-  </div>
+                <tbody id="tabla-ranking-sindicatos">
+                    <tr><td colspan="4">Cargando...</td></tr>
+                </tbody>
 
-  <!-- ================= DIRECTORES ================= -->
-  <div class="mec-seccion-card">
+            </table>
 
-    <div class="mec-seccion-header">
-      <h3>👥 Asistencia Directores</h3>
+        </div>
+
     </div>
 
-    <table class="tabla-asistencia">
+</div>
 
-      <thead>
-        <tr>
-          <th>Director</th>
-          <th>Reuniones</th>
-          <th>Asistió</th>
-          <th class="col-porcentaje">% Asistencia</th>
-        </tr>
-      </thead>
+<!-- ================= DIRECTORES ================= -->
+<div class="mec-seccion-card">
 
-      <tbody id="tabla-ranking-directores">
-        <tr><td colspan="4">Cargando...</td></tr>
-      </tbody>
+    <div class="mec-seccion-header historial-header-row">
 
-    </table>
+        <h3>👥 Asistencia Directores</h3>
 
-  </div>
+        <button
+            class="btn-mini"
+            onclick="toggleRankingDirectores(this)">
+            Ocultar
+        </button>
+
+    </div>
+
+    <div id="ranking-directores-contenido">
+
+        <div class="tabla-scroll-control">
+
+            <table class="tabla-asistencia">
+
+                <thead>
+                    <tr>
+                        <th>Director</th>
+                        <th>Reuniones</th>
+                        <th>Asistió</th>
+                        <th class="col-porcentaje">% Asistencia</th>
+                    </tr>
+                </thead>
+
+                <tbody id="tabla-ranking-directores">
+                    <tr><td colspan="4">Cargando...</td></tr>
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
 
 </div>
 

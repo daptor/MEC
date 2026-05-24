@@ -1648,75 +1648,146 @@ setTimeout(async () => {
         await cargarRankingDirectores();
     }
 
-    // ======================================================
-    // 📊 INICIAR TODO CERRADO
-    // ======================================================
+// ======================================================
+// 📊 INICIAR TODO CERRADO
+// ======================================================
 
-    const dashboard =
-        document.getElementById(
-            "dashboard-asistencia-contenido"
-        );
+const dashboard =
+    document.getElementById(
+        "dashboard-asistencia-contenido"
+    );
 
-    const historial =
-        document.getElementById(
-            "historial-reuniones-contenido"
-        );
+const historial =
+    document.getElementById(
+        "historial-reuniones-contenido"
+    );
 
-    const rankingSindicato =
-        document.getElementById(
-            "ranking-sindicato-contenido"
-        );
+const rankingSindicato =
+    document.getElementById(
+        "ranking-sindicato-contenido"
+    );
 
-    const rankingDirectores =
-        document.getElementById(
-            "ranking-directores-contenido"
-        );
+const rankingDirectores =
+    document.getElementById(
+        "ranking-directores-contenido"
+    );
 
-    if (dashboard)
-        dashboard.style.display = "none";
+if (dashboard)
+    dashboard.style.display = "none";
 
-    if (historial)
-        historial.style.display = "none";
+if (historial)
+    historial.style.display = "none";
 
-    if (rankingSindicato)
-        rankingSindicato.style.display = "none";
+if (rankingSindicato)
+    rankingSindicato.style.display = "none";
 
-    if (rankingDirectores)
-        rankingDirectores.style.display = "none";
+if (rankingDirectores)
+    rankingDirectores.style.display = "none";
 
-    // Botones
+// ======================================================
+// 📄 ACTA REUNIÓN CERRADA
+// ======================================================
 
-    const btnDashboard =
-        document.getElementById(
-            "btnToggleDashboard"
-        );
+const actaContenido =
+    document.getElementById(
+        "acta-contenido-expandible"
+    );
 
-    const btnHistorial =
-        document.getElementById(
-            "btnToggleHistorial"
-        );
+const btnActa =
+    document.getElementById(
+        "btnToggleActa"
+    );
 
-    const btnRankingSindicato =
-        document.getElementById(
-            "btnToggleRankingSindicato"
-        );
+if (actaContenido)
+    actaContenido.style.display = "none";
 
-    const btnRankingDirectores =
-        document.getElementById(
-            "btnToggleRankingDirectores"
-        );
+if (btnActa)
+    btnActa.textContent = "Mostrar";
 
-    if (btnDashboard)
-        btnDashboard.textContent = "Mostrar";
+// ======================================================
+// ✅ ASISTENTES CERRADO
+// ======================================================
 
-    if (btnHistorial)
-        btnHistorial.textContent = "Mostrar";
+const asistentes =
+    document.getElementById(
+        "detalle-reunion-asistentes"
+    );
 
-    if (btnRankingSindicato)
-        btnRankingSindicato.textContent = "Mostrar";
+if (asistentes)
+    asistentes.style.display = "none";
 
-    if (btnRankingDirectores)
-        btnRankingDirectores.textContent = "Mostrar";
+// ======================================================
+// ❌ AUSENTES CERRADO
+// ======================================================
+
+const ausentes =
+    document.getElementById(
+        "detalle-reunion-ausentes"
+    );
+
+if (ausentes)
+    ausentes.style.display = "none";
+
+// ======================================================
+// 🎙 AUDIOS CERRADO
+// ======================================================
+
+const audios =
+    document.getElementById(
+        "detalle-reunion-audios"
+    );
+
+if (audios)
+    audios.style.display = "none";
+
+// ======================================================
+// BOTONES
+// ======================================================
+
+const btnDashboard =
+    document.getElementById(
+        "btnToggleDashboard"
+    );
+
+const btnHistorial =
+    document.getElementById(
+        "btnToggleHistorial"
+    );
+
+const btnRankingSindicato =
+    document.getElementById(
+        "btnToggleRankingSindicato"
+    );
+
+const btnRankingDirectores =
+    document.getElementById(
+        "btnToggleRankingDirectores"
+    );
+
+if (btnDashboard)
+    btnDashboard.textContent = "Mostrar";
+
+if (btnHistorial)
+    btnHistorial.textContent = "Mostrar";
+
+if (btnRankingSindicato)
+    btnRankingSindicato.textContent = "Mostrar";
+
+if (btnRankingDirectores)
+    btnRankingDirectores.textContent = "Mostrar";
+
+// ======================================================
+// BOTONES INTERNOS ACTA
+// ======================================================
+
+const botonesMostrar =
+    document.querySelectorAll(
+        ".btn-toggle-lista"
+    );
+
+botonesMostrar.forEach(btn => {
+    btn.textContent = "Mostrar";
+});
 
 }, 300);
 

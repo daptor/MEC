@@ -1630,22 +1630,95 @@ if (sindicatoSeleccionado === "AsistenciaFederacion") {
 
 
     // ⏳ Esperar a que MEC renderice la pantalla
-    setTimeout(() => {
+setTimeout(async () => {
 
-        if (typeof cargarDashboardAsistencia === "function") {
-            cargarDashboardAsistencia();
-        }
-        if (typeof cargarHistorialReuniones === "function") {
-            cargarHistorialReuniones();
-        }
-        if (typeof cargarRankingSindicatos === "function") {
-            cargarRankingSindicatos();
-        }
-        if (typeof cargarRankingDirectores === "function") {
-            cargarRankingDirectores();
-        }
+    if (typeof cargarDashboardAsistencia === "function") {
+        await cargarDashboardAsistencia();
+    }
 
-    }, 300); // mismo patrón usado en Reunión Federación
+    if (typeof cargarHistorialReuniones === "function") {
+        await cargarHistorialReuniones();
+    }
+
+    if (typeof cargarRankingSindicatos === "function") {
+        await cargarRankingSindicatos();
+    }
+
+    if (typeof cargarRankingDirectores === "function") {
+        await cargarRankingDirectores();
+    }
+
+    // ======================================================
+    // 📊 INICIAR TODO CERRADO
+    // ======================================================
+
+    const dashboard =
+        document.getElementById(
+            "dashboard-asistencia-contenido"
+        );
+
+    const historial =
+        document.getElementById(
+            "historial-reuniones-contenido"
+        );
+
+    const rankingSindicato =
+        document.getElementById(
+            "ranking-sindicato-contenido"
+        );
+
+    const rankingDirectores =
+        document.getElementById(
+            "ranking-directores-contenido"
+        );
+
+    if (dashboard)
+        dashboard.style.display = "none";
+
+    if (historial)
+        historial.style.display = "none";
+
+    if (rankingSindicato)
+        rankingSindicato.style.display = "none";
+
+    if (rankingDirectores)
+        rankingDirectores.style.display = "none";
+
+    // Botones
+
+    const btnDashboard =
+        document.getElementById(
+            "btnToggleDashboard"
+        );
+
+    const btnHistorial =
+        document.getElementById(
+            "btnToggleHistorial"
+        );
+
+    const btnRankingSindicato =
+        document.getElementById(
+            "btnToggleRankingSindicato"
+        );
+
+    const btnRankingDirectores =
+        document.getElementById(
+            "btnToggleRankingDirectores"
+        );
+
+    if (btnDashboard)
+        btnDashboard.textContent = "Mostrar";
+
+    if (btnHistorial)
+        btnHistorial.textContent = "Mostrar";
+
+    if (btnRankingSindicato)
+        btnRankingSindicato.textContent = "Mostrar";
+
+    if (btnRankingDirectores)
+        btnRankingDirectores.textContent = "Mostrar";
+
+}, 300);
 
     return;
 }

@@ -1626,6 +1626,8 @@ if (sindicatoSeleccionado === "AsistenciaFederacion") {
 
     cerrarModalClave();
     mostrarPantalla("pantalla-asistencia-historica");
+    iniciarModulosAsistenciaCerrados();
+
 
     // ⏳ Esperar a que MEC renderice la pantalla
     setTimeout(() => {
@@ -1831,6 +1833,81 @@ function toggleRankingDirectores(boton) {
 
     boton.textContent =
         oculto ? "Ocultar" : "Mostrar";
+}
+
+// ======================================================
+// 📊 INICIAR MÓDULOS CERRADOS
+// ======================================================
+
+function iniciarModulosAsistenciaCerrados() {
+
+    // Dashboard
+    const dashboard =
+        document.getElementById(
+            "dashboard-asistencia-contenido"
+        );
+
+    const btnDashboard =
+        document.getElementById(
+            "btnToggleDashboard"
+        );
+
+    if (dashboard && btnDashboard) {
+
+        dashboard.style.display = "none";
+        btnDashboard.textContent = "Mostrar";
+    }
+
+    // Historial
+    const historial =
+        document.getElementById(
+            "historial-reuniones-contenido"
+        );
+
+    const btnHistorial =
+        document.getElementById(
+            "btnToggleHistorial"
+        );
+
+    if (historial && btnHistorial) {
+
+        historial.style.display = "none";
+        btnHistorial.textContent = "Mostrar";
+    }
+
+    // Ranking sindicatos
+    const rankingSindicato =
+        document.getElementById(
+            "ranking-sindicato-contenido"
+        );
+
+    const btnRankingSindicato =
+        document.getElementById(
+            "btnToggleRankingSindicato"
+        );
+
+    if (rankingSindicato && btnRankingSindicato) {
+
+        rankingSindicato.style.display = "none";
+        btnRankingSindicato.textContent = "Mostrar";
+    }
+
+    // Ranking directores
+    const rankingDirectores =
+        document.getElementById(
+            "ranking-directores-contenido"
+        );
+
+    const btnRankingDirectores =
+        document.getElementById(
+            "btnToggleRankingDirectores"
+        );
+
+    if (rankingDirectores && btnRankingDirectores) {
+
+        rankingDirectores.style.display = "none";
+        btnRankingDirectores.textContent = "Mostrar";
+    }
 }
 
 // ****************************bienvenida*********************************

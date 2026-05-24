@@ -1672,20 +1672,8 @@ const rankingDirectores =
         "ranking-directores-contenido"
     );
 
-if (dashboard)
-    dashboard.style.display = "none";
-
-if (historial)
-    historial.style.display = "none";
-
-if (rankingSindicato)
-    rankingSindicato.style.display = "none";
-
-if (rankingDirectores)
-    rankingDirectores.style.display = "none";
-
 // ======================================================
-// 📄 ACTA REUNIÓN CERRADA
+// 📄 ACTA REUNIÓN
 // ======================================================
 
 const actaContenido =
@@ -1698,14 +1686,8 @@ const btnActa =
         "btnToggleActa"
     );
 
-if (actaContenido)
-    actaContenido.style.display = "none";
-
-if (btnActa)
-    btnActa.textContent = "Mostrar";
-
 // ======================================================
-// ✅ ASISTENTES CERRADO
+// ✅ LISTAS INTERNAS ACTA
 // ======================================================
 
 const asistentes =
@@ -1713,35 +1695,46 @@ const asistentes =
         "detalle-reunion-asistentes"
     );
 
-if (asistentes)
-    asistentes.style.display = "none";
-
-// ======================================================
-// ❌ AUSENTES CERRADO
-// ======================================================
-
 const ausentes =
     document.getElementById(
         "detalle-reunion-ausentes"
     );
-
-if (ausentes)
-    ausentes.style.display = "none";
-
-// ======================================================
-// 🎙 AUDIOS CERRADO
-// ======================================================
 
 const audios =
     document.getElementById(
         "detalle-reunion-audios"
     );
 
+// ======================================================
+// 🔒 OCULTAR TODO
+// ======================================================
+
+if (dashboard)
+    dashboard.style.display = "none";
+
+if (historial)
+    historial.style.display = "none";
+
+if (rankingSindicato)
+    rankingSindicato.style.display = "none";
+
+if (rankingDirectores)
+    rankingDirectores.style.display = "none";
+
+if (actaContenido)
+    actaContenido.style.display = "none";
+
+if (asistentes)
+    asistentes.style.display = "none";
+
+if (ausentes)
+    ausentes.style.display = "none";
+
 if (audios)
     audios.style.display = "none";
 
 // ======================================================
-// BOTONES
+// 🔘 BOTONES PRINCIPALES
 // ======================================================
 
 const btnDashboard =
@@ -1776,8 +1769,11 @@ if (btnRankingSindicato)
 if (btnRankingDirectores)
     btnRankingDirectores.textContent = "Mostrar";
 
+if (btnActa)
+    btnActa.textContent = "Mostrar";
+
 // ======================================================
-// BOTONES INTERNOS ACTA
+// 🔘 BOTONES INTERNOS ACTA
 // ======================================================
 
 const botonesMostrar =

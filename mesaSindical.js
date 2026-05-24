@@ -1699,24 +1699,32 @@ async function cargarAudiosReunion(reunionId) {
             }
 
             html += `
-                <div style="
-                    border:1px solid #ddd;
-                    border-radius:10px;
-                    padding:12px;
-                    margin-bottom:12px;
-                    background:#f8f8f8;
-                ">
+                <div class="mec-audio-card">
 
-                    <strong>🎤 ${intervencion.socio_nombre || "Socio"}</strong>
+                    <div class="mec-audio-header">
 
-                    <br><br>
+                        <div class="mec-audio-usuario">
+                            🎤 ${intervencion.socio_nombre || "Socio"}
+                        </div>
+
+                        <div class="mec-audio-orden">
+                            #${intervencion.orden || "-"}
+                        </div>
+
+                    </div>
 
                     ${
                         audioUrl
-                            ? `<audio controls style="width:100%;">
-                                 <source src="${audioUrl}" type="audio/webm">
-                               </audio>`
-                            : ""
+                            ? `
+                                <audio controls class="mec-audio-player">
+                                    <source src="${audioUrl}" type="audio/webm">
+                                </audio>
+                              `
+                            : `
+                                <div class="mec-audio-error">
+                                    Audio no disponible
+                                </div>
+                              `
                     }
 
                 </div>
@@ -1726,7 +1734,12 @@ async function cargarAudiosReunion(reunionId) {
         contenedor.innerHTML = html;
 
     } catch (err) {
-        console.error("❌ Error inesperado cargando audios:", err);
+
+        console.error(
+            "❌ Error inesperado cargando audios:",
+            err
+        );
+
     }
 }
 

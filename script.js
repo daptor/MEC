@@ -1719,37 +1719,6 @@ document.getElementById("select-sindicato")?.addEventListener("change", mostrarC
 document.getElementById("ingresarBtn")?.addEventListener("click", verificarClave);
 });
 
-// ======================================================
-// 📑 Tabs detalle reunión MEC
-// ======================================================
-
-window.cambiarTabReunion = function(tabId, boton){
-
-    // Ocultar tabs
-    document
-      .querySelectorAll(".contenido-tab-reunion")
-      .forEach(tab => {
-          tab.classList.remove("active");
-      });
-
-    // Limpiar botones
-    document
-      .querySelectorAll(".tab-reunion")
-      .forEach(btn => {
-          btn.classList.remove("active");
-      });
-
-    // Activar tab
-    document
-      .getElementById(tabId)
-      .classList.add("active");
-
-    // Activar botón
-    boton.classList.add("active");
-
-};
-
-
 // ****************************bienvenida*********************************
 document.addEventListener("DOMContentLoaded", function () {
     const intro = document.getElementById("introBienvenida");

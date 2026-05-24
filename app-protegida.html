@@ -599,18 +599,18 @@
 <!-- ===================================================== -->
 <div id="pantalla-asistencia-historica" class="pantalla" style="display:none;">
 
-  <!-- ↩ VOLVER -->
+  <!-- Volver -->
   <div class="boton-container">
     <button onclick="mostrarPantalla('pantalla-archivosindical')">
       ↩ Volver a Herramientas
     </button>
   </div>
 
-  <!-- 📊 TÍTULO -->
+  <!-- Título principal -->
   <h1>📊 Asistencia y Estadísticas</h1>
   <p>Módulo de análisis histórico de participación en reuniones.</p>
 
-  <!-- 📈 KPIs -->
+  <!-- ================= KPIs ================= -->
   <h2>Dashboard General</h2>
 
   <div class="dashboard-grid">
@@ -639,10 +639,9 @@
 
   <hr>
 
-  <!-- 📋 HISTORIAL -->
+  <!-- ================= HISTORIAL ================= -->
   <h3>Historial de reuniones</h3>
   <table class="tabla-asistencia">
-
     <thead>
       <tr>
         <th>Fecha</th>
@@ -652,90 +651,60 @@
         <th>Acción</th>
       </tr>
     </thead>
-
     <tbody id="tabla-historial-reuniones">
-      <tr>
-        <td colspan="5">Cargando...</td>
-      </tr>
+      <tr><td colspan="5">Cargando...</td></tr>
     </tbody>
   </table>
+
   <hr>
 
-  <!-- 📄 ACTA REUNIÓN -->
+  <!-- ================= ACTA (VER) ================= -->
   <div id="detalle-reunion-wrapper" style="display:none; margin-top:10px;">
 
-    <!-- CABECERA -->
     <div class="acta-header-row">
+      <h3 class="acta-title">Acta de reunión</h3>
 
-      <h3 class="acta-title">
-        Acta de reunión
-      </h3>
-
-      <button type="button" class="btn-mini"
-        onclick="cerrarDetalleReunion()">Cerrar acta</button>
+      <button
+        type="button"
+        class="btn-mini"
+        onclick="cerrarDetalleReunion()">
+        Cerrar acta
+      </button>
     </div>
-
-    <!-- CONTENEDOR -->
     <div id="detalle-reunion-container" class="acta-reunion">
-
-      <!-- 📑 TABS -->
-      <div class="mec-tabs">
-
-        <button class="mec-tab-btn active"
-          onclick="cambiarTabReunion('tab-resumen', this)">Resumen</button>
-
-        <button class="mec-tab-btn"
-          onclick="cambiarTabReunion('tab-asistencia', this)">Asistencia</button>
-
-        <button class="mec-tab-btn"
-          onclick="cambiarTabReunion('tab-intervenciones', this)">Intervenciones</button>
-
-      </div>
-
-      <!-- 📋 TAB RESUMEN -->
-      <div id="tab-resumen" class="mec-tab-panel active">
-
-        <!-- CABECERA -->
-        <div id="detalle-reunion-header"></div>
-
-        <!-- COLUMNAS -->
-        <div class="acta-reunion-columns">
-
-          <!-- ASISTENTES -->
-          <div>
-            <h4>Asistentes</h4>
-            <ul id="detalle-reunion-asistentes"></ul>
-          </div>
-
-          <!-- AUSENTES -->
-          <div>
-            <h4>Inasistentes</h4>
-            <ul id="detalle-reunion-ausentes"></ul>
-          </div>
+      <!-- CABECERA -->
+      <div id="detalle-reunion-header"></div>
+      <!-- COLUMNAS -->
+      <div class="acta-reunion-columns">
+        <!-- ASISTENTES -->
+        <div>
+          <h4>Asistentes</h4>
+          <ul id="detalle-reunion-asistentes"></ul>
+        </div>
+        <!-- INASISTENTES -->
+        <div>
+          <h4>Inasistentes</h4>
+          <ul id="detalle-reunion-ausentes"></ul>
         </div>
       </div>
-
-      <!-- 👥 TAB ASISTENCIA -->
-      <div id="tab-asistencia" class="mec-tab-panel">
-        <div id="detalle-asistencia-reunion"></div>
-      </div>
-      <!-- 🎙 TAB INTERVENCIONES -->
-      <div id="tab-intervenciones" class="mec-tab-panel">
+      <!-- AUDIOS -->
+      <div style="margin-top:25px;">
 
         <h4>🎙 Intervenciones grabadas</h4>
 
         <div id="detalle-reunion-audios">
+
           <p>No hay audios cargados.</p>
         </div>
       </div>
     </div>
   </div>
+
   <hr>
 
-  <!-- 🏢 RANKING SINDICATOS -->
+  <!-- ================= RANKING SINDICATOS ================= -->
   <h3>Participación por Sindicato</h3>
   <table class="tabla-asistencia">
-
     <thead>
       <tr>
         <th>Sindicato</th>
@@ -744,19 +713,16 @@
         <th class="col-porcentaje">% Participación</th>
       </tr>
     </thead>
-
     <tbody id="tabla-ranking-sindicatos">
-      <tr>
-        <td colspan="4">Cargando...</td>
-      </tr>
+      <tr><td colspan="4">Cargando...</td></tr>
     </tbody>
   </table>
+
   <hr>
 
-  <!-- 👔 RANKING DIRECTORES -->
+  <!-- ================= RANKING DIRECTORES ================= -->
   <h3>Asistencia Directores</h3>
   <table class="tabla-asistencia">
-
     <thead>
       <tr>
         <th>Director</th>
@@ -765,11 +731,8 @@
         <th class="col-porcentaje">% Asistencia</th>
       </tr>
     </thead>
-
     <tbody id="tabla-ranking-directores">
-      <tr>
-        <td colspan="4">Cargando...</td>
-      </tr>
+      <tr><td colspan="4">Cargando...</td></tr>
     </tbody>
   </table>
 </div>

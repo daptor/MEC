@@ -638,32 +638,44 @@
 
   </div>
 
-  <!-- ================= HISTORIAL ================= -->
-  <div class="mec-seccion-card">
+<!-- ================= HISTORIAL ================= -->
+<div class="mec-seccion-card">
 
-    <div class="mec-seccion-header">
-      <h3>📅 Historial de reuniones</h3>
+    <div class="mec-seccion-header historial-header-row">
+
+        <h3>📅 Historial de reuniones</h3>
+
+        <button
+            class="btn-mini"
+            onclick="toggleHistorialReuniones(this)">
+            Ocultar
+        </button>
+
     </div>
 
-    <table class="tabla-asistencia">
+    <div id="historial-reuniones-contenido">
 
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          <th>Reunión</th>
-          <th>Moderador</th>
-          <th class="col-porcentaje">% Asistencia</th>
-          <th>Acción</th>
-        </tr>
-      </thead>
+        <table class="tabla-asistencia">
 
-      <tbody id="tabla-historial-reuniones">
-        <tr><td colspan="5">Cargando...</td></tr>
-      </tbody>
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Reunión</th>
+                    <th>Moderador</th>
+                    <th class="col-porcentaje">% Asistencia</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
 
-    </table>
+            <tbody id="tabla-historial-reuniones">
+                <tr><td colspan="5">Cargando...</td></tr>
+            </tbody>
 
-  </div>
+        </table>
+
+    </div>
+
+</div>
 
 <!-- ================= ACTA ================= -->
 <div id="detalle-reunion-wrapper"

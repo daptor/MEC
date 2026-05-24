@@ -839,3 +839,18 @@ input:focus, select:focus, textarea:focus,
     overflow-y:auto;
     padding-right:6px;
 }
+
+/* ====================================================== */
+/* 📅 HISTORIAL ESCALABLE */
+/* ====================================================== */
+
+.historial-header-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+}
+
+#historial-reuniones-contenido{
+    overflow:hidden;
+}

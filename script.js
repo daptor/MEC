@@ -1764,6 +1764,28 @@ function toggleListaActa(id, boton) {
         oculto ? "Ocultar" : "Mostrar";
 }
 
+// ======================================================
+// 📅 HISTORIAL ESCALABLE
+// ======================================================
+
+function toggleHistorialReuniones(boton) {
+
+    const contenedor =
+        document.getElementById(
+            "historial-reuniones-contenido"
+        );
+
+    if (!contenedor) return;
+
+    const oculto =
+        contenedor.style.display === "none";
+
+    contenedor.style.display =
+        oculto ? "block" : "none";
+
+    boton.textContent =
+        oculto ? "Ocultar" : "Mostrar";
+}
 
 // ****************************bienvenida*********************************
 document.addEventListener("DOMContentLoaded", function () {

@@ -944,3 +944,49 @@ input:focus, select:focus, textarea:focus,
     color:#dc2626;
     font-weight:600;
 }
+
+/* ====================================================== */
+/* 🎙 GRABACIÓN EXPOSITOR */
+/* ====================================================== */
+#msd2-bloque-expositor{
+  background:#f4f7f1;
+  border:1px solid #d7e2d1;
+  border-radius:12px;
+  padding:12px;
+  margin-top:18px;
+}
+
+/* título */
+#msd2-bloque-expositor h3{
+  margin-top:0;
+  margin-bottom:10px;
+  font-size:20px;
+}
+
+/* estado */
+#msd2-estado-expositor{
+  margin-bottom:12px;
+  font-size:14px;
+}
+
+/* grilla botones */
+.msd2-controles-expositor{
+  display:grid;
+  grid-template-columns:
+    1fr 1fr;
+  gap:8px;
+}
+
+/* botones */
+.msd2-controles-expositor button{
+  padding:10px;
+  font-size:14px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+/* preview audio */
+#audio-expositor-preview{
+  margin-top:12px;
+}

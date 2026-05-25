@@ -990,3 +990,30 @@ input:focus, select:focus, textarea:focus,
 #audio-expositor-preview{
   margin-top:12px;
 }
+
+/* ====================================================== */
+/* 🎛 CONTROLES MODERADOR */
+/* ====================================================== */
+.msd2-grid-controles{
+  display:grid;
+  grid-template-columns:
+    1fr 1fr;
+  gap:8px;
+  margin-bottom:14px;
+}
+
+/* botones moderador */
+.msd2-grid-controles button{
+  padding:10px;
+  font-size:14px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+/* botón cerrar */
+.msd2-grid-controles button:last-child{
+  grid-column:span 2;
+  background:#dc2626 !important;
+  color:white;
+}

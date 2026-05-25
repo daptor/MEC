@@ -469,18 +469,41 @@
     />
 </div>
 
-        <!-- Controles de tiempo (solo moderador real los verá) -->
-        <div
-            id="msd2-controles-moderador"
-            style="display:none; gap:8px; flex-wrap:wrap; margin-bottom:10px;"
-        >
-            <button type="button" onclick="msd2_iniciarTurno()">▶ Iniciar</button>
-            <button type="button" id="msd2-btn-pausar" onclick="msd2_pausarTurno()">⏸ Pausa</button>
-            <button type="button" onclick="msd2_reiniciarTurno()">⟲ Reiniciar</button>
-            <button type="button" onclick="msd2_cerrarReunion()" 
-                    style="background:#dc2626;color:white;">🔴 Cerrar reunión</button>
-        </div>
+<!-- Controles de tiempo (solo moderador real los verá) -->
+<div
+    id="msd2-controles-moderador"
+    style="display:none; gap:8px; flex-wrap:wrap; margin-bottom:10px;"
+>
+    <button type="button" onclick="msd2_iniciarTurno()">▶ Iniciar</button>
+    <button type="button"id="msd2-btn-pausar"onclick="msd2_pausarTurno()">⏸ Pausa</button>
+    <button type="button"onclick="msd2_reiniciarTurno()">⟲ Reiniciar</button>
+    <button type="button"onclick="msd2_cerrarReunion()"
+    style="background:#dc2626;color:white;">🔴 Cerrar reunión</button>
+</div>
 
+<!-- 🎙 GRABACIÓN EXPOSITOR -->
+<div id="msd2-bloque-expositor">
+  <h3>🎙 Grabación Expositor</h3>
+  <div id="msd2-estado-expositor">
+    ⚪ Sin iniciar
+  </div>
+
+  <div class="msd2-controles-expositor">
+    <button id="btn-expositor-iniciar"type="button">▶ Iniciar</button>
+    <button id="btn-expositor-pausar"type="button">⏸ Pausar</button>
+    <button id="btn-expositor-reanudar"type="button">▶ Reanudar</button>
+    <button id="btn-expositor-finalizar"type="button">⏹ Finalizar</button>
+  </div>
+  <audio
+    id="audio-expositor-preview"
+    controls
+    style="
+      width:100%;
+      margin-top:10px;
+      display:none;
+    "
+  ></audio>
+</div>
         <hr>
 
         <!-- TURNOS DE PARTICIPACIÓN -->

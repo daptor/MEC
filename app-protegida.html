@@ -489,21 +489,27 @@
     ⚪ Sin iniciar
   </div>
 
-  <div class="msd2-controles-expositor">
-    <button id="btn-expositor-iniciar"type="button">▶ Iniciar</button>
-    <button id="btn-expositor-pausar"type="button">⏸ Pausar</button>
-    <button id="btn-expositor-reanudar"type="button">▶ Reanudar</button>
-    <button id="btn-expositor-finalizar"type="button">⏹ Finalizar</button>
-  </div>
-  <audio
-    id="audio-expositor-preview"
-    controls
-    style="
-      width:100%;
-      margin-top:10px;
-      display:none;
-    "
-  ></audio>
+<div class="msd2-controles-expositor">
+  <button id="btn-expositor-iniciar"
+    type="button" onclick="msd2IniciarExposicion()">▶ Iniciar</button>
+  <button id="btn-expositor-pausar"
+    type="button" onclick="msd2PausarExposicion()"> ⏸ Pausar</button>
+  <button id="btn-expositor-reanudar"
+    type="button" onclick="msd2ReanudarExposicion()">▶ Reanudar</button>
+  <button id="btn-expositor-finalizar"
+    type="button" onclick="msd2FinalizarExposicion()">⏹ Finalizar</button>
+</div>
+
+<audio
+  id="audio-expositor-preview"
+  controls
+  style="
+    width:100%;
+    margin-top:10px;
+    display:none;
+  "
+  hidden
+></audio>
 </div>
         <hr>
 
@@ -664,24 +670,17 @@
 
 <!-- ================= HISTORIAL ================= -->
 <div class="mec-seccion-card">
-
     <div class="mec-seccion-header historial-header-row">
-
         <h3>📅 Historial de reuniones</h3>
-
         <button
             class="btn-mini"
             onclick="toggleHistorialReuniones(this)">
             Mostrar
         </button>
-
     </div>
-
     <div id="historial-reuniones-contenido"
          style="display:none;">
-
         <table class="tabla-asistencia">
-
             <thead>
                 <tr>
                     <th>Fecha</th>
@@ -691,30 +690,22 @@
                     <th>Acción</th>
                 </tr>
             </thead>
-
             <tbody id="tabla-historial-reuniones">
                 <tr><td colspan="5">Cargando...</td></tr>
             </tbody>
-
         </table>
-
     </div>
-
 </div>
 
 <!-- ================= ACTA ================= -->
 <div id="detalle-reunion-wrapper"
      class="mec-seccion-card"
      style="display:none;">
-
     <div class="acta-header-row">
-
         <h3 class="acta-title">
             📄 Acta de reunión
         </h3>
-
         <div class="acta-header-actions">
-
             <button
                 type="button"
                 class="btn-mini"
@@ -722,125 +713,88 @@
                 id="btnToggleActa">
                 Mostrar
             </button>
-
             <button
                 type="button"
                 class="btn-mini"
                 onclick="cerrarDetalleReunion()">
                 Cerrar
             </button>
-
         </div>
-
     </div>
 
     <!-- CONTENIDO COLAPSABLE -->
     <div id="acta-contenido-expandible"
          style="display:none;">
-
         <div id="detalle-reunion-container"
              class="acta-reunion">
-
             <!-- CABECERA -->
             <div id="detalle-reunion-header"></div>
-
             <!-- COLUMNAS -->
             <div class="acta-reunion-columns">
-
                 <!-- ASISTENTES -->
                 <div class="acta-bloque-lista">
-
                     <div class="acta-subtitulo-row">
-
                         <h4>✅ Asistentes</h4>
-
                         <button
                             class="btn-mini"
                             onclick="toggleListaActa('detalle-reunion-asistentes', this)">
                             Mostrar
                         </button>
-
                     </div>
-
                     <ul id="detalle-reunion-asistentes"
                         style="display:none;"></ul>
-
                 </div>
 
                 <!-- INASISTENTES -->
                 <div class="acta-bloque-lista">
-
                     <div class="acta-subtitulo-row">
-
                         <h4>❌ Inasistentes</h4>
-
                         <button
                             class="btn-mini"
                             onclick="toggleListaActa('detalle-reunion-ausentes', this)">
                             Mostrar
                         </button>
-
                     </div>
-
                     <ul id="detalle-reunion-ausentes"
                         style="display:none;"></ul>
-
                 </div>
-
             </div>
 
             <!-- AUDIOS -->
             <div class="acta-audios-box">
-
                 <div class="acta-subtitulo-row">
-
                     <h4>🎙 Intervenciones grabadas</h4>
-
                     <button
                         class="btn-mini"
                         onclick="toggleListaActa('detalle-reunion-audios', this)">
                         Mostrar
                     </button>
-
                 </div>
-
                 <div id="detalle-reunion-audios"
                      style="display:none;">
 
                     <p>No hay audios cargados.</p>
-
                 </div>
-
             </div>
-
         </div>
-
     </div>
-
 </div>
 
 <!-- ================= SINDICATOS ================= -->
 <div class="mec-seccion-card">
-
     <div class="mec-seccion-header historial-header-row">
-
         <h3>🏢 Participación por Sindicato</h3>
-
         <button
             class="btn-mini"
             onclick="toggleRankingSindicato(this)">
             Mostrar
         </button>
-
     </div>
 
     <div id="ranking-sindicato-contenido"
          style="display:none;">
-
         <div class="tabla-scroll-control">
-
             <table class="tabla-asistencia">
-
                 <thead>
                     <tr>
                         <th>Sindicato</th>
@@ -849,41 +803,28 @@
                         <th class="col-porcentaje">% Participación</th>
                     </tr>
                 </thead>
-
                 <tbody id="tabla-ranking-sindicatos">
                     <tr><td colspan="4">Cargando...</td></tr>
                 </tbody>
-
             </table>
-
         </div>
-
     </div>
-
 </div>
 
 <!-- ================= DIRECTORES ================= -->
 <div class="mec-seccion-card">
-
     <div class="mec-seccion-header historial-header-row">
-
         <h3>👥 Asistencia Directores</h3>
-
         <button
             class="btn-mini"
             onclick="toggleRankingDirectores(this)">
             Mostrar
         </button>
-
     </div>
-
     <div id="ranking-directores-contenido"
          style="display:none;">
-
         <div class="tabla-scroll-control">
-
             <table class="tabla-asistencia">
-
                 <thead>
                     <tr>
                         <th>Director</th>
@@ -892,17 +833,12 @@
                         <th class="col-porcentaje">% Asistencia</th>
                     </tr>
                 </thead>
-
                 <tbody id="tabla-ranking-directores">
                     <tr><td colspan="4">Cargando...</td></tr>
                 </tbody>
-
             </table>
-
         </div>
-
     </div>
-
 </div>
 
 <!-- Favicon -->

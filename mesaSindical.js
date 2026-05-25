@@ -551,6 +551,8 @@ async function msd2_entrarSala() {
   // 🟢 REGISTRAR ASISTENCIA AUTOMÁTICA (NUEVO)
     await registrarParticipanteEnReunion();
     msd2_configurarVistaRolSala();
+  // 🎙 inicializar UI expositor
+    msd2ActualizarUIExpositor();
 
   // 🔹 cargar estado inicial desde BD
   await msd2_cargarColaDesdeBD();
@@ -748,6 +750,20 @@ window.msd2_iniciarTurno = async function () {
   }
 
   console.log("🧹 Turno removido de cola");
+
+// ======================================================
+// 🎙 PAUSAR EXPOSICIÓN AUTOMÁTICA
+// ======================================================
+
+if (
+  window.msd2Expositor &&
+  window.msd2Expositor.estado === "recording"
+) {
+
+  msd2PausarExposicion();
+  window.msd2Expositor.autoPaused = true;
+  console.log("🎙 Exposición pausada automáticamente por turno");
+}
 
   // ------------------------------------------------------
   // 7️⃣ ACTUALIZAR ESTADO DE REUNIÓN
@@ -1222,6 +1238,22 @@ canal.on(
       detenerYGuardarGrabacion();
     }
 
+// ======================================================
+// 🎙 REANUDAR EXPOSICIÓN AUTOMÁTICA
+// ======================================================
+
+if (
+  window.msd2Expositor &&
+  window.msd2Expositor.estado === "paused" &&
+  window.msd2Expositor.autoPaused === true &&
+  !r.reloj_activo
+) {
+
+  // 🔒 evitar doble reanudación
+  window.msd2Expositor.autoPaused = false;
+  msd2ReanudarExposicion();
+  console.log("🎙 Exposición reanudada automáticamente");
+}
 
     // ------------------------------------------------------
     // 🔄 RECARGAR COLA
@@ -1657,12 +1689,9 @@ async function verDetalleReunion(reunionId) {
 // 🎙 CARGAR AUDIOS DE REUNIÓN
 // ======================================================
 async function cargarAudiosReunion(reunionId) {
-
     try {
-
         const contenedor = document.getElementById("detalle-reunion-audios");
         if (!contenedor) return;
-
         contenedor.innerHTML = "<p>Cargando intervenciones...</p>";
 
         const { data, error } = await supabase
@@ -1683,34 +1712,25 @@ async function cargarAudiosReunion(reunionId) {
         }
 
         let html = "";
-
         for (const intervencion of data) {
-
             let audioUrl = "";
-
             if (intervencion.audio_path) {
-
                 const { data: signedData } = await supabase
                     .storage
                     .from("reunion_intervenciones")
                     .createSignedUrl(intervencion.audio_path, 3600);
-
                 audioUrl = signedData?.signedUrl || "";
             }
 
             html += `
                 <div class="mec-audio-card">
-
                     <div class="mec-audio-header">
-
                         <div class="mec-audio-usuario">
                             🎤 ${intervencion.socio_nombre || "Socio"}
                         </div>
-
                         <div class="mec-audio-orden">
                             #${intervencion.orden || "-"}
                         </div>
-
                     </div>
 
                     ${
@@ -1726,20 +1746,15 @@ async function cargarAudiosReunion(reunionId) {
                                 </div>
                               `
                     }
-
                 </div>
             `;
         }
-
         contenedor.innerHTML = html;
-
     } catch (err) {
-
         console.error(
             "❌ Error inesperado cargando audios:",
             err
         );
-
     }
 }
 
@@ -1973,7 +1988,6 @@ window.msd2_grabacion = {
 // ======================================================
 
 async function activarMicrofonoMEC() {
-
   try {
 
     // ======================================================
@@ -1984,18 +1998,15 @@ async function activarMicrofonoMEC() {
       !navigator.mediaDevices ||
       !navigator.mediaDevices.getUserMedia
     ) {
-
       console.warn(
         "⚠️ Este dispositivo no soporta grabación de audio."
       );
-
       return null;
     }
 
     // ======================================================
     // ♻️ REUTILIZAR STREAM EXISTENTE
     // ======================================================
-
     if (
       window.mecAudio &&
       window.mecAudio.stream &&
@@ -2010,11 +2021,9 @@ async function activarMicrofonoMEC() {
           );
 
       if (tracks.length > 0) {
-
         console.log(
           "♻️ Reutilizando stream persistente"
         );
-
         return window.mecAudio.stream;
       }
     }
@@ -2022,32 +2031,23 @@ async function activarMicrofonoMEC() {
     // ======================================================
     // 🆕 SOLICITAR STREAM NUEVO
     // ======================================================
-
     console.log(
       "🎙 Solicitando acceso real al micrófono..."
     );
 
     const stream =
       await navigator.mediaDevices.getUserMedia({
-
         audio: {
-
           echoCancellation: true,
-
           noiseSuppression: true,
-
           autoGainControl: true
-
         },
-
         video: false
-
       });
 
     // ======================================================
     // 🔥 VALIDAR TRACKS AUDIO
     // ======================================================
-
     const audioTracks =
       stream.getAudioTracks();
 
@@ -2055,70 +2055,47 @@ async function activarMicrofonoMEC() {
       !audioTracks ||
       audioTracks.length === 0
     ) {
-
       console.warn(
         "⚠️ El dispositivo no entregó acceso al micrófono."
       );
-
       return null;
     }
 
     // ======================================================
     // 💾 CREAR ENGINE SI NO EXISTE
     // ======================================================
-
     if (!window.mecAudio) {
-
       window.mecAudio = {
-
         stream: null,
-
         permiso: false,
-
         inicializado: false,
-
         reconectando: false,
-
         ultimoUso: null,
-
         tracksActivos: 0
-
       };
     }
 
     // ======================================================
     // 💾 GUARDAR STREAM GLOBAL
     // ======================================================
-
     window.mecAudio.stream = stream;
-
     window.mecAudio.permiso = true;
-
     window.mecAudio.inicializado = true;
-
     window.mecAudio.ultimoUso = Date.now();
-
     window.mecAudio.tracksActivos =
       audioTracks.length;
 
     // ======================================================
     // 🔁 COMPATIBILIDAD LEGACY MEC
     // ======================================================
-
-    window.msd2_streamMicrofono =
-      stream;
-
-    window.msd2_microfonoHabilitado =
-      true;
+    window.msd2_streamMicrofono = stream;
+    window.msd2_microfonoHabilitado = true;
 
     // ======================================================
     // 🔥 DETECTAR TRACK FINALIZADO
     // ======================================================
-
     stream.getTracks().forEach(track => {
-
       track.onended = async () => {
-
         console.warn(
           "⚠️ Track micrófono finalizado."
         );
@@ -2126,67 +2103,43 @@ async function activarMicrofonoMEC() {
         // ==========================================
         // 🧹 LIMPIAR ENGINE
         // ==========================================
-
         if (window.mecAudio) {
-
           window.mecAudio.stream = null;
-
           window.mecAudio.permiso = false;
-
           window.mecAudio.inicializado = false;
         }
-
-        window.msd2_streamMicrofono =
-          null;
-
-        window.msd2_microfonoHabilitado =
-          false;
+        window.msd2_streamMicrofono = null;
+        window.msd2_microfonoHabilitado = false;
 
         // ==========================================
         // 🔄 RECOVERY SUAVE ANDROID
         // ==========================================
-
         try {
-
           if (
             window.mecAudio &&
             !window.mecAudio.reconectando
           ) {
-
-            window.mecAudio.reconectando =
-              true;
-
+            window.mecAudio.reconectando = true;
             console.log(
               "🔄 Intentando reconexión automática..."
             );
-
             setTimeout(async () => {
-
               try {
-
                 await activarMicrofonoMEC();
-
               } catch (err) {
-
                 console.error(
                   "❌ Error reconectando micrófono:",
                   err
                 );
-
               } finally {
-
                 if (window.mecAudio) {
-
                   window.mecAudio.reconectando =
                     false;
                 }
               }
-
             }, 1500);
           }
-
         } catch (err) {
-
           console.error(
             "❌ Error recovery audio:",
             err
@@ -2199,19 +2152,13 @@ async function activarMicrofonoMEC() {
     // ✅ OK
     // ======================================================
 
-    console.log(
-      "✅ Micrófono activado correctamente"
-    );
-
+    console.log("✅ Micrófono activado correctamente");
     return stream;
-
   } catch (err) {
-
     console.error(
       "❌ Error acceso micrófono:",
       err
     );
-
     return null;
   }
 }
@@ -2219,13 +2166,9 @@ async function activarMicrofonoMEC() {
 // ======================================================
 // ✅ Saber si este cliente es el orador actual
 // ======================================================
-
 function msd2_esOradorActual(payloadReunion) {
-
   if (!window.usuarioFederacion) return false;
-
   if (!payloadReunion?.orador_actual_id) return false;
-
   return (
     String(window.usuarioFederacion.socio_id) ===
     String(payloadReunion.orador_actual_id)
@@ -2235,19 +2178,13 @@ function msd2_esOradorActual(payloadReunion) {
 // ======================================================
 // 🎬 Iniciar grabación en el cliente del orador
 // ======================================================
-
 async function iniciarGrabacionOrador(reunionPayload) {
-
   try {
-
     // 🚫 Solo el orador actual graba
-
     if (!msd2_esOradorActual(reunionPayload)) {
       return;
     }
-
     // 🚫 Lock anti duplicación
-
     if (
       window.msd2_grabacion.grabando ||
       window.msd2_grabacion.iniciando
@@ -2256,20 +2193,14 @@ async function iniciarGrabacionOrador(reunionPayload) {
     }
 
     // 🔒 Activar lock inmediatamente
-
     window.msd2_grabacion.iniciando = true;
-
-    console.log(
-      "🎙 Iniciando grabación intervención..."
-    );
+    console.log("🎙 Iniciando grabación intervención...");
 
     // ======================================================
     // 🎙 ASEGURAR AUDIO ENGINE
     // ======================================================
-
     const stream =
     await activarMicrofonoMEC();
-
     if (!stream) {
     console.warn(
         "⚠️ No existe stream de audio disponible."
@@ -2281,10 +2212,7 @@ async function iniciarGrabacionOrador(reunionPayload) {
     // ======================================================
     // 🔥 VALIDAR STREAM MUERTO
     // ======================================================
-    if (!stream.active) {
-    console.warn(
-        "⚠️ Stream inactivo."
-    );
+    if (!stream.active) {console.warn("⚠️ Stream inactivo.");
     window.mecAudio.stream = null;
     window.msd2_grabacion.iniciando = false;
     return;
@@ -2293,16 +2221,11 @@ async function iniciarGrabacionOrador(reunionPayload) {
     // ======================================================
     // 🔥 VALIDAR TRACKS ACTIVOS
     // ======================================================
-
     const tracksActivos =
       stream.getAudioTracks().filter(
         track => track.readyState === "live"
       );
-
-    if (tracksActivos.length === 0) {
-    console.warn(
-        "⚠️ No existen tracks activos."
-    );
+    if (tracksActivos.length === 0) {console.warn("⚠️ No existen tracks activos.");
     window.mecAudio.stream = null;
     window.msd2_grabacion.iniciando = false;
     return;
@@ -2311,64 +2234,45 @@ async function iniciarGrabacionOrador(reunionPayload) {
     // ======================================================
     // 🔥 FIX COMPATIBILIDAD CELULAR (MEC)
     // ======================================================
-
     let mimeType = "";
-
     if (
       MediaRecorder.isTypeSupported(
         "audio/webm;codecs=opus"
       )
     ) {
-
-      mimeType =
-        "audio/webm;codecs=opus";
-
+      mimeType ="audio/webm;codecs=opus";
     } else if (
       MediaRecorder.isTypeSupported(
         "audio/webm"
       )
     ) {
-
       mimeType = "audio/webm";
-
     } else if (
       MediaRecorder.isTypeSupported(
         "audio/mp4"
       )
     ) {
-
       mimeType = "audio/mp4";
-
     } else {
-
       mimeType = "";
     }
 
     // ======================================================
     // 🔥 VALIDAR SOPORTE MediaRecorder
     // ======================================================
-
-    if (
-      typeof MediaRecorder === "undefined"
-    ) {
-
+    if (typeof MediaRecorder === "undefined") {
       console.error(
         "❌ MediaRecorder no soportado."
       );
-
-      window.msd2_grabacion.iniciando =
-        false;
-
+      window.msd2_grabacion.iniciando = false;
       return;
     }
-
     const mediaRecorder = mimeType
       ? new MediaRecorder(
           stream,
           { mimeType }
         )
       : new MediaRecorder(stream);
-
     const isMobile =
       /Android|iPhone|iPad|iPod/i.test(
         navigator.userAgent
@@ -2377,42 +2281,22 @@ async function iniciarGrabacionOrador(reunionPayload) {
     // ==================================================
     // 🔑 NUEVA INTERVENCIÓN ÚNICA
     // ==================================================
-
-    const intervencionId =
-      crypto.randomUUID();
-
-    window.msd2_grabacion.mediaRecorder =
-      mediaRecorder;
-
+    const intervencionId = crypto.randomUUID();
+    window.msd2_grabacion.mediaRecorder = mediaRecorder;
     window.msd2_grabacion.chunks = [];
-
-    window.msd2_grabacion.grabando =
-      true;
-
-    window.msd2_grabacion.reunionId =
-      reunionPayload.id;
-
-    window.msd2_grabacion.intervencionId =
-      intervencionId;
+    window.msd2_grabacion.grabando = true;
+    window.msd2_grabacion.reunionId = reunionPayload.id;
+    window.msd2_grabacion.intervencionId = intervencionId;
 
     // 🔓 liberar lock inicio
-
-    window.msd2_grabacion.iniciando =
-      false;
+    window.msd2_grabacion.iniciando = false;
 
     // =========================================
     // 📦 Captura chunks audio
     // =========================================
-
     mediaRecorder.ondataavailable = (e) => {
-
       if (e.data && e.data.size > 0) {
-
-        console.log(
-          "📦 Chunk recibido:",
-          e.data.size
-        );
-
+        console.log("📦 Chunk recibido:", e.data.size);
         window.msd2_grabacion.chunks.push(
           e.data
         );
@@ -2422,67 +2306,31 @@ async function iniciarGrabacionOrador(reunionPayload) {
     // =========================================
     // ❌ Error MediaRecorder
     // =========================================
-
     mediaRecorder.onerror = (event) => {
-
-      console.error(
-        "❌ MediaRecorder error:",
-        event
-      );
+      console.error("❌ MediaRecorder error:",event);
     };
 
     // =========================================
     // 🛑 Al detener grabación
     // =========================================
-
     mediaRecorder.onstop = async () => {
-
       try {
-
         console.log(
           "🛑 Grabación detenida, procesando Blob..."
         );
-
-        const chunks =
-          window.msd2_grabacion.chunks || [];
-
-        console.log(
-          "📦 Total chunks:",
-          chunks.length
-        );
-
+        const chunks = window.msd2_grabacion.chunks || [];
+        console.log("📦 Total chunks:", chunks.length);
         if (chunks.length === 0) {
-
-          console.warn(
-            "⚠️ No existen chunks de audio."
-          );
-
+          console.warn("⚠️ No existen chunks de audio.");
           return;
         }
+        const blob = new Blob(chunks,{type: mimeType || "audio/webm"});
 
-        const blob = new Blob(
-          chunks,
-          {
-            type:
-              mimeType ||
-              "audio/webm"
-          }
-        );
+        console.log("🎧 Blob generado:",blob.size);
 
-        console.log(
-          "🎧 Blob generado:",
-          blob.size
-        );
-
-        if (
-          !blob ||
-          blob.size === 0
+        if (!blob ||blob.size === 0
         ) {
-
-          console.warn(
-            "⚠️ Blob vacío, no se guarda intervención."
-          );
-
+          console.warn("⚠️ Blob vacío, no se guarda intervención.");
           return;
         }
 
@@ -2490,109 +2338,61 @@ async function iniciarGrabacionOrador(reunionPayload) {
           !window.msd2_grabacion.reunionId ||
           !window.msd2_grabacion.intervencionId
         ) {
-
-          console.warn(
-            "⚠️ Faltan IDs, no se guarda intervención."
-          );
-
+          console.warn("⚠️ Faltan IDs, no se guarda intervención.");
           return;
         }
-
         await guardarIntervencionAudio(
           blob,
           window.msd2_grabacion.reunionId,
           window.msd2_grabacion.intervencionId
         );
-
       } catch (err) {
-
         console.error(
           "❌ Error post-procesando grabación:",
           err
         );
-
       } finally {
-
         // 🧹 limpiar estado
-
         window.msd2_grabacion.chunks = [];
-
-        window.msd2_grabacion.mediaRecorder =
-          null;
-
-        window.msd2_grabacion.grabando =
-          false;
-
-        window.msd2_grabacion.iniciando =
-          false;
-
-        window.msd2_grabacion.guardando =
-          false;
-
-        window.msd2_grabacion.reunionId =
-          null;
-
-        window.msd2_grabacion.intervencionId =
-          null;
+        window.msd2_grabacion.mediaRecorder = null;
+        window.msd2_grabacion.grabando = false;
+        window.msd2_grabacion.iniciando = false;
+        window.msd2_grabacion.guardando = false;
+        window.msd2_grabacion.reunionId = null;
+        window.msd2_grabacion.intervencionId = null;
       }
     };
 
 // ======================================================
 // ▶ START UNIVERSAL ESTABLE
 // ======================================================
-
-console.log(
-  "🎙 MediaRecorder.start() universal"
-);
-
+console.log("🎙 MediaRecorder.start() universal");
 mediaRecorder.start();
-
-    console.log(
-      "✅ MediaRecorder.start() OK"
-    );
-
+    console.log("✅ MediaRecorder.start() OK");
     const aviso =
       document.getElementById(
         "msd2-aviso-orador"
       );
-
     if (aviso) {
-
       aviso.textContent =
         "🎙 Estás interviniendo (audio grabándose)";
-
       aviso.style.display = "block";
     }
-
   } catch (err) {
 
     // 🔓 liberar lock si falla permiso micro
-
-    window.msd2_grabacion.iniciando =
-      false;
-
-    window.msd2_grabacion.grabando =
-      false;
-
-    console.error(
-      "❌ No se pudo iniciar grabación:",
-      err
-    );
-
-    console.error(
-    "⚠️ No fue posible acceder al micrófono."
-    );
+    window.msd2_grabacion.iniciando = false;
+    window.msd2_grabacion.grabando =  false;
+    console.error("❌ No se pudo iniciar grabación:", err);
+    console.error("⚠️ No fue posible acceder al micrófono.");
   }
 }
 
 // ======================================================
 // ⏹ Detener grabación
 // ======================================================
-
 function detenerYGuardarGrabacion() {
-
   try {
-
     // 🚫 No existe grabación activa
 
     if (
@@ -2601,83 +2401,46 @@ function detenerYGuardarGrabacion() {
     ) {
       return;
     }
-
     const recorder =
       window.msd2_grabacion.mediaRecorder;
-
     // 🚫 Evitar doble stop()
-
     if (
       recorder.state === "inactive"
     ) {
       return;
     }
-
-    console.log(
-      "⏹ Solicitando stop() al MediaRecorder..."
-    );
+    console.log("⏹ Solicitando stop() al MediaRecorder...");
 
     // ======================================================
     // 📱 FIX REAL PARA CELULAR
     // ======================================================
-
-    const esMovil =
-      /Android|iPhone|iPad|iPod/i.test(
-        navigator.userAgent
-      );
+    const esMovil = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
     // ======================================================
     // ⏹ STOP UNIVERSAL ESTABLE
     // ======================================================
-
     try {
-
     recorder.stop();
-
     } catch (err) {
-
-    console.error(
-        "❌ Error stop recorder:",
-        err
-    );
+    console.error("❌ Error stop recorder:", err);
     }
 
     // 📢 ocultar aviso
-
-    const aviso =
-      document.getElementById(
-        "msd2-aviso-orador"
-      );
-
-    if (aviso) {
-
-      aviso.textContent = "";
-
-      aviso.style.display = "none";
-    }
-
+    const aviso = document.getElementById("msd2-aviso-orador");
+    if (aviso) {aviso.textContent = "";aviso.style.display = "none";}
   } catch (err) {
-
-    console.error(
-      "❌ Error deteniendo grabación:",
-      err
-    );
+    console.error("❌ Error deteniendo grabación:",err);
   }
 }
 
 // ======================================================
 // 🎙 BOTÓN ACTIVAR MICRÓFONO
 // ======================================================
-
-document.addEventListener(
-  "click",
-  async (e) => {
-
+document.addEventListener("click",async (e) => {
     if (
       e.target.id ===
       "btnActivarMicrofonoMEC"
     ) {
-
       await activarMicrofonoMEC();
     }
   }
@@ -2686,42 +2449,24 @@ document.addEventListener(
 // ======================================================
 // 📱 ANDROID BACKGROUND / FOREGROUND
 // ======================================================
-
     document.addEventListener(
     "visibilitychange",
     async () => {
-
         try {
-
-        if (
-            document.visibilityState ===
-            "visible"
-        ) {
-
-            console.log(
-            "👁 App visible nuevamente"
-            );
-
+        if (document.visibilityState ==="visible") {
+            console.log("👁 App visible nuevamente");
             if (
             !window.mecAudio ||
             !window.mecAudio.stream ||
             !window.mecAudio.stream.active
             ) {
 
-            console.warn(
-                "⚠️ Stream perdido en background."
-            );
-
+            console.warn("⚠️ Stream perdido en background.");
             await activarMicrofonoMEC();
             }
         }
-
         } catch (err) {
-
-        console.error(
-            "❌ Error visibilitychange:",
-            err
-        );
+        console.error("❌ Error visibilitychange:",err);
         }
     }
 );
@@ -2729,55 +2474,40 @@ document.addEventListener(
 // ======================================================
 // 💾 Guardar intervención en Storage + BD
 // ======================================================
-
 async function guardarIntervencionAudio(
   blob,
   reunionId,
   intervencionId
 ) {
-
   try {
-
     // 🚫 Lock anti doble guardado
-
     if (window.msd2_grabacion.guardando) {
-
       console.warn(
         "⚠️ Ya existe un guardado en proceso."
       );
-
       return;
     }
 
     // 🔒 activar lock
-
     window.msd2_grabacion.guardando = true;
 
     // 🚫 Validar usuario
-
     if (
       !window.usuarioFederacion ||
       !window.usuarioFederacion.socio_id
     ) {
-
       console.warn(
         "⚠️ Usuario federación no disponible."
       );
-
       return;
     }
-
     const socio = window.usuarioFederacion;
 
     // ==================================================
     // ☁️ SUBIR AUDIO STORAGE
     // ==================================================
-
-    const BUCKET =
-      "reunion_intervenciones";
-
+    const BUCKET = "reunion_intervenciones";
     const ts = Date.now();
-
     const safeNombre =
       (socio.nombre || "socio")
       .normalize("NFD")
@@ -2798,73 +2528,43 @@ async function guardarIntervencionAudio(
       });
 
     if (errUpload) {
-
       console.error(
         "❌ Error subiendo audio:",
         errUpload
       );
-
       return;
     }
 
-    console.log(
-      "☁️ Audio subido correctamente:",
-      path
-    );
+    console.log("☁️ Audio subido correctamente:",path);
 
     // ==================================================
     // 🗂 INSERT IDEMPOTENTE VIA RPC
     // ==================================================
-
     const { error: errInsert } =
       await supabase
       .rpc("insertar_intervencion_segura", {
-
         p_intervencion_id:
           intervencionId,
-
         p_reunion_id:
           reunionId,
-
         p_socio_id:
           socio.socio_id,
-
         p_socio_nombre:
           socio.nombre,
-
         p_audio_path:
           path
-
       });
-
     if (errInsert) {
-
-      console.error(
-        "❌ Error registrando intervención:",
-        errInsert
-      );
-
+      console.error("❌ Error registrando intervención:",errInsert);
       return;
     }
-
-    console.log(
-      "✅ Intervención registrada:",
-      intervencionId
-    );
-
+    console.log("✅ Intervención registrada:",intervencionId);
   } catch (err) {
-
-    console.error(
-      "❌ Error guardarIntervencionAudio:",
-      err
-    );
-
+    console.error("❌ Error guardarIntervencionAudio:",err);
   } finally {
 
     // 🔓 liberar lock guardado
-
-    window.msd2_grabacion.guardando = false;
-  }
+    window.msd2_grabacion.guardando = false;}
 }
 
 // ========================== fin mesa sindical ==========================
@@ -2873,8 +2573,6 @@ window.cargarDashboardAsistencia = cargarDashboardAsistencia;
 window.cargarHistorialReuniones = cargarHistorialReuniones;
 window.cargarRankingSindicatos = cargarRankingSindicatos;
 window.cargarRankingDirectores = cargarRankingDirectores;
-
 window.verDetalleReunion = verDetalleReunion;
 window.cerrarDetalleReunion = cerrarDetalleReunion;
-
 window.activarMicrofonoMEC = activarMicrofonoMEC;

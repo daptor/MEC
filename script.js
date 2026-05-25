@@ -2249,10 +2249,9 @@ async function verBoletaRendicion(path) {
   }
 })();
 
-// ======================================================
+// ------------------------------------------------------------------------------------------------
 // 🎙 MEC — GRABACIÓN EXPOSITOR
-// ======================================================
-
+// ------------------------------------------------------------------------------------------------
 window.msd2Expositor = {
   recorder: null,
   stream: null,
@@ -2260,32 +2259,27 @@ window.msd2Expositor = {
   estado: "idle",
   inicio: null,
   blobFinal: null,
-  audioURL: null
+  audioURL: null,
+  autoPaused: false
 };
 
 // ======================================================
 // ▶ INICIAR EXPOSICIÓN
 // ======================================================
-
 async function msd2IniciarExposicion() {
   try {
-
     // evitar doble inicio
     if (
       window.msd2Expositor.estado === "recording"
     ) {
       return;
     }
-
     // solicitar micrófono
     const stream = await navigator.mediaDevices.getUserMedia({audio: true});
 
     // crear recorder
-    const recorder = new MediaRecorder(
-      stream,
-      {
-        mimeType: "audio/webm;codecs=opus"
-      }
+    const recorder = new MediaRecorder(stream,
+      {mimeType: "audio/webm;codecs=opus"}
     );
 
     // limpiar estado
@@ -2293,17 +2287,23 @@ async function msd2IniciarExposicion() {
     window.msd2Expositor.stream = stream;
     window.msd2Expositor.recorder = recorder;
     window.msd2Expositor.estado = "recording";
+    msd2ActualizarUIExpositor();
     window.msd2Expositor.inicio = Date.now();
 
     // capturar chunks
     recorder.ondataavailable = (event) => {
       if (event.data.size > 0) {
-        window.msd2Expositor.chunks.push(event.data);
+        window.msd2Expositor.chunks.push(
+          event.data
+        );
       }
     };
 
     // iniciar grabación
     recorder.start();
+
+    // actualizar UI
+    document.getElementById("msd2-estado-expositor").innerHTML ="🔴 Exposición grabando";
     console.log("🎙 Exposición iniciada");
     console.log(window.msd2Expositor);
   } catch(error){
@@ -2314,76 +2314,54 @@ async function msd2IniciarExposicion() {
 // ======================================================
 // ⏹ FINALIZAR EXPOSICIÓN
 // ======================================================
-
 function msd2FinalizarExposicion() {
-
-  const expositor =
-    window.msd2Expositor;
+  const expositor = window.msd2Expositor;
 
   // validar recorder
-  if (!expositor.recorder) {
-
-    console.warn(
-      "⚠ No existe recorder"
-    );
-
+  if (!expositor.recorder) {console.warn("⚠ No existe recorder");
     return;
-
   }
 
   // evento stop
   expositor.recorder.onstop = () => {
-
-    console.log(
-      "⏹ Recorder detenido"
-    );
+    console.log("⏹ Recorder detenido");
 
     // crear blob final
-    const blob = new Blob(
-      expositor.chunks,
-      {
-        type: "audio/webm"
-      }
+    const blob = new Blob(expositor.chunks,
+      {type: "audio/webm"}
     );
 
     expositor.blobFinal = blob;
-
-    console.log(
-      "✅ Blob final creado"
-    );
-
+    console.log("✅ Blob final creado");
     console.log(blob);
 
     // crear URL local
-    const audioURL =
-      URL.createObjectURL(blob);
-
-    expositor.audioURL =
-      audioURL;
-
-    console.log(
-      "🎧 URL local creada"
-    );
-
+    const audioURL = URL.createObjectURL(blob);
+    expositor.audioURL = audioURL;
+    console.log("🎧 URL local creada");
     console.log(audioURL);
+
+    // mostrar reproductor
+    const audio = document.getElementById("audio-expositor-preview");
+
+    audio.src = audioURL;
+    // audio.style.display = "block";
 
     // detener tracks micrófono
     expositor.stream
       .getTracks()
       .forEach(track => track.stop());
 
-    expositor.estado =
-      "stopped";
+    expositor.estado = "stopped";
+    msd2ActualizarUIExpositor();
 
-    console.log(
-      "✅ Exposición finalizada"
-    );
-
+    // actualizar UI
+    document.getElementById("msd2-estado-expositor").innerHTML = "✅ Exposición finalizada";
+    console.log("✅ Exposición finalizada");
   };
 
   // detener recorder
   expositor.recorder.stop();
-
 }
 
 // ======================================================
@@ -2397,12 +2375,17 @@ function msd2PausarExposicion() {
     return;
   }
 
-  if (expositor.estado !== "recording"
+  if (
+    expositor.estado !== "recording"
   ) {
     return;
   }
   expositor.recorder.pause();
   expositor.estado = "paused";
+  msd2ActualizarUIExpositor();
+
+  // actualizar UI
+  document.getElementById("msd2-estado-expositor").innerHTML ="⏸ Exposición pausada";
   console.log("⏸ Exposición pausada");
 }
 
@@ -2410,21 +2393,77 @@ function msd2PausarExposicion() {
 // ▶ REANUDAR EXPOSICIÓN
 // ======================================================
 function msd2ReanudarExposicion() {
-  const expositor =
-    window.msd2Expositor;
-  if (!expositor.recorder
+  const expositor = window.msd2Expositor;
+
+  if (
+    !expositor.recorder
   ) {
     return;
   }
 
-  if (expositor.estado !== "paused"
+  if (
+    expositor.estado !== "paused"
   ) {
     return;
   }
+
   expositor.recorder.resume();
-  expositor.estado ="recording";
+  expositor.estado = "recording";
+  msd2ActualizarUIExpositor();
+
+  // actualizar UI
+  document.getElementById("msd2-estado-expositor").innerHTML = "🔴 Exposición grabando";
   console.log("▶ Exposición reanudada");
 }
+
+// ======================================================
+// 🎛 ACTUALIZAR UI EXPOSITOR
+// ======================================================
+function msd2ActualizarUIExpositor() {
+  const estado = window.msd2Expositor.estado;
+  const btnIniciar = document.getElementById("btn-expositor-iniciar");
+  const btnPausar = document.getElementById("btn-expositor-pausar");
+  const btnReanudar = document.getElementById("btn-expositor-reanudar");
+  const btnFinalizar = document.getElementById("btn-expositor-finalizar");
+
+  // ocultar todos
+  btnIniciar.style.display ="none";
+  btnPausar.style.display ="none";
+  btnReanudar.style.display ="none";
+  btnFinalizar.style.display ="none";
+
+  // =========================
+  // idle
+  // =========================
+  if (estado === "idle"
+  ) {
+    btnIniciar.style.display = "block";
+  }
+  // =========================
+  // recording
+  // =========================
+  if (estado === "recording"
+  ) {
+    btnPausar.style.display ="block";
+    btnFinalizar.style.display ="block";
+  }
+  // =========================
+  // paused
+  // =========================
+  if (estado === "paused"
+  ) {
+    btnReanudar.style.display ="block";
+    btnFinalizar.style.display ="block";
+  }
+  // =========================
+  // stopped
+  // =========================
+  if (estado === "stopped"
+  ) {
+    // no mostrar botones
+  }
+}
+
 
 // =========================================
 // 💰 FREEMIUM — MOSTRAR RESULTADO DEL ANÁLISIS

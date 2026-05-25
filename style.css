@@ -969,23 +969,22 @@ input:focus, select:focus, textarea:focus,
   font-size:14px;
 }
 
-/* grilla botones */
+/* botones en línea */
 .msd2-controles-expositor{
-  display:grid;
-  grid-template-columns:
-    1fr 1fr;
+  display:flex;
   gap:8px;
+  flex-wrap:nowrap;
 }
 
 /* botones */
 .msd2-controles-expositor button{
+  flex:1;
   padding:10px;
   font-size:14px;
   border:none;
   border-radius:8px;
   cursor:pointer;
   min-height:48px;
-  width:100%;
 }
 
 /* preview audio */

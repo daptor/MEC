@@ -2386,6 +2386,46 @@ function msd2FinalizarExposicion() {
 
 }
 
+// ======================================================
+// ⏸ PAUSAR EXPOSICIÓN
+// ======================================================
+function msd2PausarExposicion() {
+  const expositor = window.msd2Expositor;
+  if (
+    !expositor.recorder
+  ) {
+    return;
+  }
+
+  if (expositor.estado !== "recording"
+  ) {
+    return;
+  }
+  expositor.recorder.pause();
+  expositor.estado = "paused";
+  console.log("⏸ Exposición pausada");
+}
+
+// ======================================================
+// ▶ REANUDAR EXPOSICIÓN
+// ======================================================
+function msd2ReanudarExposicion() {
+  const expositor =
+    window.msd2Expositor;
+  if (!expositor.recorder
+  ) {
+    return;
+  }
+
+  if (expositor.estado !== "paused"
+  ) {
+    return;
+  }
+  expositor.recorder.resume();
+  expositor.estado ="recording";
+  console.log("▶ Exposición reanudada");
+}
+
 // =========================================
 // 💰 FREEMIUM — MOSTRAR RESULTADO DEL ANÁLISIS
 // =========================================

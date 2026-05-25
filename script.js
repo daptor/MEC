@@ -2311,7 +2311,80 @@ async function msd2IniciarExposicion() {
   }
 }
 
+// ======================================================
+// ⏹ FINALIZAR EXPOSICIÓN
+// ======================================================
 
+function msd2FinalizarExposicion() {
+
+  const expositor =
+    window.msd2Expositor;
+
+  // validar recorder
+  if (!expositor.recorder) {
+
+    console.warn(
+      "⚠ No existe recorder"
+    );
+
+    return;
+
+  }
+
+  // evento stop
+  expositor.recorder.onstop = () => {
+
+    console.log(
+      "⏹ Recorder detenido"
+    );
+
+    // crear blob final
+    const blob = new Blob(
+      expositor.chunks,
+      {
+        type: "audio/webm"
+      }
+    );
+
+    expositor.blobFinal = blob;
+
+    console.log(
+      "✅ Blob final creado"
+    );
+
+    console.log(blob);
+
+    // crear URL local
+    const audioURL =
+      URL.createObjectURL(blob);
+
+    expositor.audioURL =
+      audioURL;
+
+    console.log(
+      "🎧 URL local creada"
+    );
+
+    console.log(audioURL);
+
+    // detener tracks micrófono
+    expositor.stream
+      .getTracks()
+      .forEach(track => track.stop());
+
+    expositor.estado =
+      "stopped";
+
+    console.log(
+      "✅ Exposición finalizada"
+    );
+
+  };
+
+  // detener recorder
+  expositor.recorder.stop();
+
+}
 
 // =========================================
 // 💰 FREEMIUM — MOSTRAR RESULTADO DEL ANÁLISIS

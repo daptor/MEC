@@ -2263,6 +2263,55 @@ window.msd2Expositor = {
   audioURL: null
 };
 
+// ======================================================
+// ▶ INICIAR EXPOSICIÓN
+// ======================================================
+
+async function msd2IniciarExposicion() {
+  try {
+
+    // evitar doble inicio
+    if (
+      window.msd2Expositor.estado === "recording"
+    ) {
+      return;
+    }
+
+    // solicitar micrófono
+    const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+
+    // crear recorder
+    const recorder = new MediaRecorder(
+      stream,
+      {
+        mimeType: "audio/webm;codecs=opus"
+      }
+    );
+
+    // limpiar estado
+    window.msd2Expositor.chunks = [];
+    window.msd2Expositor.stream = stream;
+    window.msd2Expositor.recorder = recorder;
+    window.msd2Expositor.estado = "recording";
+    window.msd2Expositor.inicio = Date.now();
+
+    // capturar chunks
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        window.msd2Expositor.chunks.push(event.data);
+      }
+    };
+
+    // iniciar grabación
+    recorder.start();
+    console.log("🎙 Exposición iniciada");
+    console.log(window.msd2Expositor);
+  } catch(error){
+    console.error("❌ Error iniciar exposición", error);
+  }
+}
+
+
 
 // =========================================
 // 💰 FREEMIUM — MOSTRAR RESULTADO DEL ANÁLISIS

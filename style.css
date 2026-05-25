@@ -984,6 +984,8 @@ input:focus, select:focus, textarea:focus,
   border:none;
   border-radius:8px;
   cursor:pointer;
+  min-height:48px;
+  width:100%;
 }
 
 /* preview audio */

@@ -2249,6 +2249,21 @@ async function verBoletaRendicion(path) {
   }
 })();
 
+// ======================================================
+// 🎙 MEC — GRABACIÓN EXPOSITOR
+// ======================================================
+
+window.msd2Expositor = {
+  recorder: null,
+  stream: null,
+  chunks: [],
+  estado: "idle",
+  inicio: null,
+  blobFinal: null,
+  audioURL: null
+};
+
+
 // =========================================
 // 💰 FREEMIUM — MOSTRAR RESULTADO DEL ANÁLISIS
 // =========================================

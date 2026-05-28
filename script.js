@@ -291,37 +291,48 @@ if (btnIngresar) {
 
 
 // =========================================
-// NAVEGACIÓN PANTALLAS
+// NAVEGACIÓN PANTALLAS (GLOBAL)
 // =========================================
 function mostrarPantalla(idPantalla) {
-  // Ocultar todas
+  // Ocultar todas las pantallas
   document.querySelectorAll(".pantalla").forEach(p => p.style.display = "none");
 
   // Mostrar la solicitada
   const pantalla = document.getElementById(idPantalla);
   if (pantalla) pantalla.style.display = "block";
 
-  // 🔄 Reset específico para "Herramientas" (Archivo Sindical)
-  if (idPantalla === "pantalla-archivosindical") {
-    const selectSindicato = document.getElementById("select-sindicato");
-    if (selectSindicato) selectSindicato.value = "";
+  // Referencias comunes de Archivo Sindical
+  const selectSindicato = document.getElementById("select-sindicato");
+  const mensajeError = document.getElementById("mensaje-error");
+  const listaDocumentos = document.getElementById("lista-documentos-sindicato");
+  const listaPublicos = document.getElementById("lista-documentos-publicos");
+  const listaVarios = document.getElementById("lista-documentos-varios");
+  const nombreSindicato = document.getElementById("nombre-sindicato");
 
-    const mensajeError = document.getElementById("mensaje-error");
+  // 🔄 Reset cuando vuelves a Herramientas
+  if (idPantalla === "pantalla-archivosindical") {
+    if (selectSindicato) selectSindicato.value = "";
     if (mensajeError) {
       mensajeError.style.display = "none";
       mensajeError.textContent = "";
     }
-
-    const listaDocumentos = document.getElementById("lista-documentos-sindicato");
     if (listaDocumentos) listaDocumentos.innerHTML = "";
-
-    const listaPublicos = document.getElementById("lista-documentos-publicos");
     if (listaPublicos) listaPublicos.innerHTML = "";
-
-    const listaVarios = document.getElementById("lista-documentos-varios");
     if (listaVarios) listaVarios.innerHTML = "";
+    if (nombreSindicato) nombreSindicato.textContent = "";
+  }
 
-    const nombreSindicato = document.getElementById("nombre-sindicato");
+  // 🔄 Reset también al volver al Menú principal
+  // (caso: elegiste sindicato → pantalla-documentos → botón "↩ Menú")
+  if (idPantalla === "menu-principal") {
+    if (selectSindicato) selectSindicato.value = "";
+    if (mensajeError) {
+      mensajeError.style.display = "none";
+      mensajeError.textContent = "";
+    }
+    if (listaDocumentos) listaDocumentos.innerHTML = "";
+    if (listaPublicos) listaPublicos.innerHTML = "";
+    if (listaVarios) listaVarios.innerHTML = "";
     if (nombreSindicato) nombreSindicato.textContent = "";
   }
 }

@@ -291,7 +291,7 @@ if (btnIngresar) {
 
 
 // =========================================
-// 🧭 NAVEGACIÓN PANTALLAS
+// 🧭 NAVEGACIÓN PANTALLAS (GLOBAL)
 // =========================================
 function mostrarPantalla(idPantalla) {
   // Ocultar todas las pantallas
@@ -301,13 +301,11 @@ function mostrarPantalla(idPantalla) {
   const pantalla = document.getElementById(idPantalla);
   if (pantalla) pantalla.style.display = "block";
 
-  // 👇 SOLO esto es nuevo
-  if (idPantalla === "pantalla-archivosindical") {
-    const selectSindicato = document.getElementById("select-sindicato");
-    if (selectSindicato) {
-      // Fuerza la primera opción del select: "Selecciona un Sindicato"
-      selectSindicato.selectedIndex = 0;
-    }
+  // 🔄 SIEMPRE resetear el selector de sindicato
+  const selectSindicato = document.getElementById("select-sindicato");
+  if (selectSindicato) {
+    // fuerza la primera opción: <option value="" selected>Seleccione una opción</option>
+    selectSindicato.selectedIndex = 0;
   }
 }
 

@@ -291,47 +291,13 @@ if (btnIngresar) {
 
 
 // =========================================
-// 🧭 NAVEGACIÓN PANTALLAS (GLOBAL)
+// 🧭 NAVEGACIÓN PANTALLAS
 // =========================================
 function mostrarPantalla(idPantalla) {
-    // Ocultar todas las pantallas
     document.querySelectorAll(".pantalla").forEach(p => p.style.display = "none");
-
-    // Mostrar la solicitada
     const pantalla = document.getElementById(idPantalla);
     if (pantalla) pantalla.style.display = "block";
-
-    // 🔄 Reset específico al volver a Herramientas o al Menú
-    if (idPantalla === "pantalla-archivosindical" || idPantalla === "menu-principal") {
-        // Limpiar la selección de sindicato
-        const selectSindicato = document.getElementById("select-sindicato");
-        if (selectSindicato) selectSindicato.value = "";
-
-        // Limpiar cualquier mensaje de error
-        const mensajeError = document.getElementById("mensaje-error");
-        if (mensajeError) mensajeError.style.display = "none";
-
-        // Limpiar los documentos previamente mostrados
-        const listaDocumentos = document.getElementById("lista-documentos-sindicato");
-        if (listaDocumentos) listaDocumentos.innerHTML = "";
-
-        const listaPublicos = document.getElementById("lista-documentos-publicos");
-        if (listaPublicos) listaPublicos.innerHTML = "";
-
-        const listaVarios = document.getElementById("lista-documentos-varios");
-        if (listaVarios) listaVarios.innerHTML = "";
-
-        // Limpiar el nombre del sindicato
-        const nombreSindicato = document.getElementById("nombre-sindicato");
-        if (nombreSindicato) nombreSindicato.textContent = "";
-
-        // Restablecer la variable de sindicato seleccionado (si existe global)
-        if (typeof sindicatoSeleccionado !== "undefined") {
-            sindicatoSeleccionado = "";
-        }
-    }
 }
-
 
 function volverAlMenu() {
     mostrarPantalla('menu-principal');
@@ -1357,16 +1323,46 @@ document.addEventListener("DOMContentLoaded", function () {
         return data;
     }
 
-// Función para mostrar una pantalla y ocultar las demás (uso interno)
-function mostrarPantalla(idPantalla) {
-    const pantallas = document.querySelectorAll(".pantalla");
-    pantallas.forEach(p => p.style.display = "none");
-    const pantalla = document.getElementById(idPantalla);
-    if (pantalla) {
-        pantalla.style.display = "block";
-    }
-}
+    // Función para mostrar una pantalla y ocultar las demás
+    function mostrarPantalla(idPantalla) {
+        const pantallas = document.querySelectorAll(".pantalla");
+        pantallas.forEach(p => p.style.display = "none");
+        const pantalla = document.getElementById(idPantalla);
+        if (pantalla) {
+            pantalla.style.display = "block";
+        }
 
+        if (idPantalla === "pantalla-archivosindical" || idPantalla === "menu-principal") {
+            // Limpiar la selección de sindicato al regresar al menú
+            const selectSindicato = document.getElementById("select-sindicato");
+            if (selectSindicato) {
+                // fuerza que visualmente vuelva a la primera opción: "Seleccione una opción"
+                selectSindicato.selectedIndex = 0;
+                selectSindicato.value = "";
+            }
+
+            // Limpiar cualquier mensaje de error
+            const mensajeError = document.getElementById("mensaje-error");
+            if (mensajeError) mensajeError.style.display = "none";
+
+            // Limpiar los documentos previamente mostrados
+            const listaDocumentos = document.getElementById("lista-documentos-sindicato");
+            if (listaDocumentos) listaDocumentos.innerHTML = "";
+
+            const listaPublicos = document.getElementById("lista-documentos-publicos");
+            if (listaPublicos) listaPublicos.innerHTML = "";
+
+            const listaVarios = document.getElementById("lista-documentos-varios");
+            if (listaVarios) listaVarios.innerHTML = "";
+
+            // Limpiar el nombre del sindicato
+            const nombreSindicato = document.getElementById("nombre-sindicato");
+            if (nombreSindicato) nombreSindicato.textContent = "";
+
+            // Restablecer la variable de sindicato seleccionado
+            sindicatoSeleccionado = "";
+        }
+    }
 
 // Función para mostrar el modal de clave
 function mostrarClaveInput() {

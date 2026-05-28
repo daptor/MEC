@@ -244,10 +244,18 @@ function msd2_configurarSalaBasica() {
 function msd2_configurarVistaRolSala() {
   const controles = document.getElementById("msd2-controles-moderador");
   const inputDur = document.getElementById("msd2-duracion-min");
+  const bloqueExpositor = document.getElementById("msd2-bloque-expositor");
+
   const esMod = msd2_esModeradorActual();
 
+  // Controles de tiempo (reloj) solo moderador
   if (controles) controles.style.display = esMod ? "flex" : "none";
   if (inputDur) inputDur.disabled = !esMod;
+
+  // 🎙 Bloque de Grabación Expositor solo visible para moderador
+  if (bloqueExpositor) {
+    bloqueExpositor.style.display = esMod ? "block" : "none";
+  }
 }
 
 // ------------------------------------------------------

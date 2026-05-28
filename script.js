@@ -1607,10 +1607,24 @@ if (sindicatoSeleccionado === "RendicionFederacion") {
         .select("nombre")
         .eq("rol", directorCodigo) // ej: DIRECTOR_3
         .maybeSingle()
-        .then(({ data, error }) => {
-          if (!error && data && data.nombre) {
+        .then(async ({ data, error }) => {
+          let nombre = data?.nombre || null;
+
+          // ⚠ Caso especial: si NO existe DIRECTOR_3, usar TESORERO como nombre
+          if ((!nombre || error) && directorCodigo === "DIRECTOR_3") {
+            const { data: socioTes, error: errTes } = await supabase
+              .from("socios")
+              .select("nombre")
+              .eq("rol", "TESORERO")
+              .maybeSingle();
+            if (!errTes && socioTes?.nombre) {
+              nombre = socioTes.nombre;
+            }
+          }
+
+          if (nombre) {
             const el = document.getElementById("rv-nombre-director");
-            if (el) el.textContent = `(${data.nombre})`;
+            if (el) el.textContent = `(${nombre})`;
           }
         });
     } catch (e) {
@@ -1622,6 +1636,7 @@ if (sindicatoSeleccionado === "RendicionFederacion") {
       cargarMisRendiciones();
     }
   }
+
 
   cerrarModalClave();
   return; // evita que siga la lógica de sindicatos normales

@@ -1542,55 +1542,91 @@ async function verificarClave() {
         return;
 }
 
-    // ======================================================
-    // 🧾 CASO ESPECIAL: RENDICIÓN VIÁTICOS FEDERACIÓN
-    // ======================================================
-    if (sindicatoSeleccionado === "RendicionFederacion") {
+// ======================================================
+// 🧾 CASO ESPECIAL: RENDICIÓN VIÁTICOS FEDERACIÓN
+// ======================================================
+if (sindicatoSeleccionado === "RendicionFederacion") {
+  let directorCodigo = "";
+  let esTesorero = false;
 
-        let directorCodigo = "";
-        let esTesorero = false;
-
-        // TESORERO usa ADMIN_KEY
-        if (claveIngresada === claves.ADMIN_KEY) {
-            esTesorero = true;
-        } else {
-            // DIRECTORES 1..8
-            for (let i = 1; i <= 8; i++) {
-                const keyName = `DIRECTOR_${i}`;
-                if (claveIngresada === claves[keyName]) {
-                    directorCodigo = `DIRECTOR_${i}`;
-                    break;
-                }
-            }
-        }
-
-        // ❌ Clave incorrecta
-        if (!esTesorero && !directorCodigo) {
-            mensajeError.innerText = "Clave incorrecta para Rendición Federación.";
-            mensajeError.style.display = "block";
-            return;
-        }
-
-        // 💾 Guardamos identidad global (se usará con Supabase después)
-        if (esTesorero) {
-            window.rolFederacion = "tesorero";
-            window.directorCodigoFederacion = "TESORERO"; // código genérico para tesorero
-            mostrarPantalla("pantalla-rendicion-federacion-tesorero");
-            if (typeof cargarRendicionesTesorero === "function") {
-                cargarRendicionesTesorero();
-            }
-        } else {
-            window.rolFederacion = "director";
-            window.directorCodigoFederacion = directorCodigo;
-            mostrarPantalla("pantalla-rendicion-federacion-director");
-            if (typeof cargarMisRendiciones === "function") {
-                cargarMisRendiciones();
-            }
-        }
-
-        cerrarModalClave();
-        return; // 🚨 evita que siga la lógica de sindicatos normales
+  // TESORERO usa ADMIN_KEY
+  if (claveIngresada === claves.ADMIN_KEY) {
+    esTesorero = true;
+  } else {
+    // DIRECTORES 1..8
+    for (let i = 1; i <= 8; i++) {
+      const keyName = `DIRECTOR_${i}`;
+      if (claveIngresada === claves[keyName]) {
+        directorCodigo = `DIRECTOR_${i}`;
+        break;
+      }
     }
+  }
+
+  // ❌ Clave incorrecta
+  if (!esTesorero && !directorCodigo) {
+    mensajeError.innerText = "Clave incorrecta para Rendición Federación.";
+    mensajeError.style.display = "block";
+    return;
+  }
+
+  // Guardamos identidad global (se usará con Supabase después)
+  if (esTesorero) {
+    window.rolFederacion = "tesorero";
+    window.directorCodigoFederacion = "TESORERO"; // código genérico tesorero
+
+    // Buscar nombre del tesorero en socios (rol = TESORERO)
+    try {
+      supabase
+        .from("socios")
+        .select("nombre")
+        .eq("rol", "TESORERO")
+        .maybeSingle()
+        .then(({ data, error }) => {
+          if (!error && data && data.nombre) {
+            const el = document.getElementById("rv-nombre-tesorero");
+            if (el) el.textContent = `(${data.nombre})`;
+          }
+        });
+    } catch (e) {
+      console.warn("No se pudo obtener nombre tesorero:", e);
+    }
+
+    mostrarPantalla("pantalla-rendicion-federacion-tesorero");
+    if (typeof cargarRendicionesTesorero === "function") {
+      cargarRendicionesTesorero();
+    }
+  } else {
+    window.rolFederacion = "director";
+    window.directorCodigoFederacion = directorCodigo;
+
+    // Buscar nombre del director en socios (rol = DIRECTOR_X)
+    try {
+      supabase
+        .from("socios")
+        .select("nombre")
+        .eq("rol", directorCodigo) // ej: DIRECTOR_3
+        .maybeSingle()
+        .then(({ data, error }) => {
+          if (!error && data && data.nombre) {
+            const el = document.getElementById("rv-nombre-director");
+            if (el) el.textContent = `(${data.nombre})`;
+          }
+        });
+    } catch (e) {
+      console.warn("No se pudo obtener nombre director:", e);
+    }
+
+    mostrarPantalla("pantalla-rendicion-federacion-director");
+    if (typeof cargarMisRendiciones === "function") {
+      cargarMisRendiciones();
+    }
+  }
+
+  cerrarModalClave();
+  return; // evita que siga la lógica de sindicatos normales
+}
+
 
 // ======================================================
 // 📊 ACCESO ASISTENCIA Y ESTADÍSTICAS

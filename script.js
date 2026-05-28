@@ -304,14 +304,19 @@ function volverAlMenu() {
 }
 
 // =========================================
-// 🔄 Volver a HERRAMIENTAS pasando por Menú
+// 🔄 Volver a Herramientas simulando el flujo Menú → Herramientas
 // =========================================
 function volverAHerramientasDesdeHija() {
   // 1) Ir al menú principal
   mostrarPantalla("menu-principal");
-  // 2) Entrar a Herramientas (donde ya sabes que el selector aparece bien)
-  mostrarPantalla("pantalla-archivosindical");
+
+  // 2) Simular clic en el botón "Herramientas Federacion"
+  const btn = document.getElementById("btnHerramientasFederacion");
+  if (btn) {
+    btn.click();
+  }
 }
+
 
 // ==================== CONFIGURACIÓN DE NAVEGACIÓN ====================
 document.addEventListener('DOMContentLoaded', () => {

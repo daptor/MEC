@@ -303,21 +303,6 @@ function volverAlMenu() {
     mostrarPantalla('menu-principal');
 }
 
-// =========================================
-// 🔄 Volver a Herramientas simulando el flujo Menú → Herramientas
-// =========================================
-//function volverAHerramientasDesdeHija() {
-  // 1) Ir al menú principal
-  //mostrarPantalla("menu-principal");
-
-  // 2) Simular clic en el botón "Herramientas Federacion"
-  //const btn = document.getElementById("btnHerramientasFederacion");
- // if (btn) {
- //   btn.click();
- // }
-//}
-
-
 // ==================== CONFIGURACIÓN DE NAVEGACIÓN ====================
 document.addEventListener('DOMContentLoaded', () => {
     // Referencias a las pantallas (ajusta los IDs según tu HTML)

@@ -291,13 +291,41 @@ if (btnIngresar) {
 
 
 // =========================================
-// 🧭 NAVEGACIÓN PANTALLAS
+// NAVEGACIÓN PANTALLAS
 // =========================================
 function mostrarPantalla(idPantalla) {
-    document.querySelectorAll(".pantalla").forEach(p => p.style.display = "none");
-    const pantalla = document.getElementById(idPantalla);
-    if (pantalla) pantalla.style.display = "block";
+  // Ocultar todas
+  document.querySelectorAll(".pantalla").forEach(p => p.style.display = "none");
+
+  // Mostrar la solicitada
+  const pantalla = document.getElementById(idPantalla);
+  if (pantalla) pantalla.style.display = "block";
+
+  // 🔄 Reset específico para "Herramientas" (Archivo Sindical)
+  if (idPantalla === "pantalla-archivosindical") {
+    const selectSindicato = document.getElementById("select-sindicato");
+    if (selectSindicato) selectSindicato.value = "";
+
+    const mensajeError = document.getElementById("mensaje-error");
+    if (mensajeError) {
+      mensajeError.style.display = "none";
+      mensajeError.textContent = "";
+    }
+
+    const listaDocumentos = document.getElementById("lista-documentos-sindicato");
+    if (listaDocumentos) listaDocumentos.innerHTML = "";
+
+    const listaPublicos = document.getElementById("lista-documentos-publicos");
+    if (listaPublicos) listaPublicos.innerHTML = "";
+
+    const listaVarios = document.getElementById("lista-documentos-varios");
+    if (listaVarios) listaVarios.innerHTML = "";
+
+    const nombreSindicato = document.getElementById("nombre-sindicato");
+    if (nombreSindicato) nombreSindicato.textContent = "";
+  }
 }
+
 
 function volverAlMenu() {
     mostrarPantalla('menu-principal');
@@ -1636,7 +1664,6 @@ if (sindicatoSeleccionado === "RendicionFederacion") {
       cargarMisRendiciones();
     }
   }
-
 
   cerrarModalClave();
   return; // evita que siga la lógica de sindicatos normales

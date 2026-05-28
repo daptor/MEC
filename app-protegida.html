@@ -105,12 +105,17 @@
   <span id="badgeChat" class="badge-chat" aria-live="polite">0</span>
 </button>
 
-<button
+<!--button
   id="btnHerramientasFederacion"
   onclick="mostrarPantalla('pantalla-archivosindical')"
   class="btn-pro-lock">
   🔐 📂 Herramientas Federacion
+</button-->
+
+<button onclick="mostrarPantalla('pantalla-archivosindical')" class="btn-pro-lock">
+  🔐 📂 Herramientas Federacion
 </button>
+
 
 <div id="bloqueUsuario" style="display:flex; flex-direction:column; gap:4px; margin-top:4px;">
   <button id="btnLogout">Cerrar: </button>
@@ -407,7 +412,8 @@
       <h3>Selecciona tu identidad sindical</h3>
       <div id="lista-socios-reunion"></div>
       <button id="btnIngresarReunion" disabled>Ingresar a la reunión</button>
-      <button onclick="volverAHerramientasDesdeHija()">↩ Volver</button>
+      <!--button onclick="volverAHerramientasDesdeHija()">↩ Volver</button-->
+      <button onclick="mostrarPantalla('pantalla-archivosindical')">↩ Volver</button>
     </div>
 
 <!-- ===================================================== -->
@@ -564,7 +570,8 @@
   <label for="rv-boleta-file">Boleta (JPG/PNG/PDF, máx 5MB):</label>
   <input type="file" id="rv-boleta-file" accept="image/jpeg,image/png,application/pdf">
   <button id="rv-btn-guardar">Enviar rendición</button>
-  <button onclick="volverAHerramientasDesdeHija()">↩ Volver a Archivo Sindical</button>
+  <!--button onclick="volverAHerramientasDesdeHija()">↩ Volver a Archivo Sindical</button-->
+  <button onclick="mostrarPantalla('pantalla-archivosindical')">↩ Volver a Herramientas</button>
 </div>
 
 <!-- Pantalla Rendición Federación - Tesorero -->
@@ -582,7 +589,7 @@
   <div id="rv-lista-tesorero">
     <!-- Aquí se mostrará la tabla consolidada -->
   </div>
-   <button type="button" onclick="volverAHerramientasDesdeHija()">↩ Volver a Archivo Sindical</button>
+   <button type="button" onclick="mostrarPantalla('pantalla-archivosindical')">↩ Volver a Herramientas</button>
 </div>
 
 
@@ -637,7 +644,8 @@
 
   <!-- Volver -->
   <div class="boton-container">
-    <button onclick="volverAHerramientasDesdeHija()">↩ Volver a Herramientas</button>
+    <!--button onclick="volverAHerramientasDesdeHija()">↩ Volver a Herramientas</button-->
+    <button onclick="mostrarPantalla('pantalla-archivosindical')">↩ Volver a Herramientas</button>
   </div>
 
   <!-- Título principal -->

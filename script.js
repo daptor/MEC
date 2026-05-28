@@ -306,16 +306,16 @@ function volverAlMenu() {
 // =========================================
 // 🔄 Volver a Herramientas simulando el flujo Menú → Herramientas
 // =========================================
-function volverAHerramientasDesdeHija() {
+//function volverAHerramientasDesdeHija() {
   // 1) Ir al menú principal
-  mostrarPantalla("menu-principal");
+  //mostrarPantalla("menu-principal");
 
   // 2) Simular clic en el botón "Herramientas Federacion"
-  const btn = document.getElementById("btnHerramientasFederacion");
-  if (btn) {
-    btn.click();
-  }
-}
+  //const btn = document.getElementById("btnHerramientasFederacion");
+ // if (btn) {
+ //   btn.click();
+ // }
+//}
 
 
 // ==================== CONFIGURACIÓN DE NAVEGACIÓN ====================

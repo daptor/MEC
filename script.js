@@ -1768,13 +1768,26 @@ function mostrarDocumentos(sindicato) {
 
 // Función para cerrar el modal de clave
 function cerrarModalClave() {
-    const modalClave = document.getElementById("modal-clave");
-    if (modalClave) modalClave.classList.add("oculto");
-    const claveInput = document.getElementById("clave-input");
-    if (claveInput) claveInput.value = "";
-    const mensajeError = document.getElementById("mensaje-error");
-    if (mensajeError) mensajeError.style.display = "none";
+  const modalClave = document.getElementById("modal-clave");
+  if (modalClave) modalClave.classList.add("oculto");
+
+  const claveInput = document.getElementById("clave-input");
+  if (claveInput) claveInput.value = "";
+
+  const mensajeError = document.getElementById("mensaje-error");
+  if (mensajeError) {
+    mensajeError.style.display = "none";
+    mensajeError.textContent = "";
+  }
+
+  // 🔄 Resetear el selector al cerrar el modal (Cancelar)
+  const selectSindicato = document.getElementById("select-sindicato");
+  if (selectSindicato) {
+    selectSindicato.selectedIndex = 0; // Primera opción: "Seleccione una opción"
+    selectSindicato.value = "";
+  }
 }
+
 
 // Asignar las funciones al objeto global 'window'
 window.mostrarClaveInput = mostrarClaveInput;

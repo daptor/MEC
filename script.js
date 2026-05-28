@@ -291,7 +291,7 @@ if (btnIngresar) {
 
 
 // =========================================
-// NAVEGACIÓN PANTALLAS (GLOBAL)
+// 🧭 NAVEGACIÓN PANTALLAS
 // =========================================
 function mostrarPantalla(idPantalla) {
   // Ocultar todas las pantallas
@@ -301,39 +301,13 @@ function mostrarPantalla(idPantalla) {
   const pantalla = document.getElementById(idPantalla);
   if (pantalla) pantalla.style.display = "block";
 
-  // Referencias comunes de Archivo Sindical
-  const selectSindicato = document.getElementById("select-sindicato");
-  const mensajeError = document.getElementById("mensaje-error");
-  const listaDocumentos = document.getElementById("lista-documentos-sindicato");
-  const listaPublicos = document.getElementById("lista-documentos-publicos");
-  const listaVarios = document.getElementById("lista-documentos-varios");
-  const nombreSindicato = document.getElementById("nombre-sindicato");
-
-  // 🔄 Reset cuando vuelves a Herramientas
+  // 👇 SOLO esto es nuevo
   if (idPantalla === "pantalla-archivosindical") {
-    if (selectSindicato) selectSindicato.value = "";
-    if (mensajeError) {
-      mensajeError.style.display = "none";
-      mensajeError.textContent = "";
+    const selectSindicato = document.getElementById("select-sindicato");
+    if (selectSindicato) {
+      // Fuerza la primera opción del select: "Selecciona un Sindicato"
+      selectSindicato.selectedIndex = 0;
     }
-    if (listaDocumentos) listaDocumentos.innerHTML = "";
-    if (listaPublicos) listaPublicos.innerHTML = "";
-    if (listaVarios) listaVarios.innerHTML = "";
-    if (nombreSindicato) nombreSindicato.textContent = "";
-  }
-
-  // 🔄 Reset también al volver al Menú principal
-  // (caso: elegiste sindicato → pantalla-documentos → botón "↩ Menú")
-  if (idPantalla === "menu-principal") {
-    if (selectSindicato) selectSindicato.value = "";
-    if (mensajeError) {
-      mensajeError.style.display = "none";
-      mensajeError.textContent = "";
-    }
-    if (listaDocumentos) listaDocumentos.innerHTML = "";
-    if (listaPublicos) listaPublicos.innerHTML = "";
-    if (listaVarios) listaVarios.innerHTML = "";
-    if (nombreSindicato) nombreSindicato.textContent = "";
   }
 }
 

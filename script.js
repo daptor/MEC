@@ -303,6 +303,16 @@ function volverAlMenu() {
     mostrarPantalla('menu-principal');
 }
 
+// =========================================
+// 🔄 Volver a HERRAMIENTAS pasando por Menú
+// =========================================
+function volverAHerramientasDesdeHija() {
+  // 1) Ir al menú principal
+  mostrarPantalla("menu-principal");
+  // 2) Entrar a Herramientas (donde ya sabes que el selector aparece bien)
+  mostrarPantalla("pantalla-archivosindical");
+}
+
 // ==================== CONFIGURACIÓN DE NAVEGACIÓN ====================
 document.addEventListener('DOMContentLoaded', () => {
     // Referencias a las pantallas (ajusta los IDs según tu HTML)
@@ -1335,11 +1345,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (idPantalla === "pantalla-archivosindical" || idPantalla === "menu-principal") {
             // Limpiar la selección de sindicato al regresar al menú
             const selectSindicato = document.getElementById("select-sindicato");
-            if (selectSindicato) {
-                // fuerza que visualmente vuelva a la primera opción: "Seleccione una opción"
-                selectSindicato.selectedIndex = 0;
-                selectSindicato.value = "";
-            }
+            if (selectSindicato) selectSindicato.value = "";
 
             // Limpiar cualquier mensaje de error
             const mensajeError = document.getElementById("mensaje-error");

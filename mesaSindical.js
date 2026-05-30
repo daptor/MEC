@@ -1694,17 +1694,15 @@ async function verDetalleReunion(reunionId) {
 
 
 // ======================================================
-// 🎙 CARGAR AUDIOS DE REUNIÓN (Exposición + lista + 1 player)
+// 🎙 CARGAR AUDIOS DE REUNIÓN
 // ======================================================
 async function cargarAudiosReunion(reunionId) {
     try {
         const contenedor = document.getElementById("detalle-reunion-audios");
         if (!contenedor) return;
-        contenedor.innerHTML = "<p>Cargando audios...</p>";
+        contenedor.innerHTML = "<p>Cargando intervenciones...</p>";
 
-        // =====================================
-        // 1) EXPOSICIÓN PRINCIPAL (MISMO ESTILO)
-        // =====================================
+        // ===== NUEVO: EXPOSICIÓN PRINCIPAL (si existe) =====
         let htmlExpos = "";
         try {
             const { data: expos, error: errExpos } = await supabase
@@ -1712,7 +1710,7 @@ async function cargarAudiosReunion(reunionId) {
                 .select("*")
                 .eq("reunion_id", reunionId)
                 .order("creado_en", { ascending: true })
-                .limit(1);
+                .limit(1); // por diseño: 1 exposición principal
 
             if (errExpos) {
                 console.warn("⚠ Error cargando exposición:", errExpos);
@@ -1763,10 +1761,9 @@ async function cargarAudiosReunion(reunionId) {
         } catch (e) {
             console.warn("⚠ Error inesperado cargando exposición:", e);
         }
+        // ===== FIN BLOQUE NUEVO =====
 
-        // =====================================
-        // 2) INTERVENCIONES → LISTA + 1 PLAYER
-        // =====================================
+        // ===== CÓDIGO ORIGINAL: INTERVENCIONES =====
         const { data, error } = await supabase
             .from("reunion_intervenciones")
             .select("*")
@@ -1780,91 +1777,59 @@ async function cargarAudiosReunion(reunionId) {
         }
 
         if (!data || data.length === 0) {
-            contenedor.innerHTML = `
-                ${htmlExpos}
-                <p>No existen intervenciones grabadas.</p>
-            `;
+            contenedor.innerHTML = htmlExpos || "<p>No existen intervenciones grabadas.</p>";
             return;
         }
 
-        // Generar filas de lista (sin <audio> aún)
-        const itemsLista = await Promise.all(
-            data.map(async (intervencion, idx) => {
-                let audioUrl = "";
-                if (intervencion.audio_path) {
-                    const { data: signedData } = await supabase
-                        .storage
-                        .from("reunion_intervenciones")
-                        .createSignedUrl(intervencion.audio_path, 3600);
-                    audioUrl = signedData?.signedUrl || "";
-                }
+        // Antes: let html = "";
+        // Ahora: partimos con la exposición (si existe)
+        let html = htmlExpos;
 
-                const numero = intervencion.orden || (idx + 1);
-                const nombre = intervencion.socio_nombre || "Socio";
+        for (const intervencion of data) {
+            let audioUrl = "";
+            if (intervencion.audio_path) {
+                const { data: signedData } = await supabase
+                    .storage
+                    .from("reunion_intervenciones")
+                    .createSignedUrl(intervencion.audio_path, 3600);
+                audioUrl = signedData?.signedUrl || "";
+            }
 
-                return `
-                    <li
-                        class="mec-intervencion-item"
-                        data-audio-url="${audioUrl}"
-                    >
-                        <span><strong>#${numero}</strong> — ${nombre}</span>
-                        <button type="button" class="btn-mini btn-play-intervencion">
-                            ▶ Oír
-                        </button>
-                    </li>
-                `;
-            })
-        );
-
-        const htmlIntervenciones = `
-            <div class="mec-audio-card">
-                <div class="mec-audio-header">
-                    <div class="mec-audio-usuario">
-                        🎤 Intervenciones (${data.length})
+            html += `
+                <div class="mec-audio-card">
+                    <div class="mec-audio-header">
+                        <div class="mec-audio-usuario">
+                            🎤 ${intervencion.socio_nombre || "Socio"}
+                        </div>
+                        <div class="mec-audio-orden">
+                            #${intervencion.orden || "-"}
+                        </div>
                     </div>
+
+                    ${
+                        audioUrl
+                            ? `
+                                <audio controls class="mec-audio-player">
+                                    <source src="${audioUrl}" type="audio/webm">
+                                </audio>
+                              `
+                            : `
+                                <div class="mec-audio-error">
+                                    Audio no disponible
+                                </div>
+                              `
+                    }
                 </div>
-                <ul style="list-style:none; padding-left:0; margin:8px 0;">
-                    ${itemsLista.join("")}
-                </ul>
-                <div style="margin-top:10px;">
-                    <audio
-                        id="mec-player-intervencion"
-                        controls
-                        class="mec-audio-player"
-                    ></audio>
-                </div>
-            </div>
-        `;
-
-        contenedor.innerHTML = htmlExpos + htmlIntervenciones;
-
-        // =====================================
-        // 3) CONECTAR BOTONES "▶ Oír" AL ÚNICO PLAYER
-        // =====================================
-        const player = document.getElementById("mec-player-intervencion");
-        const botones = contenedor.querySelectorAll(".btn-play-intervencion");
-
-        botones.forEach((btn) => {
-            btn.addEventListener("click", () => {
-                const li = btn.closest(".mec-intervencion-item");
-                if (!li) return;
-                const url = li.getAttribute("data-audio-url");
-                if (!url) {
-                    alert("Audio no disponible para esta intervención.");
-                    return;
-                }
-                player.src = url;
-                player.play().catch(() => {
-                    // Evitar error silencioso si el navegador bloquea autoplay
-                });
-            });
-        });
-
+            `;
+        }
+        contenedor.innerHTML = html;
     } catch (err) {
-        console.error("❌ Error inesperado cargando audios:", err);
+        console.error(
+            "❌ Error inesperado cargando audios:",
+            err
+        );
     }
 }
-
 
 
 // ======================================================

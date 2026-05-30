@@ -1043,9 +1043,9 @@ input:focus, select:focus, textarea:focus,
   align-items: center;
   gap: 4px;
   padding: 2px 0;     /* casi sin alto */
-  margin-bottom: 4px;    /* NUEVO: un pequeño espacio entre filas */
+  margin-bottom: 6px;    /* NUEVO: un pequeño espacio entre filas */
   font-size: 12px;
-  line-height: 1.2;      /* un poco más de aire dentro de la línea */
+  line-height: 1.6;      /* un poco más de aire dentro de la línea */
 }
 
 /* Botón "▶ Oír" minimalista, sin aportar altura */

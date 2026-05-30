@@ -1,14 +1,10 @@
-/* ===================================================== */
-/* BASE MEC — ESTILO LIGERO (MÓVIL + LAPTOP)             */
-/* ===================================================== */
-
 /* Reset y base */
 body {
   font-family: Arial, sans-serif;
   margin: 0;
-  padding: 16px;
-  background: #f3f4f6;         /* antes gradiente verde intenso */
-  color: #111827;
+  padding: 20px;
+  background: linear-gradient(135deg, #a8e063, #56ab2f);
+  color: #fff;
   box-sizing: border-box;
 }
 
@@ -18,10 +14,10 @@ body {
   bottom: 0;
   left: 0;
   width: 100%;
-  background: #16a34a;         /* verde MEC más plano */
+  background: #56ab2f;
   color: #fff;
   text-align: center;
-  padding: 2px 4px;
+  padding: 0.2px 2px;
   font-size: 12px;
   z-index: 1000;
 }
@@ -36,14 +32,14 @@ body {
 #login-container,
 #pantalla-recursos,
 #pantalla-menu-tesoreria {
-  background: #ffffff;          /* blanco sólido, no tan “glow” */
-  padding: 16px;
-  border-radius: 12px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
-  max-width: 480px;
-  margin: 12px auto;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  max-width: 430px;
+  margin: auto;
   text-align: left;
-  color: #111827;
+  color: #333;
 }
 
 /* Títulos comunes */
@@ -54,75 +50,59 @@ h1, h2, h3,
 #pantalla-menu-tesoreria h1, #pantalla-menu-tesoreria h2 {
   text-align: center;
   font-weight: 700;
-  font-size: 22px;              /* antes 26px */
-  margin-bottom: 12px;
-  color: #065f46;               /* verde más apagado */
-  text-shadow: none;            /* sin sombreado fuerte */
+  font-size: 26px;
+  margin-bottom: 15px;
+  color: #1e4620;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
 }
 
 /* Botones generales */
 button {
   display: block;
   width: 100%;
-  padding: 10px 12px;
-  margin: 8px 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #ffffff;
-  background: #16a34a;          /* verde plano */
+  padding: 12px;
+  margin: 10px 0;
+  font-size: 18px;
+  font-weight: bold;
+  color: #fff;
+  background: linear-gradient(135deg, #28a745, #218838);
   border: none;
   border-radius: 8px;
   cursor: pointer;
   text-align: center;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
-  transition: background 0.2s ease, transform 0.1s ease;
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+  transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
 }
 
-button:hover {
-  background: #15803d;
-  transform: translateY(-1px);
-}
-
-/* En pantallas grandes, los botones no ocupan siempre el 100% */
-@media (min-width: 900px) {
-  #menu-principal button,
-  .pantalla button {
-    width: auto;
-    min-width: 220px;
-    align-self: center;
-  }
-}
-
-/* Inputs, selects y textarea */
+/* Inputs, selects y textarea (general y menú Tesorería NO EXISTE) */
 input, select, textarea,
 #pantalla-menu-tesoreria input,
 #pantalla-menu-tesoreria select,
 #pantalla-menu-tesoreria textarea {
-  width: 100%;
-  max-width: 100%;
-  padding: 8px 10px;
-  margin: 8px 0;
-  font-size: 15px;
-  border: 1px solid #d1d5db;    /* gris claro, menos “neón” */
-  border-radius: 6px;
-  background: #ffffff;
-  color: #111827;
+  width: 95%;
+  padding: 10px;
+  margin: 10px 0;
+  font-size: 16px;
+  border: 2px solid #28a745;
+  border-radius: 8px;
+  background: #fff;
+  color: #333;
   text-align: left;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.3s ease;
 }
 
 input:focus, select:focus, textarea:focus,
 #pantalla-menu-tesoreria input:focus,
 #pantalla-menu-tesoreria select:focus,
 #pantalla-menu-tesoreria textarea:focus {
-  border-color: #16a34a;        /* verde MEC suave */
-  box-shadow: 0 0 0 1px #16a34a33;
+  border-color: #218838;
+  box-shadow: 0 0 8px rgba(33,136,56,0.8);
   outline: none;
 }
 
 /* Mensajes de error */
 .error-msg {
-  color: #dc2626;
+  color: #dc3545;
   font-weight: bold;
   display: none;
 }
@@ -154,11 +134,11 @@ input:focus, select:focus, textarea:focus,
   height: auto;
   display: block;
   margin: auto;
-  transition: transform 0.2s ease-in-out;
+  transition: transform 0.3s ease-in-out;
 }
 
 .logo-container img:hover {
-  transform: scale(1.02);
+  transform: scale(1);
 }
 
 /* Enlaces de recursos */
@@ -166,34 +146,34 @@ input:focus, select:focus, textarea:focus,
   display: flex;
   align-items: center;
   gap: 10px;
-  font-weight: 600;
-  font-size: 16px;
-  color: #16a34a;
+  font-weight: bold;
+  font-size: 18px;
+  color: #28a745;
   text-decoration: none;
-  transition: color 0.2s ease, transform 0.1s ease;
+  transition: color 0.3s ease, transform 0.2s ease;
 }
 
 #pantalla-recursos a:hover {
-  color: #15803d;
+  color: #218838;
   text-decoration: underline;
-  transform: translateX(1px);
+  transform: scale(1.05);
 }
 
 #pantalla-recursos a img {
   width: 20px;
   height: auto;
-  transition: transform 0.1s ease-in-out;
+  transition: transform 0.2s ease-in-out;
 }
 
 #pantalla-recursos a:hover img {
-  transform: scale(1.05);
+  transform: scale(1.1);
 }
 
 #listaGratificables {
   padding-left: 20px;
 }
 
-/* Ocultar pantallas por defecto */
+/* Ocultar pantallas */
 .pantalla {
   display: none;
 }
@@ -203,19 +183,18 @@ input:focus, select:focus, textarea:focus,
   position: fixed;
   top: 0; left: 0;
   width: 100%; height: 100%;
-  background: rgba(0,0,0,0.45);
+  background: rgba(0,0,0,0.5);
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
 .modal-contenido {
-  background: #ffffff;
+  background: #fff;
   padding: 20px;
-  border-radius: 8px;
+  border-radius: 5px;
   width: 300px;
   text-align: center;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 
 /* Clase oculto */
@@ -225,33 +204,33 @@ input:focus, select:focus, textarea:focus,
 
 /* Botón en contenedor centrado */
 .boton-container {
-  margin-top: 16px;
+  margin-top: 20px;
   text-align: center;
 }
 
 .boton-container button {
-  padding: 8px 18px;
-  font-size: 15px;
+  padding: 10px 20px;
+  font-size: 16px;
   cursor: pointer;
 }
 
 /* Intro */
 .intro-container {
-  background-color: #ecfdf3;
-  color: #166534;
-  padding: 12px;
+  background-color: #f0fff0;
+  color: #1e4620;
+  padding: 15px;
   border-radius: 10px;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
   text-align: center;
-  font-size: 15px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.04);
+  font-size: 16px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 
 #btnEntendido {
-  margin-top: 8px;
-  padding: 8px 12px;
-  font-size: 15px;
-  background: #16a34a;
+  margin-top: 10px;
+  padding: 10px;
+  font-size: 16px;
+  background: #28a745;
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -262,78 +241,77 @@ input:focus, select:focus, textarea:focus,
 #pantalla-chat {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 16px;
+  gap: 20px;
+  padding: 20px;
   max-height: 120vh;
   overflow-y: auto;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+  background: rgba(255,255,255,0.85);
+  border-radius: 15px;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.15);
 }
 
 .mensaje {
-  background-color: #fef9c3;
-  padding: 8px 10px;
+  background-color: #ffffcc;
+  padding: 8px 12px;
   margin: 4px 0;
-  border-radius: 10px;
+  border-radius: 12px;
   max-width: 95%;
   word-wrap: break-word;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
 .mensaje.admin {
-  background-color: #e0f2f1;
+  background-color: #d1e7dd;
   text-align: left;
 }
 
 .mensaje.usuario {
-  background-color: #e5e7eb;
+  background-color: #e2e3e5;
   text-align: right;
 }
 
 .mensaje p {
-  font-size: 1rem;
+  font-size: 1.2rem;
   margin: 0;
 }
 
 .mensaje p:last-child {
-  font-weight: 600;
+  font-weight: bold;
 }
 
-/* Scroll de pantallas (chat) */
+/* Scroll de pantallas */
 #pantalla-chat::-webkit-scrollbar {
   width: 8px;
 }
 
 #pantalla-chat::-webkit-scrollbar-track {
-  background: #e5e7eb;
+  background: #f1f1f1;
 }
 
 #pantalla-chat::-webkit-scrollbar-thumb {
-  background: #16a34a;
+  background: #28a745;
   border-radius: 4px;
 }
 
-/* Colores de resultados */
 .encabezado-resultado th {
-  background-color: #fff9c4;
-  color: #111827;
-  font-weight: 600;
+  background-color: #fff9c4; /* amarillo claro */
+  color: black;              /* letras negras */
+  font-weight: bold;
 }
 
 .color-verde {
-  color: #16a34a;
-  font-weight: 600;
+  color: green;
+  font-weight: bold;
 }
 
 .color-amarillo {
-  color: #d97706;
-  font-weight: 600;
+  color: goldenrod;
+  font-weight: bold;
 }
 
 .color-rojo {
-  color: #dc2626;
-  font-weight: 600;
+  color: red;
+  font-weight: bold;
 }
 
 /* NOTIFICACION DEL BOTON chat */
@@ -345,62 +323,43 @@ input:focus, select:focus, textarea:focus,
   position: absolute;
   top: -5px;
   right: -5px;
-  background: #dc2626;
+  background: red;
   color: white;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 3px 6px;
-  border-radius: 999px;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 4px 7px;
+  border-radius: 50%;
   display: none;
 }
 
 /* BOTÓN PRO NARANJA */
 .btn-pro {
-  width: 100%;
-  margin-top: 10px;
-  background: #f59e0b;
-  color: white;
-  font-weight: 600;
-  border-radius: 10px;
-  padding: 10px;
-  border: none;
-  cursor: pointer;
-  transition: 0.2s;
+    width: 100%;
+    margin-top: 10px;
+    background: #f59e0b;
+    color: white;
+    font-weight: bold;
+    border-radius: 12px;
+    padding: 12px;
+    border: none;
+    cursor: pointer;
+    transition: 0.2s;
 }
 
 .btn-pro:hover {
-  background: #d97706;
+    background: #d97706;
 }
 
+/* BOTONES BLOQUEADOS (CON CANDADO) */
 .btn-pro-lock {
-  opacity: 0.75;
-  position: relative;
+    opacity: 0.75;
+    position: relative;
 }
 
+/* opcional: leve efecto visual */
 .btn-pro-lock:hover {
-  transform: none;
+    transform: none; /* evita efecto hover normal */
 }
-
-/* Ajustes globales móvil / desktop */
-@media (max-width: 480px) {
-  body {
-    padding: 8px;
-  }
-  #menu-principal,
-  .pantalla,
-  #login-container,
-  #pantalla-recursos {
-    padding: 12px;
-    margin: 8px auto;
-  }
-}
-
-@media (min-width: 900px) {
-  body {
-    padding: 24px;
-  }
-}
-
 
 
 /* MEJORAS VISUALES A ANALSIS DE LIQUIDACION*/

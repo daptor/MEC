@@ -2423,6 +2423,97 @@ function msd2FinalizarExposicion() {
     console.log("✅ Exposición finalizada");
   };
 
+  // ======================================================
+// ☁ SUBIR EXPOSICIÓN A STORAGE
+// ======================================================
+
+(async () => {
+
+  try {
+
+    const reunionId =
+      window.reunionFederacionActual?.id;
+
+    if (!reunionId) {
+
+      console.error(
+        "❌ No existe reunionId"
+      );
+
+      return;
+    }
+
+    const nombreArchivo =
+      `expo_${reunionId}_${Date.now()}.webm`;
+
+    const rutaStorage =
+      `${reunionId}/${nombreArchivo}`;
+
+    const { error: uploadError } =
+      await supabase.storage
+        .from("reunion_exposiciones")
+        .upload(
+          rutaStorage,
+          blob,
+          {
+            contentType:
+              "audio/webm",
+            upsert: false
+          }
+        );
+
+    if (uploadError) {
+
+      console.error(
+        "❌ Error subiendo exposición:",
+        uploadError
+      );
+
+      return;
+    }
+
+    console.log(
+      "☁ Exposición subida correctamente"
+    );
+
+    const { error: insertError } =
+      await supabase
+        .from("reunion_exposiciones")
+        .insert({
+
+          reunion_id:
+            reunionId,
+
+          audio_path:
+            rutaStorage
+
+        });
+
+    if (insertError) {
+
+      console.error(
+        "❌ Error registrando exposición:",
+        insertError
+      );
+
+      return;
+    }
+
+    console.log(
+      "✅ Exposición registrada en BD"
+    );
+
+  } catch(error) {
+
+    console.error(
+      "❌ Error general exposición:",
+      error
+    );
+
+  }
+
+})();
+
   // detener recorder
   expositor.recorder.stop();
 }
@@ -2667,4 +2758,4 @@ function actualizarCandadosUI() {
     });
 }
 
-//-- 23 de mayo 2026 
+//-- 28 de mayo 2026 

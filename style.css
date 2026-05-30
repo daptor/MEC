@@ -1028,8 +1028,8 @@ input:focus, select:focus, textarea:focus,
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 4px;
-  padding: 4px 2px;
+  gap: 8px;
+  padding: 2px 1px;
   /* antes se veían “separados verticalmente” */
   margin: 0; /* sin margen extra entre filas */
   font-size: 13px;

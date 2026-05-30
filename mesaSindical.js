@@ -75,11 +75,7 @@ window.msd2_estado = {
   actual: null,        // socio actual hablando
   segRestantes: 0,
   timerId: null,
-  running: false,
-
-// 🎙 EXPOSITOR (NUEVO CONTROL DE TIEMPOS)
-  expositor_total: null,
-  expositor_inicio_ts: null,
+  running: false
 };
 
 // ------------------------------------------------------
@@ -1803,55 +1799,7 @@ async function cargarAudiosReunion(reunionId) {
                     audioUrl = signedData?.signedUrl || "";
                 }
 
-        const numero = intervencion.orden || (idx + 1);
-        const nombre = intervencion.socio_nombre || "Socio";
 
-        const duracion =
-            Number(intervencion.duracion_segundos || 0);
-
-        const instante =
-            Number(intervencion.segundo_en_exposicion || 0);
-
-        function formatearTiempo(totalSegundos) {
-
-            const horas =
-                Math.floor(totalSegundos / 3600);
-
-            const minutos =
-                Math.floor((totalSegundos % 3600) / 60);
-
-            const segundos =
-                totalSegundos % 60;
-
-            return [
-                horas,
-                minutos,
-                segundos
-            ]
-            .map(v => String(v).padStart(2, "0"))
-            .join(":");
-        }
-
-        return `
-            <li
-                class="mec-intervencion-item"
-                data-audio-url="${audioUrl}"
-            >
-                <span>
-                    <strong>#${numero}</strong> :
-                    (${formatearTiempo(duracion)})
-                    ${nombre}
-                    (${formatearTiempo(instante)})
-                </span>
-
-                <button
-                    type="button"
-                    class="btn-mini btn-play-intervencion"
-                >
-                    ▶ Oír
-                </button>
-            </li>
-        `;
             })
         );
 

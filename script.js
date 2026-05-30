@@ -2381,19 +2381,17 @@ function msd2FinalizarExposicion() {
   const expositor = window.msd2Expositor;
 
   // validar recorder
-  if (!expositor.recorder) {console.warn("⚠ No existe recorder");
+  if (!expositor.recorder) {
+    console.warn("⚠ No existe recorder");
     return;
   }
 
   // evento stop
-  expositor.recorder.onstop = () => {
+  expositor.recorder.onstop = async () => {   // 👈 async
     console.log("⏹ Recorder detenido");
 
     // crear blob final
-    const blob = new Blob(expositor.chunks,
-      {type: "audio/webm"}
-    );
-
+    const blob = new Blob(expositor.chunks, { type: "audio/webm" });
     expositor.blobFinal = blob;
     console.log("✅ Blob final creado");
     console.log(blob);
@@ -2406,7 +2404,6 @@ function msd2FinalizarExposicion() {
 
     // mostrar reproductor
     const audio = document.getElementById("audio-expositor-preview");
-
     audio.src = audioURL;
     // audio.style.display = "block";
 
@@ -2421,11 +2418,16 @@ function msd2FinalizarExposicion() {
     // actualizar UI
     document.getElementById("msd2-estado-expositor").innerHTML = "✅ Exposición finalizada";
     console.log("✅ Exposición finalizada");
+
+    // 🟢 NUEVO: subir a Supabase + guardar en reunion_exposiciones
+    const reunionId = window.reunionFederacionActual?.id;
+    await guardarExposicionPrincipal(blob, reunionId);
   };
 
   // detener recorder
   expositor.recorder.stop();
 }
+
 
 // ======================================================
 // ⏸ PAUSAR EXPOSICIÓN
@@ -2526,6 +2528,120 @@ function msd2ActualizarUIExpositor() {
     // no mostrar botones
   }
 }
+
+// ======================================================
+// 💾 GUARDAR EXPOSICIÓN EN STORAGE + BD
+// ======================================================
+async function guardarExposicionAudio(
+  blob,
+  reunionId
+) {
+
+  try {
+
+    if (!blob) {
+      console.warn("⚠️ Blob exposición vacío");
+      return;
+    }
+
+    if (
+      !window.usuarioFederacion ||
+      !window.usuarioFederacion.socio_id
+    ) {
+      console.warn(
+        "⚠️ Usuario federación no disponible."
+      );
+      return;
+    }
+
+    const socio =
+      window.usuarioFederacion;
+
+    const BUCKET =
+      "reunion_exposiciones";
+
+    const ts = Date.now();
+
+    const safeNombre =
+      (socio.nombre || "expositor")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9_\-]/g, "_");
+
+    const path =
+      `${reunionId}/${socio.socio_id}/exposicion_${ts}_${safeNombre}.webm`;
+
+    // --------------------------------------------------
+    // ☁️ STORAGE
+    // --------------------------------------------------
+    const { error: errUpload } =
+      await supabase.storage
+        .from(BUCKET)
+        .upload(path, blob, {
+          cacheControl: "3600",
+          upsert: false,
+          contentType: "audio/webm"
+        });
+
+    if (errUpload) {
+
+      console.error(
+        "❌ Error subiendo exposición:",
+        errUpload
+      );
+
+      return;
+    }
+
+    console.log(
+      "☁️ Exposición subida:",
+      path
+    );
+
+    // --------------------------------------------------
+    // 🗂 BD
+    // --------------------------------------------------
+    const { error: errInsert } =
+      await supabase
+        .from("reunion_exposiciones")
+        .insert({
+
+          reunion_id:
+            reunionId,
+
+          socio_id:
+            socio.socio_id,
+
+          socio_nombre:
+            socio.nombre,
+
+          audio_path:
+            path
+        });
+
+    if (errInsert) {
+
+      console.error(
+        "❌ Error registrando exposición:",
+        errInsert
+      );
+
+      return;
+    }
+
+    console.log(
+      "✅ Exposición registrada"
+    );
+
+  } catch(err) {
+
+    console.error(
+      "❌ guardarExposicionAudio:",
+      err
+    );
+  }
+}
+
 
 
 // =========================================

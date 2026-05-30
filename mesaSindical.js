@@ -2575,6 +2575,164 @@ async function guardarIntervencionAudio(
     window.msd2_grabacion.guardando = false;}
 }
 
+// ======================================================
+// 🎙 Guardar exposición principal en Supabase
+// ======================================================
+async function guardarExposicionPrincipal(blob, reunionId) {
+  try {
+    if (!blob || !blob.size) {
+      console.warn("⚠ Blob exposición vacío, no se guarda.");
+      return;
+    }
+    if (!reunionId) {
+      console.warn("⚠ reunionId no definido al guardar exposición.");
+      return;
+    }
+    if (!window.usuarioFederacion) {
+      console.warn("⚠ usuarioFederacion no disponible.");
+      return;
+    }
+
+    const socio = window.usuarioFederacion;
+
+    // 1) Subir a Storage
+    const BUCKET = "reuniones-expositor"; // <--- confirmar nombre real del bucket
+    const ts = Date.now();
+    const safeNombre = (socio.nombre || "expositor")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9_\-]/g, "_");
+
+    const path = `${reunionId}/exposicion_principal_${ts}_${safeNombre}.webm`;
+
+    const { error: upErr } = await supabase
+      .storage
+      .from(BUCKET)
+      .upload(path, blob, {
+        cacheControl: "3600",
+        upsert: false,
+        contentType: "audio/webm"
+      });
+
+    if (upErr) {
+      console.error("❌ Error subiendo exposición:", upErr);
+      alert("No se pudo subir la exposición.");
+      return;
+    }
+
+    // 2) Calcular duración minutos (aprox)
+    let duracionMinutos = null;
+    if (window.msd2Expositor && window.msd2Expositor.inicio) {
+      const ms = Date.now() - window.msd2Expositor.inicio;
+      duracionMinutos = Number((ms / 60000).toFixed(1));
+    }
+
+    // 3) Insertar registro en reunion_exposiciones
+    const payload = {
+      reunion_id: reunionId,
+      nombre_expositor: socio.nombre || null,
+      audio_path: path,                 // o url_audio si así se llama la columna
+      duracion_minutos: duracionMinutos,
+      creado_por: socio.socio_id || null,
+      fecha_creacion: new Date().toISOString()
+    };
+
+    const { error: dbErr } = await supabase
+      .from("reunion_exposiciones")
+      .insert([payload]);
+
+    if (dbErr) {
+      console.error("❌ Error guardando exposición en BD:", dbErr);
+      alert("La exposición se subió, pero no se pudo registrar en la base de datos.");
+      return;
+    }
+
+    console.log("✅ Exposición principal registrada correctamente");
+
+  } catch (err) {
+    console.error("❌ Error guardarExposicionPrincipal:", err);
+  }
+}
+
+// ======================================================
+// 🎙 Guardar exposición principal en Supabase
+// ======================================================
+async function guardarExposicionPrincipal(blob, reunionId) {
+  try {
+    if (!blob || !blob.size) {
+      console.warn("⚠ Blob exposición vacío, no se guarda.");
+      return;
+    }
+    if (!reunionId) {
+      console.warn("⚠ reunionId no definido al guardar exposición.");
+      return;
+    }
+    if (!window.usuarioFederacion) {
+      console.warn("⚠ usuarioFederacion no disponible.");
+      return;
+    }
+
+    const socio = window.usuarioFederacion;
+
+    // 1) Subir a Storage
+    const BUCKET = "reunion_exposiciones";
+    const ts = Date.now();
+    const safeNombre = (socio.nombre || "expositor")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9_\-]/g, "_");
+
+    const path = `${reunionId}/exposicion_principal_${ts}_${safeNombre}.webm`;
+
+    const { error: upErr } = await supabase
+      .storage
+      .from(BUCKET)
+      .upload(path, blob, {
+        cacheControl: "3600",
+        upsert: false,
+        contentType: "audio/webm"
+      });
+
+    if (upErr) {
+      console.error("❌ Error subiendo exposición:", upErr);
+      alert("No se pudo subir la exposición.");
+      return;
+    }
+
+    // 2) Duración en segundos (aprox.)
+    let duracionSegundos = 0;
+    if (window.msd2Expositor && window.msd2Expositor.inicio) {
+      const ms = Date.now() - window.msd2Expositor.inicio;
+      duracionSegundos = Math.max(0, Math.round(ms / 1000));
+    }
+
+    // 3) Insertar registro en reunion_exposiciones
+    const payload = {
+      reunion_id: reunionId,
+      audio_path: path,
+      creado_por: socio.socio_id || null,
+      duracion_segundos: duracionSegundos
+      // creado_en usa DEFAULT now()
+    };
+
+    const { error: dbErr } = await supabase
+      .from("reunion_exposiciones")
+      .insert([payload]);
+
+    if (dbErr) {
+      console.error("❌ Error guardando exposición en BD:", dbErr);
+      alert("La exposición se subió, pero no se pudo registrar en la base de datos.");
+      return;
+    }
+
+    console.log("✅ Exposición principal registrada en reunion_exposiciones");
+
+  } catch (err) {
+    console.error("❌ Error guardarExposicionPrincipal:", err);
+  }
+}
+
+
 // ========================== fin mesa sindical ==========================
 
 window.cargarDashboardAsistencia = cargarDashboardAsistencia;
@@ -2584,3 +2742,5 @@ window.cargarRankingDirectores = cargarRankingDirectores;
 window.verDetalleReunion = verDetalleReunion;
 window.cerrarDetalleReunion = cerrarDetalleReunion;
 window.activarMicrofonoMEC = activarMicrofonoMEC;
+
+

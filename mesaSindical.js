@@ -1702,68 +1702,6 @@ async function cargarAudiosReunion(reunionId) {
         if (!contenedor) return;
         contenedor.innerHTML = "<p>Cargando intervenciones...</p>";
 
-        // ===== NUEVO: EXPOSICIÓN PRINCIPAL (si existe) =====
-        let htmlExpos = "";
-        try {
-            const { data: expos, error: errExpos } = await supabase
-                .from("reunion_exposiciones")
-                .select("*")
-                .eq("reunion_id", reunionId)
-                .order("creado_en", { ascending: true })
-                .limit(1); // por diseño: 1 exposición principal
-
-            if (errExpos) {
-                console.warn("⚠ Error cargando exposición:", errExpos);
-            } else if (expos && expos.length > 0) {
-                const exp = expos[0];
-
-                let exposUrl = "";
-                if (exp.audio_path) {
-                    const { data: signed } = await supabase
-                        .storage
-                        .from("reunion_exposiciones")
-                        .createSignedUrl(exp.audio_path, 3600);
-                    exposUrl = signed?.signedUrl || "";
-                }
-
-                htmlExpos = `
-                    <div class="mec-audio-card">
-                        <div class="mec-audio-header">
-                            <div class="mec-audio-usuario">
-                                🎙 Exposición principal
-                            </div>
-                        </div>
-                        ${
-                            exposUrl
-                                ? `
-                                    <audio controls class="mec-audio-player">
-                                        <source src="${exposUrl}" type="audio/webm">
-                                    </audio>
-                                    <p style="font-size:12px; color:#4b5563; margin-top:4px;">
-                                        Duración: ${
-                                            exp.duracion_segundos != null
-                                                ? (exp.duracion_segundos >= 60
-                                                    ? (exp.duracion_segundos/60).toFixed(1) + " min"
-                                                    : exp.duracion_segundos + " seg")
-                                                : "-"
-                                        }
-                                    </p>
-                                  `
-                                : `
-                                    <div class="mec-audio-error">
-                                        Audio de exposición no disponible
-                                    </div>
-                                  `
-                        }
-                    </div>
-                `;
-            }
-        } catch (e) {
-            console.warn("⚠ Error inesperado cargando exposición:", e);
-        }
-        // ===== FIN BLOQUE NUEVO =====
-
-        // ===== CÓDIGO ORIGINAL: INTERVENCIONES =====
         const { data, error } = await supabase
             .from("reunion_intervenciones")
             .select("*")
@@ -1772,19 +1710,16 @@ async function cargarAudiosReunion(reunionId) {
 
         if (error) {
             console.error(error);
-            contenedor.innerHTML = htmlExpos || "<p>Error cargando intervenciones.</p>";
+            contenedor.innerHTML = "<p>Error cargando intervenciones.</p>";
             return;
         }
 
         if (!data || data.length === 0) {
-            contenedor.innerHTML = htmlExpos || "<p>No existen intervenciones grabadas.</p>";
+            contenedor.innerHTML = "<p>No existen intervenciones grabadas.</p>";
             return;
         }
 
-        // Antes: let html = "";
-        // Ahora: partimos con la exposición (si existe)
-        let html = htmlExpos;
-
+        let html = "";
         for (const intervencion of data) {
             let audioUrl = "";
             if (intervencion.audio_path) {
@@ -1830,7 +1765,6 @@ async function cargarAudiosReunion(reunionId) {
         );
     }
 }
-
 
 // ======================================================
 // 🔙 CERRAR ACTA DE REUNIÓN

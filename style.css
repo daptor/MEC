@@ -1043,7 +1043,7 @@ input:focus, select:focus, textarea:focus,
   align-items: center;
   gap: 4px;
   padding: 2px 0;     /* casi sin alto */
-  margin-bottom: 2px;    /* NUEVO: un pequeño espacio entre filas */
+  margin-bottom: 4px;    /* NUEVO: un pequeño espacio entre filas */
   font-size: 12px;
   line-height: 1.1;
 }

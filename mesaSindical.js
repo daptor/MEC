@@ -1697,174 +1697,196 @@ async function verDetalleReunion(reunionId) {
 // 🎙 CARGAR AUDIOS DE REUNIÓN (Exposición + lista + 1 player)
 // ======================================================
 async function cargarAudiosReunion(reunionId) {
+  try {
+    const contenedor = document.getElementById("detalle-reunion-audios");
+    if (!contenedor) return;
+    contenedor.innerHTML = "<p>Cargando audios...</p>";
+
+    // =====================================
+    // 1) EXPOSICIÓN PRINCIPAL (MISMO ESTILO)
+    // =====================================
+    let htmlExpos = "";
     try {
-        const contenedor = document.getElementById("detalle-reunion-audios");
-        if (!contenedor) return;
-        contenedor.innerHTML = "<p>Cargando audios...</p>";
+      const { data: expos, error: errExpos } = await supabase
+        .from("reunion_exposiciones")
+        .select("*")
+        .eq("reunion_id", reunionId)
+        .order("creado_en", { ascending: true })
+        .limit(1);
 
-        // =====================================
-        // 1) EXPOSICIÓN PRINCIPAL (MISMO ESTILO)
-        // =====================================
-        let htmlExpos = "";
-        try {
-            const { data: expos, error: errExpos } = await supabase
-                .from("reunion_exposiciones")
-                .select("*")
-                .eq("reunion_id", reunionId)
-                .order("creado_en", { ascending: true })
-                .limit(1);
+      if (errExpos) {
+        console.warn("⚠ Error cargando exposición:", errExpos);
+      } else if (expos && expos.length > 0) {
+        const exp = expos[0];
 
-            if (errExpos) {
-                console.warn("⚠ Error cargando exposición:", errExpos);
-            } else if (expos && expos.length > 0) {
-                const exp = expos[0];
-
-                let exposUrl = "";
-                if (exp.audio_path) {
-                    const { data: signed } = await supabase
-                        .storage
-                        .from("reunion_exposiciones")
-                        .createSignedUrl(exp.audio_path, 3600);
-                    exposUrl = signed?.signedUrl || "";
-                }
-
-                htmlExpos = `
-                    <div class="mec-audio-card">
-                        <div class="mec-audio-header">
-                            <div class="mec-audio-usuario">
-                                🎙 Exposición principal
-                            </div>
-                        </div>
-                        ${
-                            exposUrl
-                                ? `
-                                    <audio controls class="mec-audio-player">
-                                        <source src="${exposUrl}" type="audio/webm">
-                                    </audio>
-                                    <p style="font-size:12px; color:#4b5563; margin-top:4px;">
-                                        Duración: ${
-                                            exp.duracion_segundos != null
-                                                ? (exp.duracion_segundos >= 60
-                                                    ? (exp.duracion_segundos/60).toFixed(1) + " min"
-                                                    : exp.duracion_segundos + " seg")
-                                                : "-"
-                                        }
-                                    </p>
-                                  `
-                                : `
-                                    <div class="mec-audio-error">
-                                        Audio de exposición no disponible
-                                    </div>
-                                  `
-                        }
-                    </div>
-                `;
-            }
-        } catch (e) {
-            console.warn("⚠ Error inesperado cargando exposición:", e);
+        let exposUrl = "";
+        if (exp.audio_path) {
+          const { data: signed } = await supabase
+            .storage
+            .from("reunion_exposiciones")
+            .createSignedUrl(exp.audio_path, 3600);
+          exposUrl = signed?.signedUrl || "";
         }
 
-        // =====================================
-        // 2) INTERVENCIONES → LISTA + 1 PLAYER
-        // =====================================
-        const { data, error } = await supabase
-            .from("reunion_intervenciones")
-            .select("*")
-            .eq("reunion_id", reunionId)
-            .order("orden", { ascending: true });
-
-        if (error) {
-            console.error(error);
-            contenedor.innerHTML = htmlExpos || "<p>Error cargando intervenciones.</p>";
-            return;
-        }
-
-        if (!data || data.length === 0) {
-            contenedor.innerHTML = `
-                ${htmlExpos}
-                <p>No existen intervenciones grabadas.</p>
-            `;
-            return;
-        }
-
-        // Generar filas de lista (sin <audio> aún)
-        const itemsLista = await Promise.all(
-            data.map(async (intervencion, idx) => {
-                let audioUrl = "";
-                if (intervencion.audio_path) {
-                    const { data: signedData } = await supabase
-                        .storage
-                        .from("reunion_intervenciones")
-                        .createSignedUrl(intervencion.audio_path, 3600);
-                    audioUrl = signedData?.signedUrl || "";
-                }
-
-                const numero = intervencion.orden || (idx + 1);
-                const nombre = intervencion.socio_nombre || "Socio";
-
-                return `
-                    <li
-                        class="mec-intervencion-item"
-                        data-audio-url="${audioUrl}"
-                    >
-                        <span><strong>#${numero}</strong> — ${nombre}</span>
-                        <button type="button" class="btn-mini btn-play-intervencion">
-                            ▶ Oír
-                        </button>
-                    </li>
-                `;
-            })
-        );
-
-        const htmlIntervenciones = `
-            <div class="mec-audio-card">
-                <div class="mec-audio-header">
-                    <div class="mec-audio-usuario">
-                        🎤 Intervenciones (${data.length})
-                    </div>
-                </div>
-                <ul style="list-style:none; padding-left:0; margin:8px 0;">
-                    ${itemsLista.join("")}
-                </ul>
-                <div style="margin-top:10px;">
-                    <audio
-                        id="mec-player-intervencion"
-                        controls
-                        class="mec-audio-player"
-                    ></audio>
-                </div>
+        htmlExpos = `
+          <div class="mec-audio-card">
+            <div class="mec-audio-header">
+              <div class="mec-audio-usuario">
+                🎙 Exposición principal
+              </div>
             </div>
+            ${
+              exposUrl
+                ? `
+                  <audio controls class="mec-audio-player">
+                    <source src="${exposUrl}" type="audio/webm">
+                  </audio>
+                  <p style="font-size:12px; color:#4b5563; margin-top:4px;">
+                    Duración: ${
+                      exp.duracion_segundos != null
+                        ? (exp.duracion_segundos >= 3600
+                            ? Math.floor(exp.duracion_segundos / 60) + " min"
+                            : exp.duracion_segundos + " seg")
+                        : "-"
+                    }
+                  </p>
+                `
+                : `
+                  <div class="mec-audio-error">
+                    Audio de exposición no disponible
+                  </div>
+                `
+            }
+          </div>
         `;
-
-        contenedor.innerHTML = htmlExpos + htmlIntervenciones;
-
-        // =====================================
-        // 3) CONECTAR BOTONES "▶ Oír" AL ÚNICO PLAYER
-        // =====================================
-        const player = document.getElementById("mec-player-intervencion");
-        const botones = contenedor.querySelectorAll(".btn-play-intervencion");
-
-        botones.forEach((btn) => {
-            btn.addEventListener("click", () => {
-                const li = btn.closest(".mec-intervencion-item");
-                if (!li) return;
-                const url = li.getAttribute("data-audio-url");
-                if (!url) {
-                    alert("Audio no disponible para esta intervención.");
-                    return;
-                }
-                player.src = url;
-                player.play().catch(() => {
-                    // Evitar error silencioso si el navegador bloquea autoplay
-                });
-            });
-        });
-
-    } catch (err) {
-        console.error("❌ Error inesperado cargando audios:", err);
+      }
+    } catch (e) {
+      console.warn("⚠ Error inesperado cargando exposición:", e);
     }
-}
 
+    // =====================================
+    // 2) INTERVENCIONES → LISTA + 1 PLAYER
+    // =====================================
+    const { data, error } = await supabase
+      .from("reunion_intervenciones")
+      .select("*")
+      .eq("reunion_id", reunionId)
+      .order("orden", { ascending: true });
+
+    if (error) {
+      console.error(error);
+      contenedor.innerHTML = htmlExpos || "<p>Error cargando intervenciones.</p>";
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      contenedor.innerHTML = `
+        ${htmlExpos}
+        <p>No existen intervenciones grabadas.</p>
+      `;
+      return;
+    }
+
+    // Generar filas de lista con formato:
+    // #3: (00:03:32) Nombre (00:45:12) ▶ Oír
+    const itemsLista = await Promise.all(
+      data.map(async (intervencion, idx) => {
+        let audioUrl = "";
+        if (intervencion.audio_path) {
+          const { data: signedData } = await supabase
+            .storage
+            .from("reunion_intervenciones")
+            .createSignedUrl(intervencion.audio_path, 3600);
+          audioUrl = signedData?.signedUrl || "";
+        }
+
+        const numero = intervencion.orden || (idx + 1);
+        const nombre = intervencion.socio_nombre || "Socio";
+
+        // formatear duracion_segundos a hh:mm:ss o mm:ss
+        let txtDuracion = "";
+        if (
+          typeof intervencion.duracion_segundos === "number" &&
+          intervencion.duracion_segundos >= 0
+        ) {
+          const total = intervencion.duracion_segundos;
+          const h = Math.floor(total / 3600);
+          const m = Math.floor((total % 3600) / 60);
+          const s = total % 60;
+          const hh = h > 0 ? String(h).padStart(2, "0") + ":" : "";
+          const mm = String(m).padStart(2, "0");
+          const ss = String(s).padStart(2, "0");
+          txtDuracion = `(${hh}${mm}:${ss})`;
+        }
+
+        // formatear segundo_en_exposicion a hh:mm:ss o mm:ss
+        let txtOffset = "";
+        if (
+          typeof intervencion.segundo_en_exposicion === "number" &&
+          intervencion.segundo_en_exposicion >= 0
+        ) {
+          const total = intervencion.segundo_en_exposicion;
+          const h = Math.floor(total / 3600);
+          const m = Math.floor((total % 3600) / 60);
+          const s = total % 60;
+          const hh = h > 0 ? String(h).padStart(2, "0") + ":" : "";
+          const mm = String(m).padStart(2, "0");
+          const ss = String(s).padStart(2, "0");
+          txtOffset = `(${hh}${mm}:${ss})`;
+        }
+
+        return `
+          <li class="mec-intervencion-item" data-audio-url="${audioUrl}">
+            <span><strong>#${numero}:</strong> ${txtDuracion ? txtDuracion + ' ' : ''}${nombre} ${txtOffset ? txtOffset : ''}</span>
+            <button type="button" class="btn-mini btn-play-intervencion">▶ Oír</button>
+          </li>
+        `;
+      })
+    );
+
+    const htmlIntervenciones = `
+      <div class="mec-audio-card">
+        <div class="mec-audio-header">
+          <div class="mec-audio-usuario">
+            🎤 Intervenciones (${data.length})
+          </div>
+        </div>
+        <ul style="list-style:none; padding-left:0; margin:8px 0;">
+          ${itemsLista.join("")}
+        </ul>
+        <div style="margin-top:10px;">
+          <audio id="mec-player-intervencion" controls class="mec-audio-player"></audio>
+        </div>
+      </div>
+    `;
+
+    contenedor.innerHTML = htmlExpos + htmlIntervenciones;
+
+    // =====================================
+    // 3) CONECTAR BOTONES "▶ Oír" AL ÚNICO PLAYER
+    // =====================================
+    const player = document.getElementById("mec-player-intervencion");
+    const botones = contenedor.querySelectorAll(".btn-play-intervencion");
+
+    botones.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const li = btn.closest(".mec-intervencion-item");
+        if (!li) return;
+        const url = li.getAttribute("data-audio-url");
+        if (!url) {
+          alert("Audio no disponible para esta intervención.");
+          return;
+        }
+        player.src = url;
+        player.play().catch(() => {
+          // Evitar error silencioso si el navegador bloquea autoplay
+        });
+      });
+    });
+  } catch (err) {
+    console.error("❌ Error inesperado cargando audios:", err);
+  }
+}
 
 
 // ======================================================
@@ -2387,15 +2409,30 @@ async function iniciarGrabacionOrador(reunionPayload) {
         navigator.userAgent
       );
 
-    // ==================================================
-    // 🔑 NUEVA INTERVENCIÓN ÚNICA
-    // ==================================================
-    const intervencionId = crypto.randomUUID();
-    window.msd2_grabacion.mediaRecorder = mediaRecorder;
-    window.msd2_grabacion.chunks = [];
-    window.msd2_grabacion.grabando = true;
-    window.msd2_grabacion.reunionId = reunionPayload.id;
-    window.msd2_grabacion.intervencionId = intervencionId;
+// ==================================================
+// 🔑 NUEVA INTERVENCIÓN ÚNICA
+// ==================================================
+const intervencionId = crypto.randomUUID();
+
+// calcular segundo dentro de la exposición
+let segundoEnExposicion = null;
+if (window.msd2Expositor && window.msd2Expositor.inicio) {
+  const msDiff = Date.now() - window.msd2Expositor.inicio;
+  if (msDiff >= 0) {
+    segundoEnExposicion = Math.round(msDiff / 1000);
+  }
+}
+
+// guardar en estado de grabación
+window.msd2_grabacion.inicioIntervencion = Date.now();
+window.msd2_grabacion.segundoEnExposicion = segundoEnExposicion;
+
+window.msd2_grabacion.mediaRecorder = mediaRecorder;
+window.msd2_grabacion.chunks = [];
+window.msd2_grabacion.grabando = true;
+window.msd2_grabacion.reunionId = reunionPayload.id;
+window.msd2_grabacion.intervencionId = intervencionId;
+
 
     // 🔓 liberar lock inicio
     window.msd2_grabacion.iniciando = false;
@@ -2433,28 +2470,40 @@ async function iniciarGrabacionOrador(reunionPayload) {
           console.warn("⚠️ No existen chunks de audio.");
           return;
         }
-        const blob = new Blob(chunks,{type: mimeType || "audio/webm"});
+const blob = new Blob(chunks,{type: mimeType || "audio/webm"});
 
-        console.log("🎧 Blob generado:",blob.size);
+console.log("🎧 Blob generado:",blob.size);
 
-        if (!blob ||blob.size === 0
-        ) {
-          console.warn("⚠️ Blob vacío, no se guarda intervención.");
-          return;
-        }
+if (!blob ||blob.size === 0
+) {
+  console.warn("⚠️ Blob vacío, no se guarda intervención.");
+  return;
+}
 
-        if (
-          !window.msd2_grabacion.reunionId ||
-          !window.msd2_grabacion.intervencionId
-        ) {
-          console.warn("⚠️ Faltan IDs, no se guarda intervención.");
-          return;
-        }
-        await guardarIntervencionAudio(
-          blob,
-          window.msd2_grabacion.reunionId,
-          window.msd2_grabacion.intervencionId
-        );
+if (
+  !window.msd2_grabacion.reunionId ||
+  !window.msd2_grabacion.intervencionId
+) {
+  console.warn("⚠️ Faltan IDs, no se guarda intervención.");
+  return;
+}
+
+// calcular duración de la intervención
+let duracionSegundos = null;
+if (window.msd2_grabacion && window.msd2_grabacion.inicioIntervencion) {
+  const msDur = Date.now() - window.msd2_grabacion.inicioIntervencion;
+  if (msDur >= 0) {
+    duracionSegundos = Math.round(msDur / 1000);
+  }
+}
+window.msd2_grabacion.duracionSegundos = duracionSegundos;
+
+await guardarIntervencionAudio(
+  blob,
+  window.msd2_grabacion.reunionId,
+  window.msd2_grabacion.intervencionId
+);
+
       } catch (err) {
         console.error(
           "❌ Error post-procesando grabación:",
@@ -2649,20 +2698,18 @@ async function guardarIntervencionAudio(
     // ==================================================
     // 🗂 INSERT IDEMPOTENTE VIA RPC
     // ==================================================
-    const { error: errInsert } =
-      await supabase
-      .rpc("insertar_intervencion_segura", {
-        p_intervencion_id:
-          intervencionId,
-        p_reunion_id:
-          reunionId,
-        p_socio_id:
-          socio.socio_id,
-        p_socio_nombre:
-          socio.nombre,
-        p_audio_path:
-          path
-      });
+const { error: errInsert } =
+  await supabase
+  .rpc("insertar_intervencion_segura", {
+    p_intervencion_id: intervencionId,
+    p_reunion_id: reunionId,
+    p_socio_id: socio.socio_id,
+    p_socio_nombre: socio.nombre,
+    p_audio_path: path,
+    p_segundo_en_exposicion: window.msd2_grabacion?.segundoEnExposicion ?? null,
+    p_duracion_segundos: window.msd2_grabacion?.duracionSegundos ?? null
+  });
+
     if (errInsert) {
       console.error("❌ Error registrando intervención:",errInsert);
       return;

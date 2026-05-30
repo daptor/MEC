@@ -2313,17 +2313,20 @@ async function verBoletaRendicion(path) {
 })();
 
 // ------------------------------------------------------------------------------------------------
-// 🎙 MEC — GRABACIÓN EXPOSITOR
+// 🎙 MEC — GRABACIÓN EXPOSITOR (VERSIÓN CORREGIDA)
 // ------------------------------------------------------------------------------------------------
 window.msd2Expositor = {
   recorder: null,
   stream: null,
   chunks: [],
   estado: "idle",
-  inicio: null,
   blobFinal: null,
   audioURL: null,
-  autoPaused: false
+  autoPaused: false,
+
+  // 🧠 CONTROL REAL DE TIEMPO ACTIVO
+  tiempoActivoMs: 0,
+  ultimaReanudacion: null
 };
 
 // ======================================================
@@ -2331,126 +2334,67 @@ window.msd2Expositor = {
 // ======================================================
 async function msd2IniciarExposicion() {
   try {
-    // evitar doble inicio
-    if (
-      window.msd2Expositor.estado === "recording"
-    ) {
-      return;
-    }
-    // solicitar micrófono
-    const stream = await navigator.mediaDevices.getUserMedia({audio: true});
 
-    // crear recorder
-    const recorder = new MediaRecorder(stream,
-      {mimeType: "audio/webm;codecs=opus"}
-    );
+    if (window.msd2Expositor.estado === "recording") return;
 
-    // limpiar estado
-    window.msd2Expositor.chunks = [];
-    window.msd2Expositor.stream = stream;
-    window.msd2Expositor.recorder = recorder;
-    window.msd2Expositor.estado = "recording";
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+    const recorder = new MediaRecorder(stream, {
+      mimeType: "audio/webm;codecs=opus"
+    });
+
+    const exp = window.msd2Expositor;
+
+    exp.chunks = [];
+    exp.stream = stream;
+    exp.recorder = recorder;
+    exp.estado = "recording";
+
+    exp.tiempoActivoMs = 0;
+    exp.ultimaReanudacion = Date.now();
+
     msd2ActualizarUIExpositor();
-    window.msd2Expositor.inicio = Date.now();
 
-    // capturar chunks
     recorder.ondataavailable = (event) => {
       if (event.data.size > 0) {
-        window.msd2Expositor.chunks.push(
-          event.data
-        );
+        exp.chunks.push(event.data);
       }
     };
 
-    // iniciar grabación
     recorder.start();
 
-    // actualizar UI
-    document.getElementById("msd2-estado-expositor").innerHTML ="🔴 Exposición grabando";
+    document.getElementById("msd2-estado-expositor").innerHTML =
+      "🔴 Exposición grabando";
+
     console.log("🎙 Exposición iniciada");
-    console.log(window.msd2Expositor);
-  } catch(error){
+
+  } catch (error) {
     console.error("❌ Error iniciar exposición", error);
   }
 }
 
 // ======================================================
-// ⏹ FINALIZAR EXPOSICIÓN
-// ======================================================
-function msd2FinalizarExposicion() {
-  const expositor = window.msd2Expositor;
-
-  // validar recorder
-  if (!expositor.recorder) {
-    console.warn("⚠ No existe recorder");
-    return;
-  }
-
-  // evento stop
-  expositor.recorder.onstop = async () => {   // 👈 async
-    console.log("⏹ Recorder detenido");
-
-    // crear blob final
-    const blob = new Blob(expositor.chunks, { type: "audio/webm" });
-    expositor.blobFinal = blob;
-    console.log("✅ Blob final creado");
-    console.log(blob);
-
-    // crear URL local
-    const audioURL = URL.createObjectURL(blob);
-    expositor.audioURL = audioURL;
-    console.log("🎧 URL local creada");
-    console.log(audioURL);
-
-    // mostrar reproductor
-    const audio = document.getElementById("audio-expositor-preview");
-    audio.src = audioURL;
-    // audio.style.display = "block";
-
-    // detener tracks micrófono
-    expositor.stream
-      .getTracks()
-      .forEach(track => track.stop());
-
-    expositor.estado = "stopped";
-    msd2ActualizarUIExpositor();
-
-    // actualizar UI
-    document.getElementById("msd2-estado-expositor").innerHTML = "✅ Exposición finalizada";
-    console.log("✅ Exposición finalizada");
-
-    // 🟢 NUEVO: subir a Supabase + guardar en reunion_exposiciones
-    const reunionId = window.reunionFederacionActual?.id;
-    await guardarExposicionPrincipal(blob, reunionId);
-  };
-
-  // detener recorder
-  expositor.recorder.stop();
-}
-
-
-// ======================================================
 // ⏸ PAUSAR EXPOSICIÓN
 // ======================================================
 function msd2PausarExposicion() {
-  const expositor = window.msd2Expositor;
-  if (
-    !expositor.recorder
-  ) {
-    return;
+  const exp = window.msd2Expositor;
+
+  if (!exp.recorder || exp.estado !== "recording") return;
+
+  // 🔥 sumar tiempo activo
+  if (exp.ultimaReanudacion) {
+    exp.tiempoActivoMs += Date.now() - exp.ultimaReanudacion;
+    exp.ultimaReanudacion = null;
   }
 
-  if (
-    expositor.estado !== "recording"
-  ) {
-    return;
-  }
-  expositor.recorder.pause();
-  expositor.estado = "paused";
+  exp.recorder.pause();
+  exp.estado = "paused";
+
   msd2ActualizarUIExpositor();
 
-  // actualizar UI
-  document.getElementById("msd2-estado-expositor").innerHTML ="⏸ Exposición pausada";
+  document.getElementById("msd2-estado-expositor").innerHTML =
+    "⏸ Exposición pausada";
+
   console.log("⏸ Exposición pausada");
 }
 
@@ -2458,108 +2402,109 @@ function msd2PausarExposicion() {
 // ▶ REANUDAR EXPOSICIÓN
 // ======================================================
 function msd2ReanudarExposicion() {
-  const expositor = window.msd2Expositor;
+  const exp = window.msd2Expositor;
 
-  if (
-    !expositor.recorder
-  ) {
-    return;
-  }
+  if (!exp.recorder || exp.estado !== "paused") return;
 
-  if (
-    expositor.estado !== "paused"
-  ) {
-    return;
-  }
+  exp.recorder.resume();
+  exp.estado = "recording";
 
-  expositor.recorder.resume();
-  expositor.estado = "recording";
+  exp.ultimaReanudacion = Date.now();
+
   msd2ActualizarUIExpositor();
 
-  // actualizar UI
-  document.getElementById("msd2-estado-expositor").innerHTML = "🔴 Exposición grabando";
+  document.getElementById("msd2-estado-expositor").innerHTML =
+    "🔴 Exposición grabando";
+
   console.log("▶ Exposición reanudada");
 }
 
 // ======================================================
-// 🎛 ACTUALIZAR UI EXPOSITOR
+// ⏹ FINALIZAR EXPOSICIÓN
+// ======================================================
+function msd2FinalizarExposicion() {
+  const exp = window.msd2Expositor;
+
+  if (!exp.recorder) return;
+
+  exp.recorder.onstop = async () => {
+
+    // 🔥 cerrar tiempo activo final
+    if (exp.ultimaReanudacion) {
+      exp.tiempoActivoMs += Date.now() - exp.ultimaReanudacion;
+      exp.ultimaReanudacion = null;
+    }
+
+    const blob = new Blob(exp.chunks, { type: "audio/webm" });
+
+    exp.blobFinal = blob;
+
+    const audioURL = URL.createObjectURL(blob);
+    exp.audioURL = audioURL;
+
+    const audio = document.getElementById("audio-expositor-preview");
+    if (audio) audio.src = audioURL;
+
+    exp.stream?.getTracks().forEach(t => t.stop());
+
+    exp.estado = "stopped";
+    msd2ActualizarUIExpositor();
+
+    document.getElementById("msd2-estado-expositor").innerHTML =
+      "✅ Exposición finalizada";
+
+    const reunionId = window.reunionFederacionActual?.id;
+
+    await guardarExposicionAudio(blob, reunionId);
+  };
+
+  exp.recorder.stop();
+}
+
+// ======================================================
+// 🎛 UI EXPOSITOR (SIN CAMBIOS LÓGICOS)
 // ======================================================
 function msd2ActualizarUIExpositor() {
   const estado = window.msd2Expositor.estado;
+
   const btnIniciar = document.getElementById("btn-expositor-iniciar");
   const btnPausar = document.getElementById("btn-expositor-pausar");
   const btnReanudar = document.getElementById("btn-expositor-reanudar");
   const btnFinalizar = document.getElementById("btn-expositor-finalizar");
 
-  // ocultar todos
-  btnIniciar.style.display ="none";
-  btnPausar.style.display ="none";
-  btnReanudar.style.display ="none";
-  btnFinalizar.style.display ="none";
+  if (btnIniciar) btnIniciar.style.display = "none";
+  if (btnPausar) btnPausar.style.display = "none";
+  if (btnReanudar) btnReanudar.style.display = "none";
+  if (btnFinalizar) btnFinalizar.style.display = "none";
 
-  // =========================
-  // idle
-  // =========================
-  if (estado === "idle"
-  ) {
-    btnIniciar.style.display = "block";
+  if (estado === "idle") {
+    if (btnIniciar) btnIniciar.style.display = "block";
   }
-  // =========================
-  // recording
-  // =========================
-  if (estado === "recording"
-  ) {
-    btnPausar.style.display ="block";
-    btnFinalizar.style.display ="block";
+
+  if (estado === "recording") {
+    if (btnPausar) btnPausar.style.display = "block";
+    if (btnFinalizar) btnFinalizar.style.display = "block";
   }
-  // =========================
-  // paused
-  // =========================
-  if (estado === "paused"
-  ) {
-    btnReanudar.style.display ="block";
-    btnFinalizar.style.display ="block";
-  }
-  // =========================
-  // stopped
-  // =========================
-  if (estado === "stopped"
-  ) {
-    // no mostrar botones
+
+  if (estado === "paused") {
+    if (btnReanudar) btnReanudar.style.display = "block";
+    if (btnFinalizar) btnFinalizar.style.display = "block";
   }
 }
 
 // ======================================================
-// 💾 GUARDAR EXPOSICIÓN EN STORAGE + BD
+// 💾 GUARDAR EXPOSICIÓN (CON DURACIÓN REAL)
 // ======================================================
-async function guardarExposicionAudio(
-  blob,
-  reunionId
-) {
+async function guardarExposicionAudio(blob, reunionId) {
 
   try {
 
-    if (!blob) {
-      console.warn("⚠️ Blob exposición vacío");
-      return;
-    }
+    if (!blob) return;
 
-    if (
-      !window.usuarioFederacion ||
-      !window.usuarioFederacion.socio_id
-    ) {
-      console.warn(
-        "⚠️ Usuario federación no disponible."
-      );
-      return;
-    }
+    const socio = window.usuarioFederacion;
+    if (!socio?.socio_id) return;
 
-    const socio =
-      window.usuarioFederacion;
-
-    const BUCKET =
-      "reunion_exposiciones";
-
+    const BUCKET = "reunion_exposiciones";
     const ts = Date.now();
 
     const safeNombre =
@@ -2571,74 +2516,41 @@ async function guardarExposicionAudio(
     const path =
       `${reunionId}/${socio.socio_id}/exposicion_${ts}_${safeNombre}.webm`;
 
-    // --------------------------------------------------
-    // ☁️ STORAGE
-    // --------------------------------------------------
-    const { error: errUpload } =
-      await supabase.storage
-        .from(BUCKET)
-        .upload(path, blob, {
-          cacheControl: "3600",
-          upsert: false,
-          contentType: "audio/webm"
-        });
+    const { error: errUpload } = await supabase.storage
+      .from(BUCKET)
+      .upload(path, blob, {
+        cacheControl: "3600",
+        upsert: false,
+        contentType: "audio/webm"
+      });
 
     if (errUpload) {
-
-      console.error(
-        "❌ Error subiendo exposición:",
-        errUpload
-      );
-
+      console.error("❌ Error upload:", errUpload);
       return;
     }
 
-    console.log(
-      "☁️ Exposición subida:",
-      path
-    );
+    const duracionSeg =
+      Math.round(window.msd2Expositor.tiempoActivoMs / 1000);
 
-    // --------------------------------------------------
-    // 🗂 BD
-    // --------------------------------------------------
-    const { error: errInsert } =
-      await supabase
-        .from("reunion_exposiciones")
-        .insert({
-
-          reunion_id:
-            reunionId,
-
-          socio_id:
-            socio.socio_id,
-
-          socio_nombre:
-            socio.nombre,
-
-          audio_path:
-            path
-        });
+    const { error: errInsert } = await supabase
+      .from("reunion_exposiciones")
+      .insert({
+        reunion_id: reunionId,
+        socio_id: socio.socio_id,
+        socio_nombre: socio.nombre,
+        audio_path: path,
+        duracion_segundos: duracionSeg
+      });
 
     if (errInsert) {
-
-      console.error(
-        "❌ Error registrando exposición:",
-        errInsert
-      );
-
+      console.error("❌ Error DB:", errInsert);
       return;
     }
 
-    console.log(
-      "✅ Exposición registrada"
-    );
+    console.log("✅ Exposición guardada con duración:", duracionSeg);
 
-  } catch(err) {
-
-    console.error(
-      "❌ guardarExposicionAudio:",
-      err
-    );
+  } catch (err) {
+    console.error("❌ guardarExposicionAudio:", err);
   }
 }
 

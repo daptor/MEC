@@ -75,7 +75,11 @@ window.msd2_estado = {
   actual: null,        // socio actual hablando
   segRestantes: 0,
   timerId: null,
-  running: false
+  running: false,
+
+// 🎙 EXPOSITOR (NUEVO CONTROL DE TIEMPOS)
+  expositor_total: null,
+  expositor_inicio_ts: null,
 };
 
 // ------------------------------------------------------

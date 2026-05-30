@@ -2783,4 +2783,4 @@ function actualizarCandadosUI() {
     });
 }
 
-//-- 28 de mayo 2026 
+//-- 30 de mayo 2026 

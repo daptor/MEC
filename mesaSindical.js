@@ -2395,6 +2395,7 @@ async function iniciarGrabacionOrador(reunionPayload) {
     window.msd2_grabacion.grabando = true;
     window.msd2_grabacion.reunionId = reunionPayload.id;
     window.msd2_grabacion.intervencionId = intervencionId;
+    window.msd2_grabacion.inicioIntervencion = Date.now();
 
     // 🔓 liberar lock inicio
     window.msd2_grabacion.iniciando = false;
@@ -2449,11 +2450,35 @@ async function iniciarGrabacionOrador(reunionPayload) {
           console.warn("⚠️ Faltan IDs, no se guarda intervención.");
           return;
         }
-        await guardarIntervencionAudio(
-          blob,
-          window.msd2_grabacion.reunionId,
-          window.msd2_grabacion.intervencionId
-        );
+          const duracionSegundos =
+            Math.max(
+              1,
+              Math.round(
+                (
+                  Date.now() -
+                  window.msd2_grabacion.inicioIntervencion
+                ) / 1000
+              )
+            );
+
+          const segundoEnExposicion =
+            window.msd2Expositor &&
+            window.msd2Expositor.inicio
+              ? Math.round(
+                  (
+                    Date.now() -
+                    window.msd2Expositor.inicio
+                  ) / 1000
+                ) - duracionSegundos
+              : null;
+
+          await guardarIntervencionAudio(
+            blob,
+            window.msd2_grabacion.reunionId,
+            window.msd2_grabacion.intervencionId,
+            duracionSegundos,
+            segundoEnExposicion
+          );
       } catch (err) {
         console.error(
           "❌ Error post-procesando grabación:",
@@ -2585,7 +2610,9 @@ document.addEventListener("click",async (e) => {
 async function guardarIntervencionAudio(
   blob,
   reunionId,
-  intervencionId
+  intervencionId,
+  duracionSegundos,
+  segundoEnExposicion
 ) {
   try {
     // 🚫 Lock anti doble guardado
@@ -2648,20 +2675,24 @@ async function guardarIntervencionAudio(
     // ==================================================
     // 🗂 INSERT IDEMPOTENTE VIA RPC
     // ==================================================
-    const { error: errInsert } =
-      await supabase
-      .rpc("insertar_intervencion_segura", {
-        p_intervencion_id:
-          intervencionId,
-        p_reunion_id:
-          reunionId,
-        p_socio_id:
-          socio.socio_id,
-        p_socio_nombre:
-          socio.nombre,
-        p_audio_path:
-          path
-      });
+const { error: errInsert } =
+  await supabase
+  .rpc("insertar_intervencion_segura", {
+    p_intervencion_id:
+      intervencionId,
+    p_reunion_id:
+      reunionId,
+    p_socio_id:
+      socio.socio_id,
+    p_socio_nombre:
+      socio.nombre,
+    p_audio_path:
+      path,
+    p_duracion_segundos:
+      duracionSegundos,
+    p_segundo_en_exposicion:
+      segundoEnExposicion
+  });
     if (errInsert) {
       console.error("❌ Error registrando intervención:",errInsert);
       return;

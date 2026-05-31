@@ -1727,10 +1727,9 @@ try {
 
         const exp = expos[0];
 
-        fechaInicioExposicion =
-            exp.creado_en
-                ? new Date(exp.creado_en)
-                : null;
+      fechaInicioExposicion = exp.creado_en
+              ? Date.parse(exp.creado_en)
+              : null;
 
         let exposUrl = "";
 
@@ -1843,16 +1842,16 @@ try {
             fechaInicioExposicion &&
             intervencion.fecha
         ) {
-            instante = Math.max(
-                0,
-                Math.round(
-                    (
-                        new Date(intervencion.fecha)
-                        -
-                        fechaInicioExposicion
-                    ) / 1000
-                )
-            );
+        instante = Math.max(
+    0,
+            Math.round(
+                (
+                    Date.parse(intervencion.fecha)
+                    -
+                    fechaInicioExposicion
+                ) / 1000
+            )
+        );
 
         }
 

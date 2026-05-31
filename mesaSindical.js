@@ -2497,14 +2497,13 @@ async function iniciarGrabacionOrador(reunionPayload) {
             );
 
           const segundoEnExposicion =
-            window.msd2Expositor &&
-            window.msd2Expositor.inicio
-              ? Math.round(
-                  (
-                    Date.now() -
-                    window.msd2Expositor.inicio
-                  ) / 1000
-                ) - duracionSegundos
+            window.msd2Expositor?.inicio
+              ? Math.max(
+                  0,
+                  Math.round(
+                    (Date.now() - window.msd2Expositor.inicio) / 1000
+                  )
+                )
               : null;
 
           await guardarIntervencionAudio(

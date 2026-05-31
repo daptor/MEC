@@ -2413,30 +2413,18 @@ async function iniciarGrabacionOrador(reunionPayload) {
     window.msd2_grabacion.intervencionId = intervencionId;
     window.msd2_grabacion.inicioIntervencion = Date.now();
 
-    // ⏱️ INSTANTE EN RELOJ MAESTRO (TERCER RELOJ)
+
 // ⏱️ INSTANTE EN RELOJ MAESTRO (TERCER RELOJ)
-// Si aún no existe inicio del reloj maestro, lo inicializamos aquí
-// usando preferentemente el inicio de la exposición.
-if (!window.msd2RelojMaestro) {
-  window.msd2RelojMaestro = { inicio: null };
-}
+// Solo usamos el maestro si YA existía (inicializado desde la exposición).
+// No lo inicializamos aquí con Date.now(), para no “pegarlo” al inicio del orador.
+let instanteMaestro = null;
 
-if (!window.msd2RelojMaestro.inicio) {
-  if (window.msd2Expositor && window.msd2Expositor.inicio) {
-    // Caso ideal: ya existe inicio de exposición → lo usamos como base
-    window.msd2RelojMaestro.inicio = window.msd2Expositor.inicio;
-    console.log("⏱️ Reloj maestro inicializado desde expositor.inicio:", window.msd2RelojMaestro.inicio);
-  } else {
-    // Último recurso: iniciamos ahora mismo
-    window.msd2RelojMaestro.inicio = Date.now();
-    console.log("⏱️ Reloj maestro inicializado al vuelo en primera intervención:", window.msd2RelojMaestro.inicio);
-  }
+if (window.msd2RelojMaestro && window.msd2RelojMaestro.inicio) {
+  instanteMaestro = Math.max(
+    0,
+    Math.round((Date.now() - window.msd2RelojMaestro.inicio) / 1000)
+  );
 }
-
-let instanteMaestro = Math.max(
-  0,
-  Math.round((Date.now() - window.msd2RelojMaestro.inicio) / 1000)
-);
 
 window.msd2_grabacion.segundoInicioRelojMaestro = instanteMaestro;
 
@@ -2491,26 +2479,47 @@ window.msd2_grabacion.segundoInicioRelojMaestro = instanteMaestro;
           return;
         }
 
-        const duracionSegundos = Math.max(
-          1,
-          Math.round(
-            (Date.now() - window.msd2_grabacion.inicioIntervencion) / 1000
-          )
-        );
+const duracionSegundos = Math.max(
+  1,
+  Math.round(
+    (Date.now() - window.msd2_grabacion.inicioIntervencion) / 1000
+  )
+);
 
-        // ⏱️ USAR RELOJ MAESTRO COMO "INSTANTE" DE LA INTERVENCIÓN
-        const segundoEnReunion =
-          typeof window.msd2_grabacion.segundoInicioRelojMaestro === "number"
-            ? window.msd2_grabacion.segundoInicioRelojMaestro
-            : null;
+// ⏱️ Cálculo de "instante" de intervención
+let segundoEnReunion = null;
 
-        await guardarIntervencionAudio(
-          blob,
-          window.msd2_grabacion.reunionId,
-          window.msd2_grabacion.intervencionId,
-          duracionSegundos,
-          segundoEnReunion // se guarda en p_segundo_en_exposicion
-        );
+// 1) Preferimos el valor capturado del reloj maestro (si existe y > 0)
+if (
+  typeof window.msd2_grabacion.segundoInicioRelojMaestro === "number" &&
+  window.msd2_grabacion.segundoInicioRelojMaestro > 0
+) {
+  segundoEnReunion = window.msd2_grabacion.segundoInicioRelojMaestro;
+}
+
+// 2) Fallback: si no hay maestro válido, usamos exposición.inicio como referencia
+//    instante = (momento en que empezó la intervención) - (inicio de la exposición)
+if (
+  (segundoEnReunion === null || segundoEnReunion === 0) &&
+  window.msd2Expositor &&
+  window.msd2Expositor.inicio
+) {
+  segundoEnReunion = Math.max(
+    0,
+    Math.round(
+      (window.msd2_grabacion.inicioIntervencion - window.msd2Expositor.inicio) / 1000
+    )
+  );
+}
+
+await guardarIntervencionAudio(
+  blob,
+  window.msd2_grabacion.reunionId,
+  window.msd2_grabacion.intervencionId,
+  duracionSegundos,
+  segundoEnReunion
+);
+
       } catch (err) {
         console.error("❌ Error post-procesando grabación:", err);
       } finally {

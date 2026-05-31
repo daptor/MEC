@@ -2414,14 +2414,32 @@ async function iniciarGrabacionOrador(reunionPayload) {
     window.msd2_grabacion.inicioIntervencion = Date.now();
 
     // ⏱️ INSTANTE EN RELOJ MAESTRO (TERCER RELOJ)
-    let instanteMaestro = null;
-    if (window.msd2RelojMaestro && window.msd2RelojMaestro.inicio) {
-      instanteMaestro = Math.max(
-        0,
-        Math.round((Date.now() - window.msd2RelojMaestro.inicio) / 1000)
-      );
-    }
-    window.msd2_grabacion.segundoInicioRelojMaestro = instanteMaestro;
+// ⏱️ INSTANTE EN RELOJ MAESTRO (TERCER RELOJ)
+// Si aún no existe inicio del reloj maestro, lo inicializamos aquí
+// usando preferentemente el inicio de la exposición.
+if (!window.msd2RelojMaestro) {
+  window.msd2RelojMaestro = { inicio: null };
+}
+
+if (!window.msd2RelojMaestro.inicio) {
+  if (window.msd2Expositor && window.msd2Expositor.inicio) {
+    // Caso ideal: ya existe inicio de exposición → lo usamos como base
+    window.msd2RelojMaestro.inicio = window.msd2Expositor.inicio;
+    console.log("⏱️ Reloj maestro inicializado desde expositor.inicio:", window.msd2RelojMaestro.inicio);
+  } else {
+    // Último recurso: iniciamos ahora mismo
+    window.msd2RelojMaestro.inicio = Date.now();
+    console.log("⏱️ Reloj maestro inicializado al vuelo en primera intervención:", window.msd2RelojMaestro.inicio);
+  }
+}
+
+let instanteMaestro = Math.max(
+  0,
+  Math.round((Date.now() - window.msd2RelojMaestro.inicio) / 1000)
+);
+
+window.msd2_grabacion.segundoInicioRelojMaestro = instanteMaestro;
+
 
     // 🔓 liberar lock inicio
     window.msd2_grabacion.iniciando = false;

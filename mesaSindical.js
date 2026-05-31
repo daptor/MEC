@@ -1702,71 +1702,98 @@ async function cargarAudiosReunion(reunionId) {
         if (!contenedor) return;
         contenedor.innerHTML = "<p>Cargando audios...</p>";
 
-        // =====================================
-        // 1) EXPOSICIÓN PRINCIPAL (MISMO ESTILO)
-        // =====================================
-        let htmlExpos = "";
-        try {
-            const { data: expos, error: errExpos } = await supabase
-                .from("reunion_exposiciones")
-                .select("*")
-                .eq("reunion_id", reunionId)
-                .order("creado_en", { ascending: true })
-                .limit(1);
+// =====================================
+// 1) EXPOSICIÓN PRINCIPAL (MISMO ESTILO)
+// =====================================
+let htmlExpos = "";
+let fechaInicioExposicion = null;
 
-            if (errExpos) {
-                console.warn("⚠ Error cargando exposición:", errExpos);
-            } else if (expos && expos.length > 0) {
-                const exp = expos[0];
-                const fechaInicioExposicion =
-                      exp.creado_en
-                      ? new Date(exp.creado_en)
-                      : null;
-                let exposUrl = "";
-                if (exp.audio_path) {
-                    const { data: signed } = await supabase
-                        .storage
-                        .from("reunion_exposiciones")
-                        .createSignedUrl(exp.audio_path, 3600);
-                    exposUrl = signed?.signedUrl || "";
-                }
+try {
+    const { data: expos, error: errExpos } = await supabase
+        .from("reunion_exposiciones")
+        .select("*")
+        .eq("reunion_id", reunionId)
+        .order("creado_en", { ascending: true })
+        .limit(1);
 
-                htmlExpos = `
-                    <div class="mec-audio-card">
-                        <div class="mec-audio-header">
-                            <div class="mec-audio-usuario">
-                                🎙 Exposición principal
-                            </div>
-                        </div>
-                        ${
-                            exposUrl
-                                ? `
-                                    <audio controls class="mec-audio-player">
-                                        <source src="${exposUrl}" type="audio/webm">
-                                    </audio>
-                                    <p style="font-size:12px; color:#4b5563; margin-top:4px;">
-                                        Duración: ${
-                                            exp.duracion_segundos != null
-                                                ? (exp.duracion_segundos >= 60
-                                                    ? (exp.duracion_segundos/60).toFixed(1) + " min"
-                                                    : exp.duracion_segundos + " seg")
-                                                : "-"
-                                        }
-                                    </p>
-                                  `
-                                : `
-                                    <div class="mec-audio-error">
-                                        Audio de exposición no disponible
-                                    </div>
-                                  `
-                        }
-                    </div>
-                `;
-            }
-        } catch (e) {
-            console.warn("⚠ Error inesperado cargando exposición:", e);
+    if (errExpos) {
+
+        console.warn(
+            "⚠ Error cargando exposición:",
+            errExpos
+        );
+
+    } else if (expos && expos.length > 0) {
+
+        const exp = expos[0];
+
+        fechaInicioExposicion =
+            exp.creado_en
+                ? new Date(exp.creado_en)
+                : null;
+
+        let exposUrl = "";
+
+        if (exp.audio_path) {
+
+            const { data: signed } =
+                await supabase
+                    .storage
+                    .from("reunion_exposiciones")
+                    .createSignedUrl(
+                        exp.audio_path,
+                        3600
+                    );
+
+            exposUrl =
+                signed?.signedUrl || "";
         }
 
+        htmlExpos = `
+            <div class="mec-audio-card">
+                <div class="mec-audio-header">
+                    <div class="mec-audio-usuario">
+                        🎙 Exposición principal
+                    </div>
+                </div>
+                ${
+                    exposUrl
+                        ? `
+                            <audio controls class="mec-audio-player">
+                                <source src="${exposUrl}" type="audio/webm">
+                            </audio>
+                            <p style="font-size:12px; color:#4b5563; margin-top:4px;">
+                                Duración: ${
+                                    exp.duracion_segundos != null
+                                        ? (
+                                            exp.duracion_segundos >= 60
+                                                ? (
+                                                    exp.duracion_segundos / 60
+                                                ).toFixed(1) + " min"
+                                                : exp.duracion_segundos + " seg"
+                                        )
+                                        : "-"
+                                }
+                            </p>
+                          `
+                        : `
+                            <div class="mec-audio-error">
+                                Audio de exposición no disponible
+                            </div>
+                          `
+                }
+            </div>
+        `;
+    }
+
+} catch (e) {
+
+    console.warn(
+        "⚠ Error inesperado cargando exposición:",
+        e
+    );
+
+}
         // =====================================
         // 2) INTERVENCIONES → LISTA + 1 PLAYER
         // =====================================

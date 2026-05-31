@@ -1718,7 +1718,10 @@ async function cargarAudiosReunion(reunionId) {
                 console.warn("⚠ Error cargando exposición:", errExpos);
             } else if (expos && expos.length > 0) {
                 const exp = expos[0];
-
+                const fechaInicioExposicion =
+                      exp.creado_en
+                      ? new Date(exp.creado_en)
+                      : null;
                 let exposUrl = "";
                 if (exp.audio_path) {
                     const { data: signed } = await supabase
@@ -1805,8 +1808,26 @@ async function cargarAudiosReunion(reunionId) {
         const duracion =
             Number(intervencion.duracion_segundos || 0);
 
-        const instante =
-            Number(intervencion.segundo_en_exposicion || 0);
+        // const instante =
+            //Number(intervencion.segundo_en_exposicion || 0);
+
+        let instante = null;
+        if (
+            fechaInicioExposicion &&
+            intervencion.fecha
+        ) {
+            instante = Math.max(
+                0,
+                Math.round(
+                    (
+                        new Date(intervencion.fecha)
+                        -
+                        fechaInicioExposicion
+                    ) / 1000
+                )
+            );
+
+        }
 
         function formatearTiempo(totalSegundos) {
 
@@ -1837,7 +1858,11 @@ async function cargarAudiosReunion(reunionId) {
                     <strong>#${numero}</strong> :
                     (${formatearTiempo(duracion)})
                     ${nombre}
-                    (${formatearTiempo(instante)})
+                    ${
+                          instante === null
+                              ? ""
+                              : `(${formatearTiempo(instante)})`
+                      }
                 </span>
 
                 <button

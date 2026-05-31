@@ -1702,99 +1702,84 @@ async function cargarAudiosReunion(reunionId) {
         if (!contenedor) return;
         contenedor.innerHTML = "<p>Cargando audios...</p>";
 
-// =====================================
-// 1) EXPOSICIÓN PRINCIPAL (MISMO ESTILO)
-// =====================================
-let htmlExpos = "";
-let fechaInicioExposicion = null;
+        // =====================================
+        // 1) EXPOSICIÓN PRINCIPAL
+        // =====================================
+        let htmlExpos = "";
+        let fechaInicioExposicion = null;
 
-try {
-    const { data: expos, error: errExpos } = await supabase
-        .from("reunion_exposiciones")
-        .select("*")
-        .eq("reunion_id", reunionId)
-        .order("creado_en", { ascending: true })
-        .limit(1);
+        try {
+            const { data: expos, error: errExpos } = await supabase
+                .from("reunion_exposiciones")
+                .select("*")
+                .eq("reunion_id", reunionId)
+                .order("creado_en", { ascending: true })
+                .limit(1);
 
-    if (errExpos) {
+            if (errExpos) {
+                console.warn("⚠ Error cargando exposición:", errExpos);
+            } else if (expos && expos.length > 0) {
 
-        console.warn(
-            "⚠ Error cargando exposición:",
-            errExpos
-        );
+                const exp = expos[0];
 
-    } else if (expos && expos.length > 0) {
+                fechaInicioExposicion = exp.creado_en
+                    ? Date.parse(exp.creado_en)
+                    : null;
 
-        const exp = expos[0];
+                let exposUrl = "";
 
-      fechaInicioExposicion = exp.creado_en
-              ? Date.parse(exp.creado_en)
-              : null;
+                if (exp.audio_path) {
+                    const { data: signed } =
+                        await supabase
+                            .storage
+                            .from("reunion_exposiciones")
+                            .createSignedUrl(exp.audio_path, 3600);
 
-        let exposUrl = "";
+                    exposUrl = signed?.signedUrl || "";
+                }
 
-        if (exp.audio_path) {
+                htmlExpos = `
+                    <div class="mec-audio-card">
+                        <div class="mec-audio-header">
+                            <div class="mec-audio-usuario">
+                                🎙 Exposición principal
+                            </div>
+                        </div>
 
-            const { data: signed } =
-                await supabase
-                    .storage
-                    .from("reunion_exposiciones")
-                    .createSignedUrl(
-                        exp.audio_path,
-                        3600
-                    );
+                        ${
+                            exposUrl
+                                ? `
+                                    <audio controls class="mec-audio-player">
+                                        <source src="${exposUrl}" type="audio/webm">
+                                    </audio>
+                                    <p style="font-size:12px; color:#4b5563; margin-top:4px;">
+                                        Duración: ${
+                                            exp.duracion_segundos != null
+                                                ? (
+                                                    exp.duracion_segundos >= 60
+                                                        ? (exp.duracion_segundos / 60).toFixed(1) + " min"
+                                                        : exp.duracion_segundos + " seg"
+                                                )
+                                                : "-"
+                                        }
+                                    </p>
+                                  `
+                                : `
+                                    <div class="mec-audio-error">
+                                        Audio de exposición no disponible
+                                    </div>
+                                  `
+                        }
+                    </div>
+                `;
+            }
 
-            exposUrl =
-                signed?.signedUrl || "";
+        } catch (e) {
+            console.warn("⚠ Error inesperado cargando exposición:", e);
         }
 
-        htmlExpos = `
-            <div class="mec-audio-card">
-                <div class="mec-audio-header">
-                    <div class="mec-audio-usuario">
-                        🎙 Exposición principal
-                    </div>
-                </div>
-                ${
-                    exposUrl
-                        ? `
-                            <audio controls class="mec-audio-player">
-                                <source src="${exposUrl}" type="audio/webm">
-                            </audio>
-                            <p style="font-size:12px; color:#4b5563; margin-top:4px;">
-                                Duración: ${
-                                    exp.duracion_segundos != null
-                                        ? (
-                                            exp.duracion_segundos >= 60
-                                                ? (
-                                                    exp.duracion_segundos / 60
-                                                ).toFixed(1) + " min"
-                                                : exp.duracion_segundos + " seg"
-                                        )
-                                        : "-"
-                                }
-                            </p>
-                          `
-                        : `
-                            <div class="mec-audio-error">
-                                Audio de exposición no disponible
-                            </div>
-                          `
-                }
-            </div>
-        `;
-    }
-
-} catch (e) {
-
-    console.warn(
-        "⚠ Error inesperado cargando exposición:",
-        e
-    );
-
-}
         // =====================================
-        // 2) INTERVENCIONES → LISTA + 1 PLAYER
+        // 2) INTERVENCIONES → LISTA + PLAYER
         // =====================================
         const { data, error } = await supabase
             .from("reunion_intervenciones")
@@ -1816,89 +1801,60 @@ try {
             return;
         }
 
-        // Generar filas de lista (sin <audio> aún)
+        // ======================================================
+        // ⏱ TIMELINE REAL BASADO EN ORDEN + DURACIÓN
+        // ======================================================
+        let acumulado = 0;
+
         const itemsLista = await Promise.all(
             data.map(async (intervencion, idx) => {
+
                 let audioUrl = "";
+
                 if (intervencion.audio_path) {
                     const { data: signedData } = await supabase
                         .storage
                         .from("reunion_intervenciones")
                         .createSignedUrl(intervencion.audio_path, 3600);
+
                     audioUrl = signedData?.signedUrl || "";
                 }
 
-        const numero = intervencion.orden || (idx + 1);
-        const nombre = intervencion.socio_nombre || "Socio";
+                const numero = intervencion.orden || (idx + 1);
+                const nombre = intervencion.socio_nombre || "Socio";
 
-        const duracion =
-            Number(intervencion.duracion_segundos || 0);
+                const duracion = Number(intervencion.duracion_segundos || 0);
 
-        // const instante =
-            //Number(intervencion.segundo_en_exposicion || 0);
+                // 👉 instante REAL calculado por acumulación
+                const instante = acumulado;
+                acumulado += duracion;
 
-        let instante = null;
-        if (
-            fechaInicioExposicion &&
-            intervencion.fecha
-        ) {
-        instante = Math.max(
-    0,
-            Math.round(
-                (
-                    Date.parse(intervencion.fecha)
-                    -
-                    fechaInicioExposicion
-                ) / 1000
-            )
-        );
+                function formatearTiempo(totalSegundos) {
+                    const horas = Math.floor(totalSegundos / 3600);
+                    const minutos = Math.floor((totalSegundos % 3600) / 60);
+                    const segundos = totalSegundos % 60;
 
-        }
+                    return [horas, minutos, segundos]
+                        .map(v => String(v).padStart(2, "0"))
+                        .join(":");
+                }
 
-        function formatearTiempo(totalSegundos) {
+                return `
+                    <li class="mec-intervencion-item"
+                        data-audio-url="${audioUrl}">
+                        <span>
+                            <strong>#${numero}</strong> :
+                            (${formatearTiempo(duracion)})
+                            ${nombre}
+                            (${formatearTiempo(instante)})
+                        </span>
 
-            const horas =
-                Math.floor(totalSegundos / 3600);
-
-            const minutos =
-                Math.floor((totalSegundos % 3600) / 60);
-
-            const segundos =
-                totalSegundos % 60;
-
-            return [
-                horas,
-                minutos,
-                segundos
-            ]
-            .map(v => String(v).padStart(2, "0"))
-            .join(":");
-        }
-
-        return `
-            <li
-                class="mec-intervencion-item"
-                data-audio-url="${audioUrl}"
-            >
-                <span>
-                    <strong>#${numero}</strong> :
-                    (${formatearTiempo(duracion)})
-                    ${nombre}
-                    ${
-                          instante === null
-                              ? ""
-                              : `(${formatearTiempo(instante)})`
-                      }
-                </span>
-
-                <button
-                    type="button"
-                    class="btn-mini btn-play-intervencion"
-                >
-                    ▶ Oír
-                </button>
-            </li>
-        `;
+                        <button type="button"
+                            class="btn-mini btn-play-intervencion">
+                            ▶ Oír
+                        </button>
+                    </li>
+                `;
             })
         );
 
@@ -1909,15 +1865,15 @@ try {
                         🎤 Intervenciones (${data.length})
                     </div>
                 </div>
+
                 <ul style="list-style:none; padding-left:0; margin:8px 0;">
                     ${itemsLista.join("")}
                 </ul>
+
                 <div style="margin-top:10px;">
-                    <audio
-                        id="mec-player-intervencion"
+                    <audio id="mec-player-intervencion"
                         controls
-                        class="mec-audio-player"
-                    ></audio>
+                        class="mec-audio-player"></audio>
                 </div>
             </div>
         `;
@@ -1925,7 +1881,7 @@ try {
         contenedor.innerHTML = htmlExpos + htmlIntervenciones;
 
         // =====================================
-        // 3) CONECTAR BOTONES "▶ Oír" AL ÚNICO PLAYER
+        // 3) PLAYER ÚNICO
         // =====================================
         const player = document.getElementById("mec-player-intervencion");
         const botones = contenedor.querySelectorAll(".btn-play-intervencion");
@@ -1934,15 +1890,16 @@ try {
             btn.addEventListener("click", () => {
                 const li = btn.closest(".mec-intervencion-item");
                 if (!li) return;
+
                 const url = li.getAttribute("data-audio-url");
+
                 if (!url) {
                     alert("Audio no disponible para esta intervención.");
                     return;
                 }
+
                 player.src = url;
-                player.play().catch(() => {
-                    // Evitar error silencioso si el navegador bloquea autoplay
-                });
+                player.play().catch(() => {});
             });
         });
 

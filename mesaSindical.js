@@ -663,33 +663,38 @@ function msd2_actualizarDisplayTurno() {
 }
 
 // ------------------------------------------------------
+// LEER RELOJ MAESTRO (segundos desde inicio_reunion)
+// ------------------------------------------------------
+function msd2_leerRelojMaestroSegundos() {
+  if (!window.msd2RelojMaestro || !window.msd2RelojMaestro.inicioMs) {
+    return null;
+  }
+  const ahoraMs = Date.now();
+  const diffSeg = Math.floor((ahoraMs - window.msd2RelojMaestro.inicioMs) / 1000);
+  return diffSeg >= 0 ? diffSeg : 0;
+}
+
+
+// ------------------------------------------------------
 // CONTROLES MODERADOR (FULL SINCRONIZADOS + ORADOR)
 // VERSION CORREGIDA 🔥
 // ------------------------------------------------------
 window.msd2_iniciarTurno = async function () {
-
   // 🔒 Solo moderador
   if (!msd2_esModeradorActual()) {
-
     alert("Solo el moderador puede controlar el tiempo.");
-
     return;
   }
 
   const reunion = window.reunionFederacionActual;
-
   if (!reunion) {
-
     console.error("❌ No existe reunión activa");
-
     return;
   }
 
-  console.log("🎤 Iniciando turno...");
+  console.log(" Iniciando turno...");
 
-  // ------------------------------------------------------
-  // 1️⃣ OBTENER COLA ACTUAL
-  // ------------------------------------------------------
+  // 1⃣ OBTENER COLA ACTUAL
   const { data: cola, error } = await supabase
     .from("reuniones_turnos")
     .select("*")
@@ -697,121 +702,84 @@ window.msd2_iniciarTurno = async function () {
     .order("creado_en", { ascending: true });
 
   if (error) {
-
     console.error("❌ Error obteniendo cola:", error);
-
     return;
   }
 
-  // ------------------------------------------------------
-  // 2️⃣ VALIDAR COLA
-  // ------------------------------------------------------
+  // 2⃣ VALIDAR COLA
   if (!cola || cola.length === 0) {
-
     alert("No hay personas en la cola.");
-
     return;
   }
 
-  // ------------------------------------------------------
-  // 3️⃣ TOMAR PRIMER ORADOR
-  // ------------------------------------------------------
+  // 3⃣ TOMAR PRIMER ORADOR
   const orador = cola[0];
-
   console.log("🗣 Próximo orador:", orador.nombre);
 
-  // ------------------------------------------------------
-  // 4️⃣ FEEDBACK VISUAL LOCAL INMEDIATO
-  // ------------------------------------------------------
+  // 4⃣ FEEDBACK VISUAL LOCAL INMEDIATO
   const hablandoNombre = document.getElementById("msd2-hablando-nombre");
-
   if (hablandoNombre) {
-
     hablandoNombre.textContent = orador.nombre;
   }
 
-  // ------------------------------------------------------
-  // 5️⃣ DURACIÓN DEL TURNO
-  // ------------------------------------------------------
+  // 5⃣ DURACIÓN DEL TURNO
   const durInput = document.getElementById("msd2-duracion-min");
-
-  const min = durInput
-    ? Number(durInput.value || 3)
-    : 3;
-
+  const min = durInput ? Number(durInput.value || 3) : 3;
   const segundos = min * 60;
 
-  // ------------------------------------------------------
-  // 6️⃣ ELIMINAR ORADOR DE LA COLA
-  // 🔥 ESTO ERA EL BUG PRINCIPAL
-  // ------------------------------------------------------
+  // 🔹 5.b INSTANTE DE INTERVENCIÓN (RELOJ MAESTRO)
+  const instanteIntervencion = msd2_leerRelojMaestroSegundos();
+  window.msd2_grabacion = window.msd2_grabacion || {};
+  window.msd2_grabacion.instanteIntervencion = instanteIntervencion;
+  window.msd2_grabacion.inicioIntervencionMs = Date.now();
+
+  // 6⃣ ELIMINAR ORADOR DE LA COLA
   const { error: deleteError } = await supabase
     .from("reuniones_turnos")
     .delete()
     .eq("id", orador.id);
 
   if (deleteError) {
-
     console.error("❌ Error eliminando turno:", deleteError);
-
     return;
   }
+  console.log(" Turno removido de cola");
 
-  console.log("🧹 Turno removido de cola");
+  // 🎙 PAUSAR EXPOSICIÓN AUTOMÁTICA (tu código original)
+  if (
+    window.msd2Expositor &&
+    window.msd2Expositor.estado === "recording"
+  ) {
+    msd2PausarExposicion();
+    window.msd2Expositor.autoPaused = true;
+    console.log("🎙 Exposición pausada automáticamente por turno");
+  }
 
-// ======================================================
-// 🎙 PAUSAR EXPOSICIÓN AUTOMÁTICA
-// ======================================================
-
-if (
-  window.msd2Expositor &&
-  window.msd2Expositor.estado === "recording"
-) {
-
-  msd2PausarExposicion();
-  window.msd2Expositor.autoPaused = true;
-  console.log("🎙 Exposición pausada automáticamente por turno");
-}
-
-  // ------------------------------------------------------
-  // 7️⃣ ACTUALIZAR ESTADO DE REUNIÓN
-  // ------------------------------------------------------
+  // 7⃣ ACTUALIZAR ESTADO DE REUNIÓN
   const { error: updateError } = await supabase
     .from("reuniones")
     .update({
-
       seg_restantes: segundos,
-
       reloj_activo: true,
-
       orador_actual_id: orador.socio_id
-
     })
     .eq("id", reunion.id);
 
   if (updateError) {
-
     console.error("❌ Error iniciando turno:", updateError);
-
     return;
   }
-
   console.log("✅ Turno iniciado correctamente");
 
-  // ------------------------------------------------------
-  // 8️⃣ ACTUALIZAR UI LOCAL
-  // ------------------------------------------------------
+  // 8⃣ ACTUALIZAR UI LOCAL
   window.msd2_estado.segRestantes = segundos;
-
   msd2_actualizarDisplayTurno();
-
   msd2_iniciarTimerLocal();
 
-  // ------------------------------------------------------
-  // 9️⃣ RECARGAR COLA LOCAL
-  // ------------------------------------------------------
+  // 9⃣ RECARGAR COLA LOCAL
   await msd2_cargarColaDesdeBD();
 };
+
 
 // ------------------------------------------------------
 // ⏸ PAUSAR / ▶ CONTINUAR
@@ -1697,207 +1665,207 @@ async function verDetalleReunion(reunionId) {
 // 🎙 CARGAR AUDIOS DE REUNIÓN (Exposición + lista + 1 player)
 // ======================================================
 async function cargarAudiosReunion(reunionId) {
-  try {
-    const contenedor = document.getElementById("detalle-reunion-audios");
-    if (!contenedor) return;
-    contenedor.innerHTML = "<p>Cargando audios...</p>";
-
-    // =====================================
-    // 1) EXPOSICIÓN PRINCIPAL (MISMO ESTILO)
-    // =====================================
-    let htmlExpos = "";
     try {
-      const { data: expos, error: errExpos } = await supabase
-        .from("reunion_exposiciones")
-        .select("*")
-        .eq("reunion_id", reunionId)
-        .order("creado_en", { ascending: true })
-        .limit(1);
+        const contenedor = document.getElementById("detalle-reunion-audios");
+        if (!contenedor) return;
+        contenedor.innerHTML = "<p>Cargando audios...</p>";
 
-      if (errExpos) {
-        console.warn("⚠ Error cargando exposición:", errExpos);
-      } else if (expos && expos.length > 0) {
-        const exp = expos[0];
+        // =====================================
+        // 1) EXPOSICIÓN PRINCIPAL (MISMO ESTILO)
+        // =====================================
+        let htmlExpos = "";
+        try {
+            const { data: expos, error: errExpos } = await supabase
+                .from("reunion_exposiciones")
+                .select("*")
+                .eq("reunion_id", reunionId)
+                .order("creado_en", { ascending: true })
+                .limit(1);
 
-        let exposUrl = "";
-        if (exp.audio_path) {
-          const { data: signed } = await supabase
-            .storage
-            .from("reunion_exposiciones")
-            .createSignedUrl(exp.audio_path, 3600);
-          exposUrl = signed?.signedUrl || "";
-        }
+            if (errExpos) {
+                console.warn("⚠ Error cargando exposición:", errExpos);
+            } else if (expos && expos.length > 0) {
+                const exp = expos[0];
 
-        htmlExpos = `
-          <div class="mec-audio-card">
-            <div class="mec-audio-header">
-              <div class="mec-audio-usuario">
-                🎙 Exposición principal
-              </div>
-            </div>
-            ${
-              exposUrl
-                ? `
-                  <audio controls class="mec-audio-player">
-                    <source src="${exposUrl}" type="audio/webm">
-                  </audio>
-                  <p style="font-size:12px; color:#4b5563; margin-top:4px;">
-                    Duración: ${
-                      exp.duracion_segundos != null
-                        ? (exp.duracion_segundos >= 60
-                            ? (exp.duracion_segundos/60).toFixed(1) + " min"
-                            : exp.duracion_segundos + " seg")
-                        : "-"
-                    }
-                  </p>
-                `
-                : `
-                  <div class="mec-audio-error">
-                    Audio de exposición no disponible
-                  </div>
-                `
+                let exposUrl = "";
+                if (exp.audio_path) {
+                    const { data: signed } = await supabase
+                        .storage
+                        .from("reunion_exposiciones")
+                        .createSignedUrl(exp.audio_path, 3600);
+                    exposUrl = signed?.signedUrl || "";
+                }
+
+                htmlExpos = `
+                    <div class="mec-audio-card">
+                        <div class="mec-audio-header">
+                            <div class="mec-audio-usuario">
+                                🎙 Exposición principal
+                            </div>
+                        </div>
+                        ${
+                            exposUrl
+                                ? `
+                                    <audio controls class="mec-audio-player">
+                                        <source src="${exposUrl}" type="audio/webm">
+                                    </audio>
+                                    <p style="font-size:12px; color:#4b5563; margin-top:4px;">
+                                        Duración: ${
+                                            exp.duracion_segundos != null
+                                                ? (exp.duracion_segundos >= 60
+                                                    ? (exp.duracion_segundos/60).toFixed(1) + " min"
+                                                    : exp.duracion_segundos + " seg")
+                                                : "-"
+                                        }
+                                    </p>
+                                  `
+                                : `
+                                    <div class="mec-audio-error">
+                                        Audio de exposición no disponible
+                                    </div>
+                                  `
+                        }
+                    </div>
+                `;
             }
-          </div>
-        `;
-      }
-    } catch (e) {
-      console.warn("⚠ Error inesperado cargando exposición:", e);
-    }
-
-    // =====================================
-    // 2) INTERVENCIONES → LISTA + 1 PLAYER
-    // =====================================
-    const { data, error } = await supabase
-      .from("reunion_intervenciones")
-      .select("*")
-      .eq("reunion_id", reunionId)
-      .order("orden", { ascending: true });
-
-    if (error) {
-      console.error(error);
-      contenedor.innerHTML = htmlExpos || "<p>Error cargando intervenciones.</p>";
-      return;
-    }
-
-    if (!data || data.length === 0) {
-      contenedor.innerHTML = `
-        ${htmlExpos}
-        <p>No existen intervenciones grabadas.</p>
-      `;
-      return;
-    }
-
-    // 🔹 REFERENCIA DE TIEMPO:
-    // Usamos la fecha de la PRIMERA intervención como t=0 de la reunión
-    const fechaReferenciaMs = data[0].fecha
-      ? new Date(data[0].fecha).getTime()
-      : null;
-
-    // Generar filas de lista (sin <audio> aún)
-    const itemsLista = await Promise.all(
-      data.map(async (intervencion, idx) => {
-        let audioUrl = "";
-        if (intervencion.audio_path) {
-          const { data: signedData } = await supabase
-            .storage
-            .from("reunion_intervenciones")
-            .createSignedUrl(intervencion.audio_path, 3600);
-          audioUrl = signedData?.signedUrl || "";
+        } catch (e) {
+            console.warn("⚠ Error inesperado cargando exposición:", e);
         }
+
+        // =====================================
+        // 2) INTERVENCIONES → LISTA + 1 PLAYER
+        // =====================================
+        const { data, error } = await supabase
+            .from("reunion_intervenciones")
+            .select("*")
+            .eq("reunion_id", reunionId)
+            .order("orden", { ascending: true });
+
+        if (error) {
+            console.error(error);
+            contenedor.innerHTML = htmlExpos || "<p>Error cargando intervenciones.</p>";
+            return;
+        }
+
+        if (!data || data.length === 0) {
+            contenedor.innerHTML = `
+                ${htmlExpos}
+                <p>No existen intervenciones grabadas.</p>
+            `;
+            return;
+        }
+
+        // Generar filas de lista (sin <audio> aún)
+        const itemsLista = await Promise.all(
+            data.map(async (intervencion, idx) => {
+                let audioUrl = "";
+                if (intervencion.audio_path) {
+                    const { data: signedData } = await supabase
+                        .storage
+                        .from("reunion_intervenciones")
+                        .createSignedUrl(intervencion.audio_path, 3600);
+                    audioUrl = signedData?.signedUrl || "";
+                }
 
         const numero = intervencion.orden || (idx + 1);
         const nombre = intervencion.socio_nombre || "Socio";
-        const duracion = Number(intervencion.duracion_segundos || 0);
 
-        // 🔹 Cálculo del INSTANTE respecto a fechaReferenciaMs
-        let instanteSeg = 0;
-        if (fechaReferenciaMs && intervencion.fecha) {
-          const fechaIntervencionMs = new Date(intervencion.fecha).getTime();
-          instanteSeg = Math.max(
-            0,
-            Math.round((fechaIntervencionMs - fechaReferenciaMs) / 1000)
-          );
-        }
+        const duracion =
+            Number(intervencion.duracion_segundos || 0);
+
+        const instante =
+            Number(intervencion.segundo_en_exposicion || 0);
 
         function formatearTiempo(totalSegundos) {
-          const horas = Math.floor(totalSegundos / 3600);
-          const minutos = Math.floor((totalSegundos % 3600) / 60);
-          const segundos = totalSegundos % 60;
-          return [horas, minutos, segundos]
+
+            const horas =
+                Math.floor(totalSegundos / 3600);
+
+            const minutos =
+                Math.floor((totalSegundos % 3600) / 60);
+
+            const segundos =
+                totalSegundos % 60;
+
+            return [
+                horas,
+                minutos,
+                segundos
+            ]
             .map(v => String(v).padStart(2, "0"))
             .join(":");
         }
 
         return `
-          <li
-            class="mec-intervencion-item"
-            data-audio-url="${audioUrl}"
-          >
-            <span>
-              <strong>#${numero}</strong> :
-              (${formatearTiempo(duracion)})
-              ${nombre}
-              (${formatearTiempo(instanteSeg)})
-            </span>
-
-            <button
-              type="button"
-              class="btn-mini btn-play-intervencion"
+            <li
+                class="mec-intervencion-item"
+                data-audio-url="${audioUrl}"
             >
-              ▶ Oír
-            </button>
-          </li>
+                <span>
+                    <strong>#${numero}</strong> :
+                    (${formatearTiempo(duracion)})
+                    ${nombre}
+                    (${formatearTiempo(instante)})
+                </span>
+
+                <button
+                    type="button"
+                    class="btn-mini btn-play-intervencion"
+                >
+                    ▶ Oír
+                </button>
+            </li>
         `;
-      })
-    );
+            })
+        );
 
-    const htmlIntervenciones = `
-      <div class="mec-audio-card">
-        <div class="mec-audio-header">
-          <div class="mec-audio-usuario">
-            🎤 Intervenciones (${data.length})
-          </div>
-        </div>
-        <ul style="list-style:none; padding-left:0; margin:8px 0;">
-          ${itemsLista.join("")}
-        </ul>
-        <div style="margin-top:10px;">
-          <audio
-            id="mec-player-intervencion"
-            controls
-            class="mec-audio-player"
-          ></audio>
-        </div>
-      </div>
-    `;
+        const htmlIntervenciones = `
+            <div class="mec-audio-card">
+                <div class="mec-audio-header">
+                    <div class="mec-audio-usuario">
+                        🎤 Intervenciones (${data.length})
+                    </div>
+                </div>
+                <ul style="list-style:none; padding-left:0; margin:8px 0;">
+                    ${itemsLista.join("")}
+                </ul>
+                <div style="margin-top:10px;">
+                    <audio
+                        id="mec-player-intervencion"
+                        controls
+                        class="mec-audio-player"
+                    ></audio>
+                </div>
+            </div>
+        `;
 
-    contenedor.innerHTML = htmlExpos + htmlIntervenciones;
+        contenedor.innerHTML = htmlExpos + htmlIntervenciones;
 
-    // =====================================
-    // 3) CONECTAR BOTONES "▶ Oír" AL ÚNICO PLAYER
-    // =====================================
-    const player = document.getElementById("mec-player-intervencion");
-    const botones = contenedor.querySelectorAll(".btn-play-intervencion");
+        // =====================================
+        // 3) CONECTAR BOTONES "▶ Oír" AL ÚNICO PLAYER
+        // =====================================
+        const player = document.getElementById("mec-player-intervencion");
+        const botones = contenedor.querySelectorAll(".btn-play-intervencion");
 
-    botones.forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const li = btn.closest(".mec-intervencion-item");
-        if (!li) return;
-        const url = li.getAttribute("data-audio-url");
-        if (!url) {
-          alert("Audio no disponible para esta intervención.");
-          return;
-        }
-        player.src = url;
-        player.play().catch(() => {
-          // Evitar error silencioso si el navegador bloquea autoplay
+        botones.forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const li = btn.closest(".mec-intervencion-item");
+                if (!li) return;
+                const url = li.getAttribute("data-audio-url");
+                if (!url) {
+                    alert("Audio no disponible para esta intervención.");
+                    return;
+                }
+                player.src = url;
+                player.play().catch(() => {
+                    // Evitar error silencioso si el navegador bloquea autoplay
+                });
+            });
         });
-      });
-    });
 
-  } catch (err) {
-    console.error("❌ Error inesperado cargando audios:", err);
-  }
+    } catch (err) {
+        console.error("❌ Error inesperado cargando audios:", err);
+    }
 }
 
 
@@ -2342,45 +2310,59 @@ async function iniciarGrabacionOrador(reunionPayload) {
     // ======================================================
     // 🎙 ASEGURAR AUDIO ENGINE
     // ======================================================
-    const stream = await activarMicrofonoMEC();
+    const stream =
+    await activarMicrofonoMEC();
     if (!stream) {
-      console.warn("⚠️ No existe stream de audio disponible.");
-      window.msd2_grabacion.iniciando = false;
-      return;
+    console.warn(
+        "⚠️ No existe stream de audio disponible."
+    );
+    window.msd2_grabacion.iniciando = false;
+    return;
     }
 
     // ======================================================
     // 🔥 VALIDAR STREAM MUERTO
     // ======================================================
-    if (!stream.active) {
-      console.warn("⚠️ Stream inactivo.");
-      window.mecAudio.stream = null;
-      window.msd2_grabacion.iniciando = false;
-      return;
+    if (!stream.active) {console.warn("⚠️ Stream inactivo.");
+    window.mecAudio.stream = null;
+    window.msd2_grabacion.iniciando = false;
+    return;
     }
 
     // ======================================================
     // 🔥 VALIDAR TRACKS ACTIVOS
     // ======================================================
-    const tracksActivos = stream.getAudioTracks().filter(
-      track => track.readyState === "live"
-    );
-    if (tracksActivos.length === 0) {
-      console.warn("⚠️ No existen tracks activos.");
-      window.mecAudio.stream = null;
-      window.msd2_grabacion.iniciando = false;
-      return;
+    const tracksActivos =
+      stream.getAudioTracks().filter(
+        track => track.readyState === "live"
+      );
+    if (tracksActivos.length === 0) {console.warn("⚠️ No existen tracks activos.");
+    window.mecAudio.stream = null;
+    window.msd2_grabacion.iniciando = false;
+    return;
     }
 
     // ======================================================
     // 🔥 FIX COMPATIBILIDAD CELULAR (MEC)
     // ======================================================
     let mimeType = "";
-    if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
-      mimeType = "audio/webm;codecs=opus";
-    } else if (MediaRecorder.isTypeSupported("audio/webm")) {
+    if (
+      MediaRecorder.isTypeSupported(
+        "audio/webm;codecs=opus"
+      )
+    ) {
+      mimeType ="audio/webm;codecs=opus";
+    } else if (
+      MediaRecorder.isTypeSupported(
+        "audio/webm"
+      )
+    ) {
       mimeType = "audio/webm";
-    } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
+    } else if (
+      MediaRecorder.isTypeSupported(
+        "audio/mp4"
+      )
+    ) {
       mimeType = "audio/mp4";
     } else {
       mimeType = "";
@@ -2390,17 +2372,22 @@ async function iniciarGrabacionOrador(reunionPayload) {
     // 🔥 VALIDAR SOPORTE MediaRecorder
     // ======================================================
     if (typeof MediaRecorder === "undefined") {
-      console.error("❌ MediaRecorder no soportado.");
+      console.error(
+        "❌ MediaRecorder no soportado."
+      );
       window.msd2_grabacion.iniciando = false;
       return;
     }
-
     const mediaRecorder = mimeType
-      ? new MediaRecorder(stream, { mimeType })
+      ? new MediaRecorder(
+          stream,
+          { mimeType }
+        )
       : new MediaRecorder(stream);
-
     const isMobile =
-      /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      /Android|iPhone|iPad|iPod/i.test(
+        navigator.userAgent
+      );
 
     // ==================================================
     // 🔑 NUEVA INTERVENCIÓN ÚNICA
@@ -2413,25 +2400,6 @@ async function iniciarGrabacionOrador(reunionPayload) {
     window.msd2_grabacion.intervencionId = intervencionId;
     window.msd2_grabacion.inicioIntervencion = Date.now();
 
-    
-// ⏱️ Instante de intervención respecto al inicio de la reunión
-let instanteReunion = null;
-
-if (window.msd2RelojReunionInicio) {
-  instanteReunion = Math.max(
-    0,
-    Math.round(
-      (window.msd2_grabacion.inicioIntervencion - window.msd2RelojReunionInicio) / 1000
-    )
-  );
-} else {
-  // Si por algún motivo no se fijó (caso extremo), usamos 0
-  instanteReunion = 0;
-}
-
-window.msd2_grabacion.segundoInicioRelojMaestro = instanteReunion;
-
-
     // 🔓 liberar lock inicio
     window.msd2_grabacion.iniciando = false;
 
@@ -2441,7 +2409,9 @@ window.msd2_grabacion.segundoInicioRelojMaestro = instanteReunion;
     mediaRecorder.ondataavailable = (e) => {
       if (e.data && e.data.size > 0) {
         console.log("📦 Chunk recibido:", e.data.size);
-        window.msd2_grabacion.chunks.push(e.data);
+        window.msd2_grabacion.chunks.push(
+          e.data
+        );
       }
     };
 
@@ -2449,94 +2419,96 @@ window.msd2_grabacion.segundoInicioRelojMaestro = instanteReunion;
     // ❌ Error MediaRecorder
     // =========================================
     mediaRecorder.onerror = (event) => {
-      console.error("❌ MediaRecorder error:", event);
+      console.error("❌ MediaRecorder error:",event);
     };
 
     // =========================================
     // 🛑 Al detener grabación
     // =========================================
-    mediaRecorder.onstop = async () => {
-      try {
-        console.log("🛑 Grabación detenida, procesando Blob...");
-        const chunks = window.msd2_grabacion.chunks || [];
-        console.log("📦 Total chunks:", chunks.length);
+mediaRecorder.onstop = async () => {
+  try {
+    console.log(" Grabación detenida, procesando Blob...");
+    const chunks = window.msd2_grabacion.chunks || [];
+    console.log("📦 Total chunks:", chunks.length);
+    if (chunks.length === 0) {
+      console.warn("⚠ No existen chunks de audio.");
+      return;
+    }
 
-        if (chunks.length === 0) {
-          console.warn("⚠️ No existen chunks de audio.");
-          return;
-        }
+    const blob = new Blob(chunks, { type: mimeType || "audio/webm" });
+    console.log("🎧 Blob generado:", blob.size);
+    if (!blob || blob.size === 0) {
+      console.warn("⚠ Blob vacío, no se guarda intervención.");
+      return;
+    }
 
-        const blob = new Blob(chunks, { type: mimeType || "audio/webm" });
-        console.log("🎧 Blob generado:", blob.size);
+    if (
+      !window.msd2_grabacion.reunionId ||
+      !window.msd2_grabacion.intervencionId
+    ) {
+      console.warn("⚠ Faltan IDs, no se guarda intervención.");
+      return;
+    }
 
-        if (!blob || blob.size === 0) {
-          console.warn("⚠️ Blob vacío, no se guarda intervención.");
-          return;
-        }
+    // 🔹 Duración: desde que guardamos inicioIntervencionMs
+    const duracionSegundos = Math.max(
+      1,
+      Math.round(
+        (Date.now() - (window.msd2_grabacion.inicioIntervencionMs || Date.now())) / 1000
+      )
+    );
 
-        if (
-          !window.msd2_grabacion.reunionId ||
-          !window.msd2_grabacion.intervencionId
-        ) {
-          console.warn("⚠️ Faltan IDs, no se guarda intervención.");
-          return;
-        }
+    // 🔹 Instante: el que capturamos al iniciar turno (reloj maestro)
+    const segundoEnExposicion =
+      window.msd2_grabacion.instanteIntervencion != null
+        ? window.msd2_grabacion.instanteIntervencion
+        : null;
 
-const duracionSegundos = Math.max(
-  1,
-  Math.round(
-    (Date.now() - window.msd2_grabacion.inicioIntervencion) / 1000
-  )
-);
+    await guardarIntervencionAudio(
+      blob,
+      window.msd2_grabacion.reunionId,
+      window.msd2_grabacion.intervencionId,
+      duracionSegundos,
+      segundoEnExposicion
+    );
+  } catch (err) {
+    console.error(
+      "❌ Error post-procesando grabación:",
+      err
+    );
+  } finally {
+    // limpiar estado
+    window.msd2_grabacion.chunks = [];
+    window.msd2_grabacion.mediaRecorder = null;
+    window.msd2_grabacion.grabando = false;
+    window.msd2_grabacion.iniciando = false;
+    window.msd2_grabacion.guardando = false;
+    window.msd2_grabacion.reunionId = null;
+    window.msd2_grabacion.intervencionId = null;
+  }
+};
 
-// Usar directamente el instante calculado al inicio
-let segundoEnReunion = null;
-if (
-  typeof window.msd2_grabacion.segundoInicioRelojMaestro === "number" &&
-  window.msd2_grabacion.segundoInicioRelojMaestro >= 0
-) {
-  segundoEnReunion = window.msd2_grabacion.segundoInicioRelojMaestro;
-}
 
-await guardarIntervencionAudio(
-  blob,
-  window.msd2_grabacion.reunionId,
-  window.msd2_grabacion.intervencionId,
-  duracionSegundos,
-  segundoEnReunion
-);
-
-      } catch (err) {
-        console.error("❌ Error post-procesando grabación:", err);
-      } finally {
-        // 🧹 limpiar estado
-        window.msd2_grabacion.chunks = [];
-        window.msd2_grabacion.mediaRecorder = null;
-        window.msd2_grabacion.grabando = false;
-        window.msd2_grabacion.iniciando = false;
-        window.msd2_grabacion.guardando = false;
-        window.msd2_grabacion.reunionId = null;
-        window.msd2_grabacion.intervencionId = null;
-        window.msd2_grabacion.segundoInicioRelojMaestro = null;
-      }
-    };
-
-    // ======================================================
-    // ▶ START UNIVERSAL ESTABLE
-    // ======================================================
-    console.log("🎙 MediaRecorder.start() universal");
-    mediaRecorder.start();
+// ======================================================
+// ▶ START UNIVERSAL ESTABLE
+// ======================================================
+console.log("🎙 MediaRecorder.start() universal");
+mediaRecorder.start();
     console.log("✅ MediaRecorder.start() OK");
-
-    const aviso = document.getElementById("msd2-aviso-orador");
+    const aviso =
+      document.getElementById(
+        "msd2-aviso-orador"
+      );
     if (aviso) {
-      aviso.textContent = "🎙 Estás interviniendo (audio grabándose)";
+      aviso.textContent =
+        "🎙 Estás interviniendo (audio grabándose)";
       aviso.style.display = "block";
     }
   } catch (err) {
+
     // 🔓 liberar lock si falla permiso micro
     window.msd2_grabacion.iniciando = false;
-    window.msd2_grabacion.grabando = false;
+    window.msd2_grabacion.grabando =  false;
     console.error("❌ No se pudo iniciar grabación:", err);
     console.error("⚠️ No fue posible acceder al micrófono.");
   }
@@ -2548,20 +2520,21 @@ await guardarIntervencionAudio(
 function detenerYGuardarGrabacion() {
   try {
     // 🚫 No existe grabación activa
+
     if (
       !window.msd2_grabacion.grabando ||
       !window.msd2_grabacion.mediaRecorder
     ) {
       return;
     }
-
-    const recorder = window.msd2_grabacion.mediaRecorder;
-
+    const recorder =
+      window.msd2_grabacion.mediaRecorder;
     // 🚫 Evitar doble stop()
-    if (recorder.state === "inactive") {
+    if (
+      recorder.state === "inactive"
+    ) {
       return;
     }
-
     console.log("⏹ Solicitando stop() al MediaRecorder...");
 
     // ======================================================
@@ -2573,22 +2546,18 @@ function detenerYGuardarGrabacion() {
     // ⏹ STOP UNIVERSAL ESTABLE
     // ======================================================
     try {
-      recorder.stop();
+    recorder.stop();
     } catch (err) {
-      console.error("❌ Error stop recorder:", err);
+    console.error("❌ Error stop recorder:", err);
     }
 
     // 📢 ocultar aviso
     const aviso = document.getElementById("msd2-aviso-orador");
-    if (aviso) {
-      aviso.textContent = "";
-      aviso.style.display = "none";
-    }
+    if (aviso) {aviso.textContent = "";aviso.style.display = "none";}
   } catch (err) {
-    console.error("❌ Error deteniendo grabación:", err);
+    console.error("❌ Error deteniendo grabación:",err);
   }
 }
-
 
 // ======================================================
 // 🎙 BOTÓN ACTIVAR MICRÓFONO

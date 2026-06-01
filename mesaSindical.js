@@ -335,6 +335,14 @@ function msd2_detenerTimer() {
   }
 }
 
+
+// AGREGADO O3 IA 
+function msd2_masterSegundos() {
+  if (!window.msd2RelojMaestro?.inicioMs) return 0;
+  return Math.floor((Date.now() - window.msd2RelojMaestro.inicioMs) / 1000);
+}
+
+
 // ======================================================
 // 🟢 REGISTRAR PARTICIPANTE EN REUNIÓN (ASISTENCIA)
 // Se ejecuta automáticamente al entrar a la sala
@@ -663,38 +671,33 @@ function msd2_actualizarDisplayTurno() {
 }
 
 // ------------------------------------------------------
-// LEER RELOJ MAESTRO (segundos desde inicio_reunion)
-// ------------------------------------------------------
-function msd2_leerRelojMaestroSegundos() {
-  if (!window.msd2RelojMaestro || !window.msd2RelojMaestro.inicioMs) {
-    return null;
-  }
-  const ahoraMs = Date.now();
-  const diffSeg = Math.floor((ahoraMs - window.msd2RelojMaestro.inicioMs) / 1000);
-  return diffSeg >= 0 ? diffSeg : 0;
-}
-
-
-// ------------------------------------------------------
 // CONTROLES MODERADOR (FULL SINCRONIZADOS + ORADOR)
 // VERSION CORREGIDA 🔥
 // ------------------------------------------------------
 window.msd2_iniciarTurno = async function () {
+
   // 🔒 Solo moderador
   if (!msd2_esModeradorActual()) {
+
     alert("Solo el moderador puede controlar el tiempo.");
+
     return;
   }
 
   const reunion = window.reunionFederacionActual;
+
   if (!reunion) {
+
     console.error("❌ No existe reunión activa");
+
     return;
   }
 
-  console.log(" Iniciando turno...");
+  console.log("🎤 Iniciando turno...");
 
-  // 1⃣ OBTENER COLA ACTUAL
+  // ------------------------------------------------------
+  // 1️⃣ OBTENER COLA ACTUAL
+  // ------------------------------------------------------
   const { data: cola, error } = await supabase
     .from("reuniones_turnos")
     .select("*")
@@ -702,84 +705,123 @@ window.msd2_iniciarTurno = async function () {
     .order("creado_en", { ascending: true });
 
   if (error) {
+
     console.error("❌ Error obteniendo cola:", error);
+
     return;
   }
 
-  // 2⃣ VALIDAR COLA
+  // ------------------------------------------------------
+  // 2️⃣ VALIDAR COLA
+  // ------------------------------------------------------
   if (!cola || cola.length === 0) {
+
     alert("No hay personas en la cola.");
+
     return;
   }
 
-  // 3⃣ TOMAR PRIMER ORADOR
+  // ------------------------------------------------------
+  // 3️⃣ TOMAR PRIMER ORADOR
+  // ------------------------------------------------------
   const orador = cola[0];
+
   console.log("🗣 Próximo orador:", orador.nombre);
 
-  // 4⃣ FEEDBACK VISUAL LOCAL INMEDIATO
+  // ------------------------------------------------------
+  // 4️⃣ FEEDBACK VISUAL LOCAL INMEDIATO
+  // ------------------------------------------------------
   const hablandoNombre = document.getElementById("msd2-hablando-nombre");
+
   if (hablandoNombre) {
+
     hablandoNombre.textContent = orador.nombre;
   }
 
-  // 5⃣ DURACIÓN DEL TURNO
+  // ------------------------------------------------------
+  // 5️⃣ DURACIÓN DEL TURNO
+  // ------------------------------------------------------
   const durInput = document.getElementById("msd2-duracion-min");
-  const min = durInput ? Number(durInput.value || 3) : 3;
+
+  const min = durInput
+    ? Number(durInput.value || 3)
+    : 3;
+
   const segundos = min * 60;
 
-  // 🔹 5.b INSTANTE DE INTERVENCIÓN (RELOJ MAESTRO)
-  const instanteIntervencion = msd2_leerRelojMaestroSegundos();
-  window.msd2_grabacion = window.msd2_grabacion || {};
-  window.msd2_grabacion.instanteIntervencion = instanteIntervencion;
-  window.msd2_grabacion.inicioIntervencionMs = Date.now();
+   window.msd2_grabacion.instanteIntervencion = msd2_masterSegundos();
 
-  // 6⃣ ELIMINAR ORADOR DE LA COLA
+  // ------------------------------------------------------
+  // 6️⃣ ELIMINAR ORADOR DE LA COLA
+  // 🔥 ESTO ERA EL BUG PRINCIPAL
+  // ------------------------------------------------------
   const { error: deleteError } = await supabase
     .from("reuniones_turnos")
     .delete()
     .eq("id", orador.id);
 
   if (deleteError) {
+
     console.error("❌ Error eliminando turno:", deleteError);
+
     return;
   }
-  console.log(" Turno removido de cola");
 
-  // 🎙 PAUSAR EXPOSICIÓN AUTOMÁTICA (tu código original)
-  if (
-    window.msd2Expositor &&
-    window.msd2Expositor.estado === "recording"
-  ) {
-    msd2PausarExposicion();
-    window.msd2Expositor.autoPaused = true;
-    console.log("🎙 Exposición pausada automáticamente por turno");
-  }
+  console.log("🧹 Turno removido de cola");
 
-  // 7⃣ ACTUALIZAR ESTADO DE REUNIÓN
+// ======================================================
+// 🎙 PAUSAR EXPOSICIÓN AUTOMÁTICA
+// ======================================================
+
+if (
+  window.msd2Expositor &&
+  window.msd2Expositor.estado === "recording"
+) {
+
+  msd2PausarExposicion();
+  window.msd2Expositor.autoPaused = true;
+  console.log("🎙 Exposición pausada automáticamente por turno");
+}
+
+  // ------------------------------------------------------
+  // 7️⃣ ACTUALIZAR ESTADO DE REUNIÓN
+  // ------------------------------------------------------
   const { error: updateError } = await supabase
     .from("reuniones")
     .update({
+
       seg_restantes: segundos,
+
       reloj_activo: true,
+
       orador_actual_id: orador.socio_id
+
     })
     .eq("id", reunion.id);
 
   if (updateError) {
+
     console.error("❌ Error iniciando turno:", updateError);
+
     return;
   }
+
   console.log("✅ Turno iniciado correctamente");
 
-  // 8⃣ ACTUALIZAR UI LOCAL
+  // ------------------------------------------------------
+  // 8️⃣ ACTUALIZAR UI LOCAL
+  // ------------------------------------------------------
   window.msd2_estado.segRestantes = segundos;
+
   msd2_actualizarDisplayTurno();
+
   msd2_iniciarTimerLocal();
 
-  // 9⃣ RECARGAR COLA LOCAL
+  // ------------------------------------------------------
+  // 9️⃣ RECARGAR COLA LOCAL
+  // ------------------------------------------------------
   await msd2_cargarColaDesdeBD();
 };
-
 
 // ------------------------------------------------------
 // ⏸ PAUSAR / ▶ CONTINUAR
@@ -2425,69 +2467,71 @@ async function iniciarGrabacionOrador(reunionPayload) {
     // =========================================
     // 🛑 Al detener grabación
     // =========================================
-mediaRecorder.onstop = async () => {
-  try {
-    console.log(" Grabación detenida, procesando Blob...");
-    const chunks = window.msd2_grabacion.chunks || [];
-    console.log("📦 Total chunks:", chunks.length);
-    if (chunks.length === 0) {
-      console.warn("⚠ No existen chunks de audio.");
-      return;
-    }
+    mediaRecorder.onstop = async () => {
+      try {
+        console.log(
+          "🛑 Grabación detenida, procesando Blob..."
+        );
+        const chunks = window.msd2_grabacion.chunks || [];
+        console.log("📦 Total chunks:", chunks.length);
+        if (chunks.length === 0) {
+          console.warn("⚠️ No existen chunks de audio.");
+          return;
+        }
+        const blob = new Blob(chunks,{type: mimeType || "audio/webm"});
 
-    const blob = new Blob(chunks, { type: mimeType || "audio/webm" });
-    console.log("🎧 Blob generado:", blob.size);
-    if (!blob || blob.size === 0) {
-      console.warn("⚠ Blob vacío, no se guarda intervención.");
-      return;
-    }
+        console.log("🎧 Blob generado:",blob.size);
 
-    if (
-      !window.msd2_grabacion.reunionId ||
-      !window.msd2_grabacion.intervencionId
-    ) {
-      console.warn("⚠ Faltan IDs, no se guarda intervención.");
-      return;
-    }
+        if (!blob ||blob.size === 0
+        ) {
+          console.warn("⚠️ Blob vacío, no se guarda intervención.");
+          return;
+        }
 
-    // 🔹 Duración: desde que guardamos inicioIntervencionMs
-    const duracionSegundos = Math.max(
-      1,
-      Math.round(
-        (Date.now() - (window.msd2_grabacion.inicioIntervencionMs || Date.now())) / 1000
-      )
-    );
+        if (
+          !window.msd2_grabacion.reunionId ||
+          !window.msd2_grabacion.intervencionId
+        ) {
+          console.warn("⚠️ Faltan IDs, no se guarda intervención.");
+          return;
+        }
+          const duracionSegundos =
+            Math.max(
+              1,
+              Math.round(
+                (
+                  Date.now() -
+                  window.msd2_grabacion.inicioIntervencion
+                ) / 1000
+              )
+            );
 
-    // 🔹 Instante: el que capturamos al iniciar turno (reloj maestro)
-    const segundoEnExposicion =
-      window.msd2_grabacion.instanteIntervencion != null
-        ? window.msd2_grabacion.instanteIntervencion
-        : null;
+          const segundoEnExposicion = window.msd2_grabacion.instanteIntervencion ?? null;
 
-    await guardarIntervencionAudio(
-      blob,
-      window.msd2_grabacion.reunionId,
-      window.msd2_grabacion.intervencionId,
-      duracionSegundos,
-      segundoEnExposicion
-    );
-  } catch (err) {
-    console.error(
-      "❌ Error post-procesando grabación:",
-      err
-    );
-  } finally {
-    // limpiar estado
-    window.msd2_grabacion.chunks = [];
-    window.msd2_grabacion.mediaRecorder = null;
-    window.msd2_grabacion.grabando = false;
-    window.msd2_grabacion.iniciando = false;
-    window.msd2_grabacion.guardando = false;
-    window.msd2_grabacion.reunionId = null;
-    window.msd2_grabacion.intervencionId = null;
-  }
-};
 
+          await guardarIntervencionAudio(
+            blob,
+            window.msd2_grabacion.reunionId,
+            window.msd2_grabacion.intervencionId,
+            duracionSegundos,
+            segundoEnExposicion
+          );
+      } catch (err) {
+        console.error(
+          "❌ Error post-procesando grabación:",
+          err
+        );
+      } finally {
+        // 🧹 limpiar estado
+        window.msd2_grabacion.chunks = [];
+        window.msd2_grabacion.mediaRecorder = null;
+        window.msd2_grabacion.grabando = false;
+        window.msd2_grabacion.iniciando = false;
+        window.msd2_grabacion.guardando = false;
+        window.msd2_grabacion.reunionId = null;
+        window.msd2_grabacion.intervencionId = null;
+      }
+    };
 
 // ======================================================
 // ▶ START UNIVERSAL ESTABLE

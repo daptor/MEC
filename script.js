@@ -2327,89 +2327,42 @@ window.msd2Expositor = {
 };
 
 // ======================================================
-// ▶ INICIAR EXPOSICIÓN  +  INICIO RELOJ MAESTRO
+// ▶ INICIAR EXPOSICIÓN  +  crear Reloj Maestro (memoria)
 // ======================================================
 async function msd2IniciarExposicion() {
   try {
     // evitar doble inicio
-    if (window.msd2Expositor.estado === "recording") {
-      return;
+    if (window.msd2Expositor.estado === "recording") return;
+
+    /* ⏱ Reloj maestro en memoria
+       —si ya existe, no se vuelve a crear— */
+    if (!window.msd2RelojMaestro) {
+      const inicioMs  = Date.now();
+      window.msd2RelojMaestro = {
+        inicioMs,
+        inicioISO: new Date(inicioMs).toISOString()
+      };
+      console.log("⏱ Reloj maestro iniciado:", window.msd2RelojMaestro.inicioISO);
     }
 
-    // 🔹 RELOJ MAESTRO: fijar inicio_reunion solo una vez
-    const reunionId = window.reunionFederacionActual?.id;
-    if (!reunionId) {
-      console.warn("⚠ No hay reunión activa para iniciar exposición.");
-      return;
-    }
+    /*  ── TODO LO DEMÁS ES TU CÓDIGO ORIGINAL ── */
+    const stream   = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const recorder = new MediaRecorder(stream, { mimeType: "audio/webm;codecs=opus" });
 
-    try {
-      const { data: reu, error: errReu } = await supabase
-        .from("reuniones")
-        .select("inicio_reunion")
-        .eq("id", reunionId)
-        .single();
-
-      if (errReu) {
-        console.warn("⚠ No se pudo leer inicio_reunion:", errReu);
-      }
-
-      if (!reu?.inicio_reunion) {
-        const ahoraISO = new Date().toISOString();
-        const { error: errUpd } = await supabase
-          .from("reuniones")
-          .update({ inicio_reunion: ahoraISO })
-          .eq("id", reunionId);
-
-        if (errUpd) {
-          console.warn("⚠ No se pudo guardar inicio_reunion:", errUpd);
-        } else {
-          window.msd2RelojMaestro = {
-            inicioISO: ahoraISO,
-            inicioMs: Date.parse(ahoraISO)
-          };
-        }
-      } else {
-        window.msd2RelojMaestro = {
-          inicioISO: reu.inicio_reunion,
-          inicioMs: Date.parse(reu.inicio_reunion)
-        };
-      }
-    } catch (e) {
-      console.warn("⚠ Error gestionando reloj maestro:", e);
-    }
-
-    // 🔹 LÓGICA ORIGINAL DE GRABACIÓN (sin cambios)
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-    const recorder = new MediaRecorder(stream, {
-      mimeType: "audio/webm;codecs=opus"
-    });
-
-    // limpiar estado
-    window.msd2Expositor.chunks = [];
-    window.msd2Expositor.stream = stream;
+    window.msd2Expositor.chunks   = [];
+    window.msd2Expositor.stream   = stream;
     window.msd2Expositor.recorder = recorder;
-    window.msd2Expositor.estado = "recording";
+    window.msd2Expositor.estado   = "recording";
     msd2ActualizarUIExpositor();
-    window.msd2Expositor.inicio = Date.now();
+    window.msd2Expositor.inicio   = Date.now();
 
-    // capturar chunks
-    recorder.ondataavailable = (event) => {
-      if (event.data.size > 0) {
-        window.msd2Expositor.chunks.push(event.data);
-      }
-    };
-
-    // iniciar grabación
+    recorder.ondataavailable = (e) => e.data.size && window.msd2Expositor.chunks.push(e.data);
     recorder.start();
 
-    // actualizar UI
-    document.getElementById("msd2-estado-expositor").innerHTML = " Exposición grabando";
+    document.getElementById("msd2-estado-expositor").innerText = " Exposición grabando";
     console.log("🎙 Exposición iniciada");
-    console.log(window.msd2Expositor);
-  } catch (error) {
-    console.error("❌ Error iniciar exposición", error);
+  } catch (err) {
+    console.error("❌ iniciar exposición", err);
   }
 }
 

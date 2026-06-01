@@ -335,14 +335,6 @@ function msd2_detenerTimer() {
   }
 }
 
-
-// AGREGADO O3 IA 
-function msd2_masterSegundos() {
-  if (!window.msd2RelojMaestro?.inicioMs) return 0;
-  return Math.floor((Date.now() - window.msd2RelojMaestro.inicioMs) / 1000);
-}
-
-
 // ======================================================
 // 🟢 REGISTRAR PARTICIPANTE EN REUNIÓN (ASISTENCIA)
 // Se ejecuta automáticamente al entrar a la sala
@@ -748,8 +740,6 @@ window.msd2_iniciarTurno = async function () {
     : 3;
 
   const segundos = min * 60;
-
-   window.msd2_grabacion.instanteIntervencion = msd2_masterSegundos();
 
   // ------------------------------------------------------
   // 6️⃣ ELIMINAR ORADOR DE LA COLA
@@ -2506,8 +2496,16 @@ async function iniciarGrabacionOrador(reunionPayload) {
               )
             );
 
-          const segundoEnExposicion = window.msd2_grabacion.instanteIntervencion ?? null;
-
+          const segundoEnExposicion =
+            window.msd2Expositor &&
+            window.msd2Expositor.inicio
+              ? Math.round(
+                  (
+                    Date.now() -
+                    window.msd2Expositor.inicio
+                  ) / 1000
+                ) - duracionSegundos
+              : null;
 
           await guardarIntervencionAudio(
             blob,
@@ -2909,4 +2907,4 @@ window.cargarRankingSindicatos = cargarRankingSindicatos;
 window.cargarRankingDirectores = cargarRankingDirectores;
 window.verDetalleReunion = verDetalleReunion;
 window.cerrarDetalleReunion = cerrarDetalleReunion;
-window.activarMicrofonoMEC = activarMicrofonoMEC;
+window.activarMicrofonoMEC = activarMicrofonoMEC

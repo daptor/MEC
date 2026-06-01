@@ -2327,45 +2327,52 @@ window.msd2Expositor = {
 };
 
 // ======================================================
-// ▶ INICIAR EXPOSICIÓN  +  crear Reloj Maestro (memoria)
+// ▶ INICIAR EXPOSICIÓN
 // ======================================================
 async function msd2IniciarExposicion() {
   try {
     // evitar doble inicio
-    if (window.msd2Expositor.estado === "recording") return;
-
-    /* ⏱ Reloj maestro en memoria
-       —si ya existe, no se vuelve a crear— */
-    if (!window.msd2RelojMaestro) {
-      const inicioMs  = Date.now();
-      window.msd2RelojMaestro = {
-        inicioMs,
-        inicioISO: new Date(inicioMs).toISOString()
-      };
-      console.log("⏱ Reloj maestro iniciado:", window.msd2RelojMaestro.inicioISO);
+    if (
+      window.msd2Expositor.estado === "recording"
+    ) {
+      return;
     }
+    // solicitar micrófono
+    const stream = await navigator.mediaDevices.getUserMedia({audio: true});
 
-    /*  ── TODO LO DEMÁS ES TU CÓDIGO ORIGINAL ── */
-    const stream   = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const recorder = new MediaRecorder(stream, { mimeType: "audio/webm;codecs=opus" });
+    // crear recorder
+    const recorder = new MediaRecorder(stream,
+      {mimeType: "audio/webm;codecs=opus"}
+    );
 
-    window.msd2Expositor.chunks   = [];
-    window.msd2Expositor.stream   = stream;
+    // limpiar estado
+    window.msd2Expositor.chunks = [];
+    window.msd2Expositor.stream = stream;
     window.msd2Expositor.recorder = recorder;
-    window.msd2Expositor.estado   = "recording";
+    window.msd2Expositor.estado = "recording";
     msd2ActualizarUIExpositor();
-    window.msd2Expositor.inicio   = Date.now();
+    window.msd2Expositor.inicio = Date.now();
 
-    recorder.ondataavailable = (e) => e.data.size && window.msd2Expositor.chunks.push(e.data);
+    // capturar chunks
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        window.msd2Expositor.chunks.push(
+          event.data
+        );
+      }
+    };
+
+    // iniciar grabación
     recorder.start();
 
-    document.getElementById("msd2-estado-expositor").innerText = " Exposición grabando";
+    // actualizar UI
+    document.getElementById("msd2-estado-expositor").innerHTML ="🔴 Exposición grabando";
     console.log("🎙 Exposición iniciada");
-  } catch (err) {
-    console.error("❌ iniciar exposición", err);
+    console.log(window.msd2Expositor);
+  } catch(error){
+    console.error("❌ Error iniciar exposición", error);
   }
 }
-
 
 // ======================================================
 // ⏹ FINALIZAR EXPOSICIÓN

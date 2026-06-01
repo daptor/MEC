@@ -2413,20 +2413,23 @@ async function iniciarGrabacionOrador(reunionPayload) {
     window.msd2_grabacion.intervencionId = intervencionId;
     window.msd2_grabacion.inicioIntervencion = Date.now();
 
+    
+// ⏱️ Instante de intervención respecto al inicio de la reunión
+let instanteReunion = null;
 
-// ⏱️ INSTANTE EN RELOJ MAESTRO (TERCER RELOJ)
-// Solo usamos el maestro si YA existía (inicializado desde la exposición).
-// No lo inicializamos aquí con Date.now(), para no “pegarlo” al inicio del orador.
-let instanteMaestro = null;
-
-if (window.msd2RelojMaestro && window.msd2RelojMaestro.inicio) {
-  instanteMaestro = Math.max(
+if (window.msd2RelojReunionInicio) {
+  instanteReunion = Math.max(
     0,
-    Math.round((Date.now() - window.msd2RelojMaestro.inicio) / 1000)
+    Math.round(
+      (window.msd2_grabacion.inicioIntervencion - window.msd2RelojReunionInicio) / 1000
+    )
   );
+} else {
+  // Si por algún motivo no se fijó (caso extremo), usamos 0
+  instanteReunion = 0;
 }
 
-window.msd2_grabacion.segundoInicioRelojMaestro = instanteMaestro;
+window.msd2_grabacion.segundoInicioRelojMaestro = instanteReunion;
 
 
     // 🔓 liberar lock inicio
@@ -2486,30 +2489,13 @@ const duracionSegundos = Math.max(
   )
 );
 
-// ⏱️ Cálculo de "instante" de intervención
+// Usar directamente el instante calculado al inicio
 let segundoEnReunion = null;
-
-// 1) Preferimos el valor capturado del reloj maestro (si existe y > 0)
 if (
   typeof window.msd2_grabacion.segundoInicioRelojMaestro === "number" &&
-  window.msd2_grabacion.segundoInicioRelojMaestro > 0
+  window.msd2_grabacion.segundoInicioRelojMaestro >= 0
 ) {
   segundoEnReunion = window.msd2_grabacion.segundoInicioRelojMaestro;
-}
-
-// 2) Fallback: si no hay maestro válido, usamos exposición.inicio como referencia
-//    instante = (momento en que empezó la intervención) - (inicio de la exposición)
-if (
-  (segundoEnReunion === null || segundoEnReunion === 0) &&
-  window.msd2Expositor &&
-  window.msd2Expositor.inicio
-) {
-  segundoEnReunion = Math.max(
-    0,
-    Math.round(
-      (window.msd2_grabacion.inicioIntervencion - window.msd2Expositor.inicio) / 1000
-    )
-  );
 }
 
 await guardarIntervencionAudio(

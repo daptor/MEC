@@ -718,6 +718,18 @@ window.msd2_iniciarTurno = async function () {
   // ------------------------------------------------------
   const orador = cola[0];
 
+    // --- CORRECCIÓN MEC: CAPTURA DE INSTANTE -----------------------------------------------------
+  const inicioM = new Date(window.reunionFederacionActual.hora_inicio_maestro);
+  const ahoraM = new Date();
+  // Calculamos cuántos segundos han pasado desde el inicio de la reunión hasta este segundo exacto
+  const instanteReal = Math.max(0, Math.floor((ahoraM - inicioM) / 1000));
+
+  // IMPORTANTE: Guardamos este valor en el objeto de la intervención ANTES de que termine
+  // para no tener que calcular nada después.
+  window.msd2_grabacion.instanteCapturado = instanteReal;
+  // ------------------------------------------------------------------------------------------------
+
+
   console.log("🗣 Próximo orador:", orador.nombre);
 
   // ------------------------------------------------------
@@ -1809,23 +1821,12 @@ async function cargarAudiosReunion(reunionId) {
             Number(intervencion.segundo_en_exposicion || 0);
 
         function formatearTiempo(totalSegundos) {
-
-            const horas =
-                Math.floor(totalSegundos / 3600);
-
-            const minutos =
-                Math.floor((totalSegundos % 3600) / 60);
-
-            const segundos =
-                totalSegundos % 60;
-
-            return [
-                horas,
-                minutos,
-                segundos
-            ]
-            .map(v => String(v).padStart(2, "0"))
-            .join(":");
+            const horas = Math.floor(totalSegundos / 3600);
+            const minutos = Math.floor((totalSegundos % 3600) / 60);
+            const segundos = totalSegundos % 60;
+            return [horas, minutos, segundos]
+                .map(v => String(v).padStart(2, "0"))
+                .join(":");
         }
 
         return `
@@ -2496,16 +2497,19 @@ async function iniciarGrabacionOrador(reunionPayload) {
               )
             );
 
-          const segundoEnExposicion =
-            window.msd2Expositor &&
-            window.msd2Expositor.inicio
-              ? Math.round(
-                  (
-                    Date.now() -
-                    window.msd2Expositor.inicio
-                  ) / 1000
-                ) - duracionSegundos
-              : null;
+          // --- CORRECCIÓN MEC: USO DE INSTANTE CAPTURADO ---
+          // Ya no restamos la duración. Usamos el instante que congelamos al iniciar el turno.
+          const segundoEnExposicion = window.msd2_grabacion.instanteCapturado || 0;
+          // -------------------------------------------------
+
+          await guardarIntervencionAudio(
+              blob,
+              window.msd2_grabacion.reunionId,
+              window.msd2_grabacion.intervencionId,
+              duracionSegundos, 
+              segundoEnExposicion // Enviamos el valor limpio
+          );
+
 
           await guardarIntervencionAudio(
             blob,

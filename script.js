@@ -2353,6 +2353,18 @@ async function msd2IniciarExposicion() {
     msd2ActualizarUIExpositor();
     window.msd2Expositor.inicio = Date.now();
 
+// --- CORRECCIÓN MEC: INICIO RELOJ MAESTRO -------------------------------------------
+const inicioAbsoluto = new Date().toISOString();
+// Guardamos en la BD para que sea el punto de verdad para todos los clientes
+await supabase
+    .from("reuniones")
+    .update({ hora_inicio_maestro: inicioAbsoluto })
+    .eq("id", window.reunionFederacionActual.id);
+// También lo guardamos en memoria local para cálculos rápidos
+window.reunionFederacionActual.hora_inicio_maestro = inicioAbsoluto;
+// ------------------------------------------------------------------------------------
+ 
+
     // capturar chunks
     recorder.ondataavailable = (event) => {
       if (event.data.size > 0) {

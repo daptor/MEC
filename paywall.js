@@ -194,17 +194,27 @@ function renderPasoPagoReal() {
 
   document.getElementById("btnPago").onclick = async () => {
     try {
-      // CORRECCIÓN AQUÍ: Agregada la ruta /api/
+      // 1. Obtener la sesión actual para enviar el Token de seguridad
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        alert("Sesión expirada. Por favor, vuelve a ingresar.");
+        return;
+      }
+
+      // 2. Llamada a la API enviando el Token en los Headers (Solución error 401)
       const resp = await fetch("/api/mercadopago/crear-suscripcion", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`
+        },
         body: JSON.stringify({ tipo: "trabajador" }) 
       });
       
       const data = await resp.json();
 
       if (!resp.ok || !data.init_point) {
-        alert("No se pudo iniciar el pago.");
+        alert("No se pudo iniciar el pago: " + (data.error || "Revisa la consola"));
         return;
       }
 

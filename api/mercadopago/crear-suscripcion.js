@@ -21,30 +21,32 @@ function getSupabaseTokenFromCookies(cookieHeader) {
 
 export default async function handler(req, res) {
   try {
-    if (req.method !== "POST") {
-      return res.status(405).send("Method not allowed");
-    }
+    if (req.method !== "POST") return res.status(405).send("Method not allowed");
 
-    // 1) Obtener token del usuario
-    const token = getSupabaseTokenFromCookies(req.headers.cookie || "");
+    // 1) Obtener token del header Authorization
+    const authHeader = req.headers.authorization;
+    const token = authHeader ? authHeader.split(" ")[1] : null;
+
     if (!token) {
-      return res.status(401).json({ error: "No autenticado" });
+      return res.status(401).json({ error: "No autorizado (falta token)" });
     }
 
-    // 2) Cliente Supabase "de usuario" para saber quién es
+    // 2) Cliente Supabase "de usuario" usando el token recibido
     const supabaseUser = createClient(
       process.env.SUPABASE_URL,
       process.env.SUPABASE_SERVICE_KEY,
-      { global: { headers: { Authorization: `Bearer ${token}` } } }
+      { 
+        global: { headers: { Authorization: `Bearer ${token}` } } 
+      }
     );
 
     const { data: userData, error: userError } = await supabaseUser.auth.getUser();
     if (userError || !userData?.user) {
-      return res.status(401).json({ error: "Usuario no encontrado" });
+      return res.status(401).json({ error: "Usuario inválido o sesión expirada" });
     }
     const user = userData.user;
 
-    // 3) Tipo de suscripción (por ahora siempre trabajador)
+       // 3) Tipo de suscripción (por ahora siempre trabajador)
     const { tipo } = req.body || {};
     const plan_id =
       tipo === "sindicato" ? "pro_anual_sindicato" : "pro_mensual_trabajador";

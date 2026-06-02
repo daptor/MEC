@@ -12,46 +12,123 @@ mercadopago.configure({
 
 export default async function handler(req, res) {
   try {
-    const topic = req.query.topic || req.query.type;
+
+    console.log("====================================");
+    console.log("🚀 WEBHOOK MERCADO PAGO RECIBIDO");
+    console.log("METHOD:", req.method);
+    console.log("QUERY:", JSON.stringify(req.query, null, 2));
+    console.log("BODY:", JSON.stringify(req.body, null, 2));
+    console.log("====================================");
+
+    // Mercado Pago puede enviar el tipo en query o body
+    const topic =
+      req.query.topic ||
+      req.query.type ||
+      req.body?.type;
+
+    // Mercado Pago puede enviar el id en distintos formatos
     const id =
       req.query.id ||
-      (req.body && req.body.data && (req.body.data.id || req.body.data.resource_id));
+      req.body?.data?.id ||
+      req.body?.data?.resource_id;
+
+    console.log("📌 topic:", topic);
+    console.log("📌 id:", id);
 
     if (!topic || !id) {
+      console.log("⚠️ Falta topic o id. Se ignora evento.");
       return res.status(200).end();
     }
 
-    // Solo pagos por ahora
+    // Solo pagos
     if (topic !== "payment") {
+      console.log("ℹ️ Evento ignorado:", topic);
       return res.status(200).end();
     }
+
+    console.log("🔍 Consultando pago en Mercado Pago...");
 
     const payment = await mercadopago.payment.findById(id);
     const info = payment.body;
 
+    console.log(
+      "💳 PAYMENT INFO:",
+      JSON.stringify(info, null, 2)
+    );
+
+    console.log("📌 Estado pago:", info.status);
+
     if (info.status !== "approved") {
+      console.log(
+        "⏳ Pago aún no aprobado. Estado:",
+        info.status
+      );
       return res.status(200).end();
     }
 
-    const [user_id, plan_id] = (info.external_reference || "").split(":");
+    const externalReference =
+      info.external_reference || "";
+
+    console.log(
+      "📌 external_reference:",
+      externalReference
+    );
+
+    const [user_id, plan_id] =
+      externalReference.split(":");
+
     if (!user_id || !plan_id) {
+      console.log(
+        "❌ external_reference inválido:",
+        externalReference
+      );
       return res.status(200).end();
     }
 
-    console.log("✅ Pago aprobado para usuario:", user_id, "plan:", plan_id);
+    console.log(
+      "✅ Pago aprobado para usuario:",
+      user_id,
+      "plan:",
+      plan_id
+    );
 
-    // 1) Marcar suscripción como activa
-    await supabaseAdmin
+    // =====================================================
+    // 1) Activar suscripción
+    // =====================================================
+
+    const {
+      data: suscripcionData,
+      error: suscripcionError
+    } = await supabaseAdmin
       .from("suscripciones")
-      .update({ estado: "activa" })
+      .update({
+        estado: "activa"
+      })
       .eq("user_id", user_id)
       .eq("plan", plan_id);
 
-    // 2) Actualizar perfil del usuario a PRO con fechas
-    const ahora = new Date();
-    const hasta = new Date(ahora.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 días
+    console.log("📄 UPDATE SUSCRIPCION:", {
+      user_id,
+      plan_id,
+      suscripcionData,
+      suscripcionError
+    });
 
-    await supabaseAdmin
+    // =====================================================
+    // 2) Actualizar profile
+    // =====================================================
+
+    const ahora = new Date();
+
+    const hasta = new Date(
+      ahora.getTime() +
+      30 * 24 * 60 * 60 * 1000
+    );
+
+    const {
+      data: profileData,
+      error: profileError
+    } = await supabaseAdmin
       .from("profiles")
       .update({
         plan: "pro",
@@ -60,9 +137,34 @@ export default async function handler(req, res) {
       })
       .eq("id", user_id);
 
+    console.log("👤 UPDATE PROFILE:", {
+      user_id,
+      profileData,
+      profileError
+    });
+
+    if (profileError) {
+      console.error(
+        "❌ Error actualizando profile:",
+        profileError
+      );
+    }
+
+    console.log(
+      "🎉 PRO ACTIVADO PARA:",
+      user_id
+    );
+
     return res.status(200).end();
+
   } catch (e) {
-    console.error("MP webhook error:", e);
+
+    console.error(
+      "💥 MP webhook error:"
+    );
+
+    console.error(e);
+
     return res.status(500).end();
   }
 }

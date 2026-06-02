@@ -194,11 +194,13 @@ function renderPasoPagoReal() {
 
   document.getElementById("btnPago").onclick = async () => {
     try {
-      const resp = await fetch("/mercadopago/crear-suscripcion", {
+      // CORRECCIÓN AQUÍ: Agregada la ruta /api/
+      const resp = await fetch("/api/mercadopago/crear-suscripcion", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tipo: "trabajador" }) // luego podrás variar
+        body: JSON.stringify({ tipo: "trabajador" }) 
       });
+      
       const data = await resp.json();
 
       if (!resp.ok || !data.init_point) {

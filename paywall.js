@@ -48,7 +48,7 @@ function cerrarModal() {
 // 🟡 PASO 1 — BLOQUEO
 // =====================================================
 
-function renderPasoBloqueo(featureName="esta función") {
+function renderPasoBloqueo(featureName = "esta función") {
   PAYWALL_STATE = "blocked";
   crearModalBase();
 
@@ -101,7 +101,7 @@ function renderPasoFormulario() {
 }
 
 // =====================================================
-// 🟢 PASO 3 — RPC activar_pro
+// 🟢 PASO 3 — RPC activar_pro (trial)
 // =====================================================
 
 async function guardarDatosPro() {
@@ -144,8 +144,7 @@ async function guardarDatosPro() {
 
     renderPasoExito();
 
-    setTimeout(() => window.planTransition = false, 1500);
-
+    setTimeout(() => (window.planTransition = false), 1500);
   } catch (err) {
     console.error(err);
     alert("Error inesperado");
@@ -172,13 +171,11 @@ function renderPasoExito() {
 }
 
 // =====================================================
-// 💳 PASO EXTRA — PAYWALL REAL (MercadoPago)
+// 💳 PASO EXTRA — PAYWALL REAL (Mercado Pago)
 // =====================================================
+
 function renderPasoPagoReal() {
-
-  // 🔥 ESTA LÍNEA FALTABA
   crearModalBase();
-
   PAYWALL_STATE = "payment";
 
   document.getElementById("paywall-content").innerHTML = `
@@ -195,8 +192,26 @@ function renderPasoPagoReal() {
     </button>
   `;
 
-  document.getElementById("btnPago").onclick = () => {
-    alert("Aquí conectaremos MercadoPago 💳");
+  document.getElementById("btnPago").onclick = async () => {
+    try {
+      const resp = await fetch("/mercadopago/crear-suscripcion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tipo: "trabajador" }) // luego podrás variar
+      });
+      const data = await resp.json();
+
+      if (!resp.ok || !data.init_point) {
+        alert("No se pudo iniciar el pago.");
+        return;
+      }
+
+      // Redirige al checkout de Mercado Pago
+      window.location.href = data.init_point;
+    } catch (e) {
+      console.error(e);
+      alert("Error iniciando pago.");
+    }
   };
 
   document.getElementById("btnCerrar").onclick = cerrarModal;
@@ -206,7 +221,7 @@ function renderPasoPagoReal() {
 // 🔐 API GLOBAL PAYWALL
 // =====================================================
 
-function showPaywall(featureName="esta función") {
+function showPaywall(featureName = "esta función") {
   renderPasoBloqueo(featureName);
 }
 
@@ -220,11 +235,9 @@ function requireFeature(feature, featureName) {
   return true;
 }
 
-// ⭐⭐⭐ ESTA ES LA PIEZA QUE FALTABA ⭐⭐⭐
 // Botón del menú y botones globales usan esto
 function mostrarUpgradeGlobal() {
   console.log("🚀 Botón Activar PRO presionado desde menú/app");
-
   showPaywall("Activar versión PRO");
 }
 
@@ -239,11 +252,8 @@ console.log("💳 Paywall UX V3 cargado");
 // ========================================
 // 💳 IR A PAGO REAL CUANDO ESTÁ EN TRIAL
 // ========================================
+
 window.PAYWALL.irAPago = function () {
-
   console.log("💳 Usuario en trial → abrir pantalla de pago");
-
-  // reutiliza la pantalla de pago que YA existe
   renderPasoPagoReal();
-
 };

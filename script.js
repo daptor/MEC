@@ -2799,4 +2799,4 @@ function actualizarCandadosUI() {
     });
 }
 
-//-- 30 de mayo 2026
+// ------------------  1 DE JUNIO TODO CORRECTO  --------------------------

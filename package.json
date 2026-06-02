@@ -1,0 +1,8 @@
+{
+  "name": "mec-monetizacion",
+  "version": "1.0.0",
+  "dependencies": {
+    "mercadopago": "^1.5.17",
+    "@supabase/supabase-js": "^2.39.0"
+  }
+}

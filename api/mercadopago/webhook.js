@@ -105,7 +105,8 @@ export default async function handler(req, res) {
         estado: "activa"
       })
       .eq("user_id", user_id)
-      .eq("plan", plan_id);
+      .eq("plan", plan_id)
+      .select(); // 👈 añadimos select() para ver qué fila tocó
 
     console.log("📄 UPDATE SUSCRIPCION:", {
       user_id,
@@ -135,13 +136,23 @@ export default async function handler(req, res) {
         pro_desde: ahora.toISOString(),
         pro_hasta: hasta.toISOString()
       })
-      .eq("id", user_id);
+      .eq("id", user_id)
+      .select(); // 👈 clave: ver realmente qué devuelve
 
     console.log("👤 UPDATE PROFILE:", {
       user_id,
       profileData,
       profileError
     });
+
+    // Clasificación según tu plan MEC
+    if (profileError) {
+      console.log(">>> ESCENARIO A: PROFILE ERROR");
+    } else if (Array.isArray(profileData) && profileData.length === 0) {
+      console.log(">>> ESCENARIO B: PROFILE RESULT = [] (0 filas afectadas)");
+    } else if (Array.isArray(profileData) && profileData.length === 1) {
+      console.log(">>> ESCENARIO C: PROFILE ACTUALIZADO:", profileData[0]);
+    }
 
     if (profileError) {
       console.error(

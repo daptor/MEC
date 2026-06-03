@@ -192,37 +192,16 @@ function renderPasoPagoReal() {
     </button>
   `;
 
-  document.getElementById("btnPago").onclick = async () => {
-    try {
-      // 1. Obtener la sesión actual para enviar el Token de seguridad
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        alert("Sesión expirada. Por favor, vuelve a ingresar.");
-        return;
-      }
-
-      // 2. Llamada a la API enviando el Token en los Headers (Solución error 401)
-      const resp = await fetch("/api/mercadopago/crear-suscripcion", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({ tipo: "trabajador" }) 
-      });
-      
-      const data = await resp.json();
-
-      if (!resp.ok || !data.init_point) {
-        alert("No se pudo iniciar el pago: " + (data.error || "Revisa la consola"));
-        return;
-      }
-
-      // Redirige al checkout de Mercado Pago
-      window.location.href = data.init_point;
-    } catch (e) {
-      console.error(e);
-      alert("Error iniciando pago.");
+  // 🔴 AQUÍ ESTABA TU LÓGICA ANTERIOR
+  // La cambiamos para delegar en iniciarPagoMEC (script.js),
+  // que ya envía session + Device ID a /api/mercadopago/crear-suscripcion.
+  document.getElementById("btnPago").onclick = () => {
+    console.log("Iniciando flujo de pago MEC con Device ID...");
+    if (typeof window.iniciarPagoMEC === "function") {
+      window.iniciarPagoMEC();
+    } else {
+      // Fallback por si iniciarPagoMEC no está disponible
+      alert("No se pudo iniciar el pago (función iniciarPagoMEC no disponible).");
     }
   };
 

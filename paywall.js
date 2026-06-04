@@ -57,13 +57,8 @@ function renderPasoBloqueo(featureName = "esta función") {
     <p>Has alcanzado el límite gratuito.</p>
     <p><b>Activa PRO para continuar usando MEC sin límites.</b></p>
 
-    <button id="btnIrRegistro" class="btn-principal">
-      Activar PRO ahora
-    </button>
-
-    <button id="btnCerrar" class="btn-secundario">
-      Volver
-    </button>
+    <button id="btnIrRegistro" class="btn-principal">Activar PRO ahora</button>
+    <button id="btnCerrar" class="btn-secundario">Volver</button>
   `;
 
   document.getElementById("btnIrRegistro").onclick = renderPasoFormulario;
@@ -87,13 +82,8 @@ function renderPasoFormulario() {
     <input id="proRut" placeholder="RUT (ej: 12.345.678-9)"
       style="width:100%;padding:10px;margin-top:10px"/>
 
-    <button id="btnGuardarPro" class="btn-principal">
-      Continuar
-    </button>
-
-    <button id="btnVolver" class="btn-secundario">
-      Volver
-    </button>
+    <button id="btnGuardarPro" class="btn-principal">Continuar</button>
+    <button id="btnVolver" class="btn-secundario">Volver</button>
   `;
 
   document.getElementById("btnGuardarPro").onclick = guardarDatosPro;
@@ -112,10 +102,7 @@ async function guardarDatosPro() {
     const nombre = document.getElementById("proNombre").value.trim();
     const rut = document.getElementById("proRut").value.trim();
 
-    if (!nombre || !rut) {
-      alert("Completa los datos");
-      return;
-    }
+    if (!nombre || !rut) {alert("Completa los datos");return;}
 
     console.log("🟡 RPC activar_pro para:", user.id);
 
@@ -162,9 +149,7 @@ function renderPasoExito() {
     <h2>✅ PRO activado</h2>
     <p><b>Tu acceso PRO temporal está activo.</b></p>
 
-    <button id="cerrarPaywall" class="btn-principal">
-      Continuar usando MEC
-    </button>
+    <button id="cerrarPaywall" class="btn-principal">Continuar usando MEC</button>
   `;
 
   document.getElementById("cerrarPaywall").onclick = cerrarModal;
@@ -180,16 +165,11 @@ function renderPasoPagoReal() {
 
   document.getElementById("paywall-content").innerHTML = `
     <h2>💳 Activar Suscripción PRO</h2>
-    <p>Tu periodo de prueba ya fue utilizado.</p>
+    <p>Tu periodo de prueba ha expirado.</p>
     <p>Para seguir usando MEC debes activar tu suscripción.</p>
 
-    <button id="btnPago" class="btn-principal">
-      Ir a pagar
-    </button>
-
-    <button id="btnCerrar" class="btn-secundario">
-      Volver
-    </button>
+    <button id="btnPago" class="btn-principal">Ir a pagar</button>
+    <button id="btnCerrar" class="btn-secundario">Volver</button>
   `;
 
   // 🔴 AQUÍ ESTABA TU LÓGICA ANTERIOR

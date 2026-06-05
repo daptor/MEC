@@ -490,7 +490,6 @@ function salirAplicacion() {
 }
 
 
-
 // **************** archivo sindical ********************
 document.addEventListener("DOMContentLoaded", function () {
 

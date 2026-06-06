@@ -52,7 +52,7 @@ export default async function handler(req, res) {
       tipo === "sindicato" ? "pro_anual_sindicato" : "pro_mensual_trabajador";
 
     // 4) Precio (duro por ahora)
-    const precio_clp = 100; // Precio temporal para prueba real
+    const precio_clp = 2990; // Precio temporal para prueba real
 
     // 5) Crear preferencia en Mercado Pago
     const preference = {

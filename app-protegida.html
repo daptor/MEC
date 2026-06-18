@@ -387,16 +387,71 @@
       <button onclick="mostrarPantalla('menu-principal')">↩ Menú</button>
   </div>
 
-  <!-- Pantalla de documentos (mostrar solo después de ingresar la clave correctamente) -->
-  <div id="pantalla-documentos" class="pantalla" style="display: none;">
-      <h2 id="nombre-sindicato"></h2>
-      <ul id="lista-documentos-sindicato"></ul>
-      <h3>Documentos Federación</h3>
-      <ul id="lista-documentos-publicos"></ul>
-      <h3>Documentos Interesantes</h3>
-      <ul id="lista-documentos-varios"></ul>
-      <button onclick="mostrarPantalla('menu-principal')">↩ Menú</button>
+<!-- Pantalla de documentos (mostrar solo después de ingresar la clave correctamente) -->
+<div id="pantalla-documentos" class="pantalla" style="display: none;">
+
+  <!-- Cabecera -->
+  <h2 id="nombre-sindicato"></h2>
+
+  <!-- ===================== -->
+  <!-- BLOQUE A: MIS ARCHIVOS -->
+  <!-- ===================== -->
+  <div id="as-bloque-mis-archivos" style="margin-bottom: 18px;">
+    <h3>📂 Mis archivos</h3>
+
+    <!-- Formulario de subida -->
+    <div id="as-form-subida" style="margin-bottom: 12px; padding: 10px; border-radius: 8px; background:#f9fafb;">
+      <p><strong>Subir nuevo archivo</strong></p>
+
+      <input type="file" id="as-file" />
+
+      <input
+        type="text"
+        id="as-nombre"
+        placeholder="Nombre a mostrar (opcional)"
+      />
+
+      <label for="as-tipo">Tipo de documento:</label>
+      <select id="as-tipo">
+        <option value="contrato_colectivo">Contrato colectivo</option>
+        <option value="estatuto">Estatuto</option>
+        <option value="acta">Acta</option>
+        <option value="otro" selected>Otro</option>
+      </select>
+
+      <label for="as-visibilidad">Visibilidad:</label>
+      <select id="as-visibilidad">
+        <option value="privado" selected>Privado (solo mi sindicato)</option>
+        <option value="federacion">Compartido con Federación</option>
+      </select>
+
+      <button id="as-btn-subir">Subir archivo</button>
+    </div>
+
+    <!-- Lista de archivos del sindicato -->
+    <ul id="lista-documentos-sindicato"></ul>
   </div>
+
+  <!-- ========================================= -->
+  <!-- BLOQUE B: ARCHIVOS COMPARTIDOS FEDERACIÓN -->
+  <!-- ========================================= -->
+  <div id="as-bloque-compartidos" style="margin-bottom: 18px;">
+    <h3>🤝 Archivos compartidos con Federación</h3>
+    <ul id="lista-documentos-publicos"></ul>
+  </div>
+
+  <!-- ================================== -->
+  <!-- BLOQUE C: DOCUMENTOS MEC / VARIOS -->
+  <!-- ================================== -->
+  <div id="as-bloque-varios">
+    <h3>📘 Documentos MEC</h3>
+    <ul id="lista-documentos-varios"></ul>
+  </div>
+
+  <!-- Botón Volver al menú -->
+  <button onclick="mostrarPantalla('menu-principal')">↩ Menú</button>
+</div>
+
 
 <!-- Pantalla Mesa Sindical Digital -->
     <div id="pantalla-reunion-acceso" class="pantalla" style="display:none;">

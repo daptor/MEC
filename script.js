@@ -2507,12 +2507,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // ======================================================
 // 📊 Archivo Sindical – Vista Tesorero (admin)
+// Se inicializa cuando el plan/perfil ya están listos (planReady)
 // ======================================================
-document.addEventListener("DOMContentLoaded", function () {
+window.addEventListener("planReady", function () {
   const btnAdmin = document.getElementById("as-btn-admin-consolidado");
   if (!btnAdmin) return;
 
-  // Mostrar botón solo si es admin (tesorero)
   if (window.PERMISSIONS && PERMISSIONS.isAdmin && PERMISSIONS.isAdmin()) {
     btnAdmin.style.display = "block";
 
@@ -2522,6 +2522,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 });
+
 
 // Listar todos los archivos (consolidado)
 async function as_admin_listarConsolidado() {

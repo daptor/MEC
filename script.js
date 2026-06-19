@@ -2084,7 +2084,7 @@ function as_obtenerSindicatoIdDesdeNombre(nombreSindicato) {
 }
 
 // Límite y tipos coherentes con bucket archivos_sindicato
-const AS_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
+const AS_MAX_BYTES = 30 * 1024 * 1024; // 10 MB
 const AS_ALLOWED_MIME = [
   "application/pdf",
   "application/msword",

@@ -2505,5 +2505,158 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
+// ======================================================
+// 📊 Archivo Sindical – Vista Tesorero (admin)
+// ======================================================
+document.addEventListener("DOMContentLoaded", function () {
+  const btnAdmin = document.getElementById("as-btn-admin-consolidado");
+  if (!btnAdmin) return;
+
+  // Mostrar botón solo si es admin (tesorero)
+  if (window.PERMISSIONS && PERMISSIONS.isAdmin && PERMISSIONS.isAdmin()) {
+    btnAdmin.style.display = "block";
+
+    btnAdmin.addEventListener("click", function () {
+      mostrarPantalla("pantalla-archivosindical-admin");
+      as_admin_listarConsolidado();
+    });
+  }
+});
+
+// Listar todos los archivos (consolidado)
+async function as_admin_listarConsolidado() {
+  const tbody = document.getElementById("as-admin-tbody");
+  if (!tbody) return;
+
+  tbody.innerHTML = "<tr><td colspan='7'>Cargando...</td></tr>";
+
+  // Traer archivos + nombre de sindicato
+  const { data, error } = await supabase
+    .from("sindicato_archivos")
+    .select("id, nombre_mostrado, tipo, visibilidad, size_bytes, creado_en, sindicato_id, sindicatos(nombre)")
+    .order("sindicatos(nombre)", { ascending: true })
+    .order("tipo", { ascending: true })
+    .order("creado_en", { ascending: false });
+
+  if (error) {
+    console.error("Error cargando archivos consolidados:", error);
+    tbody.innerHTML = "<tr><td colspan='7'>Error al cargar datos.</td></tr>";
+    return;
+  }
+
+  const archivos = data || [];
+  tbody.innerHTML = "";
+
+  if (!archivos.length) {
+    tbody.innerHTML = "<tr><td colspan='7'>No hay archivos registrados.</td></tr>";
+    return;
+  }
+
+  archivos.forEach(row => {
+    const tr = document.createElement("tr");
+
+    const tam = row.size_bytes
+      ? (Math.round(row.size_bytes / 1024) + " KB")
+      : "N/D";
+
+    const fecha = row.creado_en
+      ? new Date(row.creado_en).toLocaleString("es-CL")
+      : "N/D";
+
+    const visTxt = row.visibilidad === "federacion" ? "Federación" : "Privado";
+
+    tr.innerHTML = `
+      <td>${row.sindicatos?.nombre || row.sindicato_id || ""}</td>
+      <td>${row.nombre_mostrado}</td>
+      <td>${row.tipo || "otro"}</td>
+      <td>${visTxt}</td>
+      <td>${tam}</td>
+      <td>${fecha}</td>
+      <td>
+        <button class="as-admin-ver" data-id="${row.id}">Ver</button>
+        <button class="as-admin-eliminar" data-id="${row.id}">Eliminar</button>
+      </td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+}
+
+// Ver archivo desde vista admin
+document.addEventListener("click", function (ev) {
+  const target = ev.target;
+  if (target.classList.contains("as-admin-ver")) {
+    const id = target.getAttribute("data-id");
+    if (!id) return;
+    supabase
+      .from("sindicato_archivos")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle()
+      .then(async ({ data, error }) => {
+        if (error || !data) {
+          alert("No se pudo obtener el archivo.");
+          return;
+        }
+        const url = await as_crearSignedUrl(data.storage_path);
+        if (url) window.open(url, "_blank");
+      });
+  }
+
+  if (target.classList.contains("as-admin-eliminar")) {
+    const id = target.getAttribute("data-id");
+    if (!id) return;
+    as_admin_eliminarArchivo(id);
+  }
+});
+
+// Eliminar archivo desde vista admin (tesorero)
+async function as_admin_eliminarArchivo(idArchivo) {
+  const confirmar = window.confirm("¿Seguro que deseas eliminar este archivo para todos los usuarios?");
+  if (!confirmar) return;
+
+  // Primero obtener storage_path
+  const { data, error } = await supabase
+    .from("sindicato_archivos")
+    .select("storage_path")
+    .eq("id", idArchivo)
+    .maybeSingle();
+
+  if (error || !data) {
+    console.error("Error obteniendo archivo:", error);
+    alert("No se pudo obtener información del archivo.");
+    return;
+  }
+
+  const storagePath = data.storage_path;
+
+  // Borrar de storage
+  const { error: stErr } = await supabase
+    .storage
+    .from("archivos_sindicato")
+    .remove([storagePath]);
+
+  if (stErr) {
+    console.error("Error borrando archivo de storage:", stErr);
+    alert("No se pudo borrar el archivo del almacenamiento.");
+    return;
+  }
+
+  // Borrar registro en tabla
+  const { error: delErr } = await supabase
+    .from("sindicato_archivos")
+    .delete()
+    .eq("id", idArchivo);
+
+  if (delErr) {
+    console.error("Error borrando registro de archivo:", delErr);
+    alert("No se pudo borrar el registro del archivo.");
+    return;
+  }
+
+  await as_admin_listarConsolidado();
+  alert("Archivo eliminado correctamente.");
+}
+
 
 // ------------------  18 DE JUNIO TODO CORRECTO  --------------------------

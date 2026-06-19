@@ -493,78 +493,6 @@ function salirAplicacion() {
 // **************** archivo sindical ********************
 document.addEventListener("DOMContentLoaded", function () {
 
-    // Documentos específicos de cada sindicato (ruta y nombre de archivo)
-    const documentosSindicato = {
-        Concepcion: [
-            { nombre: "Contrato Colectivo Concepción 2024", url: "Concepción/CC CONCEPCIÓN CENTRO 2024 VF (1).pdf" },
-            { nombre: "Estatuto Sindicato Concepción", url: "Concepción/ESTATUTO CONCEPCION CENTRO.pdf" },
-            { nombre: "Horas Programadas", url: "Concepción/HPS Concepcion.xlsm" }
-        ],
-        Costanera: [
-            { nombre: "Contrato Colectivo Costanera", url: "sindicato2/contrato.pdf" },
-            { nombre: "Horas Programadas", url: "Costanera/HPS Costanera.xlsm" }
-        ],
-        Curico: [
-            { nombre: "Contrato Colectivo Curicó 2023", url: "Curicó/Contrato Colectivo STFC 2023.pdf" },
-            { nombre: "Estatuto Sindicato Curicó 2022", url: "Curicó/ESTATUTOS VIGENTE CURICO 2022.pdf" },
-            { nombre: "Ingreso y Costo Sindicato", url: "Curicó/INGRESO Y COSTO SINDICATO.xlsm" },
-            { nombre: "Listado STFC", url: "Curicó/Listado STFC.xlsx" },
-            { nombre: "Horas Programadas", url: "Curicó/HPS Curico.xlsx" },
-            { nombre: "Calculo Reliquicadión", url: "Curicó/RELIQUIDACION 2024.xlsx" },
-            { nombre: "QR MEC.doc", url: "Curicó/QR MEC.docx" },
-            { nombre: "Ficha Ingreso", url: "Curicó/FICHA INGRESO.xls" },
-            { nombre: "Reserva de Derecho", url: "Curicó/RESERVA DERECHO.docx" },
-        ],
-        Iquique: [
-            { nombre: "Contrato Colectivo Iquique", url: "sindicato4/contrato.pdf" },
-            { nombre: "Estatuto Sindicato Iquique", url: "sindicato4/estatuto.pdf" },
-            { nombre: "Horas Programadas", url: "Iquique/HPS Iquique.xlsm" }
-        ],
-        PlazaNorte: [
-            { nombre: "Contrato Colectivo 2023 Plaza Norte", url: "Plaza Norte/Contrato Colectivo 2023 PLAZA NORTE.pdf" },
-            { nombre: "Estatuto Sindicato Plaza Norte", url: "Plaza Norte/estatuto.pdf" },
-            { nombre: "Horas Programadas", url: "Plaza Norte/HPS Plaza Norte.xlsm" }
-        ],
-        PuertoMontt: [
-            { nombre: "Contrato Colectivo 2021 Puerto Montt", url: "Puerto Montt/Puerto Montt 2021.pdf" },
-            { nombre: "Estatuto Sindicato Puerto Montt", url: "sindicato6/estatuto.pdf" },
-            { nombre: "Horas Programadas", url: "Puerto Montt/HPS Puerto Montt.xlsm" }
-        ],
-        Rancagua: [
-            { nombre: "Contrato Colectivo 2022 Rancagua", url: "Rancagua/Rancagua 2022.pdf" },
-            { nombre: "Estatuto Sindicato Rancagua", url: "sindicato7/estatuto.pdf" },
-            { nombre: "Horas Programadas", url: "Rancagua/HPS Rancagua.xlsm" }
-        ],
-        Trebol: [
-            { nombre: "Contrato Colectivo Trebol 2023", url: "Trebol/Contrato Colectivo TREBOL 2023.pdf" },
-            { nombre: "Estatuto Sindicato Trebol", url: "sindicato8/estatuto.pdf" },
-            { nombre: "Horas Programadas", url: "Trebol/HPS Trebol.xlsm" }
-        ]
-    };
-
-    // Documentos públicos, accesibles para todos los sindicatos autenticados
-    const documentosPublicos = [
-        { nombre: "Estatutos Federación 2019", url: "Documento Público General/Estatutos Federación 2019.pdf" },
-        { nombre: "Proyecto Estatutos Federacion 2025", url: "Documento Público General/estatutos federacion 2025.pdf" },
-        { nombre: "TESORERIA Federacion 2023-2024", url: "Documento Público General/TESORERIA Federacion 2023-2024.xlsm" },
-        { nombre: "TESORERIA Federacion 2024-2025", url: "Documento Público General/TESORERIA Federacion 2024-2025.xlsm" },
-        { nombre: "TESORERIA Federacion 2025-2026", url: "Documento Público General/TESORERIA Federacion 2025-2026.xlsm" },
-        { nombre: "Calculo Reliquicadión", url: "Documento Público General/RELIQUIDACION 2024.xlsx" },
-        { nombre: "QR MEC.doc", url: "Documento Público General/QR MEC.docx" },
-        { nombre: "Cartola 4 abr 24", url: "Documento Público General/cartola 24-25/4 abr 24.pdf" },
-        { nombre: "Cartola 5 may 24", url: "Documento Público General/cartola 24-25/5 may 24.pdf" },
-        { nombre: "Cartola 6 jun 24", url: "Documento Público General/cartola 24-25/6 jun 24.pdf" },
-        { nombre: "Cartola 7 jul 24", url: "Documento Público General/cartola 24-25/7 jul 24.pdf" },
-        { nombre: "Cartola 8 ago 24", url: "Documento Público General/cartola 24-25/8 ago 24.pdf" },
-        { nombre: "Cartola 9 sep 24", url: "Documento Público General/cartola 24-25/9 sep 24.pdf" },
-        { nombre: "Cartola 10 oct 24", url: "Documento Público General/cartola 24-25/10 oct 24.pdf" },
-        { nombre: "Cartola 11 nov 24", url: "Documento Público General/cartola 24-25/11 nov 24.pdf" },
-        { nombre: "Cartola 12 dic 24", url: "Documento Público General/cartola 24-25/12 dic 24.pdf" },
-        { nombre: "Cartola 1 ene 25", url: "Documento Público General/cartola 24-25/1 ene 25.pdf" },
-        { nombre: "Cartola 2 feb 25", url: "Documento Público General/cartola 24-25/2 feb 25.pdf" },
-        { nombre: "Cartola 3 mar 25", url: "Documento Público General/cartola 24-25/3 mar 25.pdf" }
-    ];
-
     // Documentos varios (que deben aparecer después de los públicos)
     const documentosVarios = [
         { nombre: "Código del Trabajo 2024", url: "Documento Público General/Datos/Cod Trab ene24.pdf" },
@@ -2234,10 +2162,11 @@ async function as_listarMisArchivos(sindicatoId, sindicatoNombre) {
 
   archivos.forEach(archivo => {
     const li = document.createElement("li");
+    li.className = "as-archivo-item";
 
     const etiquetaVis = archivo.visibilidad === "federacion"
-      ? " (Compartido con Federación)"
-      : " (Privado)";
+      ? "Compartido con Federación"
+      : "Privado";
 
     const tam = archivo.size_bytes
       ? (Math.round(archivo.size_bytes / 1024) + " KB")
@@ -2248,19 +2177,29 @@ async function as_listarMisArchivos(sindicatoId, sindicatoNombre) {
       : "N/D";
 
     li.innerHTML = `
-      <span><strong>${archivo.nombre_mostrado}</strong> — ${archivo.tipo || "otro"}${etiquetaVis}</span>
-      <br>
-      <small>Tamaño: ${tam} | Fecha: ${fecha}</small>
-      <br>
-      <button class="as-btn-ver" data-id="${archivo.id}">Ver / Descargar</button>
-      <button class="as-btn-toggle" data-id="${archivo.id}" data-vis="${archivo.visibilidad}">
-        Cambiar visibilidad
-      </button>
-      <button class="as-btn-eliminar" data-id="${archivo.id}">Eliminar</button>
+      <div class="as-archivo-header">
+        <div class="as-archivo-titulo">
+          <strong>${archivo.nombre_mostrado}</strong>
+          <span class="as-archivo-tipo">· ${archivo.tipo || "otro"}</span>
+        </div>
+        <div class="as-archivo-meta">
+          <span>${etiquetaVis}</span>
+          <span>· ${tam}</span>
+          <span>· ${fecha}</span>
+        </div>
+      </div>
+      <div class="as-archivo-actions">
+        <button class="as-btn-ver" data-id="${archivo.id}">Ver</button>
+        <button class="as-btn-toggle" data-id="${archivo.id}" data-vis="${archivo.visibilidad}">
+          Visibilidad
+        </button>
+        <button class="as-btn-eliminar" data-id="${archivo.id}">Eliminar</button>
+      </div>
     `;
 
     lista.appendChild(li);
   });
+
 }
 
 // ===============================

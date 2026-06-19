@@ -1064,3 +1064,53 @@ input:focus, select:focus, textarea:focus,
 .mec-intervencion-item .btn-play-intervencion:hover {
   text-decoration: underline;
 }
+
+/* Archivo Sindical v2 – lista compacta */
+.as-archivo-item {
+  list-style: none;
+  margin-bottom: 6px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #f9fafb;
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+.as-archivo-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.as-archivo-titulo {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.as-archivo-tipo {
+  font-size: 12px;
+  color: #6b7280;
+  margin-left: 4px;
+}
+
+.as-archivo-meta {
+  font-size: 11px;
+  color: #6b7280;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.as-archivo-actions {
+  margin-top: 4px;
+  display: flex;
+  gap: 6px;
+}
+
+.as-archivo-actions button {
+  width: auto;
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  font-size: 11px;
+  border-radius: 6px;
+}

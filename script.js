@@ -645,9 +645,10 @@ function mostrarClaveInput() {
         // Oculta errores previos
         document.getElementById("mensaje-error").style.display =
             "none";
-        // ======================================================
-        // 🧠 MENSAJE DINÁMICO SEGÚN MÓDULO
-        // ======================================================
+
+// ======================================================
+// 🧠 MENSAJE DINÁMICO SEGÚN MÓDULO
+// ======================================================
         if (sindicatoSeleccionado === "RendicionFederacion") {
             descripcion.innerHTML = `
                 🔐 Ingreso Rendición Federación<br><br>
@@ -2115,6 +2116,425 @@ async function iniciarPagoMEC() {
 }
 window.iniciarPagoMEC = iniciarPagoMEC;
 
+// ======================================================
+// 📂 ARCHIVO SINDICAL v2 (Supabase) – helpers
+// ======================================================
+
+// Mapeo nombre visual → UUID real (mismo que usas en Mesa Sindical)
+const AS_MAPA_SINDICATOS_UUID = {
+  "Concepcion":  "9ca693bd-8284-41ae-943f-cb6ec8e76c2c",
+  "Costanera":   "de394bc2-fef6-4a68-9998-d68223183905",
+  "Curico":      "64cfea41-937d-48e7-876d-578c3aba7941",
+  "Iquique":     "af3b44d8-8bb3-4d8c-b066-1060b5daaa48",
+  "PlazaNorte":  "4361900f-099b-4419-8bbe-f801817f673f",
+  "PuertoMontt": "732f660b-d50e-4b59-8859-ab8ee046626e",
+  "Rancagua":    "c255adf1-0c00-4aa2-aac7-ffbe590534ec",
+  "Trebol":      "c0e6834e-73fa-4bf0-a5b9-778848e388a8"
+};
+
+function as_obtenerSindicatoIdDesdeNombre(nombreSindicato) {
+  return AS_MAPA_SINDICATOS_UUID[nombreSindicato] || null;
+}
+
+// Límite y tipos coherentes con bucket archivos_sindicato
+const AS_MAX_BYTES = 10 * 1024 * 1024; // 10 MB
+const AS_ALLOWED_MIME = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "image/jpeg",
+  "image/png"
+];
+
+function as_validarArchivo(file) {
+  if (!file) {
+    alert("Debes seleccionar un archivo.");
+    return false;
+  }
+  if (file.size > AS_MAX_BYTES) {
+    alert("El archivo supera el límite de 10 MB.");
+    return false;
+  }
+  if (!AS_ALLOWED_MIME.includes(file.type)) {
+    alert("Tipo de archivo no permitido. Usa PDF, Word, Excel, JPG o PNG.");
+    return false;
+  }
+  return true;
+}
+
+// Crear URL firmada para ver/descargar
+async function as_crearSignedUrl(storagePath) {
+  const { data, error } = await supabase
+    .storage
+    .from("archivos_sindicato")
+    .createSignedUrl(storagePath, 60 * 10); // 10 minutos
+
+  if (error || !data?.signedUrl) {
+    console.error("Error creando URL firmada:", error);
+    alert("No se pudo generar el enlace de descarga.");
+    return null;
+  }
+  return data.signedUrl;
+}
+
+// ===============================
+// LISTAR: Mis archivos
+// ===============================
+async function as_listarMisArchivos(sindicatoId, sindicatoNombre) {
+  const lista = document.getElementById("lista-documentos-sindicato");
+  const titulo = document.getElementById("nombre-sindicato");
+  if (!lista) return;
+
+  lista.innerHTML = "Cargando archivos...";
+  if (titulo && sindicatoNombre) {
+    titulo.textContent = "Sindicato de " + sindicatoNombre;
+  }
+
+  const { data, error } = await supabase
+    .from("sindicato_archivos")
+    .select("*")
+    .eq("sindicato_id", sindicatoId)
+    .order("tipo", { ascending: true })
+    .order("nombre_mostrado", { ascending: true });
+
+  if (error) {
+    console.error("Error cargando archivos del sindicato:", error);
+    lista.innerHTML = "<li>Error al cargar archivos.</li>";
+    return;
+  }
+
+  const archivos = data || [];
+  lista.innerHTML = "";
+
+  if (!archivos.length) {
+    lista.innerHTML = "<li>No hay archivos cargados aún.</li>";
+    return;
+  }
+
+  archivos.forEach(archivo => {
+    const li = document.createElement("li");
+
+    const etiquetaVis = archivo.visibilidad === "federacion"
+      ? " (Compartido con Federación)"
+      : " (Privado)";
+
+    const tam = archivo.size_bytes
+      ? (Math.round(archivo.size_bytes / 1024) + " KB")
+      : "N/D";
+
+    const fecha = archivo.creado_en
+      ? new Date(archivo.creado_en).toLocaleString("es-CL")
+      : "N/D";
+
+    li.innerHTML = `
+      <span><strong>${archivo.nombre_mostrado}</strong> — ${archivo.tipo || "otro"}${etiquetaVis}</span>
+      <br>
+      <small>Tamaño: ${tam} | Fecha: ${fecha}</small>
+      <br>
+      <button class="as-btn-ver" data-id="${archivo.id}">Ver / Descargar</button>
+      <button class="as-btn-toggle" data-id="${archivo.id}" data-vis="${archivo.visibilidad}">
+        Cambiar visibilidad
+      </button>
+      <button class="as-btn-eliminar" data-id="${archivo.id}">Eliminar</button>
+    `;
+
+    lista.appendChild(li);
+  });
+}
+
+// ===============================
+// LISTAR: Archivos federación (otros sindicatos)
+// ===============================
+async function as_listarArchivosFederacion(sindicatoIdActual) {
+  const lista = document.getElementById("lista-documentos-publicos");
+  if (!lista) return;
+
+  lista.innerHTML = "Cargando archivos...";
+
+  const { data, error } = await supabase
+    .from("sindicato_archivos")
+    .select("*")
+    .eq("visibilidad", "federacion")
+    .neq("sindicato_id", sindicatoIdActual)
+    .order("creado_en", { ascending: false });
+
+  if (error) {
+    console.error("Error cargando archivos federación:", error);
+    lista.innerHTML = "<li>Error al cargar archivos compartidos.</li>";
+    return;
+  }
+
+  const archivos = data || [];
+  lista.innerHTML = "";
+
+  if (!archivos.length) {
+    lista.innerHTML = "<li>No hay archivos compartidos por otros sindicatos.</li>";
+    return;
+  }
+
+  archivos.forEach(archivo => {
+    const li = document.createElement("li");
+
+    const tam = archivo.size_bytes
+      ? (Math.round(archivo.size_bytes / 1024) + " KB")
+      : "N/D";
+
+    const fecha = archivo.creado_en
+      ? new Date(archivo.creado_en).toLocaleString("es-CL")
+      : "N/D";
+
+    li.innerHTML = `
+      <span><strong>${archivo.nombre_mostrado}</strong> — ${archivo.tipo || "otro"}</span>
+      <br>
+      <small>Tamaño: ${tam} | Fecha: ${fecha}</small>
+      <br>
+      <button class="as-btn-ver" data-id="${archivo.id}">Ver / Descargar</button>
+    `;
+
+    lista.appendChild(li);
+  });
+}
+
+// ===============================
+// SUBIR ARCHIVO
+// ===============================
+async function as_subirArchivo(sindicatoId, sindicatoNombre) {
+  const fileInput   = document.getElementById("as-file");
+  const nombreInput = document.getElementById("as-nombre");
+  const tipoSelect  = document.getElementById("as-tipo");
+  const visSelect   = document.getElementById("as-visibilidad");
+
+  if (!fileInput) {
+    alert("No se encontró el input de archivo.");
+    return;
+  }
+
+  const file = fileInput.files[0];
+  if (!as_validarArchivo(file)) return;
+
+  const nombre_mostrado = (nombreInput && nombreInput.value.trim()) || file.name;
+  const tipo        = (tipoSelect && tipoSelect.value) || "otro";
+  const visibilidad = (visSelect && visSelect.value) || "privado";
+
+  // Obtener usuario actual para trazabilidad
+  const { data: udata } = await supabase.auth.getUser();
+  const currentUser = udata?.user || null;
+
+  const extension = file.name.includes(".")
+    ? file.name.substring(file.name.lastIndexOf(".") + 1)
+    : "bin";
+
+  const randomId = (crypto.randomUUID && crypto.randomUUID()) || String(Date.now());
+  const path = `${sindicatoId}/${randomId}.${extension}`;
+
+  // 1) Subir al bucket
+  const { error: upErr } = await supabase
+    .storage
+    .from("archivos_sindicato")
+    .upload(path, file);
+
+  if (upErr) {
+    console.error("Error subiendo archivo:", upErr);
+    alert("No se pudo subir el archivo.");
+    return;
+  }
+
+  // 2) Insertar registro en tabla
+  const payload = {
+    sindicato_id: sindicatoId,
+    nombre_mostrado,
+    storage_path: path,
+    tipo,
+    visibilidad,
+    mime_type: file.type,
+    size_bytes: file.size,
+    creado_por_user: currentUser ? currentUser.id : null,
+    creado_por_text: currentUser ? (currentUser.email || null) : null
+  };
+
+  const { error: insErr } = await supabase
+    .from("sindicato_archivos")
+    .insert(payload);
+
+  if (insErr) {
+    console.error("Error registrando archivo:", insErr);
+    alert("El archivo se subió, pero no se pudo registrar en la base de datos.");
+    return;
+  }
+
+  // limpiar formulario
+  fileInput.value = "";
+  if (nombreInput) nombreInput.value = "";
+
+  // refrescar listas
+  await as_listarMisArchivos(sindicatoId, sindicatoNombre);
+  await as_listarArchivosFederacion(sindicatoId);
+  alert("Archivo subido correctamente.");
+}
+
+// ===============================
+// CAMBIAR VISIBILIDAD
+// ===============================
+async function as_cambiarVisibilidad(idArchivo, visActual, sindicatoId, sindicatoNombre) {
+  const nuevaVis = visActual === "privado" ? "federacion" : "privado";
+
+  const { error } = await supabase
+    .from("sindicato_archivos")
+    .update({ visibilidad: nuevaVis })
+    .eq("id", idArchivo);
+
+  if (error) {
+    console.error("Error cambiando visibilidad:", error);
+    alert("No se pudo cambiar la visibilidad del archivo.");
+    return;
+  }
+
+  await as_listarMisArchivos(sindicatoId, sindicatoNombre);
+  await as_listarArchivosFederacion(sindicatoId);
+}
+
+// ===============================
+// ELIMINAR ARCHIVO
+// ===============================
+async function as_eliminarArchivo(idArchivo, sindicatoId, sindicatoNombre) {
+  const confirmar = window.confirm("¿Seguro que deseas eliminar este archivo?");
+  if (!confirmar) return;
+
+  // Primero obtener storage_path
+  const { data, error } = await supabase
+    .from("sindicato_archivos")
+    .select("storage_path")
+    .eq("id", idArchivo)
+    .maybeSingle();
+
+  if (error || !data) {
+    console.error("Error obteniendo archivo:", error);
+    alert("No se pudo obtener información del archivo.");
+    return;
+  }
+
+  const storagePath = data.storage_path;
+
+  // Borrar de storage
+  const { error: stErr } = await supabase
+    .storage
+    .from("archivos_sindicato")
+    .remove([storagePath]);
+
+  if (stErr) {
+    console.error("Error borrando archivo de storage:", stErr);
+    alert("No se pudo borrar el archivo del almacenamiento.");
+    return;
+  }
+
+  // Borrar registro en tabla
+  const { error: delErr } = await supabase
+    .from("sindicato_archivos")
+    .delete()
+    .eq("id", idArchivo);
+
+  if (delErr) {
+    console.error("Error borrando registro de archivo:", delErr);
+    alert("No se pudo borrar el registro del archivo.");
+    return;
+  }
+
+  await as_listarMisArchivos(sindicatoId, sindicatoNombre);
+  await as_listarArchivosFederacion(sindicatoId);
+}
+
+// ===============================
+// DELEGACIÓN DE EVENTOS EN LISTAS
+// ===============================
+document.addEventListener("click", function (ev) {
+  const target = ev.target;
+  const listaSindicato = document.getElementById("lista-documentos-sindicato");
+  const listaPublicos  = document.getElementById("lista-documentos-publicos");
+
+  // Determinar sindicato actual (todavía usaremos esto más adelante cuando integremos con verificarClave)
+  // Por ahora asumimos que window.sindicatoFederacionActual será seteado en el flujo de clave.
+  const sfa = window.sindicatoFederacionActual;
+  const sindicatoId   = sfa?.id || null;
+  const sindicatoNombre = sfa?.nombre || null;
+
+  if (!sindicatoId) return; // si aún no hay sindicato, no hacemos nada
+
+  // Clicks en "Mis archivos"
+  if (listaSindicato && listaSindicato.contains(target)) {
+    if (target.classList.contains("as-btn-ver")) {
+      const id = target.getAttribute("data-id");
+      if (!id) return;
+      supabase
+        .from("sindicato_archivos")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle()
+        .then(async ({ data, error }) => {
+          if (error || !data) {
+            alert("No se pudo obtener el archivo.");
+            return;
+          }
+          const url = await as_crearSignedUrl(data.storage_path);
+          if (url) window.open(url, "_blank");
+        });
+    }
+
+    if (target.classList.contains("as-btn-toggle")) {
+      const id  = target.getAttribute("data-id");
+      const vis = target.getAttribute("data-vis");
+      if (!id) return;
+      as_cambiarVisibilidad(id, vis, sindicatoId, sindicatoNombre);
+    }
+
+    if (target.classList.contains("as-btn-eliminar")) {
+      const id = target.getAttribute("data-id");
+      if (!id) return;
+      as_eliminarArchivo(id, sindicatoId, sindicatoNombre);
+    }
+  }
+
+  // Clicks en "Compartidos con Federación"
+  if (listaPublicos && listaPublicos.contains(target)) {
+    if (target.classList.contains("as-btn-ver")) {
+      const id = target.getAttribute("data-id");
+      if (!id) return;
+      supabase
+        .from("sindicato_archivos")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle()
+        .then(async ({ data, error }) => {
+          if (error || !data) {
+            alert("No se pudo obtener el archivo.");
+            return;
+          }
+          const url = await as_crearSignedUrl(data.storage_path);
+          if (url) window.open(url, "_blank");
+        });
+    }
+  }
+});
+
+// ===============================
+// HOOK BOTÓN SUBIR (formulario)
+// ===============================
+document.addEventListener("DOMContentLoaded", function () {
+  const btnSubir = document.getElementById("as-btn-subir");
+  if (!btnSubir) return;
+
+  btnSubir.addEventListener("click", function () {
+    const sfa = window.sindicatoFederacionActual;
+    const sindicatoId   = sfa?.id || null;
+    const sindicatoNombre = sfa?.nombre || null;
+    if (!sindicatoId) {
+      alert("No hay sindicato seleccionado.");
+      return;
+    }
+    as_subirArchivo(sindicatoId, sindicatoNombre);
+  });
+});
 
 
-// ------------------  3 DE JUNIO TODO CORRECTO  --------------------------
+// ------------------  18 DE JUNIO TODO CORRECTO  --------------------------

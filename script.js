@@ -2191,7 +2191,7 @@ async function as_listarMisArchivos(sindicatoId, sindicatoNombre) {
       <div class="as-archivo-actions">
         <button class="as-btn-ver" data-id="${archivo.id}">Ver</button>
         <button class="as-btn-toggle" data-id="${archivo.id}" data-vis="${archivo.visibilidad}">
-          Visibilidad
+          Compartir
         </button>
         <button class="as-btn-eliminar" data-id="${archivo.id}">Eliminar</button>
       </div>
@@ -2234,6 +2234,7 @@ async function as_listarArchivosFederacion(sindicatoIdActual) {
 
   archivos.forEach(archivo => {
     const li = document.createElement("li");
+    li.className = "as-archivo-item";
 
     const tam = archivo.size_bytes
       ? (Math.round(archivo.size_bytes / 1024) + " KB")
@@ -2244,15 +2245,25 @@ async function as_listarArchivosFederacion(sindicatoIdActual) {
       : "N/D";
 
     li.innerHTML = `
-      <span><strong>${archivo.nombre_mostrado}</strong> — ${archivo.tipo || "otro"}</span>
-      <br>
-      <small>Tamaño: ${tam} | Fecha: ${fecha}</small>
-      <br>
-      <button class="as-btn-ver" data-id="${archivo.id}">Ver / Descargar</button>
+      <div class="as-archivo-header">
+        <div class="as-archivo-titulo">
+          <strong>${archivo.nombre_mostrado}</strong>
+          <span class="as-archivo-tipo">· ${archivo.tipo || "otro"}</span>
+        </div>
+        <div class="as-archivo-meta">
+          <span>Compartido con Federación</span>
+          <span>· ${tam}</span>
+          <span>· ${fecha}</span>
+        </div>
+      </div>
+      <div class="as-archivo-actions">
+        <button class="as-btn-ver" data-id="${archivo.id}">Ver</button>
+      </div>
     `;
 
     lista.appendChild(li);
   });
+
 }
 
 // ===============================

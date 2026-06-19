@@ -983,44 +983,63 @@ if (sindicatoSeleccionado === "AsistenciaFederacion") {
     }
 }
 
-// Función para mostrar la pantalla de documentos para el sindicato autenticado
-function mostrarDocumentos(sindicato) {
-    const nombreSindicato = document.getElementById("nombre-sindicato");
-    if (nombreSindicato) nombreSindicato.textContent = "Sindicato de " + sindicato;
+// Función para mostrar la pantalla de documentos para el sindicato autenticado (v2 Supabase)
+async function mostrarDocumentos(sindicato) {
+  // 1) Determinar UUID real del sindicato
+  //    Usamos el mismo mapa que en helpers as_* (AS_MAPA_SINDICATOS_UUID)
+  const sindicatoId = AS_MAPA_SINDICATOS_UUID[sindicato] || null;
 
-    const listaSindicato = document.getElementById("lista-documentos-sindicato");
-    if (listaSindicato) listaSindicato.innerHTML = ""; // Limpiar cualquier contenido previo
+  if (!sindicatoId) {
+    console.warn("No se encontró UUID para el sindicato:", sindicato);
+    alert("No se pudo identificar el sindicato en Supabase.");
+    return;
+  }
 
-    const docsSindicato = documentosSindicato[sindicato] || [];
-    docsSindicato.forEach(doc => {
-        const li = document.createElement("li");
-        li.innerHTML = `<a href="${doc.url}" target="_blank">${doc.nombre}</a>`;
-        listaSindicato.appendChild(li);
-    });
+  // 2) Guardar contexto global (para Archivo Sindical / Mesa, etc.)
+  window.sindicatoFederacionActual = {
+    id: sindicatoId,
+    nombre: sindicato
+  };
 
-    const listaPublicos = document.getElementById("lista-documentos-publicos");
-    if (listaPublicos) listaPublicos.innerHTML = "";
-    documentosPublicos.forEach(doc => {
-        const li = document.createElement("li");
-        li.innerHTML = `<a href="${doc.url}" target="_blank">${doc.nombre}</a>`;
-        listaPublicos.appendChild(li);
-    });
+  // 3) Cabecera
+  const nombreSindicatoEl = document.getElementById("nombre-sindicato");
+  if (nombreSindicatoEl) {
+    nombreSindicatoEl.textContent = "Sindicato de " + sindicato;
+  }
 
-    const listaVarios = document.getElementById("lista-documentos-varios");
-    if (listaVarios) listaVarios.innerHTML = "";
+  // 4) Limpiar listas antes de cargar
+  const listaSindicato = document.getElementById("lista-documentos-sindicato");
+  const listaPublicos  = document.getElementById("lista-documentos-publicos");
+  const listaVarios    = document.getElementById("lista-documentos-varios");
+
+  if (listaSindicato) listaSindicato.innerHTML = "";
+  if (listaPublicos)  listaPublicos.innerHTML  = "";
+  if (listaVarios)    listaVarios.innerHTML    = "";
+
+  // 5) Documentos MEC (estáticos) → mismos documentosVarios de antes
+  if (listaVarios && Array.isArray(documentosVarios)) {
     documentosVarios.forEach(doc => {
-        const li = document.createElement("li");
-        li.innerHTML = `<a href="${doc.url}" target="_blank">${doc.nombre}</a>`;
-        listaVarios.appendChild(li);
+      const li = document.createElement("li");
+      li.innerHTML = `<a href="${doc.url}" target="_blank">${doc.nombre}</a>`;
+      listaVarios.appendChild(li);
     });
+  }
 
-    // Limpiar el campo de clave y el select
-    document.getElementById("clave-input").value = "";
-    document.getElementById("select-sindicato").value = "";
+  // 6) Cargar desde Supabase:
+  //    - Mis archivos (sindicato_archivos donde sindicato_id = sindicatoId)
+  //    - Archivos compartidos (visibilidad = 'federacion' de otros sindicatos)
+  await as_listarMisArchivos(sindicatoId, sindicato);
+  await as_listarArchivosFederacion(sindicatoId);
 
-    cerrarModalClave(); // Limpia y oculta el modal de clave
+  // 7) Limpiar clave y select, cerrar modal y mostrar pantalla
+  const claveInput = document.getElementById("clave-input");
+  if (claveInput) claveInput.value = "";
 
-    mostrarPantalla("pantalla-documentos");
+  const selectSindicato = document.getElementById("select-sindicato");
+  if (selectSindicato) selectSindicato.value = "";
+
+  cerrarModalClave();
+  mostrarPantalla("pantalla-documentos");
 }
 
 // Función para cerrar el modal de clave

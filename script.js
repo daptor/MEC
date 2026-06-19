@@ -2091,7 +2091,7 @@ const AS_ALLOWED_MIME = [
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "application/vnd.ms-excel",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  "application/vnd.ms-excel.sheet.macroenabled.12",
+  "application/vnd.ms-excel.sheet.macroEnabled.12", // 👈 EXACTO como file.type
   "image/jpeg",
   "image/png"
 ];

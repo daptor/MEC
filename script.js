@@ -2526,12 +2526,11 @@ window.addEventListener("planReady", function () {
 
 // Listar todos los archivos (consolidado)
 async function as_admin_listarConsolidado() {
-  const tbody = document.getElementById("as-admin-tbody");
-  if (!tbody) return;
+  const lista = document.getElementById("as-admin-list");
+  if (!lista) return;
 
-  tbody.innerHTML = "<tr><td colspan='7'>Cargando...</td></tr>";
+  lista.innerHTML = "<li>Cargando...</li>";
 
-  // Traer archivos + nombre de sindicato
   const { data, error } = await supabase
     .from("sindicato_archivos")
     .select("id, nombre_mostrado, tipo, visibilidad, size_bytes, creado_en, sindicato_id, sindicatos(nombre)")
@@ -2541,20 +2540,21 @@ async function as_admin_listarConsolidado() {
 
   if (error) {
     console.error("Error cargando archivos consolidados:", error);
-    tbody.innerHTML = "<tr><td colspan='7'>Error al cargar datos.</td></tr>";
+    lista.innerHTML = "<li>Error al cargar datos.</li>";
     return;
   }
 
   const archivos = data || [];
-  tbody.innerHTML = "";
+  lista.innerHTML = "";
 
   if (!archivos.length) {
-    tbody.innerHTML = "<tr><td colspan='7'>No hay archivos registrados.</td></tr>";
+    lista.innerHTML = "<li>No hay archivos registrados.</li>";
     return;
   }
 
   archivos.forEach(row => {
-    const tr = document.createElement("tr");
+    const li = document.createElement("li");
+    li.className = "as-archivo-item";
 
     const tam = row.size_bytes
       ? (Math.round(row.size_bytes / 1024) + " KB")
@@ -2565,23 +2565,31 @@ async function as_admin_listarConsolidado() {
       : "N/D";
 
     const visTxt = row.visibilidad === "federacion" ? "Federación" : "Privado";
+    const sindicatoNombre = row.sindicatos?.nombre || row.sindicato_id || "";
 
-    tr.innerHTML = `
-      <td>${row.sindicatos?.nombre || row.sindicato_id || ""}</td>
-      <td>${row.nombre_mostrado}</td>
-      <td>${row.tipo || "otro"}</td>
-      <td>${visTxt}</td>
-      <td>${tam}</td>
-      <td>${fecha}</td>
-      <td>
+    li.innerHTML = `
+      <div class="as-archivo-header">
+        <div class="as-archivo-titulo">
+          <strong>${row.nombre_mostrado}</strong>
+          <span class="as-archivo-tipo">· ${row.tipo || "otro"}</span>
+        </div>
+        <div class="as-archivo-meta">
+          <span>${sindicatoNombre}</span>
+          <span>· ${visTxt}</span>
+          <span>· ${tam}</span>
+          <span>· ${fecha}</span>
+        </div>
+      </div>
+      <div class="as-archivo-actions">
         <button class="as-admin-ver" data-id="${row.id}">Ver</button>
         <button class="as-admin-eliminar" data-id="${row.id}">Eliminar</button>
-      </td>
+      </div>
     `;
 
-    tbody.appendChild(tr);
+    lista.appendChild(li);
   });
 }
+
 
 // Ver archivo desde vista admin
 document.addEventListener("click", function (ev) {

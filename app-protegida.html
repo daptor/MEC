@@ -664,6 +664,132 @@
    <button type="button" onclick="mostrarPantalla('pantalla-archivosindical')">↩ Volver a Herramientas</button>
 </div>
 
+<!-- ===================================================== -->
+<!-- 📅 AGENDA FEDERACIÓN -->
+<!-- ===================================================== -->
+<div id="pantalla-agenda-federacion" class="pantalla" style="display:none;">
+  <div class="boton-container">
+    <button onclick="mostrarPantalla('pantalla-archivosindical')">↩ Volver a Herramientas</button>
+  </div>
+
+  <h1>📅 Agenda Federación</h1>
+
+  <!-- FILTROS -->
+  <div class="mec-seccion-card">
+    <div style="display:flex; flex-wrap:wrap; gap:6px;">
+      <button type="button" class="btn-mini" onclick="agendaFiltrarPorEstado('TODAS')">Todas</button>
+      <button type="button" class="btn-mini" onclick="agendaFiltrarPorEstado('FUTURAS')">Futuras</button>
+      <button type="button" class="btn-mini" onclick="agendaFiltrarPorEstado('REALIZADA')">Realizadas</button>
+      <button type="button" class="btn-mini" onclick="agendaFiltrarPorEstado('CANCELADA')">Canceladas</button>
+    </div>
+    <div style="margin-top:8px;">
+      <label for="agenda-filtro-clase">Clase:</label>
+      <select id="agenda-filtro-clase" onchange="agendaRefrescarListado()">
+        <option value="">Todas las clases</option>
+        <option value="A">Asambleas Plenarias Zoom (A)</option>
+        <option value="B">Asamblea Plenaria Presencial (B)</option>
+        <option value="C">Plenarias Director S/SB (C)</option>
+        <option value="D">Reunión Ejecutivo Presencial (D)</option>
+        <option value="E">Reunión Directorio Zoom (2h) (E)</option>
+        <option value="F">Reuniones Especiales Presenciales (F)</option>
+        <option value="G">Reuniones Zoom (2h) (G)</option>
+        <option value="H">Visita Zona Norte Zoom (H)</option>
+        <option value="I">Visita Zona Sur Zoom (I)</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- BOTÓN CREAR (solo admin MEC) -->
+  <div id="agenda-bloque-crear" style="display:none; margin-bottom:10px;">
+    <button type="button" onclick="agendaNuevaReunion()">➕ Crear reunión</button>
+  </div>
+
+  <!-- LISTA DE REUNIONES -->
+  <div id="agenda-lista-reuniones">
+    <!-- Se rellena por JS -->
+  </div>
+</div>
+
+<!-- ===================================================== -->
+<!-- 📅 DETALLE REUNIÓN FEDERACIÓN -->
+<!-- ===================================================== -->
+<div id="pantalla-agenda-detalle" class="pantalla" style="display:none;">
+  <div class="boton-container">
+    <button onclick="volverDesdeDetalleAgenda()">↩ Volver a Agenda</button>
+  </div>
+
+  <h1>📅 Detalle reunión</h1>
+
+  <!-- Bloque 1: Datos generales -->
+  <div class="mec-seccion-card" id="agenda-detalle-datos">
+    <label>Clase:</label>
+    <select id="ag-clase" disabled></select>
+
+    <p><strong>Tipo:</strong> <span id="ag-tipo"></span></p>
+
+    <label>Fecha:</label>
+    <input type="date" id="ag-fecha">
+
+    <label>Estado:</label>
+    <select id="ag-estado">
+      <option value="PLANIFICADA">Planificada</option>
+      <option value="REALIZADA">Realizada</option>
+      <option value="CANCELADA">Cancelada</option>
+    </select>
+
+    <label>Motivo / tema:</label>
+    <textarea id="ag-motivo" rows="2"></textarea>
+
+    <div id="ag-bloque-tele" style="margin-top:8px; display:none;">
+      <label>Hora inicio:</label>
+      <input type="time" id="ag-hora-inicio">
+      <label>Hora final:</label>
+      <input type="time" id="ag-hora-final">
+      <p id="ag-texto-duracion"></p>
+    </div>
+
+    <div id="ag-bloque-presencial" style="margin-top:8px; display:none;">
+      <p>Pago día por asistente: <strong>$20.000</strong></p>
+    </div>
+  </div>
+
+  <!-- Bloque 2: Asistentes -->
+  <div class="mec-seccion-card" id="agenda-detalle-asistentes">
+    <h3>Asistentes</h3>
+    <div id="ag-lista-directores">
+      <!-- Directores con checkbox -->
+    </div>
+    <hr>
+    <div id="ag-invitados">
+      <h4>Invitados</h4>
+      <div>
+        <label>Invitado 1 (nombre libre):</label>
+        <input type="text" id="ag-inv1-nombre">
+        <label><input type="checkbox" id="ag-inv1-asistio"> Asistió</label>
+        <p>Pago: $0</p>
+      </div>
+      <div style="margin-top:8px;">
+        <label>Invitado 2 (nombre libre):</label>
+        <input type="text" id="ag-inv2-nombre">
+        <label><input type="checkbox" id="ag-inv2-asistio"> Asistió</label>
+        <p>Pago: $0</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bloque 3: Resumen -->
+  <div class="mec-seccion-card" id="agenda-detalle-resumen">
+    <h3>Resumen de pago</h3>
+    <p id="ag-resumen-linea1"></p>
+    <p id="ag-resumen-linea2"></p>
+  </div>
+
+  <!-- Acciones admin -->
+  <div id="agenda-detalle-acciones-admin" style="margin-top:10px; display:none;">
+    <button type="button" onclick="agendaGuardarReunion()">💾 Guardar cambios</button>
+    <button type="button" style="background:#dc2626;" onclick="agendaEliminarReunion()">🗑 Eliminar reunión</button>
+  </div>
+</div>
 
 <!-- ====================================================== -->
 <!-- 🧑‍⚖️ MESA SINDICAL DIGITAL -->
@@ -924,132 +1050,7 @@
     </div>
 </div>
 
-<!-- ===================================================== -->
-<!-- 📅 AGENDA FEDERACIÓN -->
-<!-- ===================================================== -->
-<div id="pantalla-agenda-federacion" class="pantalla" style="display:none;">
-  <div class="boton-container">
-    <button onclick="mostrarPantalla('pantalla-archivosindical')">↩ Volver a Herramientas</button>
-  </div>
 
-  <h1>📅 Agenda Federación</h1>
-
-  <!-- FILTROS -->
-  <div class="mec-seccion-card">
-    <div style="display:flex; flex-wrap:wrap; gap:6px;">
-      <button type="button" class="btn-mini" onclick="agendaFiltrarPorEstado('TODAS')">Todas</button>
-      <button type="button" class="btn-mini" onclick="agendaFiltrarPorEstado('FUTURAS')">Futuras</button>
-      <button type="button" class="btn-mini" onclick="agendaFiltrarPorEstado('REALIZADA')">Realizadas</button>
-      <button type="button" class="btn-mini" onclick="agendaFiltrarPorEstado('CANCELADA')">Canceladas</button>
-    </div>
-    <div style="margin-top:8px;">
-      <label for="agenda-filtro-clase">Clase:</label>
-      <select id="agenda-filtro-clase" onchange="agendaRefrescarListado()">
-        <option value="">Todas las clases</option>
-        <option value="A">Asambleas Plenarias Zoom (A)</option>
-        <option value="B">Asamblea Plenaria Presencial (B)</option>
-        <option value="C">Plenarias Director S/SB (C)</option>
-        <option value="D">Reunión Ejecutivo Presencial (D)</option>
-        <option value="E">Reunión Directorio Zoom (2h) (E)</option>
-        <option value="F">Reuniones Especiales Presenciales (F)</option>
-        <option value="G">Reuniones Zoom (2h) (G)</option>
-        <option value="H">Visita Zona Norte Zoom (H)</option>
-        <option value="I">Visita Zona Sur Zoom (I)</option>
-      </select>
-    </div>
-  </div>
-
-  <!-- BOTÓN CREAR (solo admin MEC) -->
-  <div id="agenda-bloque-crear" style="display:none; margin-bottom:10px;">
-    <button type="button" onclick="agendaNuevaReunion()">➕ Crear reunión</button>
-  </div>
-
-  <!-- LISTA DE REUNIONES -->
-  <div id="agenda-lista-reuniones">
-    <!-- Se rellena por JS -->
-  </div>
-</div>
-
-<!-- ===================================================== -->
-<!-- 📅 DETALLE REUNIÓN FEDERACIÓN -->
-<!-- ===================================================== -->
-<div id="pantalla-agenda-detalle" class="pantalla" style="display:none;">
-  <div class="boton-container">
-    <button onclick="volverDesdeDetalleAgenda()">↩ Volver a Agenda</button>
-  </div>
-
-  <h1>📅 Detalle reunión</h1>
-
-  <!-- Bloque 1: Datos generales -->
-  <div class="mec-seccion-card" id="agenda-detalle-datos">
-    <label>Clase:</label>
-    <select id="ag-clase" disabled></select>
-
-    <p><strong>Tipo:</strong> <span id="ag-tipo"></span></p>
-
-    <label>Fecha:</label>
-    <input type="date" id="ag-fecha">
-
-    <label>Estado:</label>
-    <select id="ag-estado">
-      <option value="PLANIFICADA">Planificada</option>
-      <option value="REALIZADA">Realizada</option>
-      <option value="CANCELADA">Cancelada</option>
-    </select>
-
-    <label>Motivo / tema:</label>
-    <textarea id="ag-motivo" rows="2"></textarea>
-
-    <div id="ag-bloque-tele" style="margin-top:8px; display:none;">
-      <label>Hora inicio:</label>
-      <input type="time" id="ag-hora-inicio">
-      <label>Hora final:</label>
-      <input type="time" id="ag-hora-final">
-      <p id="ag-texto-duracion"></p>
-    </div>
-
-    <div id="ag-bloque-presencial" style="margin-top:8px; display:none;">
-      <p>Pago día por asistente: <strong>$20.000</strong></p>
-    </div>
-  </div>
-
-  <!-- Bloque 2: Asistentes -->
-  <div class="mec-seccion-card" id="agenda-detalle-asistentes">
-    <h3>Asistentes</h3>
-    <div id="ag-lista-directores">
-      <!-- Directores con checkbox -->
-    </div>
-    <hr>
-    <div id="ag-invitados">
-      <h4>Invitados</h4>
-      <div>
-        <label>Invitado 1 (nombre libre):</label>
-        <input type="text" id="ag-inv1-nombre">
-        <label><input type="checkbox" id="ag-inv1-asistio"> Asistió</label>
-        <p>Pago: $0</p>
-      </div>
-      <div style="margin-top:8px;">
-        <label>Invitado 2 (nombre libre):</label>
-        <input type="text" id="ag-inv2-nombre">
-        <label><input type="checkbox" id="ag-inv2-asistio"> Asistió</label>
-        <p>Pago: $0</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Bloque 3: Resumen -->
-  <div class="mec-seccion-card" id="agenda-detalle-resumen">
-    <h3>Resumen de pago</h3>
-    <p id="ag-resumen-linea1"></p>
-    <p id="ag-resumen-linea2"></p>
-  </div>
-
-  <!-- Acciones admin -->
-  <div id="agenda-detalle-acciones-admin" style="margin-top:10px; display:none;">
-    <button type="button" onclick="agendaGuardarReunion()">💾 Guardar cambios</button>
-    <button type="button" style="background:#dc2626;" onclick="agendaEliminarReunion()">🗑 Eliminar reunión</button>
-  </div>
-</div>
 
 
 <!-- Favicon -->

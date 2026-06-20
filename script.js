@@ -911,19 +911,15 @@ if (sindicatoSeleccionado === "AgendaFederacion") {
     return;
   }
 
-  console.log("✅ Clave correcta para AgendaFederacion, abriendo pantalla.");
   cerrarModalClave();
   mostrarPantalla("pantalla-agenda-federacion");
 
   if (typeof window.agendaInit === "function") {
     agendaInit();
-  } else {
-    console.log("ℹ️ agendaInit aún no definida.");
   }
 
   return;
 }
-
 
 
     // ======================================================

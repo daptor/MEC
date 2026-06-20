@@ -2913,4 +2913,4 @@ window.cerrarDetalleReunion = cerrarDetalleReunion;
 window.activarMicrofonoMEC = activarMicrofonoMEC
 
 
-// ------------------  1 DE JUNIO TODO CORRECTO  --------------------------
+// ------------------  18 DE JUNIO TODO CORRECTO  --------------------------

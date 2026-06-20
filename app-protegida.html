@@ -1052,20 +1052,6 @@
 </div>
 
 
-<!-- ========================== -->
-<!-- 📄 DETALLE REUNIÓN         -->
-<!-- ========================== -->
-<div id="pantalla-agenda-detalle" class="pantalla" style="display:none;">
-  <div class="boton-container">
-    <button onclick="mostrarPantalla('pantalla-agenda-federacion')">↩ Volver a Agenda</button>
-  </div>
-
-  <h1>Detalle reunión</h1>
-  <div id="agenda-detalle-contenido">
-    <!-- Aquí se inyectará el detalle por JS -->
-  </div>
-</div>
-
 <!-- Favicon -->
 <link rel="icon" href="data:,">
 
@@ -1091,10 +1077,11 @@
 
 <script src="analisisLiquidacion.js"></script>
 <script src="mesaSindical.js"></script>
-<script src="agendaFederacion.js"></script>
 <script src="chat.js"></script>   
 <script src="global.js"></script>
 <script src="authGuard.js"></script>
+
+<script src="agendaFederacion.js"></script>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
@@ -1105,6 +1092,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 </script>
+
+
 
 </body>
 </html>

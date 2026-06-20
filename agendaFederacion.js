@@ -5,7 +5,6 @@
 
 console.log("📅 agendaFederacion.js cargado (versión simple)");
 
-// Esta función se llamará desde verificarClave() en script.js
 function agendaInit() {
   console.log("🔄 agendaInit (simple) llamada");
 
@@ -17,7 +16,12 @@ function agendaInit() {
 
   if (!lista) return;
 
-  // NO usamos Supabase aquí, solo texto estático.
+  // Forzamos estilo MUY visible
+  lista.style.border = "3px solid red";
+  lista.style.padding = "10px";
+  lista.style.background = "yellow";
+  lista.style.minHeight = "100px";
+
   lista.innerHTML = `
     <div style="
       background:#ffffff;
@@ -34,5 +38,4 @@ function agendaInit() {
   `;
 }
 
-// Exportamos al scope global
 window.agendaInit = agendaInit;

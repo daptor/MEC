@@ -2,6 +2,7 @@
 // 📅 Agenda Federación MEC
 // SOLO LECTURA (listar + ver)
 // ============================
+console.log("📅 agendaFederacion.js cargado");
 
 // Estado simple de filtro en memoria
 let agendaFiltroEstado = "TODAS";

@@ -900,29 +900,6 @@ if (sindicatoSeleccionado === "AsistenciaFederacion") {
     return;
 }
 
-// ======================================================
-// 📅 CASO ESPECIAL: AGENDA FEDERACIÓN
-// ======================================================
-if (sindicatoSeleccionado === "AgendaFederacion") {
-  const todasLasClaves = Object.values(claves);
-  if (!todasLasClaves.includes(claveIngresada)) {
-    mensajeError.innerText = "Clave incorrecta para Agenda Federación.";
-    mensajeError.style.display = "block";
-    return;
-  }
-
-  cerrarModalClave();
-  // Mostramos la pantalla de Agenda (luego la inicializaremos por JS)
-  mostrarPantalla("pantalla-agenda-federacion");
-
-  // Si más adelante definimos agendaInit(), la llamamos aquí:
-  if (typeof window.agendaInit === "function") {
-    window.agendaInit();
-  }
-
-  return;
-}
-
 
     // ======================================================
     // 🏢 FLUJO ORIGINAL – SINDICATOS (NO TOCAR)
@@ -1215,6 +1192,31 @@ function iniciarModulosAsistenciaCerrados() {
         btnRankingDirectores.textContent = "Mostrar";
     }
 }
+
+// ======================================================
+// 📅 CASO ESPECIAL: AGENDA FEDERACIÓN
+// ======================================================
+if (sindicatoSeleccionado === "AgendaFederacion") {
+  const todasLasClaves = Object.values(claves);
+  if (!todasLasClaves.includes(claveIngresada)) {
+    mensajeError.innerText = "Clave incorrecta para Agenda Federación.";
+    mensajeError.style.display = "block";
+    return;
+  }
+
+  console.log("✅ Clave correcta para AgendaFederacion, abriendo pantalla.");
+  cerrarModalClave();
+  mostrarPantalla("pantalla-agenda-federacion");
+
+  if (typeof window.agendaInit === "function") {
+    agendaInit();
+  } else {
+    console.log("ℹ️ agendaInit aún no definida.");
+  }
+
+  return;
+}
+
 
 // ****************************bienvenida*********************************
 document.addEventListener("DOMContentLoaded", function () {

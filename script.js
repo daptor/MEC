@@ -910,14 +910,11 @@ if (sindicatoSeleccionado === "AgendaFederacion") {
     mensajeError.style.display = "block";
     return;
   }
-
   cerrarModalClave();
   mostrarPantalla("pantalla-agenda-federacion");
-
-  if (typeof window.agendaInit === "function") {
-    agendaInit();
+  if (typeof agendaInicializar === "function") {
+    agendaInicializar();
   }
-
   return;
 }
 

@@ -900,7 +900,6 @@ if (sindicatoSeleccionado === "AsistenciaFederacion") {
     return;
 }
 
-
     // ======================================================
     // 🏢 FLUJO ORIGINAL – SINDICATOS (NO TOCAR)
     // ======================================================

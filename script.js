@@ -900,6 +900,30 @@ if (sindicatoSeleccionado === "AsistenciaFederacion") {
     return;
 }
 
+// ======================================================
+// 📅 CASO ESPECIAL: AGENDA FEDERACIÓN
+// ======================================================
+if (sindicatoSeleccionado === "AgendaFederacion") {
+  const todasLasClaves = Object.values(claves);
+  if (!todasLasClaves.includes(claveIngresada)) {
+    mensajeError.innerText = "Clave incorrecta para Agenda Federación.";
+    mensajeError.style.display = "block";
+    return;
+  }
+
+  cerrarModalClave();
+  // Mostramos la pantalla de Agenda (luego la inicializaremos por JS)
+  mostrarPantalla("pantalla-agenda-federacion");
+
+  // Si más adelante definimos agendaInit(), la llamamos aquí:
+  if (typeof window.agendaInit === "function") {
+    window.agendaInit();
+  }
+
+  return;
+}
+
+
     // ======================================================
     // 🏢 FLUJO ORIGINAL – SINDICATOS (NO TOCAR)
     // ======================================================
@@ -2669,5 +2693,4 @@ async function as_admin_eliminarArchivo(idArchivo) {
   alert("Archivo eliminado correctamente.");
 }
 
-
-// ------------------  18 DE JUNIO TODO CORRECTO  --------------------------
+// ------------------  19 DE JUNIO TODO CORRECTO  --------------------------

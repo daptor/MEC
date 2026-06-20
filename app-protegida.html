@@ -358,18 +358,19 @@
       <!-- Lista desplegable para seleccionar sindicato -->
       <select id="select-sindicato" onchange="mostrarClaveInput()">
           <option value=""selected>Seleccione una opción</option>
-          <option value="Concepcion">Sindicato Concepción</option>
-          <option value="Costanera">Sindicato Costanera</option>
-          <option value="Curico">Sindicato Curicó</option>
-          <option value="Iquique">Sindicato Iquique</option>
-          <option value="PlazaNorte">Sindicato Plaza Norte</option>
-          <option value="PuertoMontt">Sindicato Puerto Montt</option>
-          <option value="Rancagua">Sindicato Rancagua</option>
-          <option value="Trebol">Sindicato Trebol</option>
+          <option value="Concepcion">Archivo Sindicato Concepción</option>
+          <option value="Costanera">Archivo Sindicato Costanera</option>
+          <option value="Curico">Archivo Sindicato Curicó</option>
+          <option value="Iquique">Archivo Sindicato Iquique</option>
+          <option value="PlazaNorte">Archivo Sind. Plaza Norte</option>
+          <option value="PuertoMontt">Archivo Sind. Puerto Montt</option>
+          <option value="Rancagua">Archivo Sindicato Rancagua</option>
+          <option value="Trebol">Archivo Sindicato Trebol</option>
           <option value="RendicionFederacion">💲 Rendir Federación</option>
           <option value="ReunionFederacion">⏳ Reunión Federación</option>
           <option value="AsistenciaFederacion">📊 Asistencia/Estadísticas</option>
-          </select>
+          <option value="AgendaFederacion">📅 Agenda Federación</option>
+        </select>
  
       <!-- Modal para ingresar la clave -->
       <div id="modal-clave" class="modal oculto">
@@ -922,6 +923,67 @@
         </div>
     </div>
 </div>
+
+<!-- ========================== -->
+<!-- 📅 AGENDA FEDERACIÓN       -->
+<!-- ========================== -->
+<div id="pantalla-agenda-federacion" class="pantalla" style="display:none;">
+  <div class="boton-container">
+    <button onclick="mostrarPantalla('pantalla-archivosindical')">↩ Volver a Herramientas</button>
+  </div>
+
+  <h1>📅 Agenda Federación</h1>
+
+  <!-- Filtros básicos (sin lógica todavía) -->
+  <div style="margin-bottom:10px;">
+    <button type="button" onclick="agendaFiltrar('TODAS')">Todas</button>
+    <button type="button" onclick="agendaFiltrar('FUTURAS')">Futuras</button>
+    <button type="button" onclick="agendaFiltrar('REALIZADAS')">Realizadas</button>
+    <button type="button" onclick="agendaFiltrar('CANCELADAS')">Canceladas</button>
+  </div>
+
+  <div style="margin-bottom:10px;">
+    <label for="agenda-filtro-clase">Clase:</label>
+    <select id="agenda-filtro-clase">
+      <option value="">Todas las clases</option>
+      <option value="A">Asambleas Plenarias Zoom (A)</option>
+      <option value="B">Asamblea Plenaria Presencial (B)</option>
+      <option value="C">Plenarias Director S/SB (C)</option>
+      <option value="D">Reunión Ejecutivo Presencial (D)</option>
+      <option value="E">Reunión Directorio Zoom (E)</option>
+      <option value="F">Reuniones Especiales Presenciales (F)</option>
+      <option value="G">Reuniones Zoom (G)</option>
+      <option value="H">Visita Zona Norte Zoom (H)</option>
+      <option value="I">Visita Zona Sur Zoom (I)</option>
+    </select>
+  </div>
+
+  <!-- Botón crear (solo admin, lo controlaremos luego por JS) -->
+  <div id="agenda-boton-crear" style="margin-bottom:10px; display:none;">
+    <button type="button" onclick="agendaNuevaReunion()">+ Crear reunión</button>
+  </div>
+
+  <!-- Lista de reuniones (se llenará desde JS) -->
+  <div id="agenda-lista">
+    Aún no hay reuniones cargadas.
+  </div>
+</div>
+
+<!-- ========================== -->
+<!-- 📄 DETALLE REUNIÓN         -->
+<!-- ========================== -->
+<div id="pantalla-agenda-detalle" class="pantalla" style="display:none;">
+  <div class="boton-container">
+    <button onclick="mostrarPantalla('pantalla-agenda-federacion')">↩ Volver a Agenda</button>
+  </div>
+
+  <h1>Detalle reunión</h1>
+  <div id="agenda-detalle-contenido">
+    <!-- Aquí se inyectará el detalle por JS -->
+  </div>
+</div>
+
+
 
 <!-- Favicon -->
 <link rel="icon" href="data:,">

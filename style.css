@@ -1176,3 +1176,46 @@ input:focus, select:focus, textarea:focus,
     margin-bottom: 5px;
   }
 }
+
+/* Alinear checkbox a la izquierda del nombre, en la misma línea */
+#ag-lista-directores .item-director,
+#ag-lista-directores > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;              /* espacio entre checkbox y texto */
+  padding: 6px 4px;
+}
+
+#ag-lista-directores label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  cursor: pointer;
+}
+
+/* checkbox tamaño y alineación */
+#ag-lista-directores input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+/* texto del nombre ocupa el resto y evita romper la línea */
+#ag-lista-directores .director-nombre {
+  display: inline-block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1 1 auto;
+  font-size: 14px;
+  color: #0f172a;
+}
+
+/* mobile: permitir wrap si es necesario */
+@media (max-width:480px) {
+  #ag-lista-directores label { gap: 8px; }
+  #ag-lista-directores .director-nombre { font-size: 13px; white-space: normal; }
+}
+

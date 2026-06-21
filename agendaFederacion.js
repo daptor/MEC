@@ -435,7 +435,7 @@ async function agendaGuardarReunion() {
       horaFinalVal = document.getElementById('ag-hora-final')?.value || null;
     }
 
-    // para clase C usaremos duracion_horas como "días de plenaria"
+    // para clase C usamos duracion_horas como "días de plenaria"
     let diasPlenaria = null;
     if (agendaReunionActual.tipo_conexion === 'PRESENCIAL' && agendaReunionActual.clase === 'C') {
       const inpDias = document.getElementById('ag-dias-plenaria');
@@ -530,7 +530,7 @@ async function agendaGuardarReunion() {
       }
     }
 
-    // 3) Invitados: borrar todos los INVITADO_* y recrear desde inputs
+    // 3) Invitados: borrar todos los INVITADO y recrear desde inputs
     const { error: errDelInv } = await supabase
       .from('reunion_federacion_asistente')
       .delete()
@@ -583,14 +583,17 @@ async function agendaGuardarReunion() {
       alert('Reunión guardada y totales recalculados.');
     }
 
-    // 5) Volver al listado
-    await agendaRefrescarListado();
-
-        if (esAdminMEC()) {
-      await agendaCargarResumenPagosClase();
-      await agendaCargarResumenPagosDirector();
+    // 5) Actualizar resúmenes (si existen) y volver al listado
+    if (esAdminMEC()) {
+      if (typeof agendaCargarResumenPagosClase === 'function') {
+        await agendaCargarResumenPagosClase();
+      }
+      if (typeof agendaCargarResumenPagosDirector === 'function') {
+        await agendaCargarResumenPagosDirector();
+      }
     }
 
+    await agendaRefrescarListado();
     mostrarPantalla('pantalla-agenda-federacion');
   } catch (err) {
     console.error('agendaGuardarReunion error', err);

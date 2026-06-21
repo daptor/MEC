@@ -210,7 +210,7 @@ async function abrirDetalleReunionAgenda(id) {
       .from('reunion_federacion_asistente')
       .select('*')
       .eq('reunion_id', id)
-      .order('id', { ascending: true });
+      .order('creado_en', { ascending: true });
 
     if (errA) {
       console.warn('Error cargando asistentes', errA);
@@ -220,7 +220,7 @@ async function abrirDetalleReunionAgenda(id) {
     const { data: sociosDirectores, error: errD } = await supabase
       .from('socios')
       .select('id, nombre, rol')
-      .or('rol.ilike.DIRECTOR_% , rol.eq.TESORERO');
+      .or('rol.ilike.DIRECTOR_%,rol.eq.TESORERO');
 
     if (errD) {
       console.warn('Error cargando directores', errD);
@@ -263,7 +263,7 @@ async function abrirDetalleReunionAgenda(id) {
 
     const asistMap = new Map(
       (asistentes || [])
-        .filter(a => a.socio_id != null)
+        .filter(a => a.socio_id != null && a.tipo_asistente === 'DIRECTOR')
         .map(a => [String(a.socio_id), a])
     );
 
@@ -275,6 +275,8 @@ async function abrirDetalleReunionAgenda(id) {
           <input type="checkbox"
                  class="ag-director-checkbox"
                  data-socio-id="${sd.id}"
+                 data-socio-rol="${sd.rol || ''}"
+                 data-socio-nombre="${sd.nombre || ''}"
                  ${checked ? 'checked' : ''}>
           ${sd.nombre} (${sd.rol})
         </label>
@@ -282,9 +284,13 @@ async function abrirDetalleReunionAgenda(id) {
       if (contDir) contDir.appendChild(div);
     });
 
-    // 6) Invitados (tipo = INVITADO, orden 1 y 2)
-    const inv1Row = (asistentes || []).find(a => (a.tipo || '').toUpperCase() === 'INVITADO' && a.orden === 1);
-    const inv2Row = (asistentes || []).find(a => (a.tipo || '').toUpperCase() === 'INVITADO' && a.orden === 2);
+    // 6) Invitados (INVITADO_1 e INVITADO_2 por rol_interno)
+    const inv1Row = (asistentes || []).find(
+      a => a.tipo_asistente === 'INVITADO' && a.rol_interno === 'INVITADO_1'
+    );
+    const inv2Row = (asistentes || []).find(
+      a => a.tipo_asistente === 'INVITADO' && a.rol_interno === 'INVITADO_2'
+    );
 
     const inv1NombreInput = document.getElementById('ag-inv1-nombre');
     const inv1AsistioInput = document.getElementById('ag-inv1-asistio');
@@ -292,11 +298,11 @@ async function abrirDetalleReunionAgenda(id) {
     const inv2AsistioInput = document.getElementById('ag-inv2-asistio');
 
     if (inv1NombreInput && inv1AsistioInput) {
-      inv1NombreInput.value = inv1Row?.nombre || '';
+      inv1NombreInput.value = inv1Row?.nombre_mostrado || '';
       inv1AsistioInput.checked = !!inv1Row?.asistio;
     }
     if (inv2NombreInput && inv2AsistioInput) {
-      inv2NombreInput.value = inv2Row?.nombre || '';
+      inv2NombreInput.value = inv2Row?.nombre_mostrado || '';
       inv2AsistioInput.checked = !!inv2Row?.asistio;
     }
 
@@ -321,6 +327,7 @@ async function abrirDetalleReunionAgenda(id) {
     alert('Error al abrir detalle.');
   }
 }
+
 
 // ------------------------------------------------------
 // Guardar reunión + asistentes + RPC recálculo
@@ -371,7 +378,7 @@ async function agendaGuardarReunion() {
       return;
     }
 
-    // 2) Asistentes directores
+    // 2) Asistentes DIRECTOR
     const { data: currentAsist = [] } = await supabase
       .from('reunion_federacion_asistente')
       .select('*')
@@ -380,90 +387,100 @@ async function agendaGuardarReunion() {
     const checkboxes = Array.from(document.querySelectorAll('.ag-director-checkbox'));
     const seleccionados = checkboxes
       .filter(c => c.checked)
-      .map(c => c.getAttribute('data-socio-id'));
+      .map(c => ({
+        socioId: c.getAttribute('data-socio-id'),
+        rolSocio: c.getAttribute('data-socio-rol') || '',
+        nombreSocio: c.getAttribute('data-socio-nombre') || ''
+      }));
 
-    // Crear/actualizar seleccionados
-    for (const socioId of seleccionados) {
-      const row = currentAsist.find(a => String(a.socio_id) === String(socioId));
+    // Crear/actualizar DIRECTOR
+    for (const sel of seleccionados) {
+      const socioId = sel.socioId;
+      const row = currentAsist.find(
+        a => String(a.socio_id) === String(socioId) && a.tipo_asistente === 'DIRECTOR'
+      );
+      const rolInterno = (sel.rolSocio && [
+        'DIRECTOR_1','DIRECTOR_2','DIRECTOR_3',
+        'PRESIDENTE','SECRETARIO','SEC_ACTAS',
+        'TESORERO','VICE_NORTE','VICE_SUR'
+      ].includes(sel.rolSocio))
+        ? sel.rolSocio
+        : 'DIRECTOR_1'; // fallback simple
+
       if (!row) {
         const { error: errIns } = await supabase
           .from('reunion_federacion_asistente')
           .insert({
             reunion_id: id,
             socio_id: socioId,
-            tipo: 'DIRECTOR',
-            asistio: true
+            tipo_asistente: 'DIRECTOR',
+            rol_interno: rolInterno,
+            nombre_mostrado: sel.nombreSocio,
+            asistio: true,
+            pago_calculado: 0
           });
         if (errIns) console.warn('Error insert asistente director', errIns);
       } else {
         const { error: errUp } = await supabase
           .from('reunion_federacion_asistente')
-          .update({ asistio: true })
+          .update({
+            asistio: true,
+            rol_interno: rolInterno,
+            nombre_mostrado: sel.nombreSocio
+          })
           .eq('id', row.id);
         if (errUp) console.warn('Error update asistente director', errUp);
       }
     }
 
-    // Eliminar directores que ya no están seleccionados
+    // Eliminar DIRECTOR que ya no están seleccionados
     for (const row of currentAsist) {
-      const tipo = (row.tipo || '').toUpperCase();
-      if ((tipo === 'DIRECTOR' || tipo === 'DIRECTORIO')
-        && !seleccionados.includes(String(row.socio_id))) {
-        const { error: errDel } = await supabase
-          .from('reunion_federacion_asistente')
-          .delete()
-          .eq('id', row.id);
-        if (errDel) console.warn('Error delete asistente director', errDel);
-      }
-    }
-
-    // 3) Invitados (si tienen nombre; pago siempre $0)
-    async function upsertInvitado(orden, nombreInputId, asistioInputId) {
-      const nombre = document.getElementById(nombreInputId)?.value.trim() || '';
-      const asistio = document.getElementById(asistioInputId)?.checked || false;
-
-      const { data: existing } = await supabase
-        .from('reunion_federacion_asistente')
-        .select('*')
-        .eq('reunion_id', id)
-        .eq('tipo', 'INVITADO')
-        .eq('orden', orden)
-        .maybeSingle();
-
-      if (!nombre) {
-        // sin nombre → borrar si existía
-        if (existing) {
-          await supabase
+      if (row.tipo_asistente === 'DIRECTOR') {
+        const sigue = seleccionados.some(sel => String(sel.socioId) === String(row.socio_id));
+        if (!sigue) {
+          const { error: errDel } = await supabase
             .from('reunion_federacion_asistente')
             .delete()
-            .eq('id', existing.id);
+            .eq('id', row.id);
+          if (errDel) console.warn('Error delete asistente director', errDel);
         }
-        return;
-      }
-
-      if (!existing) {
-        await supabase
-          .from('reunion_federacion_asistente')
-          .insert({
-            reunion_id: id,
-            nombre,
-            tipo: 'INVITADO',
-            orden,
-            asistio
-          });
-      } else {
-        await supabase
-          .from('reunion_federacion_asistente')
-          .update({
-            nombre,
-            asistio
-          })
-          .eq('id', existing.id);
       }
     }
 
-    await upsertInvitado(1, 'ag-inv1-nombre', 'ag-inv1-asistio');
-    await upsertInvitado(2, 'ag-inv2-nombre', 'ag-inv2-asistio');
+    // 3) Invitados: borrar todos los INVITADO_* y recrear desde inputs
+    const { error: errDelInv } = await supabase
+      .from('reunion_federacion_asistente')
+      .delete()
+      .eq('reunion_id', id)
+      .eq('tipo_asistente', 'INVITADO');
+
+    if (errDelInv) {
+      console.warn('Error borrando invitados previos', errDelInv);
+    }
+
+    async function crearInvitado(nombreInputId, asistioInputId, rolInternoInvitado) {
+      const nombre = document.getElementById(nombreInputId)?.value.trim() || '';
+      const asistio = document.getElementById(asistioInputId)?.checked || false;
+      if (!nombre) return;
+
+      const { error } = await supabase
+        .from('reunion_federacion_asistente')
+        .insert({
+          reunion_id: id,
+          socio_id: null,
+          tipo_asistente: 'INVITADO',
+          rol_interno: rolInternoInvitado,
+          nombre_mostrado: nombre,
+          asistio: asistio,
+          pago_calculado: 0
+        });
+      if (error) {
+        console.warn('Error insert invitado', rolInternoInvitado, error);
+      }
+    }
+
+    await crearInvitado('ag-inv1-nombre', 'ag-inv1-asistio', 'INVITADO_1');
+    await crearInvitado('ag-inv2-nombre', 'ag-inv2-asistio', 'INVITADO_2');
 
     // 4) Llamar RPC para recálculo
     const { data: rpcData, error: rpcErr } = await supabase
@@ -491,6 +508,7 @@ async function agendaGuardarReunion() {
     alert('Error guardando reunión.');
   }
 }
+
 
 // ------------------------------------------------------
 // Eliminar reunión (solo admin MEC)

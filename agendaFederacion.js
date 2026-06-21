@@ -24,20 +24,20 @@ async function agendaInicializar() {
   if (bloqueCrear) bloqueCrear.style.display = esAdminMEC() ? 'block' : 'none';
   await agendaRefrescarListado();
 
-      if (esAdminMEC()) {
-      await agendaCargarResumenPagosClase();
-      await agendaCargarResumenPagosDirector();
-    }
-
-
   const bloqueResumen = document.getElementById('agenda-resumen-pagos');
   if (bloqueResumen) bloqueResumen.style.display = esAdminMEC() ? 'block' : 'none';
-  if (esAdminMEC()) {
-    await agendaCargarResumenPagosClase();
-    await agendaCargarResumenPagosDirector();
-  }
 
+  // Solo llamamos al resumen si las funciones ya están definidas
+  if (esAdminMEC()) {
+    if (typeof agendaCargarResumenPagosClase === 'function') {
+      await agendaCargarResumenPagosClase();
+    }
+    if (typeof agendaCargarResumenPagosDirector === 'function') {
+      await agendaCargarResumenPagosDirector();
+    }
+  }
 }
+
 
 function agendaFiltrarPorEstado(estado) {
   agendaFiltroEstado = estado;
@@ -683,8 +683,6 @@ async function agendaCargarResumenPagosDirector() {
     console.error('agendaCargarResumenPagosDirector error', err);
   }
 }
-
-
 
 // ------------------------------------------------------
 // Resumen pagos por director (solo admin)

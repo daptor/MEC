@@ -114,11 +114,74 @@ function agendaAsegurarOpcionesClase() {
 }
 
 // ------------------------------------------------------
-// Crear reunión (pendiente, otra tarea)
+// Crear reunión (solo ADMIN MEC)
 // ------------------------------------------------------
-function agendaNuevaReunion() {
-  alert("Crear reunión: lo implementamos en el siguiente paso.");
+async function agendaNuevaReunion() {
+  try {
+    // Solo admin MEC
+    const { data } = await supabase.auth.getUser();
+    const user = data?.user;
+    if (!user || user.email !== "christorfu@gmail.com") {
+      alert("Solo ADMIN MEC puede crear reuniones.");
+      return;
+    }
+
+    // 1) Pedir clase (A–I)
+    let clase = prompt("Clase de reunión (A–I):\nA: Plenaria Zoom\nB: Plenaria Presencial\nC: Plenaria Director S/SB\nD: Reunión Ejecutivo Presencial\nE: Directorio Zoom (2h)\nF: Reuniones Especiales Presenciales\nG: Reuniones Zoom (2h)\nH: Visita Zona Norte Zoom\nI: Visita Zona Sur Zoom", "E");
+    if (!clase) return;
+    clase = clase.trim().toUpperCase();
+
+    if (!AGENDA_CLASES[clase]) {
+      alert("Clase inválida. Debe ser una letra de A a I.");
+      return;
+    }
+
+    // 2) Fecha (formato yyyy-mm-dd)
+    const hoy = new Date().toISOString().slice(0, 10);
+    let fecha = prompt("Fecha de la reunión (YYYY-MM-DD):", hoy);
+    if (!fecha) return;
+    fecha = fecha.trim();
+    // Validación mínima de formato
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+      alert("Formato de fecha inválido. Usa YYYY-MM-DD.");
+      return;
+    }
+
+    // 3) Motivo
+    let motivo = prompt("Motivo / tema principal de la reunión:", "");
+    motivo = (motivo || "").trim();
+
+    const claseInfo = AGENDA_CLASES[clase];
+
+    // 4) Insertar reunión base
+    const { data: inserted, error: errIns } = await supabase
+      .from("reunion_federacion")
+      .insert({
+        clase: claseInfo.clase,
+        clase_nombre: claseInfo.nombre,
+        tipo_conexion: claseInfo.tipo_conexion,
+        fecha: fecha,
+        estado: "PLANIFICADA",
+        motivo: motivo || null
+      })
+      .select()
+      .single();
+
+    if (errIns || !inserted) {
+      console.error("Error creando reunión", errIns);
+      alert("No se pudo crear la reunión.");
+      return;
+    }
+
+    // 5) Refrescar listado y abrir detalle de la nueva reunión
+    await agendaRefrescarListado();
+    abrirDetalleReunionAgenda(inserted.id);
+  } catch (err) {
+    console.error("agendaNuevaReunion error", err);
+    alert("Error creando reunión.");
+  }
 }
+
 
 // ------------------------------------------------------
 // Abrir detalle de reunión

@@ -628,58 +628,63 @@ function volverDesdeDetalleAgenda() {
 }
 
 // ------------------------------------------------------
-// Resumen pagos por clase (solo admin)
+// Resumen pagos por director (solo admin)
 // ------------------------------------------------------
-async function agendaCargarResumenPagosClase() {
+async function agendaCargarResumenPagosDirector() {
   try {
     if (!esAdminMEC()) {
       return;
     }
 
-    const cont = document.getElementById('agenda-resumen-clase');
+    const cont = document.getElementById('agenda-resumen-director');
     if (!cont) return;
 
+    // Unir asistentes con reunión para filtrar solo REALIZADAS
     const { data, error } = await supabase
-      .from('reunion_federacion')
-      .select('clase, clase_nombre, total_monto')
-      .eq('estado', 'REALIZADA');
+      .from('reunion_federacion_asistente')
+      .select('socio_id, nombre_mostrado, tipo_asistente, pago_calculado, reunion_federacion!inner(estado)')
+      .eq('tipo_asistente', 'DIRECTOR')
+      .eq('reunion_federacion.estado', 'REALIZADA');
 
     if (error) {
-      console.error('Error resumen por clase', error);
-      cont.innerHTML = '<p>Error cargando resumen por clase.</p>';
+      console.error('Error resumen por director', error);
+      cont.innerHTML = '<p>Error cargando resumen por director.</p>';
       return;
     }
 
     const mapa = new Map();
-    (data || []).forEach(r => {
-      const key = r.clase;
-      const nombre = r.clase_nombre || r.clase;
-      const monto = Number(r.total_monto || 0);
+    (data || []).forEach(a => {
+      const key = a.socio_id || a.nombre_mostrado;
+      if (!key) return;
+      const nombre = a.nombre_mostrado || 'Director sin nombre';
+      const monto = Number(a.pago_calculado || 0);
       if (!mapa.has(key)) {
-        mapa.set(key, { clase: key, nombre, total: 0 });
+        mapa.set(key, { nombre, total: 0 });
       }
       const item = mapa.get(key);
       item.total += monto;
     });
 
     if (mapa.size === 0) {
-      cont.innerHTML = '<p>No hay pagos registrados aún.</p>';
+      cont.innerHTML = '<p>No hay pagos a directores registrados aún.</p>';
       return;
     }
 
-    let html = '<h4>Pagos por tipo de reunión</h4><ul>';
+    let html = '<h4>Pagos por director</h4><ul>';
     Array.from(mapa.values())
-      .sort((a, b) => a.clase.localeCompare(b.clase))
+      .sort((a, b) => a.nombre.localeCompare(b.nombre))
       .forEach(item => {
-        html += `<li><strong>${item.clase} – ${item.nombre}:</strong> ${formatearCLP(item.total)}</li>`;
+        html += `<li><strong>${item.nombre}:</strong> ${formatearCLP(item.total)}</li>`;
       });
     html += '</ul>';
 
     cont.innerHTML = html;
   } catch (err) {
-    console.error('agendaCargarResumenPagosClase error', err);
+    console.error('agendaCargarResumenPagosDirector error', err);
   }
 }
+
+
 
 // ------------------------------------------------------
 // Resumen pagos por director (solo admin)

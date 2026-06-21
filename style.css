@@ -1136,3 +1136,43 @@ input:focus, select:focus, textarea:focus,
 .agenda-card-line5 {
   font-size: 13px;
 }
+
+/* Compactar sección detalle reunión (menos altura y margenes) */
+#agenda-detalle-datos {
+  padding: 10px 12px;            /* menos padding interno */
+}
+#agenda-detalle-datos label,
+#agenda-detalle-datos p,
+#agenda-detalle-datos select,
+#agenda-detalle-datos input,
+#agenda-detalle-datos textarea {
+  margin-bottom: 6px;           /* reducir espacio entre líneas */
+  font-size: 14px;              /* texto ligeramente más compacto */
+  line-height: 1.25;
+}
+#agenda-detalle-datos h3,
+#agenda-detalle-datos .titulo {
+  margin-bottom: 6px;
+}
+#agenda-detalle-datos textarea {
+  padding: 8px;
+  resize: vertical;
+  min-height: 38px;
+}
+#ag-bloque-tele, #ag-bloque-presencial, #ag-lista-directores, #ag-invitados {
+  margin-top: 6px;              /* menos separación entre sub-bloques */
+}
+#agenda-detalle-asistentes .mec-seccion-card,
+#agenda-detalle-resumen {
+  padding: 8px 10px;            /* menos padding en sub tarjetas */
+}
+@media (max-width: 480px) {
+  #agenda-detalle-datos label,
+  #agenda-detalle-datos p,
+  #agenda-detalle-datos select,
+  #agenda-detalle-datos input,
+  #agenda-detalle-datos textarea {
+    font-size: 13px;
+    margin-bottom: 5px;
+  }
+}

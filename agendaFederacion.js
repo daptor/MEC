@@ -84,7 +84,14 @@ async function agendaRefrescarListado() {
     else if (r.estado === 'CANCELADA') borde = '#f87171';
     div.style.borderLeft = `4px solid ${borde}`;
 
-    const fechaStr = new Date(r.fecha).toLocaleDateString('es-CL');
+    let fechaStr = '';
+    if (r.fecha) {
+    const [yyyy, mm, dd] = r.fecha.split('-');
+    if (yyyy && mm && dd) {
+    fechaStr = `${dd}-${mm}-${yyyy}`;
+  }
+}
+
     const claseNombre = r.clase_nombre;
     const esTele = (r.tipo_conexion === 'TELEMATICA');
     let linea2 = esTele ? 'ZOOM' : 'PRESENCIAL';
@@ -685,21 +692,39 @@ async function agendaCargarResumenPagosDirector() {
 }
 
 // ------------------------------------------------------
-// Resumen pagos por director (solo admin)
+// Resumen pagos por director (solo admin, solo REALIZADAS)
 // ------------------------------------------------------
 async function agendaCargarResumenPagosDirector() {
   try {
-    if (!esAdminMEC()) {
-      return;
-    }
+    if (!esAdminMEC()) return;
 
     const cont = document.getElementById('agenda-resumen-director');
     if (!cont) return;
 
+    // 1) Obtener IDs de reuniones REALIZADAS
+    const { data: reuniones, error: errR } = await supabase
+      .from('reunion_federacion')
+      .select('id')
+      .eq('estado', 'REALIZADA');
+
+    if (errR) {
+      console.error('Error cargando reuniones REALIZADAS', errR);
+      cont.innerHTML = '<p>Error cargando resumen por director.</p>';
+      return;
+    }
+
+    const ids = (reuniones || []).map(r => r.id);
+    if (!ids.length) {
+      cont.innerHTML = '<p>No hay pagos a directores registrados aún.</p>';
+      return;
+    }
+
+    // 2) Asistentes DIRECTOR solo en esas reuniones
     const { data, error } = await supabase
       .from('reunion_federacion_asistente')
-      .select('socio_id, nombre_mostrado, tipo_asistente, pago_calculado')
-      .eq('tipo_asistente', 'DIRECTOR');
+      .select('reunion_id, socio_id, nombre_mostrado, tipo_asistente, pago_calculado')
+      .eq('tipo_asistente', 'DIRECTOR')
+      .in('reunion_id', ids);
 
     if (error) {
       console.error('Error resumen por director', error);
@@ -708,6 +733,8 @@ async function agendaCargarResumenPagosDirector() {
     }
 
     const mapa = new Map();
+    let totalGeneral = 0;
+
     (data || []).forEach(a => {
       const key = a.socio_id || a.nombre_mostrado;
       if (!key) return;
@@ -718,6 +745,7 @@ async function agendaCargarResumenPagosDirector() {
       }
       const item = mapa.get(key);
       item.total += monto;
+      totalGeneral += monto;
     });
 
     if (mapa.size === 0) {
@@ -732,6 +760,7 @@ async function agendaCargarResumenPagosDirector() {
         html += `<li><strong>${item.nombre}:</strong> ${formatearCLP(item.total)}</li>`;
       });
     html += '</ul>';
+    html += `<p><strong>Total general pagado a directores (solo reuniones REALIZADAS):</strong> ${formatearCLP(totalGeneral)}</p>`;
 
     cont.innerHTML = html;
   } catch (err) {

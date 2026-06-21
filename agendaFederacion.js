@@ -168,7 +168,10 @@ async function agendaNuevaReunion() {
     }
 
     // 1) Pedir clase (A–I)
-    let clase = prompt("Clase de reunión (A–I):\nA: Plenaria Zoom\nB: Plenaria Presencial\nC: Plenaria Director S/SB\nD: Reunión Ejecutivo Presencial\nE: Directorio Zoom (2h)\nF: Reuniones Especiales Presenciales\nG: Reuniones Zoom (2h)\nH: Visita Zona Norte Zoom\nI: Visita Zona Sur Zoom", "E");
+    let clase = prompt(
+      "Clase de reunión (A–I):\nA: Plenaria Zoom (sin pago)\nB: Plenaria Presencial (sin pago)\nC: Plenaria Director S/SB (paga día)\nD: Reunión Ejecutivo Presencial\nE: Directorio Zoom (2h)\nF: Reuniones Especiales Presenciales\nG: Reuniones Zoom (2h)\nH: Visita Zona Norte Zoom\nI: Visita Zona Sur Zoom",
+      "E"
+    );
     if (!clase) return;
     clase = clase.trim().toUpperCase();
 
@@ -182,7 +185,6 @@ async function agendaNuevaReunion() {
     let fecha = prompt("Fecha de la reunión (YYYY-MM-DD):", hoy);
     if (!fecha) return;
     fecha = fecha.trim();
-    // Validación mínima de formato
     if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
       alert("Formato de fecha inválido. Usa YYYY-MM-DD.");
       return;
@@ -198,12 +200,14 @@ async function agendaNuevaReunion() {
     const { data: inserted, error: errIns } = await supabase
       .from("reunion_federacion")
       .insert({
+        fecha: fecha,
         clase: claseInfo.clase,
         clase_nombre: claseInfo.nombre,
         tipo_conexion: claseInfo.tipo_conexion,
-        fecha: fecha,
         estado: "PLANIFICADA",
-        motivo: motivo || null
+        motivo: motivo || null,
+        tarifa_hora: claseInfo.tipo_conexion === "TELEMATICA" ? 2500 : null,
+        tarifa_dia: claseInfo.tipo_conexion === "PRESENCIAL" ? 20000 : null
       })
       .select()
       .single();
@@ -214,12 +218,16 @@ async function agendaNuevaReunion() {
       return;
     }
 
-    // 5) Refrescar listado y abrir detalle de la nueva reunión
+    // 5) Refrescar listado y resumen, luego abrir detalle
     await agendaRefrescarListado();
 
-        if (esAdminMEC()) {
-      await agendaCargarResumenPagosClase();
-      await agendaCargarResumenPagosDirector();
+    if (esAdminMEC()) {
+      if (typeof agendaCargarResumenPagosClase === "function") {
+        await agendaCargarResumenPagosClase();
+      }
+      if (typeof agendaCargarResumenPagosDirector === "function") {
+        await agendaCargarResumenPagosDirector();
+      }
     }
 
     abrirDetalleReunionAgenda(inserted.id);

@@ -23,6 +23,20 @@ async function agendaInicializar() {
   const bloqueCrear = document.getElementById('agenda-bloque-crear');
   if (bloqueCrear) bloqueCrear.style.display = esAdminMEC() ? 'block' : 'none';
   await agendaRefrescarListado();
+
+      if (esAdminMEC()) {
+      await agendaCargarResumenPagosClase();
+      await agendaCargarResumenPagosDirector();
+    }
+
+
+  const bloqueResumen = document.getElementById('agenda-resumen-pagos');
+  if (bloqueResumen) bloqueResumen.style.display = esAdminMEC() ? 'block' : 'none';
+  if (esAdminMEC()) {
+    await agendaCargarResumenPagosClase();
+    await agendaCargarResumenPagosDirector();
+  }
+
 }
 
 function agendaFiltrarPorEstado(estado) {
@@ -86,12 +100,24 @@ async function agendaRefrescarListado() {
       linea4 = `Asistentes pagados: ${n} · Total: ${formatearCLP(total)}`;
     }
 
+    // Mensaje fijo de política de pago según clase
+    let lineaPago = '';
+    if (r.clase === 'A') {
+      lineaPago = 'Pago MEC: $0 (Asamblea Plenaria Zoom sin pago).';
+    } else if (r.clase === 'B') {
+      lineaPago = 'Pago MEC: $0 (Asamblea Plenaria Presencial sin pago).';
+    } else if (r.clase === 'C') {
+      lineaPago = 'Esta reunión paga $20.000 por día al director sin SB (1 a 3 días).';
+    }
+
     div.innerHTML = `
       <p><strong>${fechaStr}</strong> · ${claseNombre}</p>
       <p>${linea2}</p>
       <p>Motivo: ${r.motivo || ''}</p>
+      ${lineaPago ? `<p>${lineaPago}</p>` : ''}
       ${linea4 ? `<p>${linea4}</p>` : ''}
     `;
+
     div.onclick = () => abrirDetalleReunionAgenda(r.id);
     cont.appendChild(div);
   });
@@ -175,6 +201,12 @@ async function agendaNuevaReunion() {
 
     // 5) Refrescar listado y abrir detalle de la nueva reunión
     await agendaRefrescarListado();
+
+        if (esAdminMEC()) {
+      await agendaCargarResumenPagosClase();
+      await agendaCargarResumenPagosDirector();
+    }
+
     abrirDetalleReunionAgenda(inserted.id);
   } catch (err) {
     console.error("agendaNuevaReunion error", err);
@@ -244,6 +276,9 @@ async function abrirDetalleReunionAgenda(id) {
 
     const bloqueTele = document.getElementById('ag-bloque-tele');
     const bloquePres = document.getElementById('ag-bloque-presencial');
+    const txtPres = document.getElementById('ag-presencial-texto');
+    const bloqueDias = document.getElementById('ag-bloque-dias-plenaria');
+    const inpDias = document.getElementById('ag-dias-plenaria');
 
     if (reunion.tipo_conexion === 'TELEMATICA') {
       if (bloqueTele) bloqueTele.style.display = 'block';
@@ -252,10 +287,26 @@ async function abrirDetalleReunionAgenda(id) {
       const hf = document.getElementById('ag-hora-final');
       if (hi) hi.value = reunion.hora_inicio || '';
       if (hf) hf.value = reunion.hora_final || '';
+      if (bloqueDias) bloqueDias.style.display = 'none';
     } else {
       if (bloqueTele) bloqueTele.style.display = 'none';
       if (bloquePres) bloquePres.style.display = 'block';
+
+      // Clase C: Plenarias Director S/SB
+      if (reunion.clase === 'C') {
+        if (txtPres) txtPres.textContent = 'Esta reunión paga $20.000 por día al director sin SB (1 a 3 días).';
+        if (bloqueDias) bloqueDias.style.display = 'block';
+        if (inpDias) {
+          const dias = Number(reunion.duracion_horas || 1);
+          inpDias.value = Math.min(3, Math.max(1, dias || 1));
+        }
+      } else {
+        if (txtPres) txtPres.innerHTML = 'Pago día por asistente: <strong>$20.000</strong>';
+        if (bloqueDias) bloqueDias.style.display = 'none';
+        if (inpDias) inpDias.value = 1;
+      }
     }
+
 
     // 5) Render de directores con checkboxes
     const contDir = document.getElementById('ag-lista-directores');
@@ -361,6 +412,14 @@ async function agendaGuardarReunion() {
       horaFinalVal = document.getElementById('ag-hora-final')?.value || null;
     }
 
+    // para clase C usaremos duracion_horas como "días de plenaria"
+    let diasPlenaria = null;
+    if (agendaReunionActual.tipo_conexion === 'PRESENCIAL' && agendaReunionActual.clase === 'C') {
+      const inpDias = document.getElementById('ag-dias-plenaria');
+      const val = Number(inpDias?.value || 1);
+      diasPlenaria = Math.min(3, Math.max(1, val || 1));
+    }
+
     const { error: errUpd } = await supabase
       .from('reunion_federacion')
       .update({
@@ -368,7 +427,8 @@ async function agendaGuardarReunion() {
         estado: estadoVal,
         motivo: motivoVal,
         hora_inicio: horaInicioVal,
-        hora_final: horaFinalVal
+        hora_final: horaFinalVal,
+        duracion_horas: diasPlenaria  // null en otras clases
       })
       .eq('id', id);
 
@@ -502,6 +562,12 @@ async function agendaGuardarReunion() {
 
     // 5) Volver al listado
     await agendaRefrescarListado();
+
+        if (esAdminMEC()) {
+      await agendaCargarResumenPagosClase();
+      await agendaCargarResumenPagosDirector();
+    }
+
     mostrarPantalla('pantalla-agenda-federacion');
   } catch (err) {
     console.error('agendaGuardarReunion error', err);
@@ -544,6 +610,12 @@ async function agendaEliminarReunion() {
     agendaReunionActual = null;
     alert('Reunión eliminada.');
     await agendaRefrescarListado();
+
+        if (esAdminMEC()) {
+      await agendaCargarResumenPagosClase();
+      await agendaCargarResumenPagosDirector();
+    }
+
     mostrarPantalla('pantalla-agenda-federacion');
   } catch (err) {
     console.error('agendaEliminarReunion error', err);
@@ -554,6 +626,116 @@ async function agendaEliminarReunion() {
 function volverDesdeDetalleAgenda() {
   mostrarPantalla("pantalla-agenda-federacion");
 }
+
+// ------------------------------------------------------
+// Resumen pagos por clase (solo admin)
+// ------------------------------------------------------
+async function agendaCargarResumenPagosClase() {
+  try {
+    if (!esAdminMEC()) {
+      return;
+    }
+
+    const cont = document.getElementById('agenda-resumen-clase');
+    if (!cont) return;
+
+    const { data, error } = await supabase
+      .from('reunion_federacion')
+      .select('clase, clase_nombre, total_monto')
+      .eq('estado', 'REALIZADA');
+
+    if (error) {
+      console.error('Error resumen por clase', error);
+      cont.innerHTML = '<p>Error cargando resumen por clase.</p>';
+      return;
+    }
+
+    const mapa = new Map();
+    (data || []).forEach(r => {
+      const key = r.clase;
+      const nombre = r.clase_nombre || r.clase;
+      const monto = Number(r.total_monto || 0);
+      if (!mapa.has(key)) {
+        mapa.set(key, { clase: key, nombre, total: 0 });
+      }
+      const item = mapa.get(key);
+      item.total += monto;
+    });
+
+    if (mapa.size === 0) {
+      cont.innerHTML = '<p>No hay pagos registrados aún.</p>';
+      return;
+    }
+
+    let html = '<h4>Pagos por tipo de reunión</h4><ul>';
+    Array.from(mapa.values())
+      .sort((a, b) => a.clase.localeCompare(b.clase))
+      .forEach(item => {
+        html += `<li><strong>${item.clase} – ${item.nombre}:</strong> ${formatearCLP(item.total)}</li>`;
+      });
+    html += '</ul>';
+
+    cont.innerHTML = html;
+  } catch (err) {
+    console.error('agendaCargarResumenPagosClase error', err);
+  }
+}
+
+// ------------------------------------------------------
+// Resumen pagos por director (solo admin)
+// ------------------------------------------------------
+async function agendaCargarResumenPagosDirector() {
+  try {
+    if (!esAdminMEC()) {
+      return;
+    }
+
+    const cont = document.getElementById('agenda-resumen-director');
+    if (!cont) return;
+
+    const { data, error } = await supabase
+      .from('reunion_federacion_asistente')
+      .select('socio_id, nombre_mostrado, tipo_asistente, pago_calculado')
+      .eq('tipo_asistente', 'DIRECTOR');
+
+    if (error) {
+      console.error('Error resumen por director', error);
+      cont.innerHTML = '<p>Error cargando resumen por director.</p>';
+      return;
+    }
+
+    const mapa = new Map();
+    (data || []).forEach(a => {
+      const key = a.socio_id || a.nombre_mostrado;
+      if (!key) return;
+      const nombre = a.nombre_mostrado || 'Director sin nombre';
+      const monto = Number(a.pago_calculado || 0);
+      if (!mapa.has(key)) {
+        mapa.set(key, { nombre, total: 0 });
+      }
+      const item = mapa.get(key);
+      item.total += monto;
+    });
+
+    if (mapa.size === 0) {
+      cont.innerHTML = '<p>No hay pagos a directores registrados aún.</p>';
+      return;
+    }
+
+    let html = '<h4>Pagos por director</h4><ul>';
+    Array.from(mapa.values())
+      .sort((a, b) => a.nombre.localeCompare(b.nombre))
+      .forEach(item => {
+        html += `<li><strong>${item.nombre}:</strong> ${formatearCLP(item.total)}</li>`;
+      });
+    html += '</ul>';
+
+    cont.innerHTML = html;
+  } catch (err) {
+    console.error('agendaCargarResumenPagosDirector error', err);
+  }
+}
+
 
 // Exponer global
 window.agendaInicializar = agendaInicializar;

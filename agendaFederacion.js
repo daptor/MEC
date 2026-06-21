@@ -118,11 +118,19 @@ async function agendaRefrescarListado() {
     }
 
     div.innerHTML = `
-      <p><strong>${fechaStr}</strong> · ${claseNombre}</p>
-      <p>${linea2}</p>
-      <p>Motivo: ${r.motivo || ''}</p>
-      ${lineaPago ? `<p>${lineaPago}</p>` : ''}
-      ${linea4 ? `<p>${linea4}</p>` : ''}
+      <div class="agenda-card-compact">
+        <div class="agenda-card-line1">
+          <strong>${fechaStr}</strong> · ${claseNombre}
+        </div>
+        <div class="agenda-card-line2">
+          ${linea2}
+        </div>
+        <div class="agenda-card-line3">
+          Motivo: ${r.motivo || ''}
+        </div>
+        ${lineaPago ? `<div class="agenda-card-line4">${lineaPago}</div>` : ''}
+        ${linea4 ? `<div class="agenda-card-line5">${linea4}</div>` : ''}
+      </div>
     `;
 
     div.onclick = () => abrirDetalleReunionAgenda(r.id);

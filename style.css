@@ -1115,3 +1115,24 @@ input:focus, select:focus, textarea:focus,
   border-radius: 6px;
 }
 
+/* Tarjetas Agenda Federación más compactas */
+.agenda-card-compact {
+  line-height: 1.3;
+  font-size: 14px;
+}
+
+.agenda-card-compact > div {
+  margin-bottom: 2px; /* muy poca separación */
+}
+
+.agenda-card-line1 {
+  font-weight: 700;
+  margin-bottom: 3px;
+}
+
+.agenda-card-line2,
+.agenda-card-line3,
+.agenda-card-line4,
+.agenda-card-line5 {
+  font-size: 13px;
+}

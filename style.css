@@ -1157,7 +1157,7 @@ input:focus, select:focus, textarea:focus,
 #agenda-detalle-datos textarea {
   padding: 8px;
   resize: vertical;
-  min-height: 38px;
+  min-height: 32px;
 }
 #ag-bloque-tele, #ag-bloque-presencial, #ag-lista-directores, #ag-invitados {
   margin-top: 2px;              /* menos separación entre sub-bloques */
@@ -1182,7 +1182,7 @@ input:focus, select:focus, textarea:focus,
 #ag-lista-directores > div {
   display: flex;
   align-items: center;
-  gap: 10px;              /* espacio entre checkbox y texto */
+  gap: 6px;              /* espacio entre checkbox y texto */
   padding: 6px 4px;
 }
 

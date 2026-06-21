@@ -1146,7 +1146,7 @@ input:focus, select:focus, textarea:focus,
 #agenda-detalle-datos select,
 #agenda-detalle-datos input,
 #agenda-detalle-datos textarea {
-  margin-bottom: 6px;           /* reducir espacio entre líneas */
+  margin-bottom: 2px;           /* reducir espacio entre líneas */
   font-size: 14px;              /* texto ligeramente más compacto */
   line-height: 1.25;
 }
@@ -1160,7 +1160,7 @@ input:focus, select:focus, textarea:focus,
   min-height: 38px;
 }
 #ag-bloque-tele, #ag-bloque-presencial, #ag-lista-directores, #ag-invitados {
-  margin-top: 6px;              /* menos separación entre sub-bloques */
+  margin-top: 2px;              /* menos separación entre sub-bloques */
 }
 #agenda-detalle-asistentes .mec-seccion-card,
 #agenda-detalle-resumen {

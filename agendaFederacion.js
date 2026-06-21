@@ -402,7 +402,6 @@ async function abrirDetalleReunionAgenda(id) {
   }
 }
 
-
 // ------------------------------------------------------
 // Guardar reunión + asistentes + RPC recálculo
 // ------------------------------------------------------
@@ -652,6 +651,63 @@ async function agendaEliminarReunion() {
 
 function volverDesdeDetalleAgenda() {
   mostrarPantalla("pantalla-agenda-federacion");
+}
+
+// ------------------------------------------------------
+// Resumen pagos por tipo de reunión (solo admin, solo REALIZADAS)
+// ------------------------------------------------------
+async function agendaCargarResumenPagosClase() {
+  try {
+    if (!esAdminMEC()) return;
+
+    const cont = document.getElementById('agenda-resumen-clase');
+    if (!cont) return;
+
+    const { data, error } = await supabase
+      .from('reunion_federacion')
+      .select('clase, clase_nombre, total_monto')
+      .eq('estado', 'REALIZADA');
+
+    if (error) {
+      console.error('Error resumen por clase', error);
+      cont.innerHTML = '<p>Error cargando resumen por tipo de reunión.</p>';
+      return;
+    }
+
+    const mapa = new Map();
+    let totalGeneral = 0;
+
+    (data || []).forEach(r => {
+      const key = r.clase;
+      const nombre = r.clase_nombre || r.clase;
+      const monto = Number(r.total_monto || 0);
+      if (!mapa.has(key)) {
+        mapa.set(key, { clase: key, nombre, total: 0 });
+      }
+      const item = mapa.get(key);
+      item.total += monto;
+      totalGeneral += monto;
+    });
+
+    if (mapa.size === 0) {
+      cont.innerHTML = '<p>No hay pagos registrados aún.</p>';
+      return;
+    }
+
+    let html = '<h4>Pagos por tipo de reunión</h4><ul>';
+    Array.from(mapa.values())
+      .sort((a, b) => a.clase.localeCompare(b.clase))
+      .forEach(item => {
+        html += `<li><strong>${item.clase} – ${item.nombre}:</strong> ${formatearCLP(item.total)}</li>`;
+      });
+    html += '</ul>';
+
+    html += `<p><strong>Total general reuniones realizadas:</strong> ${formatearCLP(totalGeneral)}</p>`;
+
+    cont.innerHTML = html;
+  } catch (err) {
+    console.error('agendaCargarResumenPagosClase error', err);
+  }
 }
 
 // -----------------------------------------------------------

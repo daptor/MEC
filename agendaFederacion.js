@@ -595,6 +595,7 @@ async function agendaGuardarReunion() {
 
     await agendaRefrescarListado();
     mostrarPantalla('pantalla-agenda-federacion');
+    
   } catch (err) {
     console.error('agendaGuardarReunion error', err);
     alert('Error guardando reunión.');
@@ -653,66 +654,10 @@ function volverDesdeDetalleAgenda() {
   mostrarPantalla("pantalla-agenda-federacion");
 }
 
-// ------------------------------------------------------
-// Resumen pagos por director (solo admin)
-// ------------------------------------------------------
-async function agendaCargarResumenPagosDirector() {
-  try {
-    if (!esAdminMEC()) {
-      return;
-    }
-
-    const cont = document.getElementById('agenda-resumen-director');
-    if (!cont) return;
-
-    // Unir asistentes con reunión para filtrar solo REALIZADAS
-    const { data, error } = await supabase
-      .from('reunion_federacion_asistente')
-      .select('socio_id, nombre_mostrado, tipo_asistente, pago_calculado, reunion_federacion!inner(estado)')
-      .eq('tipo_asistente', 'DIRECTOR')
-      .eq('reunion_federacion.estado', 'REALIZADA');
-
-    if (error) {
-      console.error('Error resumen por director', error);
-      cont.innerHTML = '<p>Error cargando resumen por director.</p>';
-      return;
-    }
-
-    const mapa = new Map();
-    (data || []).forEach(a => {
-      const key = a.socio_id || a.nombre_mostrado;
-      if (!key) return;
-      const nombre = a.nombre_mostrado || 'Director sin nombre';
-      const monto = Number(a.pago_calculado || 0);
-      if (!mapa.has(key)) {
-        mapa.set(key, { nombre, total: 0 });
-      }
-      const item = mapa.get(key);
-      item.total += monto;
-    });
-
-    if (mapa.size === 0) {
-      cont.innerHTML = '<p>No hay pagos a directores registrados aún.</p>';
-      return;
-    }
-
-    let html = '<h4>Pagos por director</h4><ul>';
-    Array.from(mapa.values())
-      .sort((a, b) => a.nombre.localeCompare(b.nombre))
-      .forEach(item => {
-        html += `<li><strong>${item.nombre}:</strong> ${formatearCLP(item.total)}</li>`;
-      });
-    html += '</ul>';
-
-    cont.innerHTML = html;
-  } catch (err) {
-    console.error('agendaCargarResumenPagosDirector error', err);
-  }
-}
-
-// ------------------------------------------------------
+// -----------------------------------------------------------
 // Resumen pagos por director (solo admin, solo REALIZADAS)
-// ------------------------------------------------------
+// -----------------------------------------------------------
+
 async function agendaCargarResumenPagosDirector() {
   try {
     if (!esAdminMEC()) return;

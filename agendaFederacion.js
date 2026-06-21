@@ -760,7 +760,7 @@ async function agendaCargarResumenPagosDirector() {
         html += `<li><strong>${item.nombre}:</strong> ${formatearCLP(item.total)}</li>`;
       });
     html += '</ul>';
-    html += `<p><strong>Total general pagado a directores (solo reuniones REALIZADAS):</strong> ${formatearCLP(totalGeneral)}</p>`;
+    html += `<p><strong>Total general reuniones realizadas:</strong> ${formatearCLP(totalGeneral)}</p>`;
 
     cont.innerHTML = html;
   } catch (err) {

@@ -1219,3 +1219,75 @@ input:focus, select:focus, textarea:focus,
   #ag-lista-directores .director-nombre { font-size: 13px; white-space: normal; }
 }
 
+/* =========================
+   Estética Agenda → estilo MesaSindical (compacto, cartes blanco sobre verde)
+   ========================= /
+.pantalla#pantalla-agenda-federacion,
+.pantalla#pantalla-agenda-detalle {
+  max-width: 540px;           / un poco más ancho que el menú, centrado */
+  margin: 18px auto;
+  padding: 16px;
+  background: rgba(255,255,255,0.95);
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  color: #0f172a;
+}
+
+/* Cabecera Agenda */
+#pantalla-agenda-federacion h1,
+#pantalla-agenda-detalle h1 {
+  color: #0f4620;
+  font-size: 22px;
+  margin-bottom: 8px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+/* Tarjetas de lista */
+#agenda-lista-reuniones .mec-seccion-card {
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.06);
+  padding: 10px 12px;
+  border-radius: 10px;
+  margin: 10px 0;
+}
+.agenda-card-compact { line-height:1.25; font-size:14px; color:#122226; }
+.agenda-card-line1{ font-weight:700; color:#103f1e; }
+.agenda-card-line2{ color:#334155; font-size:13px; margin-top:4px; }
+.agenda-card-line3{ color:#475569; font-size:13px; margin-top:4px; }
+
+/* Resumen de pagos: tarjeta destacada */
+#agenda-resumen-pagos {
+  background: linear-gradient(180deg,#fcfffa,#f7fff3);
+  border-left:6px solid #28a745;
+  padding:12px;
+  margin-top:12px;
+}
+#agenda-resumen-pagos h3{ color:#0f4620; margin-top:0; }
+
+/* Botón Crear */
+#agenda-bloque-crear button {
+  background: linear-gradient(135deg,#10b981,#059669);
+  padding:12px;
+  border-radius:12px;
+  box-shadow: 0 6px 14px rgba(16,185,129,0.18);
+}
+
+/* Detalle: compactar y alinear campos en dos columnas en desktop */
+#agenda-detalle-datos { padding:12px; }
+@media(min-width:700px){
+  #agenda-detalle-datos { display:grid; grid-template-columns: 1fr 1fr; gap:10px; align-items:start; }
+  #agenda-detalle-datos label, #agenda-detalle-datos input, #agenda-detalle-datos textarea { margin-bottom:6px; }
+  #ag-bloque-tele, #ag-bloque-presencial { grid-column: span 2; }
+}
+
+/* Asistentes: list style similar MesaSindical */
+#ag-lista-directores .item-director { background:#f8faf8; border:1px solid rgba(0,0,0,0.04); padding:8px; border-radius:8px; margin:6px 0; }
+#ag-lista-directores .director-nombre { color:#0f172a; font-weight:600; }
+
+/* Mobile tweaks (más compacto) */
+@media(max-width:480px){
+  .pantalla#pantalla-agenda-federacion, .pantalla#pantalla-agenda-detalle { padding:12px; margin:12px; }
+  .agenda-card-line2, .agenda-card-line3 { font-size:13px; }
+}

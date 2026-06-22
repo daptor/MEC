@@ -729,37 +729,69 @@
 
   <!-- Bloque 1: Datos generales -->
   <div class="mec-seccion-card" id="agenda-detalle-datos">
-    <label>Clase:</label>
-    <select id="ag-clase" disabled></select>
 
-    <p><strong>Tipo:</strong> <span id="ag-tipo"></span></p>
-
-    <label>Fecha:</label>
-    <input type="date" id="ag-fecha">
-
-    <label>Estado:</label>
-    <select id="ag-estado">
-      <option value="PLANIFICADA">Planificada</option>
-      <option value="REALIZADA">Realizada</option>
-      <option value="CANCELADA">Cancelada</option>
-    </select>
-
-    <label>Motivo / tema:</label>
-    <textarea id="ag-motivo" rows="2"></textarea>
-
-    <div id="ag-bloque-tele" style="margin-top:8px; display:none;">
-      <label>Hora inicio:</label>
-      <input type="time" id="ag-hora-inicio">
-      <label>Hora final:</label>
-      <input type="time" id="ag-hora-final">
-      <p id="ag-texto-duracion"></p>
+    <div class="form-row">
+      <label for="ag-clase">Clase:</label>
+      <div class="field">
+        <select id="ag-clase" disabled></select>
+      </div>
     </div>
 
-    <div id="ag-bloque-presencial" style="margin-top:8px; display:none;">
-      <p id="ag-presencial-texto">Pago día por asistente: <strong>$20.000</strong></p>
-      <div id="ag-bloque-dias-plenaria" style="margin-top:8px; display:none;">
-        <label for="ag-dias-plenaria">Días de plenaria (1 a 3):</label>
-        <input type="number" id="ag-dias-plenaria" min="1" max="3" value="1" style="width:80px;">
+    <div class="form-row">
+      <label>Tipo:</label>
+      <div class="field">
+        <span id="ag-tipo"></span>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label for="ag-fecha">Fecha:</label>
+      <div class="field">
+        <input type="date" id="ag-fecha">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label for="ag-estado">Estado:</label>
+      <div class="field">
+        <select id="ag-estado">
+          <option value="PLANIFICADA">Planificada</option>
+          <option value="REALIZADA">Realizada</option>
+          <option value="CANCELADA">Cancelada</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <label for="ag-motivo">Motivo / tema:</label>
+      <div class="field">
+        <textarea id="ag-motivo" rows="2"></textarea>
+      </div>
+    </div>
+
+    <div id="ag-bloque-tele" style="margin-top:4px; display:none;">
+      <div class="form-row">
+        <label for="ag-hora-inicio">Hora inicio:</label>
+        <div class="field">
+          <input type="time" id="ag-hora-inicio">
+        </div>
+      </div>
+      <div class="form-row">
+        <label for="ag-hora-final">Hora final:</label>
+        <div class="field">
+          <input type="time" id="ag-hora-final">
+        </div>
+      </div>
+      <p id="ag-texto-duracion" style="margin-top:4px;"></p>
+    </div>
+
+    <div id="ag-bloque-presencial" style="margin-top:4px; display:none;">
+      <p id="ag-presencial-texto" style="margin:0 0 6px 0;">Pago día por asistente: <strong>$20.000</strong></p>
+      <div id="ag-bloque-dias-plenaria" class="form-row" style="display:none;">
+        <label for="ag-dias-plenaria">Días plenaria (1–3):</label>
+        <div class="field">
+          <input type="number" id="ag-dias-plenaria" min="1" max="3" value="1" style="width:80px;">
+        </div>
       </div>
     </div>
   </div>
@@ -773,17 +805,25 @@
     <hr>
     <div id="ag-invitados">
       <h4>Invitados</h4>
-      <div>
-        <label>Invitado 1 (nombre libre):</label>
-        <input type="text" id="ag-inv1-nombre">
-        <label><input type="checkbox" id="ag-inv1-asistio"> Asistió</label>
-        <p>Pago: $0</p>
+      <div class="form-row">
+        <label for="ag-inv1-nombre">Invitado 1:</label>
+        <div class="field">
+          <input type="text" id="ag-inv1-nombre" placeholder="Nombre invitado 1">
+        </div>
+        <label style="width:auto;">
+          <input type="checkbox" id="ag-inv1-asistio"> Asistió
+        </label>
+        <span>Pago: $0</span>
       </div>
-      <div style="margin-top:8px;">
-        <label>Invitado 2 (nombre libre):</label>
-        <input type="text" id="ag-inv2-nombre">
-        <label><input type="checkbox" id="ag-inv2-asistio"> Asistió</label>
-        <p>Pago: $0</p>
+      <div class="form-row">
+        <label for="ag-inv2-nombre">Invitado 2:</label>
+        <div class="field">
+          <input type="text" id="ag-inv2-nombre" placeholder="Nombre invitado 2">
+        </div>
+        <label style="width:auto;">
+          <input type="checkbox" id="ag-inv2-asistio"> Asistió
+        </label>
+        <span>Pago: $0</span>
       </div>
     </div>
   </div>
@@ -801,6 +841,7 @@
     <button type="button" style="background:#dc2626;" onclick="agendaEliminarReunion()">🗑 Eliminar reunión</button>
   </div>
 </div>
+
 
 
 <!-- ====================================================== -->
@@ -1061,8 +1102,6 @@
         </div>
     </div>
 </div>
-
-
 
 
 <!-- Favicon -->

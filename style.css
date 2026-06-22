@@ -1219,75 +1219,103 @@ input:focus, select:focus, textarea:focus,
   #ag-lista-directores .director-nombre { font-size: 13px; white-space: normal; }
 }
 
-/* =========================
-   Estética Agenda → estilo MesaSindical (compacto, cartes blanco sobre verde)
-   ========================= /
-.pantalla#pantalla-agenda-federacion,
-.pantalla#pantalla-agenda-detalle {
-  max-width: 540px;           / un poco más ancho que el menú, centrado */
-  margin: 18px auto;
-  padding: 16px;
-  background: rgba(255,255,255,0.95);
-  border-radius: 14px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-  color: #0f172a;
+/* Mejora visual: Detalle reunión (alineado, compacto, claro) */
+#agenda-detalle-datos {
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 6px 18px rgba(16,185,129,0.06);
+  color: #0f1720;
+  margin-bottom: 10px;
 }
 
-/* Cabecera Agenda */
-#pantalla-agenda-federacion h1,
-#pantalla-agenda-detalle h1 {
-  color: #0f4620;
-  font-size: 22px;
+/* Grid compacto: etiquetas a la izquierda, campos a la derecha */
+#agenda-detalle-datos .form-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
   margin-bottom: 8px;
+}
+#agenda-detalle-datos .form-row label {
+  width: 120px;
+  min-width: 100px;
+  font-weight:700;
+  color:#14532d;
+  margin:0;
+}
+#agenda-detalle-datos .form-row .field {
+  flex:1;
+  margin:0;
+}
+
+/* Inputs y textarea más compactos */
+#agenda-detalle-datos input[type="date"],
+#agenda-detalle-datos input[type="time"],
+#agenda-detalle-datos select,
+#agenda-detalle-datos textarea,
+#agenda-detalle-datos input[type="text"] {
+  width:100%;
+  padding:8px 10px;
+  font-size:14px;
+  border-radius:8px;
+  border:1px solid #d1e7dd;
+  box-shadow:none;
+  background:#fff;
+  color:#0f1720;
+}
+
+/* Asistentes: lista limpia en columna, checkbox a la izquierda */
+#ag-lista-directores .item-director {
   display:flex;
   align-items:center;
-  gap:8px;
+  gap:10px;
+  padding:8px;
+  background:#fbfffb;
+  border:1px solid rgba(0,0,0,0.04);
+  border-radius:8px;
+  margin-bottom:6px;
 }
+#ag-lista-directores .director-nombre { font-weight:600; color:#0b3b26; }
 
-/* Tarjetas de lista */
-#agenda-lista-reuniones .mec-seccion-card {
-  background: #fff;
-  border: 1px solid rgba(0,0,0,0.06);
-  padding: 10px 12px;
-  border-radius: 10px;
-  margin: 10px 0;
+/* Invitados: inline compacto */
+#ag-invitados > div {
+  display:flex;
+  gap:10px;
+  align-items:center;
+  margin-bottom:6px;
 }
-.agenda-card-compact { line-height:1.25; font-size:14px; color:#122226; }
-.agenda-card-line1{ font-weight:700; color:#103f1e; }
-.agenda-card-line2{ color:#334155; font-size:13px; margin-top:4px; }
-.agenda-card-line3{ color:#475569; font-size:13px; margin-top:4px; }
+#ag-invitados label { margin:0; font-weight:600; color:#14532d; }
 
-/* Resumen de pagos: tarjeta destacada */
-#agenda-resumen-pagos {
-  background: linear-gradient(180deg,#fcfffa,#f7fff3);
-  border-left:6px solid #28a745;
-  padding:12px;
+/* Resumen: tarjeta compacta */
+#agenda-detalle-resumen {
+  background:#f7fff3;
+  border-left:4px solid #28a745;
+  padding:10px;
+  border-radius:8px;
+  margin-top:8px;
+  color:#0b3b26;
+}
+#agenda-detalle-resumen p { margin:4px 0; font-weight:600; }
+
+/* Botones: inline, tamaño más reducido */
+#agenda-detalle-acciones-admin {
+  display:flex;
+  gap:10px;
   margin-top:12px;
 }
-#agenda-resumen-pagos h3{ color:#0f4620; margin-top:0; }
-
-/* Botón Crear */
-#agenda-bloque-crear button {
-  background: linear-gradient(135deg,#10b981,#059669);
-  padding:12px;
-  border-radius:12px;
-  box-shadow: 0 6px 14px rgba(16,185,129,0.18);
+#agenda-detalle-acciones-admin button {
+  width:auto;
+  padding:8px 12px;
+  font-size:14px;
+  border-radius:10px;
+  box-shadow:none;
 }
+#agenda-detalle-acciones-admin button:first-child { background:linear-gradient(135deg,#10b981,#059669); }
+#agenda-detalle-acciones-admin button:last-child { background:#dc2626; }
 
-/* Detalle: compactar y alinear campos en dos columnas en desktop */
-#agenda-detalle-datos { padding:12px; }
-@media(min-width:700px){
-  #agenda-detalle-datos { display:grid; grid-template-columns: 1fr 1fr; gap:10px; align-items:start; }
-  #agenda-detalle-datos label, #agenda-detalle-datos input, #agenda-detalle-datos textarea { margin-bottom:6px; }
-  #ag-bloque-tele, #ag-bloque-presencial { grid-column: span 2; }
-}
-
-/* Asistentes: list style similar MesaSindical */
-#ag-lista-directores .item-director { background:#f8faf8; border:1px solid rgba(0,0,0,0.04); padding:8px; border-radius:8px; margin:6px 0; }
-#ag-lista-directores .director-nombre { color:#0f172a; font-weight:600; }
-
-/* Mobile tweaks (más compacto) */
-@media(max-width:480px){
-  .pantalla#pantalla-agenda-federacion, .pantalla#pantalla-agenda-detalle { padding:12px; margin:12px; }
-  .agenda-card-line2, .agenda-card-line3 { font-size:13px; }
+/* Mobile: apilar filas (labels arriba) */
+@media (max-width:640px) {
+  #agenda-detalle-datos .form-row { flex-direction:column; align-items:flex-start; gap:6px; }
+  #agenda-detalle-datos .form-row label { width:100%; min-width:0; }
+  #ag-lista-directores .item-director { gap:8px; }
 }

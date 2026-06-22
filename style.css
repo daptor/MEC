@@ -1319,3 +1319,31 @@ input:focus, select:focus, textarea:focus,
   #agenda-detalle-datos .form-row label { width:100%; min-width:0; }
   #ag-lista-directores .item-director { gap:8px; }
 }
+
+/* Invitados Agenda: todo en una línea, sin $0 */
+.invitado-row {
+  align-items: center;
+  gap: 6px;
+}
+.invitado-row label {
+  width: 40px;      /* etiqueta #1 / #2 corta */
+  min-width: 40px;
+}
+.invitado-row .field {
+  flex: 1;
+}
+.chk-invitado {
+  width: auto !important;
+  min-width: auto !important;
+  font-weight: 700;
+  color: #14532d;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+}
+.chk-invitado input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}

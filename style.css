@@ -1347,3 +1347,21 @@ input:focus, select:focus, textarea:focus,
   height: 16px;
   margin: 0;
 }
+
+/* Botones de acciones en detalle de reunión: en línea horizontal */
+#agenda-detalle-acciones-admin {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end; /* o center/space-between según prefieras */
+  margin-top: 10px;
+}
+
+/* Sobrescribir el botón global (que es width:100%) SOLO aquí */
+#agenda-detalle-acciones-admin button {
+  width: auto !important;
+  flex: 0 0 auto;
+  padding: 8px 14px;
+  font-size: 14px;
+  border-radius: 10px;
+  box-shadow: none;
+}

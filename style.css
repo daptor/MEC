@@ -1194,3 +1194,75 @@ input:focus, select:focus, textarea:focus,
   background: #ef4444 !important;
   color: #fff;
 }
+
+/* ======================================================
+   🧯 PATCH MEC - SOLO CORRECCIONES SIN DESTRUIR DETALLE
+====================================================== */
+
+/* =========================
+   ASISTENTES (FIX CHECKBOX SOBRE TEXTO)
+========================= */
+
+#ag-lista-directores .item-director {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+#ag-lista-directores input[type="checkbox"] {
+  flex: 0 0 18px !important;
+  width: 18px !important;
+  height: 18px !important;
+  margin: 0 !important;
+}
+
+#ag-lista-directores .director-nombre {
+  flex: 1 !important;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* =========================
+   RESUMEN (EVITAR QUE CREZCA)
+========================= */
+
+#agenda-detalle-resumen {
+  padding: 6px 10px !important;
+  font-size: 13px !important;
+  line-height: 1.3 !important;
+}
+
+#agenda-detalle-resumen h3 {
+  font-size: 14px !important;
+  margin: 0 0 4px 0 !important;
+}
+
+#agenda-detalle-resumen p {
+  margin: 2px 0 !important;
+  font-size: 13px !important;
+}
+
+/* =========================
+   SEGURIDAD INVITADOS (NO ROMPER LO YA BIEN)
+========================= */
+
+.invitado-row {
+  gap: 6px !important;
+  align-items: center !important;
+}
+
+/* checkbox nunca al final */
+.invitado-row .chk-invitado {
+  order: -1 !important;
+}
+
+/* =========================
+   PROTECCIÓN BOTONES (NO TOCAR MÁS)
+========================= */
+
+#agenda-detalle-acciones-admin {
+  flex-wrap: nowrap !important;
+}

@@ -1135,22 +1135,22 @@ input:focus, select:focus, textarea:focus,
 ========================= */
 
 #agenda-detalle-datos {
-  background: lab(99.59% -2.19 1.91);
+  background: lab(99 -7.9 17.74);
   border-radius: 10px;
-  padding: 4px;
+  padding: 14px;
   box-shadow: 0 3px 10px rgba(16,185,129,0.08);
 }
 
 #agenda-detalle-datos .form-row {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
   margin-bottom: 2px;
 }
 
 #agenda-detalle-datos label {
   width: 110px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   color: #14532d;
 }
@@ -1189,7 +1189,7 @@ input:focus, select:focus, textarea:focus,
   width: 18px;
   height: 18px;
   flex: 0 0 auto;
-  margin: 0;
+  margin: 1,4;
 }
 
 #ag-lista-directores .director-nombre {
@@ -1207,7 +1207,7 @@ input:focus, select:focus, textarea:focus,
 .invitado-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   padding: 3px 6px;
   margin-bottom: 3px;
   background: lab(94.51% -30.24 29.99);
@@ -1223,8 +1223,8 @@ input:focus, select:focus, textarea:focus,
 }
 
 .invitado-row .chk-invitado input {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   margin: 0;
 }
 
@@ -1237,7 +1237,7 @@ input:focus, select:focus, textarea:focus,
   width: 100%;
   box-sizing: border-box;
   padding: 5px 6px;
-  font-size: 13px;
+  font-size: 14px;
   border-radius: 6px;
   border: 1px solid #d1e7dd;
 }
@@ -1250,19 +1250,19 @@ input:focus, select:focus, textarea:focus,
   background: #f6f8ad;
   border-left: 3px solid #e03d32;
   border-radius: 8px;
-  padding: 6px 10px;
-  font-size: 13px;
-  line-height: 1.3;
+  padding: 6px 14px;
+  font-size: 16px;
+  line-height: 1.6;
 }
 
 #agenda-detalle-resumen h3 {
-  font-size: 14px;
+  font-size: 20px;
   margin: 0 0 4px 0;
   font-weight: 700;
 }
 
 #agenda-detalle-resumen p {
-  margin: 2px 0;
+  margin: 1.5px 0;
 }
 
 /* =========================
@@ -1368,8 +1368,8 @@ input:focus, select:focus, textarea:focus,
 
 /* checkbox sigue a la izquierda (se mantiene) */
 .invitado-row .chk-invitado input {
-  width: 16px !important;
-  height: 16px !important;
+  width: 20px !important;
+  height: 20px !important;
 }
 
 /* INPUT MÁS ANCHO (~30% + extra real usable) */
@@ -1379,8 +1379,8 @@ input:focus, select:focus, textarea:focus,
 
 /* input más limpio */
 .invitado-row input[type="text"] {
-  padding: 4px 6px !important;
-  font-size: 13px;
+  padding: 2px 6px !important;
+  font-size: 16px;
 }
 
 /* =========================

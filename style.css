@@ -1172,7 +1172,7 @@ input:focus, select:focus, textarea:focus,
 
 /* =========================
    ASISTENTES (ESTABLE)
-========================= 
+========================= */
 
 #ag-lista-directores .item-director {
   display: flex;
@@ -1202,7 +1202,7 @@ input:focus, select:focus, textarea:focus,
 
 /* =========================
    INVITADOS (MINIMAL + 30%)
-========================= 
+========================= */
 
 .invitado-row {
   display: flex;
@@ -1215,7 +1215,7 @@ input:focus, select:focus, textarea:focus,
   border: 1px solid rgba(0,0,0,0.05);
 }
 
-/* checkbox primero siempre 
+/* checkbox primero siempre */
 .invitado-row .chk-invitado {
   order: -1;
   display: flex;
@@ -1228,7 +1228,7 @@ input:focus, select:focus, textarea:focus,
   margin: 0;
 }
 
-/* input ocupa 30% real 
+/* input ocupa 30% real */
 .invitado-row .field {
   flex: 0 0 30%;
 }
@@ -1240,7 +1240,7 @@ input:focus, select:focus, textarea:focus,
   font-size: 13px;
   border-radius: 6px;
   border: 1px solid #d1e7dd;
-}  
+}
 
 /* =========================
    RESUMEN (COMPACTO REAL)
@@ -1346,7 +1346,7 @@ input:focus, select:focus, textarea:focus,
 
 /* =========================
    2. ASISTENTES - MÁS SEPARACIÓN VERTICAL
-========================= */
+========================= 
 
 #ag-lista-directores .item-director {
   margin-bottom: 20px !important; /* más aire entre directores */

@@ -1236,3 +1236,92 @@ input:focus, select:focus, textarea:focus,
     width: 100%;
   }
 }
+
+/* ======================================================
+   🔧 FIX DEFINITIVO AGENDA (MEC OVERRIDE)
+   PEGA AL FINAL DEL CSS
+====================================================== */
+
+/* =========================
+   1. BOTONES AGENDA
+   (mata el width:100% global)
+========================= */
+
+#agenda-detalle-acciones-admin button{
+  width: auto !important;
+  flex: 0 0 auto !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  padding: 8px 14px;
+  font-size: 13px;
+}
+
+/* fuerza UNA SOLA LINEA real */
+#agenda-detalle-acciones-admin{
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* =========================
+   2. CHECKBOX ASISTENTES
+========================= */
+
+#ag-lista-directores .item-director{
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+}
+
+#ag-lista-directores input[type="checkbox"]{
+  width: auto !important;
+  margin: 0 !important;
+  flex: 0 0 auto;
+}
+
+/* =========================
+   3. INVITADOS (CHECKBOX REAL ALINEADO)
+========================= */
+
+.invitado-row{
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+}
+
+/* el label checkbox te está rompiendo layout */
+.invitado-row .chk-invitado{
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+}
+
+/* checkbox real */
+.invitado-row .chk-invitado input{
+  width: auto !important;
+  margin: 0 !important;
+  transform: scale(1.05);
+}
+
+/* input texto estable */
+.invitado-row .field{
+  flex: 1;
+}
+
+.invitado-row input[type="text"]{
+  width: 100% !important;
+  box-sizing: border-box;
+}
+
+/* =========================
+   4. ANTI-REGLA GLOBAL INPUT
+========================= */
+
+#agenda-detalle-datos input[type="checkbox"]{
+  width: auto !important;
+}

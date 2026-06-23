@@ -1116,18 +1116,23 @@ input:focus, select:focus, textarea:focus,
 }
 
 /* ======================================================
-   📅 AGENDA DETALLE - CSS FINAL REAL MEC (STABLE)
+   📅 AGENDA DETALLE — BLOQUE DEFINITIVO MEC
+   (AISLADO, ESTABLE, SIN CONFLICTOS)
 ====================================================== */
 
 /* =========================
-   FORMULARIO BASE
+   CONTENEDORES BASE
 ========================= */
 
 #agenda-detalle-datos,
 #agenda-detalle-asistentes,
 #agenda-detalle-resumen {
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
+
+/* =========================
+   FORMULARIO GENERAL
+========================= */
 
 #agenda-detalle-datos {
   background: #fff;
@@ -1166,14 +1171,14 @@ input:focus, select:focus, textarea:focus,
 }
 
 /* =========================
-   ASISTENTES
+   ASISTENTES (ESTABLE)
 ========================= */
 
 #ag-lista-directores .item-director {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 5px 8px;
+  padding: 6px 8px;
   margin-bottom: 6px;
   background: #fbfffb;
   border-radius: 8px;
@@ -1191,10 +1196,12 @@ input:focus, select:focus, textarea:focus,
   flex: 1;
   font-size: 14px;
   font-weight: 600;
+  color: #0f172a;
+  line-height: 1.2;
 }
 
 /* =========================
-   INVITADOS (30% INPUT)
+   INVITADOS (MINIMAL + 30%)
 ========================= */
 
 .invitado-row {
@@ -1208,7 +1215,7 @@ input:focus, select:focus, textarea:focus,
   border: 1px solid rgba(0,0,0,0.05);
 }
 
-/* checkbox primero */
+/* checkbox primero siempre */
 .invitado-row .chk-invitado {
   order: -1;
   display: flex;
@@ -1221,7 +1228,7 @@ input:focus, select:focus, textarea:focus,
   margin: 0;
 }
 
-/* INPUT INVITADO ~30% */
+/* input ocupa 30% real */
 .invitado-row .field {
   flex: 0 0 30%;
 }
@@ -1236,20 +1243,22 @@ input:focus, select:focus, textarea:focus,
 }
 
 /* =========================
-   RESUMEN (COMPACTO)
+   RESUMEN (COMPACTO REAL)
 ========================= */
 
 #agenda-detalle-resumen {
   background: #f7fff3;
   border-left: 3px solid #28a745;
-  padding: 6px 10px;
   border-radius: 8px;
+  padding: 6px 10px;
   font-size: 13px;
+  line-height: 1.3;
 }
 
 #agenda-detalle-resumen h3 {
   font-size: 14px;
   margin: 0 0 4px 0;
+  font-weight: 700;
 }
 
 #agenda-detalle-resumen p {
@@ -1257,14 +1266,14 @@ input:focus, select:focus, textarea:focus,
 }
 
 /* =========================
-   BOTONES (UNA SOLA LINEA REAL)
+   BOTONES (UNA SOLA LÍNEA REAL)
 ========================= */
 
 #agenda-detalle-acciones-admin {
   display: flex !important;
   flex-direction: row !important;
-  justify-content: center;
-  align-items: center;
+  justify-content: center !important;
+  align-items: center !important;
   gap: 10px;
   flex-wrap: nowrap !important;
   margin-top: 10px;
@@ -1273,25 +1282,25 @@ input:focus, select:focus, textarea:focus,
 #agenda-detalle-acciones-admin button {
   width: auto !important;
   flex: 0 0 auto !important;
-  min-width: 120px;
-  max-width: 160px;
-  padding: 7px 12px;
+  min-width: 130px;
+  max-width: 170px;
+  padding: 8px 12px;
   font-size: 13px;
   white-space: nowrap;
-  border-radius: 8px;
   display: inline-flex;
   justify-content: center;
   align-items: center;
+  border-radius: 8px;
 }
 
 #agenda-detalle-acciones-admin button:first-child {
-  background: #10b981;
-  color: #fff;
+  background: #10b981 !important;
+  color: #fff !important;
 }
 
 #agenda-detalle-acciones-admin button:last-child {
-  background: #ef4444;
-  color: #fff;
+  background: #ef4444 !important;
+  color: #fff !important;
 }
 
 /* =========================

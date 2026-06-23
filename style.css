@@ -1116,192 +1116,81 @@ input:focus, select:focus, textarea:focus,
 }
 
 /* ======================================================
-   📅 AGENDA DETALLE - CSS LIMPIO DEFINITIVO MEC
+   🔧 FIX FINAL MEC (ÚNICO Y LIMPIO)
 ====================================================== */
 
 /* =========================
-   CONTENEDORES BASE
+   INVITADOS ULTRA COMPACTO
 ========================= */
 
-#agenda-detalle-datos,
-#agenda-detalle-asistentes,
-#agenda-detalle-resumen {
-  margin-bottom: 6px;
-}
-
-/* =========================
-   FORMULARIO
-========================= */
-
-#agenda-detalle-datos {
-  background: #fff;
-  border-radius: 10px;
-  padding: 10px;
-  box-shadow: 0 3px 10px rgba(16,185,129,0.08);
-}
-
-#agenda-detalle-datos .form-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-
-#agenda-detalle-datos label {
-  width: 110px;
-  font-size: 13px;
-  font-weight: 700;
-  color: #14532d;
-}
-
-#agenda-detalle-datos .field {
-  flex: 1;
-}
-
-#agenda-detalle-datos input,
-#agenda-detalle-datos select,
-#agenda-detalle-datos textarea {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 6px 8px;
-  font-size: 13px;
-  border-radius: 6px;
-  border: 1px solid #d1e7dd;
-}
-
-/* =========================
-   ASISTENTES (FIX REAL)
-========================= */
-
-#ag-lista-directores .item-director {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 4px 6px;
-  margin-bottom: 3px;
-}
-
-/* checkbox fijo izquierda */
-#ag-lista-directores input[type="checkbox"] {
-  width: 18px !important;
-  height: 18px;
-  flex: 0 0 auto;
-  margin: 0;
-}
-
-/* nombre ocupa resto */
-#ag-lista-directores .director-nombre {
-  flex: 1;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-/* =========================
-   INVITADOS (FIX REAL)
-========================= */
 
 .invitado-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 6px;
-  margin-bottom: 3px;
+  gap: 6px;
+  padding: 2px 6px;
+  margin-bottom: 2px;
 }
 
-/* ocultar label #1 #2 */
-.invitado-row > label {
-  display: none;
-}
-
-/* checkbox orden fijo */
 .invitado-row .chk-invitado {
-  order: 0;
+  order: -1;
   display: flex;
   align-items: center;
 }
 
 .invitado-row .chk-invitado input {
-  width: 18px !important;
-  height: 18px;
+  width: 16px !important;
+  height: 16px !important;
   margin: 0;
 }
 
-/* input ocupa todo */
-.invitado-row .field {
-  flex: 1;
-}
-
 .invitado-row input[type="text"] {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 6px 8px;
+  padding: 4px 6px;
   font-size: 13px;
-  border-radius: 6px;
-  border: 1px solid #d1e7dd;
 }
 
 /* =========================
-   RESUMEN (COMPACTO REAL)
+   ASISTENTES ESPACIADO
 ========================= */
 
-#agenda-detalle-resumen {
-  background: #f7fff3;
-  border-left: 3px solid #28a745;
-  border-radius: 8px;
-  padding: 6px 10px;
-}
-
-#agenda-detalle-resumen h3 {
-  font-size: 14px;
-  margin: 0 0 4px 0;
-}
-
-#agenda-detalle-resumen p {
-  margin: 2px 0;
-  font-size: 13px;
+#ag-lista-directores .item-director {
+  margin-bottom: 6px !important;
+  padding: 5px 8px;
 }
 
 /* =========================
-   BOTONES (UNA SOLA LINEA REAL)
+   BOTONES LIMPIOS EN UNA LINEA
 ========================= */
 
 #agenda-detalle-acciones-admin {
-  display: flex;
-  gap: 10px;
+  display: flex !important;
   justify-content: center;
+  align-items: center;
+  gap: 10px;
   flex-wrap: nowrap;
+  margin-top: 10px;
 }
 
 #agenda-detalle-acciones-admin button {
-  flex: 1;
-  padding: 8px 10px;
+  width: auto !important;
+  flex: 0 0 auto !important;
+  min-width: 140px;
+  max-width: 180px;
+  padding: 8px 12px;
   font-size: 13px;
-  border-radius: 8px;
-  border: none;
   white-space: nowrap;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 8px;
 }
 
 #agenda-detalle-acciones-admin button:first-child {
-  background: #10b981;
-  color: white;
+  background: #10b981 !important;
+  color: #fff;
 }
 
 #agenda-detalle-acciones-admin button:last-child {
-  background: #ef4444;
-  color: white;
-}
-
-/* =========================
-   MOBILE
-========================= */
-
-@media (max-width: 640px) {
-  #agenda-detalle-datos .form-row {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  #agenda-detalle-datos label {
-    width: 100%;
-  }
+  background: #ef4444 !important;
+  color: #fff;
 }

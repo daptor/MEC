@@ -1135,7 +1135,7 @@ input:focus, select:focus, textarea:focus,
 ========================= */
 
 #agenda-detalle-datos {
-  background: lab(94.51% -30.24 29.99);
+  background: lab(99.59% -2.19 1.91);
   border-radius: 10px;
   padding: 4px;
   box-shadow: 0 3px 10px rgba(16,185,129,0.08);
@@ -1145,7 +1145,7 @@ input:focus, select:focus, textarea:focus,
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 #agenda-detalle-datos label {
@@ -1180,7 +1180,7 @@ input:focus, select:focus, textarea:focus,
   gap: 10px;
   padding: 6px 8px;
   margin-bottom: 6px;
-  background: lab(94.51% -30.24 29.99);
+  background: lab(91.42% -54.74 57.24);
   border-radius: 8px;
   border: 1px solid rgba(0,0,0,0.05);
 }
@@ -1193,7 +1193,7 @@ input:focus, select:focus, textarea:focus,
 }
 
 #ag-lista-directores .director-nombre {
-  flex: 1;
+  flex: 2;
   font-size: 14px;
   font-weight: 600;
   color: #0f172a;

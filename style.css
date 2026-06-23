@@ -1116,208 +1116,71 @@ input:focus, select:focus, textarea:focus,
 }
 
 /* ======================================================
-   📅 AGENDA DETALLE — BLOQUE DEFINITIVO MEC
-   (AISLADO, ESTABLE, SIN CONFLICTOS)
+   🔧 AJUSTES FINOS AGENDA DETALLE (SIN ROMPER BASE)
 ====================================================== */
 
 /* =========================
-   CONTENEDORES BASE
+   1. DETALLE REUNIÓN - MENOS ESPACIO VERTICAL
 ========================= */
-
-#agenda-detalle-datos,
-#agenda-detalle-asistentes,
-#agenda-detalle-resumen {
-  margin-bottom: 8px;
-}
-
-/* =========================
-   FORMULARIO GENERAL
-========================= */
-
-#agenda-detalle-datos {
-  background: #fff;
-  border-radius: 10px;
-  padding: 10px;
-  box-shadow: 0 3px 10px rgba(16,185,129,0.08);
-}
 
 #agenda-detalle-datos .form-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
+  margin-bottom: 2px !important;
 }
 
 #agenda-detalle-datos label {
-  width: 110px;
-  font-size: 13px;
-  font-weight: 700;
-  color: #14532d;
-}
-
-#agenda-detalle-datos .field {
-  flex: 1;
+  line-height: 1.1 !important;
 }
 
 #agenda-detalle-datos input,
 #agenda-detalle-datos select,
 #agenda-detalle-datos textarea {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 6px 8px;
-  font-size: 13px;
-  border-radius: 6px;
-  border: 1px solid #d1e7dd;
+  padding: 4px 8px !important;
 }
 
 /* =========================
-   ASISTENTES (ESTABLE)
+   2. ASISTENTES - MÁS SEPARACIÓN VERTICAL
 ========================= */
 
 #ag-lista-directores .item-director {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  margin-bottom: 10px !important; /* más aire entre directores */
   padding: 6px 8px;
-  margin-bottom: 6px;
-  background: #fbfffb;
-  border-radius: 8px;
-  border: 1px solid rgba(0,0,0,0.05);
-}
-
-#ag-lista-directores input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  flex: 0 0 auto;
-  margin: 0;
-}
-
-#ag-lista-directores .director-nombre {
-  flex: 1;
-  font-size: 14px;
-  font-weight: 600;
-  color: #0f172a;
-  line-height: 1.2;
 }
 
 /* =========================
-   INVITADOS (MINIMAL + 30%)
+   3. INVITADOS - MÁS MINIMALISTA + INPUT +30%
 ========================= */
 
+/* eliminar sensación de "tarjeta por fila" */
 .invitado-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 6px;
-  margin-bottom: 3px;
-  background: #fbfffb;
-  border-radius: 8px;
-  border: 1px solid rgba(0,0,0,0.05);
+  background: transparent !important;
+  border: none !important;
+  padding: 2px 4px !important;
+  margin-bottom: 4px !important;
+  box-shadow: none !important;
 }
 
-/* checkbox primero siempre */
-.invitado-row .chk-invitado {
-  order: -1;
-  display: flex;
-  align-items: center;
-}
-
+/* checkbox sigue a la izquierda (se mantiene) */
 .invitado-row .chk-invitado input {
-  width: 16px;
-  height: 16px;
-  margin: 0;
+  width: 16px !important;
+  height: 16px !important;
 }
 
-/* input ocupa 30% real */
+/* INPUT MÁS ANCHO (~30% + extra real usable) */
 .invitado-row .field {
-  flex: 0 0 30%;
+  flex: 0 0 40% !important; /* antes 30%, ahora ampliado real */
 }
 
+/* input más limpio */
 .invitado-row input[type="text"] {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 5px 6px;
+  padding: 4px 6px !important;
   font-size: 13px;
-  border-radius: 6px;
-  border: 1px solid #d1e7dd;
 }
 
 /* =========================
-   RESUMEN (COMPACTO REAL)
+   BONUS: EVITAR “BLOQUE VISUAL PESADO”
 ========================= */
 
-#agenda-detalle-resumen {
-  background: #f7fff3;
-  border-left: 3px solid #28a745;
-  border-radius: 8px;
-  padding: 6px 10px;
-  font-size: 13px;
-  line-height: 1.3;
-}
-
-#agenda-detalle-resumen h3 {
-  font-size: 14px;
-  margin: 0 0 4px 0;
-  font-weight: 700;
-}
-
-#agenda-detalle-resumen p {
-  margin: 2px 0;
-}
-
-/* =========================
-   BOTONES (UNA SOLA LÍNEA REAL)
-========================= */
-
-#agenda-detalle-acciones-admin {
-  display: flex !important;
-  flex-direction: row !important;
-  justify-content: center !important;
-  align-items: center !important;
-  gap: 10px;
-  flex-wrap: nowrap !important;
-  margin-top: 10px;
-}
-
-#agenda-detalle-acciones-admin button {
-  width: auto !important;
-  flex: 0 0 auto !important;
-  min-width: 130px;
-  max-width: 170px;
-  padding: 8px 12px;
-  font-size: 13px;
-  white-space: nowrap;
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 8px;
-}
-
-#agenda-detalle-acciones-admin button:first-child {
-  background: #10b981 !important;
-  color: #fff !important;
-}
-
-#agenda-detalle-acciones-admin button:last-child {
-  background: #ef4444 !important;
-  color: #fff !important;
-}
-
-/* =========================
-   MOBILE
-========================= */
-
-@media (max-width: 640px) {
-  #agenda-detalle-datos .form-row {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  #agenda-detalle-datos label {
-    width: 100%;
-  }
-
-  .invitado-row .field {
-    flex: 1;
-  }
+.invitado-row:hover {
+  background: transparent !important;
+  border: none !important;
 }

@@ -1118,210 +1118,154 @@ input:focus, select:focus, textarea:focus,
 /* =========================
    AGENDA — ESTILO LIMPIO Y MÍNIMO
 
-campos con etiqueta a la izquierda y casilleros a la derecha (mismo ancho)
-inputs con box-sizing para no salirse del recuadro blanco
-asistentes e invitados con la misma “tarjetita” y checkbox a la izquierda
-botones centrados y en una sola línea ========================= */
-.agenda-card-compact {
-  line-height: 1.3;
-  font-size: 14px;
-}
-.agenda-card-compact > div { margin-bottom: 2px; }
-.agenda-card-line1 { font-weight: 700; margin-bottom: 3px; }
-.agenda-card-line2,
-.agenda-card-line3,
-.agenda-card-line4,
-.agenda-card-line5 { font-size: 13px; }
-
+etiqueta izquierda / casillero derecha (mismo ancho)
+inputs con box-sizing
+asistentes e invitados: misma "tarjetita"
+botones centrados y en línea ========================= */ .agenda-card-compact { line-height:1.3; font-size:14px; } .agenda-card-compact > div { margin-bottom:2px; } .agenda-card-line1 { font-weight:700; margin-bottom:3px; } .agenda-card-line2, .agenda-card-line3, .agenda-card-line4, .agenda-card-line5 { font-size:13px; }
 /* Contenedor blanco del detalle */
 #agenda-detalle-datos {
-  background: #fff;
-  border-radius: 12px;
-  padding: 12px;
-  box-shadow: 0 6px 18px rgba(16,185,129,0.06);
-  color: #0f1720;
-  margin-bottom: 10px;
+  background:#fff;
+  border-radius:12px;
+  padding:12px;
+  box-shadow:0 6px 18px rgba(16,185,129,0.06);
+  color:#0f1720;
+  margin-bottom:10px;
 }
 
 /* Fila: etiqueta izquierda / casillero derecha */
 #agenda-detalle-datos .form-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:8px;
 }
 #agenda-detalle-datos .form-row label {
-  width: 120px;
-  min-width: 120px;
-  font-weight: 700;
-  color: #14532d;
-  margin: 0;
+  width:120px;
+  min-width:120px;
+  font-weight:700;
+  color:#14532d;
+  margin:0;
 }
-#agenda-detalle-datos .form-row .field { flex: 1; margin: 0; }
+#agenda-detalle-datos .form-row .field { flex:1; margin:0; }
 
-/* Casilleros: mismos anchos y box-sizing para no salirse del recuadro */
+/* Casilleros: mismos anchos y box-sizing */
 #agenda-detalle-datos input[type="date"],
 #agenda-detalle-datos input[type="time"],
 #agenda-detalle-datos input[type="text"],
 #agenda-detalle-datos input[type="number"],
 #agenda-detalle-datos select,
 #agenda-detalle-datos textarea {
-  width: 100%;
-  padding: 8px 10px;
-  font-size: 14px;
-  border-radius: 8px;
-  border: 1px solid #d1e7dd;
-  box-shadow: none;
-  background: #fff;
-  color: #0f1720;
-  box-sizing: border-box;
+  width:100%;
+  padding:8px 10px;
+  font-size:14px;
+  border-radius:8px;
+  border:1px solid #d1e7dd;
+  box-shadow:none;
+  background:#fff;
+  color:#0f1720;
+  box-sizing:border-box;
 }
-#agenda-detalle-datos textarea { resize: vertical; min-height: 32px; }
+#agenda-detalle-datos textarea { resize:vertical; min-height:32px; }
 
 /* Espaciado de subbloques */
-#ag-bloque-tele,
-#ag-bloque-presencial,
-#ag-lista-directores,
-#ag-invitados { margin-top: 6px; }
+#ag-bloque-tele, #ag-bloque-presencial, #ag-lista-directores, #ag-invitados { margin-top:6px; }
 
 /* Asistentes: tarjetita con checkbox + nombre */
 #ag-lista-directores .item-director,
 #ag-lista-directores > div {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
-  margin-bottom: 6px;
-  background: #fbfffb;
-  border: 1px solid rgba(0,0,0,0.04);
-  border-radius: 8px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 8px;
+  margin-bottom:6px;
+  background:#fbfffb;
+  border:1px solid rgba(0,0,0,0.04);
+  border-radius:8px;
 }
 #ag-lista-directores label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  margin: 0;
-  cursor: pointer;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  width:100%;
+  margin:0;
+  cursor:pointer;
 }
-#ag-lista-directores input[type="checkbox"] { width: 18px; height: 18px; margin: 0; flex: 0 0 auto; }
+#ag-lista-directores input[type="checkbox"] { width:18px; height:18px; margin:0; flex:0 0 auto; }
 #ag-lista-directores .director-nombre {
-  flex: 1 1 auto;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 14px;
-  color: #0f172a;
-  font-weight: 600;
+  flex:1 1 auto;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  font-size:14px;
+  color:#0f172a;
+  font-weight:600;
 }
 
-/* Invitados: mismo visual que asistentes (label a la izquierda, input a la derecha) /
+/* Invitados: igual visual (etiqueta | input | checkbox) /
 #ag-invitados > div {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
-  margin-bottom: 6px;
-  background: #fbfffb;
-  border: 1px solid rgba(0,0,0,0.04);
-  border-radius: 8px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 8px;
+  margin-bottom:6px;
+  background:#fbfffb;
+  border:1px solid rgba(0,0,0,0.04);
+  border-radius:8px;
 }
 #ag-invitados > div label:first-child {
-  width: 120px;
-  min-width: 120px;
-  margin: 0;
-  font-weight: 600;
-  color: #14532d;
+  width:120px;
+  min-width:120px;
+  margin:0;
+  font-weight:600;
+  color:#14532d;
 }
-#ag-invitados input[type="text"] { flex: 1; width: 100%; box-sizing: border-box; }
-#ag-invitados p { display: none; } / oculta "Pago: $0" si existiera */
+#ag-invitados input[type="text"] { flex:1; width:100%; box-sizing:border-box; padding:8px 10px; border:1px solid #d1e7dd; border-radius:6px; }
+#ag-invitados p { display:none; } / ocultar "Pago: $0" si existiera */
 
 /* Resumen de pago */
 #agenda-detalle-resumen {
-  background: #f7fff3;
-  border-left: 4px solid #28a745;
-  padding: 10px;
-  border-radius: 8px;
-  margin-top: 8px;
-  color: #0b3b26;
+  background:#f7fff3;
+  border-left:4px solid #28a745;
+  padding:10px;
+  border-radius:8px;
+  margin-top:8px;
+  color:#0b3b26;
 }
-#agenda-detalle-resumen p { margin: 4px 0; font-weight: 600; }
+#agenda-detalle-resumen p { margin:4px 0; font-weight:600; }
 
-/* Botones centrados y en horizontal */
+/* Invitados: fila compacta (clase alternativa .invitado-row) */
+.invitado-row { display:flex; align-items:center; gap:8px; padding:6px 8px; }
+.invitado-row label[for] { width:120px; min-width:120px; font-weight:600; color:#14532d; margin:0; }
+.invitado-row .field { flex:1; }
+.invitado-row .field input { width:100%; box-sizing:border-box; padding:8px 10px; border:1px solid #d1e7dd; border-radius:6px; }
+
+/* checkbox alineado (sin texto extra) */
+.chk-invitado { display:flex; align-items:center; justify-content:center; width:36px; margin:0; }
+.chk-invitado input[type="checkbox"] { width:16px; height:16px; margin:0; }
+
+/* Botones: centrados y en línea (única definición) */
 #agenda-detalle-acciones-admin {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 12px;
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  margin-top:12px;
 }
 #agenda-detalle-acciones-admin button {
-  width: auto !important;
-  padding: 8px 14px;
-  font-size: 14px;
-  border-radius: 10px;
-  box-shadow: none;
+  display:inline-flex;
+  width:auto !important;
+  padding:8px 14px;
+  font-size:14px;
+  border-radius:10px;
+  box-shadow:none;
+  color:#fff;
+  border:none;
 }
+#btn-ag-guardar { background:linear-gradient(135deg,#10b981,#059669); }
+#btn-ag-eliminar { background:#dc2626; }
 
 /* Mobile: apilar etiquetas sobre campos */
-@media (max-width: 640px) {
-  #agenda-detalle-datos .form-row { flex-direction: column; align-items: flex-start; gap: 6px; }
-  #agenda-detalle-datos .form-row label { width: 100%; min-width: 0; }
-  #ag-lista-directores .director-nombre { white-space: normal; }
-}                                                 /* Fin de regla para los botones */
-
-/* Invitados: una línea, etiqueta | input | checkbox */
-.invitado-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
+@media (max-width:640px) {
+  #agenda-detalle-datos .form-row { flex-direction:column; align-items:flex-start; gap:6px; }
+  #agenda-detalle-datos .form-row label { width:100%; min-width:0; }
+  #ag-lista-directores .director-nombre { white-space:normal; }
 }
-.invitado-row label[for] {
-  width: 120px;
-  min-width: 120px;
-  font-weight: 600;
-  color: #14532d;
-  margin: 0;
-}
-.invitado-row .field {
-  flex: 1;
-}
-.invitado-row .field input {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 8px 10px;
-  border: 1px solid #d1e7dd;
-  border-radius: 6px;
-}
-
-/* checkbox alineado al final, sin texto ✔ adicional */
-.chk-invitado {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  margin: 0;
-}
-.chk-invitado input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  margin: 0;
-}
-
-/* Botones: centrados y en línea (anula width:100% global) */
-#agenda-detalle-acciones-admin {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 12px;
-}
-#agenda-detalle-acciones-admin button {
-  display: inline-flex;
-  width: auto !important;
-  padding: 8px 14px;
-  font-size: 14px;
-  border-radius: 10px;
-  box-shadow: none;
-}
-#btn-ag-guardar { background: linear-gradient(135deg,#10b981,#059669); color:#fff; border: none; }
-#btn-ag-eliminar { background: #dc2626; color:#fff; border: none; }

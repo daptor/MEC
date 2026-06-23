@@ -1228,11 +1228,6 @@ input:focus, select:focus, textarea:focus,
   margin: 0;
 }
 
-/* input ocupa 30% real 
-.invitado-row .field {
-  flex: 0 0 30%;
-}*/
-
 .invitado-row input[type="text"] {
   width: 100%;
   box-sizing: border-box;
@@ -1251,7 +1246,7 @@ input:focus, select:focus, textarea:focus,
   border-left: 3px solid #e03d32;
   border-radius: 8px;
   padding: 6px 14px;
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1.6;
 }
 

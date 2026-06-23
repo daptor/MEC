@@ -1352,7 +1352,7 @@ input:focus, select:focus, textarea:focus,
 #agenda-detalle-acciones-admin {
   display: flex !important;
   gap: 8px;
-  justify-content: flex-end; /* o center / space-between si prefieres */
+  justify-content: center; /* o center / space-between si prefieres */
   margin-top: 10px;
 }
 

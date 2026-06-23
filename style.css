@@ -1269,3 +1269,59 @@ botones centrados y en una sola línea ========================= */
   #ag-lista-directores .director-nombre { white-space: normal; }
 }                                                 /* Fin de regla para los botones */
 
+/* Invitados: una línea, etiqueta | input | checkbox */
+.invitado-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+}
+.invitado-row label[for] {
+  width: 120px;
+  min-width: 120px;
+  font-weight: 600;
+  color: #14532d;
+  margin: 0;
+}
+.invitado-row .field {
+  flex: 1;
+}
+.invitado-row .field input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid #d1e7dd;
+  border-radius: 6px;
+}
+
+/* checkbox alineado al final, sin texto ✔ adicional */
+.chk-invitado {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  margin: 0;
+}
+.chk-invitado input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+/* Botones: centrados y en línea (anula width:100% global) */
+#agenda-detalle-acciones-admin {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+#agenda-detalle-acciones-admin button {
+  display: inline-flex;
+  width: auto !important;
+  padding: 8px 14px;
+  font-size: 14px;
+  border-radius: 10px;
+  box-shadow: none;
+}
+#btn-ag-guardar { background: linear-gradient(135deg,#10b981,#059669); color:#fff; border: none; }
+#btn-ag-eliminar { background: #dc2626; color:#fff; border: none; }

@@ -1306,3 +1306,51 @@ input:focus, select:focus, textarea:focus,
     padding-top: 10px !important; /* Originalmente 8px */
     padding-bottom: 10px !important; /* Originalmente 8px */
 }
+
+/* =========================================
+   AJUSTES FINOS DE ESPACIADO VERTICAL Y BOTONES
+   (Para corregir inconsistencias y apilamiento)
+========================================= */
+
+/* --- Sección Invitados --- */
+#ag-invitados h4 {
+    margin-bottom: 6px !important; /* Reduce espacio debajo del título "Invitados" */
+    margin-top: 10px !important; /* Ajusta espacio encima del título "Invitados" */
+}
+
+.invitado-row {
+    margin-bottom: 4px !important; /* Reduce el espacio vertical entre cada invitado */
+}
+
+/* --- Sección Resumen de pago --- */
+#agenda-detalle-resumen {
+    margin-top: 8px !important; /* Reduce espacio entre Invitados y Resumen de Pago */
+    padding: 10px !important; /* Asegura un padding consistente dentro de la tarjeta */
+}
+
+#agenda-detalle-resumen h3 {
+    margin-bottom: 4px !important; /* Reduce espacio debajo del título "Resumen de pago" */
+}
+
+#agenda-detalle-resumen p {
+    margin: 2px 0 !important; /* Reduce el espacio vertical entre las líneas de texto del resumen */
+}
+
+/* --- Botones Guardar y Eliminar (FORZAR HORIZONTAL Y CENTRADOS) --- */
+#agenda-detalle-acciones-admin {
+    display: flex !important; /* Asegura que el contenedor sea flex */
+    flex-direction: row !important; /* FUERZA que los botones estén en fila */
+    justify-content: center !important; /* Centra los botones horizontalmente */
+    align-items: center !important; /* Centra los botones verticalmente si tienen diferentes alturas */
+    gap: 15px !important; /* Espacio entre los botones */
+    width: 100% !important; /* Ocupa todo el ancho para centrar bien */
+    margin-top: 15px !important; /* Ajusta el espacio superior de los botones */
+}
+
+#agenda-detalle-acciones-admin button {
+    display: inline-flex !important; /* FUERZA que cada botón se comporte como elemento inline-flex */
+    width: auto !important; /* Permite que el ancho del botón se ajuste a su contenido */
+    flex: 0 0 auto !important; /* Evita que los botones se estiren o encojan */
+    margin: 0 !important; /* Elimina cualquier margen externo que pueda apilarlos */
+    padding: 8px 14px !important; /* Asegura un padding consistente */
+}

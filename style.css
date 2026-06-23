@@ -1228,10 +1228,10 @@ input:focus, select:focus, textarea:focus,
   margin: 0;
 }
 
-/* input ocupa 30% real */
+/* input ocupa 30% real 
 .invitado-row .field {
   flex: 0 0 30%;
-}
+}*/
 
 .invitado-row input[type="text"] {
   width: 100%;
@@ -1346,10 +1346,10 @@ input:focus, select:focus, textarea:focus,
 
 /* =========================
    2. ASISTENTES - MÁS SEPARACIÓN VERTICAL
-========================= 
+========================= */
 
 #ag-lista-directores .item-director {
-  margin-bottom: 20px !important; /* más aire entre directores */
+  margin-bottom: 10px !important; /* más aire entre directores */
   padding: 6px 8px;
 }
 

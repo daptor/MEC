@@ -1135,7 +1135,7 @@ input:focus, select:focus, textarea:focus,
 ========================= */
 
 #agenda-detalle-datos {
-  background: lab(99 -7.9 17.74);
+  background: lab(99.53% -3.36 9.55);
   border-radius: 10px;
   padding: 14px;
   box-shadow: 0 3px 10px rgba(16,185,129,0.08);
@@ -1180,7 +1180,7 @@ input:focus, select:focus, textarea:focus,
   gap: 10px;
   padding: 6px 8px;
   margin-bottom: 6px;
-  background: lab(91.42% -54.74 57.24);
+  background: lab(98.52% -8.38 26.98);
   border-radius: 8px;
   border: 1px solid rgba(0,0,0,0.05);
 }
@@ -1210,7 +1210,7 @@ input:focus, select:focus, textarea:focus,
   gap: 8px;
   padding: 3px 6px;
   margin-bottom: 3px;
-  background: lab(94.51% -30.24 29.99);
+  background: lab(96.87% -8.61 33.8);
   border-radius: 8px;
   border: 1px solid rgba(0,0,0,0.05);
 }
@@ -1242,8 +1242,8 @@ input:focus, select:focus, textarea:focus,
 ========================= */
 
 #agenda-detalle-resumen {
-  background: #f6f8ad;
-  border-left: 3px solid #e03d32;
+  background: #ffebd5;
+  border-left: 3px solid #89e032;
   border-radius: 8px;
   padding: 6px 14px;
   font-size: 18px;
@@ -1289,12 +1289,12 @@ input:focus, select:focus, textarea:focus,
 }
 
 #agenda-detalle-acciones-admin button:first-child {
-  background: #078f62 !important;
+  background: #078f3b !important;
   color: #fff !important;
 }
 
 #agenda-detalle-acciones-admin button:last-child {
-  background: #bf2d2d !important;
+  background: #e81b3d !important;
   color: #fff !important;
 }
 

@@ -1116,8 +1116,12 @@ input:focus, select:focus, textarea:focus,
 }
 
 /* ======================================================
-   AGENDA - ESTILO FINAL (VERSIÓN LIMPIA MEC)
+   📅 AGENDA DETALLE - CSS LIMPIO DEFINITIVO MEC
 ====================================================== */
+
+/* =========================
+   CONTENEDORES BASE
+========================= */
 
 #agenda-detalle-datos,
 #agenda-detalle-asistentes,
@@ -1125,19 +1129,22 @@ input:focus, select:focus, textarea:focus,
   margin-bottom: 6px;
 }
 
-/* FORMULARIO */
+/* =========================
+   FORMULARIO
+========================= */
+
 #agenda-detalle-datos {
   background: #fff;
   border-radius: 10px;
   padding: 10px;
-  box-shadow: 0 4px 12px rgba(16,185,129,0.05);
+  box-shadow: 0 3px 10px rgba(16,185,129,0.08);
 }
 
 #agenda-detalle-datos .form-row {
   display: flex;
+  align-items: center;
   gap: 8px;
   margin-bottom: 4px;
-  align-items: center;
 }
 
 #agenda-detalle-datos label {
@@ -1151,63 +1158,122 @@ input:focus, select:focus, textarea:focus,
   flex: 1;
 }
 
-/* INPUTS */
 #agenda-detalle-datos input,
 #agenda-detalle-datos select,
 #agenda-detalle-datos textarea {
   width: 100%;
+  box-sizing: border-box;
   padding: 6px 8px;
   font-size: 13px;
   border-radius: 6px;
   border: 1px solid #d1e7dd;
-  box-sizing: border-box;
 }
 
-/* ASISTENTES + INVITADOS */
-.item-director,
+/* =========================
+   ASISTENTES (FIX REAL)
+========================= */
+
+#ag-lista-directores .item-director {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 6px;
+  margin-bottom: 3px;
+}
+
+/* checkbox fijo izquierda */
+#ag-lista-directores input[type="checkbox"] {
+  width: 18px !important;
+  height: 18px;
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+/* nombre ocupa resto */
+#ag-lista-directores .director-nombre {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* =========================
+   INVITADOS (FIX REAL)
+========================= */
+
 .invitado-row {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 5px 8px;
-  margin-bottom: 4px;
-  background: #fbfffb;
-  border-radius: 8px;
-  border: 1px solid rgba(0,0,0,0.05);
+  padding: 4px 6px;
+  margin-bottom: 3px;
 }
 
-.item-director input[type="checkbox"],
-.invitado-row input[type="checkbox"] {
-  width: 18px;
+/* ocultar label #1 #2 */
+.invitado-row > label {
+  display: none;
+}
+
+/* checkbox orden fijo */
+.invitado-row .chk-invitado {
+  order: 0;
+  display: flex;
+  align-items: center;
+}
+
+.invitado-row .chk-invitado input {
+  width: 18px !important;
   height: 18px;
   margin: 0;
 }
 
-.director-nombre,
+/* input ocupa todo */
 .invitado-row .field {
   flex: 1;
 }
 
-/* RESUMEN */
+.invitado-row input[type="text"] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  font-size: 13px;
+  border-radius: 6px;
+  border: 1px solid #d1e7dd;
+}
+
+/* =========================
+   RESUMEN (COMPACTO REAL)
+========================= */
+
 #agenda-detalle-resumen {
   background: #f7fff3;
   border-left: 3px solid #28a745;
-  padding: 8px;
   border-radius: 8px;
-  color: #0b3b26;
+  padding: 6px 10px;
 }
 
-/* BOTONES (UNA SOLA LINEA REAL) */
+#agenda-detalle-resumen h3 {
+  font-size: 14px;
+  margin: 0 0 4px 0;
+}
+
+#agenda-detalle-resumen p {
+  margin: 2px 0;
+  font-size: 13px;
+}
+
+/* =========================
+   BOTONES (UNA SOLA LINEA REAL)
+========================= */
+
 #agenda-detalle-acciones-admin {
   display: flex;
-  flex-wrap: nowrap;
   gap: 10px;
   justify-content: center;
+  flex-wrap: nowrap;
 }
 
 #agenda-detalle-acciones-admin button {
   flex: 1;
-  min-width: 0;
   padding: 8px 10px;
   font-size: 13px;
   border-radius: 8px;
@@ -1217,15 +1283,18 @@ input:focus, select:focus, textarea:focus,
 
 #agenda-detalle-acciones-admin button:first-child {
   background: #10b981;
-  color: #fff;
+  color: white;
 }
 
 #agenda-detalle-acciones-admin button:last-child {
   background: #ef4444;
-  color: #fff;
+  color: white;
 }
 
-/* MOBILE */
+/* =========================
+   MOBILE
+========================= */
+
 @media (max-width: 640px) {
   #agenda-detalle-datos .form-row {
     flex-direction: column;
@@ -1235,93 +1304,4 @@ input:focus, select:focus, textarea:focus,
   #agenda-detalle-datos label {
     width: 100%;
   }
-}
-
-/* ======================================================
-   🔧 FIX DEFINITIVO AGENDA (MEC OVERRIDE)
-   PEGA AL FINAL DEL CSS
-====================================================== */
-
-/* =========================
-   1. BOTONES AGENDA
-   (mata el width:100% global)
-========================= */
-
-#agenda-detalle-acciones-admin button{
-  width: auto !important;
-  flex: 0 0 auto !important;
-  display: inline-flex !important;
-  align-items: center;
-  justify-content: center;
-  white-space: nowrap;
-  padding: 8px 14px;
-  font-size: 13px;
-}
-
-/* fuerza UNA SOLA LINEA real */
-#agenda-detalle-acciones-admin{
-  display: flex !important;
-  flex-direction: row !important;
-  flex-wrap: nowrap !important;
-  justify-content: center;
-  gap: 10px;
-}
-
-/* =========================
-   2. CHECKBOX ASISTENTES
-========================= */
-
-#ag-lista-directores .item-director{
-  display: flex !important;
-  align-items: center;
-  gap: 8px;
-}
-
-#ag-lista-directores input[type="checkbox"]{
-  width: auto !important;
-  margin: 0 !important;
-  flex: 0 0 auto;
-}
-
-/* =========================
-   3. INVITADOS (CHECKBOX REAL ALINEADO)
-========================= */
-
-.invitado-row{
-  display: flex !important;
-  align-items: center;
-  gap: 8px;
-}
-
-/* el label checkbox te está rompiendo layout */
-.invitado-row .chk-invitado{
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-  min-width: 24px;
-}
-
-/* checkbox real */
-.invitado-row .chk-invitado input{
-  width: auto !important;
-  margin: 0 !important;
-  transform: scale(1.05);
-}
-
-/* input texto estable */
-.invitado-row .field{
-  flex: 1;
-}
-
-.invitado-row input[type="text"]{
-  width: 100% !important;
-  box-sizing: border-box;
-}
-
-/* =========================
-   4. ANTI-REGLA GLOBAL INPUT
-========================= */
-
-#agenda-detalle-datos input[type="checkbox"]{
-  width: auto !important;
 }

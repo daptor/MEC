@@ -1348,20 +1348,22 @@ input:focus, select:focus, textarea:focus,
   margin: 0;
 }
 
-/* Botones de acciones en detalle de reunión: en línea horizontal */
+/* Forzar botones de acciones Agenda en línea horizontal */
 #agenda-detalle-acciones-admin {
-  display: flex;
+  display: flex !important;
   gap: 8px;
-  justify-content: flex-end; /* o center/space-between según prefieras */
+  justify-content: flex-end; /* o center / space-between si prefieres */
   margin-top: 10px;
 }
 
-/* Sobrescribir el botón global (que es width:100%) SOLO aquí */
+/* Sobrescribir estilos globales de button SOLO aquí */
 #agenda-detalle-acciones-admin button {
+  display: inline-flex !important;
   width: auto !important;
-  flex: 0 0 auto;
+  flex: 0 0 auto !important;
   padding: 8px 14px;
   font-size: 14px;
   border-radius: 10px;
   box-shadow: none;
 }
+

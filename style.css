@@ -1409,3 +1409,18 @@ input:focus, select:focus, textarea:focus,
   box-shadow: none;                                  /* Sin sombra extra */
 }                                                    /* Fin de regla para los botones */
 
+/* AGENDA: Invitados con mismo estilo visual que Asistentes */
+.invitado-item .director-nombre input[type="text"] {
+  width: 100%;
+  border: 1px solid #d1e7dd;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+/* Opcional: texto “Invitados” un poco pegado arriba */
+#ag-invitados h4 {
+  margin-top: 4px;
+  margin-bottom: 6px;
+}

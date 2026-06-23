@@ -1386,3 +1386,54 @@ input:focus, select:focus, textarea:focus,
   border-radius: 10px;
   box-shadow: none;
 }
+
+/* === FIX DETALLE AGENDA: CAMPOS ALINEADOS Y BOTONES CENTRADOS === */
+
+/* Campos del detalle: layout vertical, mismo ancho */
+#agenda-detalle-datos .form-row {
+  display: block !important;
+  margin-bottom: 8px;
+}
+
+#agenda-detalle-datos .form-row label {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 0 4px 0;
+  font-weight: 700;
+  color: #14532d;
+}
+
+#agenda-detalle-datos .form-row .field {
+  width: 100% !important;
+  margin: 0;
+}
+
+/* Todos los controles a 100% del recuadro, sin salirse */
+#agenda-detalle-datos input[type="date"],
+#agenda-detalle-datos input[type="time"],
+#agenda-detalle-datos input[type="text"],
+#agenda-detalle-datos input[type="number"],
+#agenda-detalle-datos select,
+#agenda-detalle-datos textarea {
+  width: 100% !important;
+  box-sizing: border-box;
+}
+
+/* Botones Guardar / Eliminar centrados y en horizontal */
+#agenda-detalle-acciones-admin {
+  display: flex !important;
+  justify-content: center !important;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+#agenda-detalle-acciones-admin button {
+  display: inline-flex !important;
+  width: auto !important;
+  flex: 0 0 auto !important;
+  padding: 8px 14px;
+  font-size: 14px;
+  border-radius: 10px;
+  box-shadow: none;
+}

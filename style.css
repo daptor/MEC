@@ -1127,7 +1127,7 @@ input:focus, select:focus, textarea:focus,
 #agenda-detalle-datos,
 #agenda-detalle-asistentes,
 #agenda-detalle-resumen {
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 /* =========================
@@ -1135,7 +1135,7 @@ input:focus, select:focus, textarea:focus,
 ========================= */
 
 #agenda-detalle-datos {
-  background: lab(89.66% -47.24 48.34);
+  background: lab(94.51% -30.24 29.99);
   border-radius: 10px;
   padding: 4px;
   box-shadow: 0 3px 10px rgba(16,185,129,0.08);
@@ -1180,7 +1180,7 @@ input:focus, select:focus, textarea:focus,
   gap: 10px;
   padding: 6px 8px;
   margin-bottom: 6px;
-  background: #fcfab0;
+  background: lab(94.51% -30.24 29.99);
   border-radius: 8px;
   border: 1px solid rgba(0,0,0,0.05);
 }
@@ -1210,7 +1210,7 @@ input:focus, select:focus, textarea:focus,
   gap: 6px;
   padding: 3px 6px;
   margin-bottom: 3px;
-  background: #b2f8b2;
+  background: lab(94.51% -30.24 29.99);
   border-radius: 8px;
   border: 1px solid rgba(0,0,0,0.05);
 }
@@ -1247,8 +1247,8 @@ input:focus, select:focus, textarea:focus,
 ========================= */
 
 #agenda-detalle-resumen {
-  background: #f3f48b;
-  border-left: 3px solid #28a745;
+  background: #f6f8ad;
+  border-left: 3px solid #e03d32;
   border-radius: 8px;
   padding: 6px 10px;
   font-size: 13px;

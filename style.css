@@ -1115,6 +1115,10 @@ input:focus, select:focus, textarea:focus,
   border-radius: 6px;
 }
 
+/* =========================
+   📅 AGENDA — LISTA (compacta)
+   ========================= */
+
 /* Tarjetas Agenda Federación más compactas */
 .agenda-card-compact {
   line-height: 1.3;
@@ -1137,45 +1141,50 @@ input:focus, select:focus, textarea:focus,
   font-size: 13px;
 }
 
-/* Compactar sección detalle reunión (menos altura y margenes) */
+/* =========================
+   📅 AGENDA — DETALLE (compactar un poco sin cambiar anchos)
+   ========================= */
+
+/* Menos padding interno en el bloque de datos */
 #agenda-detalle-datos {
-  padding: 10px 12px;            /* menos padding interno */
+  padding: 10px 12px;
+  margin-bottom: 10px;
 }
+
+/* Texto un poco más compacto verticalmente */
 #agenda-detalle-datos label,
 #agenda-detalle-datos p,
 #agenda-detalle-datos select,
 #agenda-detalle-datos input,
 #agenda-detalle-datos textarea {
-  margin-bottom: 2px;           /* reducir espacio entre líneas */
-  font-size: 14px;              /* texto ligeramente más compacto */
+  margin-bottom: 4px;
+  font-size: 14px;
   line-height: 1.25;
 }
-#agenda-detalle-datos h3,
-#agenda-detalle-datos .titulo {
-  margin-bottom: 6px;
-}
+
 #agenda-detalle-datos textarea {
   padding: 8px;
   resize: vertical;
   min-height: 32px;
 }
-#ag-bloque-tele, #ag-bloque-presencial, #ag-lista-directores, #ag-invitados {
-  margin-top: 2px;              /* menos separación entre sub-bloques */
+
+/* Subbloques con poco espacio entre ellos */
+#ag-bloque-tele,
+#ag-bloque-presencial,
+#ag-lista-directores,
+#ag-invitados {
+  margin-top: 4px;
 }
+
+/* Ajuste en sub tarjetas (asistentes + resumen) */
 #agenda-detalle-asistentes .mec-seccion-card,
 #agenda-detalle-resumen {
-  padding: 8px 10px;            /* menos padding en sub tarjetas */
+  padding: 8px 10px;
 }
-@media (max-width: 480px) {
-  #agenda-detalle-datos label,
-  #agenda-detalle-datos p,
-  #agenda-detalle-datos select,
-  #agenda-detalle-datos input,
-  #agenda-detalle-datos textarea {
-    font-size: 13px;
-    margin-bottom: 5px;
-  }
-}
+
+/* =========================
+   👥 AGENDA — ASISTENTES
+   ========================= */
 
 /* Alinear checkbox a la izquierda del nombre, en la misma línea */
 #ag-lista-directores .item-director,
@@ -1211,6 +1220,7 @@ input:focus, select:focus, textarea:focus,
   flex: 1 1 auto;
   font-size: 14px;
   color: #0f172a;
+  font-weight: 600;
 }
 
 /* mobile: permitir wrap si es necesario */
@@ -1219,72 +1229,49 @@ input:focus, select:focus, textarea:focus,
   #ag-lista-directores .director-nombre { font-size: 13px; white-space: normal; }
 }
 
-/* Mejora visual: Detalle reunión (alineado, compacto, claro) */
-#agenda-detalle-datos {
-  background: #fff;
-  border-radius: 12px;
-  padding: 12px;
-  box-shadow: 0 6px 18px rgba(16,185,129,0.06);
-  color: #0f1720;
-  margin-bottom: 10px;
-}
+/* =========================
+   👤 AGENDA — INVITADOS
+   ========================= */
 
-/* Grid compacto: etiquetas a la izquierda, campos a la derecha */
-#agenda-detalle-datos .form-row {
+/* Invitados Agenda: todo en una línea, sin $0 */
+.invitado-row {
   display: flex;
-  gap: 8px;
   align-items: center;
-  margin-bottom: 8px;
-}
-#agenda-detalle-datos .form-row label {
-  width: 120px;
-  min-width: 100px;
-  font-weight:700;
-  color:#14532d;
-  margin:0;
-}
-#agenda-detalle-datos .form-row .field {
-  flex:1;
-  margin:0;
+  gap: 6px;
 }
 
-/* Inputs y textarea más compactos */
-#agenda-detalle-datos input[type="date"],
-#agenda-detalle-datos input[type="time"],
-#agenda-detalle-datos select,
-#agenda-detalle-datos textarea,
-#agenda-detalle-datos input[type="text"] {
-  width:100%;
-  padding:8px 10px;
-  font-size:14px;
-  border-radius:8px;
-  border:1px solid #d1e7dd;
-  box-shadow:none;
-  background:#fff;
-  color:#0f1720;
+.invitado-row label {
+  margin: 0;
+  font-weight: 600;
+  color: #14532d;
+  width: auto;
+  min-width: 0;
 }
 
-/* Asistentes: lista limpia en columna, checkbox a la izquierda */
-#ag-lista-directores .item-director {
-  display:flex;
-  align-items:center;
-  gap:10px;
-  padding:8px;
-  background:#fbfffb;
-  border:1px solid rgba(0,0,0,0.04);
-  border-radius:8px;
-  margin-bottom:6px;
+.invitado-row .field {
+  flex: 1;
 }
-#ag-lista-directores .director-nombre { font-weight:600; color:#0b3b26; }
 
-/* Invitados: inline compacto */
-#ag-invitados > div {
-  display:flex;
-  gap:10px;
-  align-items:center;
-  margin-bottom:6px;
+.chk-invitado {
+  width: auto;
+  min-width: auto;
+  font-weight: 700;
+  color: #14532d;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
 }
-#ag-invitados label { margin:0; font-weight:600; color:#14532d; }
+
+.chk-invitado input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+/* =========================
+   💰 AGENDA — RESUMEN Y BOTONES
+   ========================= */
 
 /* Resumen: tarjeta compacta */
 #agenda-detalle-resumen {
@@ -1295,75 +1282,43 @@ input:focus, select:focus, textarea:focus,
   margin-top:8px;
   color:#0b3b26;
 }
-#agenda-detalle-resumen p { margin:4px 0; font-weight:600; }
+#agenda-detalle-resumen p {
+  margin:4px 0;
+  font-weight:600;
+}
 
-/* Botones: inline, tamaño más reducido */
+/* Botones: en línea, tamaño más reducido */
 #agenda-detalle-acciones-admin {
   display:flex;
   gap:10px;
+  justify-content:center;
   margin-top:12px;
-}
-#agenda-detalle-acciones-admin button {
-  width:auto;
-  padding:8px 12px;
-  font-size:14px;
-  border-radius:10px;
-  box-shadow:none;
-}
-#agenda-detalle-acciones-admin button:first-child { background:linear-gradient(135deg,#10b981,#059669); }
-#agenda-detalle-acciones-admin button:last-child { background:#dc2626; }
-
-/* Mobile: apilar filas (labels arriba) */
-@media (max-width:640px) {
-  #agenda-detalle-datos .form-row { flex-direction:column; align-items:flex-start; gap:6px; }
-  #agenda-detalle-datos .form-row label { width:100%; min-width:0; }
-  #ag-lista-directores .item-director { gap:8px; }
-}
-
-/* Invitados Agenda: todo en una línea, sin $0 */
-.invitado-row {
-  align-items: center;
-  gap: 6px;
-}
-.invitado-row label {
-  width: 40px;      /* etiqueta #1 / #2 corta */
-  min-width: 40px;
-}
-.invitado-row .field {
-  flex: 1;
-}
-.chk-invitado {
-  width: auto !important;
-  min-width: auto !important;
-  font-weight: 700;
-  color: #14532d;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin: 0;
-}
-.chk-invitado input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  margin: 0;
-}
-
-/* Forzar botones de acciones Agenda en línea horizontal */
-#agenda-detalle-acciones-admin {
-  display: flex !important;
-  gap: 8px;
-  justify-content: center; /* o center / space-between si prefieres */
-  margin-top: 10px;
 }
 
 /* Sobrescribir estilos globales de button SOLO aquí */
 #agenda-detalle-acciones-admin button {
-  display: inline-flex !important;
-  width: auto !important;
-  flex: 0 0 auto !important;
-  padding: 8px 14px;
-  font-size: 14px;
-  border-radius: 10px;
-  box-shadow: none;
+  display:inline-flex;
+  width:auto;
+  flex:0 0 auto;
+  padding:8px 14px;
+  font-size:14px;
+  border-radius:10px;
+  box-shadow:none;
 }
+
+/* =========================
+   📱 AGENDA — MOBILE
+   ========================= */
+
+@media (max-width: 480px) {
+  #agenda-detalle-datos label,
+  #agenda-detalle-datos p,
+  #agenda-detalle-datos select,
+  #agenda-detalle-datos input,
+  #agenda-detalle-datos textarea {
+    font-size: 13px;
+    margin-bottom: 5px;
+  }
+}
+
 

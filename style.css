@@ -1115,312 +1115,157 @@ input:focus, select:focus, textarea:focus,
   border-radius: 6px;
 }
 
-/* Tarjetas Agenda Federación más compactas */        /* Comentario: título de bloque para las tarjetas de la lista de Agenda */
-.agenda-card-compact {                               /* Selector: clase aplicada a los contenedores de tarjetas de Agenda */
-  line-height: 1.3;                                  /* Altura de línea un poco más apretada dentro de la tarjeta */
-  font-size: 14px;                                   /* Tamaño de texto base de la tarjeta */
-}                                                    /* Fin de la regla .agenda-card-compact */
+/* =========================
+   AGENDA — ESTILO LIMPIO Y MÍNIMO
 
-.agenda-card-compact > div {                         /* Selector: divs hijos directos dentro de .agenda-card-compact */
-  margin-bottom: 2px; /* muy poca separación */      /* Deja solo 2px de espacio vertical entre esos divs (líneas) */
-}                                                    /* Fin de la regla .agenda-card-compact > div */
-
-.agenda-card-line1 {                                 /* Selector: primera línea de la tarjeta (por convención) */
-  font-weight: 700;                                  /* Texto en negrita fuerte */
-  margin-bottom: 3px;                                /* Pequeño espacio inferior respecto a la siguiente línea */
-}                                                    /* Fin de la regla .agenda-card-line1 */
-
-.agenda-card-line2,                                  /* Selector: segunda línea de la tarjeta */
-.agenda-card-line3,                                  /* Selector: tercera línea de la tarjeta */
-.agenda-card-line4,                                  /* Selector: cuarta línea de la tarjeta */
-.agenda-card-line5 {                                 /* Selector: quinta línea de la tarjeta */
-  font-size: 13px;                                   /* Tamaño de texto ligeramente más pequeño que la primera línea */
-}                                                    /* Fin de la regla para todas las líneas 2–5 */
-
-/* Compactar sección detalle reunión (menos altura y margenes) */  /* Comentario: título del bloque de estilo del detalle */
-#agenda-detalle-datos {                              /* Selector: contenedor principal del bloque de datos del detalle */
-  padding: 10px 12px;            /* menos padding interno */ /* Relleno interno del bloque (10px arriba/abajo, 12px izq/der) */
-}                                                    /* Fin de #agenda-detalle-datos (primera definición, luego se sobre-escribe) */
-
-#agenda-detalle-datos label,                         /* Selector: todos los <label> dentro del detalle */
-#agenda-detalle-datos p,                             /* Selector: todos los <p> dentro del detalle */
-#agenda-detalle-datos select,                        /* Selector: todos los <select> dentro del detalle */
-#agenda-detalle-datos input,                         /* Selector: todos los <input> dentro del detalle */
-#agenda-detalle-datos textarea {                     /* Selector: todos los <textarea> dentro del detalle */
-  margin-bottom: 2px;           /* reducir espacio entre líneas */ /* Deja 2px de margen inferior a esos elementos */
-  font-size: 14px;              /* texto ligeramente más compacto */ /* Tamaño de texto 14px */
-  line-height: 1.25;                               /* Apretar un poco la altura de línea respecto al valor por defecto */
-}                                                    /* Fin de la regla para label/p/select/input/textarea */
-
-#agenda-detalle-datos h3,                            /* Selector: <h3> dentro del detalle */
-#agenda-detalle-datos .titulo {                      /* Selector: elementos con clase .titulo dentro del detalle */
-  margin-bottom: 6px;                                /* Deja 6px de espacio debajo del título */
-}                                                    /* Fin de la regla de títulos */
-
-#agenda-detalle-datos textarea {                     /* Selector específico para <textarea> dentro del detalle */
-  padding: 8px;                                      /* Relleno interno uniforme de 8px */
-  resize: vertical;                                  /* Permite redimensionar solo verticalmente */
-  min-height: 32px;                                  /* Altura mínima de 32px para el textarea */
-}                                                    /* Fin de la regla del textarea */
-
-#ag-bloque-tele, #ag-bloque-presencial,              /* Selector: bloques de telemática y presencial */
-#ag-lista-directores, #ag-invitados {                /* Selector: bloques de lista de directores e invitados */
-  margin-top: 2px;              /* menos separación entre sub-bloques */ /* Separación superior mínima entre bloques */
-}                                                    /* Fin de regla para esos 4 bloques */
-
-#agenda-detalle-asistentes .mec-seccion-card,        /* Selector: tarjetas internas dentro de bloque asistentes */
-#agenda-detalle-resumen {                            /* Selector: tarjeta de resumen del detalle */
-  padding: 8px 10px;            /* menos padding en sub tarjetas */ /* Relleno interno de 8px arriba/abajo, 10px lados */
-}                                                    /* Fin de la regla para sub-tarjetas */
-
-@media (max-width: 480px) {                          /* Media query: estilos aplicados cuando el ancho es <= 480px */
-  #agenda-detalle-datos label,                       /* Selector: <label> en móviles */
-  #agenda-detalle-datos p,                           /* Selector: <p> en móviles */
-  #agenda-detalle-datos select,                      /* Selector: <select> en móviles */
-  #agenda-detalle-datos input,                       /* Selector: <input> en móviles */
-  #agenda-detalle-datos textarea {                   /* Selector: <textarea> en móviles */
-    font-size: 13px;                                 /* Reduce el tamaño de texto a 13px en móvil */
-    margin-bottom: 5px;                              /* Aumenta el espacio entre elementos a 5px en móvil */
-  }                                                  /* Fin de regla dentro de la media query */
-}                                                    /* Fin de media query */
-
-/* Alinear checkbox a la izquierda del nombre, en la misma línea */ /* Comentario: bloque para la lista de asistentes */
-#ag-lista-directores .item-director,                 /* Selector: elementos con clase .item-director dentro de la lista */
-#ag-lista-directores > div {                         /* Selector: todos los <div> hijos directos de la lista */
-  display: flex;                                     /* Usa flexbox como modelo de layout horizontal */
-  align-items: center;                               /* Alinea verticalmente al centro los hijos (checkbox y texto) */
-  gap: 6px;              /* espacio entre checkbox y texto */ /* Separa horizontalmente checkbox y texto por 6px */
-  padding: 6px 4px;                                  /* Relleno interno: 6px vertical, 4px horizontal */
-}                                                    /* Fin de regla para items de lista de directores */
-
-#ag-lista-directores label {                         /* Selector: todos los <label> dentro de la lista de directores */
-  display: flex;                                     /* Usa flexbox para alinear el checkbox y el nombre */
-  align-items: center;                               /* Centra verticalmente contenido del label */
-  gap: 10px;                                         /* 10px de espacio entre checkbox y texto */
-  width: 100%;                                       /* El label ocupa todo el ancho disponible del contenedor */
-  cursor: pointer;                                   /* Muestra puntero de mano para indicar clickeable */
-}                                                    /* Fin de regla para label de lista de directores */
-
-/* checkbox tamaño y alineación */
-#ag-lista-directores input[type="checkbox"] {        /* Selector: checkbox específicos de la lista de directores */
-  width: 18px;                                       /* Ancho de 18px para el cuadrado del checkbox */
-  height: 18px;                                      /* Alto de 18px para el cuadrado del checkbox */
-  margin: 0;                                         /* Sin márgenes adicionales */
-  flex: 0 0 auto;                                    /* El checkbox no se estira, mantiene su tamaño fijo */
-}                                                    /* Fin de regla para checkbox */
-
-/* texto del nombre ocupa el resto y evita romper la línea */
-#ag-lista-directores .director-nombre {              /* Selector: span o elemento con clase .director-nombre */
-  display: inline-block;                             /* Se comporta como inline, pero permite tamaño (width/height) */
-  white-space: nowrap;                               /* Evita saltos de línea: todo el nombre en una sola línea */
-  overflow: hidden;                                  /* Oculta el texto que se salga del ancho */
-  text-overflow: ellipsis;                           /* Muestra "..." si el texto es más largo que el ancho */
-  flex: 1 1 auto;                                    /* Ocupa todo el espacio horizontal disponible restante */
-  font-size: 14px;                                   /* Tamaño de texto 14px para el nombre */
-  color: #0f172a;                                    /* Color de texto gris-azul oscuro */
-}                                                    /* Fin de regla para .director-nombre */
-
-/* mobile: permitir wrap si es necesario */
-@media (max-width:480px) {                           /* Media query: estilos para pantallas <= 480px */
-  #ag-lista-directores label { gap: 8px; }           /* Reduce un poco el espacio entre checkbox y texto a 8px */
-  #ag-lista-directores .director-nombre {            /* Selector: nombre del director en móviles */
-    font-size: 13px;                                 /* Disminuye el tamaño de fuente a 13px */
-    white-space: normal;                             /* Permite saltos de línea (ya no obliga una sola línea) */
-  }                                                  /* Fin de regla .director-nombre en móvil */
-}                                                    /* Fin de la media query móvil */
-
-/* Mejora visual: Detalle reunión (alineado, compacto, claro) */
-#agenda-detalle-datos {                              /* Segunda definición de #agenda-detalle-datos (sobrescribe parte) */
-  background: #fff;                                  /* Fondo blanco del bloque (encima del contenedor verde) */
-  border-radius: 12px;                               /* Bordes redondeados de 12px */
-  padding: 12px;                                     /* Relleno interno 12px (reemplaza el 10px anterior) */
-  box-shadow: 0 6px 18px rgba(16,185,129,0.06);      /* Sombra suave color verde MEC */
-  color: #0f1720;                                    /* Color de texto principal oscuro */
-  margin-bottom: 10px;                               /* Espacio inferior de 10px bajo el bloque */
-}                                                    /* Fin de la definición visual principal del detalle */
-
-/* Grid compacto: etiquetas a la izquierda, campos a la derecha */
-#agenda-detalle-datos .form-row {                    /* Selector: filas con class="form-row" dentro del detalle */
-  display: flex;                                     /* Usa flex para poner label y campo en una misma línea */
-  gap: 8px;                                          /* Espacio horizontal entre label y campo */
-  align-items: center;                               /* Alinea verticalmente el label y el campo al centro */
-  margin-bottom: 8px;                                /* Espacio inferior entre filas */
-}                                                    /* Fin de regla .form-row */
-
-#agenda-detalle-datos .form-row label {              /* Selector: etiquetas dentro de form-row */
-  width: 120px;                                      /* Ancho fijo para la columna de etiquetas (lado izquierdo) */
-  min-width: 100px;                                  /* Ancho mínimo para que no se encoja demasiado */
-  font-weight:700;                                   /* Etiquetas en negrita */
-  color:#14532d;                                     /* Color verde oscuro para etiquetas */
-  margin:0;                                          /* Sin margen adicional */
-}                                                    /* Fin de regla para label en form-row */
-
-#agenda-detalle-datos .form-row .field {             /* Selector: contenedor del campo dentro de form-row */
-  flex:1;                                            /* Ocupa todo el espacio horizontal restante */
-  margin:0;                                          /* Sin margen adicional */
-}                                                    /* Fin de regla para .field */
-
-/* Inputs y textarea más compactos */
-#agenda-detalle-datos input[type="date"],            /* Selector: input de tipo fecha dentro del detalle */
-#agenda-detalle-datos input[type="time"],            /* Selector: input de tipo hora dentro del detalle */
-#agenda-detalle-datos select,                        /* Selector: cualquier select dentro del detalle */
-#agenda-detalle-datos textarea,                      /* Selector: cualquier textarea dentro del detalle */
-#agenda-detalle-datos input[type="text"] {           /* Selector: input de texto dentro del detalle */
-  width:100%;                                        /* Cada control llena todo el ancho de su contenedor .field */
-  padding:8px 10px;                                  /* Relleno interno cómodo */
-  font-size:14px;                                    /* Tamaño de texto 14px */
-  border-radius:8px;                                 /* Bordes redondeados de 8px */
-  border:1px solid #d1e7dd;                          /* Borde gris verdoso suave */
-  box-shadow:none;                                   /* Sin sombra adicional en el control */
-  background:#fff;                                   /* Fondo blanco del control */
-  color:#0f1720;                                     /* Color de texto oscuro */
-  box-sizing: border-box;
-
-}                                                    /* Fin de regla para inputs en el detalle */
-
-/* Asistentes: lista limpia en columna, checkbox a la izquierda */
-#ag-lista-directores .item-director {                /* Selector: fila de director con clase .item-director */
-  display:flex;                                      /* De nuevo flex, asegura alineación horizontal */
-  align-items:center;                                /* Centra verticalmente el contenido */
-  gap:10px;                                          /* Más espacio horizontal que antes */
-  padding:8px;                                       /* Más relleno interno, estilo tarjetita */
-  background:#fbfffb;                                /* Fondo blanco ligeramente verdoso */
-  border:1px solid rgba(0,0,0,0.04);                 /* Borde muy suave */
-  border-radius:8px;                                 /* Bordes redondeados */
-  margin-bottom:6px;                                 /* Separación vertical entre directores */
-}                                                    /* Fin de regla item-director */
-
-#ag-lista-directores .director-nombre {              /* Segunda regla para el nombre del director */
-  font-weight:600;                                   /* Negrita media */
-  color:#0b3b26;                                     /* Verde oscuro */
-}                                                    /* Fin de la segunda regla .director-nombre */
-
-/* Invitados: inline compacto */
-#ag-invitados > div {                                /* Selector: cada <div> hijo directo bajo el bloque de invitados */
-  display:flex;                                      /* Alinea horizontalmente los elementos (label, input, check, texto) */
-  gap:10px;                                          /* Espacio horizontal entre esos elementos */
-  align-items:center;                                /* Centra verticalmente */
-  margin-bottom:6px;                                 /* Separación vertical entre invitados */
-}                                                    /* Fin de regla para cada fila de invitado */
-
-#ag-invitados label {                                /* Selector: etiquetas dentro del bloque de invitados */
-  margin:0;                                          /* Sin margen extra */
-  font-weight:600;                                   /* Texto de etiqueta en seminegrita */
-  color:#14532d;                                     /* Color verde oscuro */
-}                                                    /* Fin de regla de label en invitados */
-
-/* Resumen: tarjeta compacta */
-#agenda-detalle-resumen {                            /* Selector: bloque resumen de pago */
-  background:#f7fff3;                                /* Fondo verde muy suave */
-  border-left:4px solid #28a745;                     /* Barra verde a la izquierda */
-  padding:10px;                                      /* Relleno interno estándar */
-  border-radius:8px;                                 /* Bordes redondeados */
-  margin-top:8px;                                    /* Separación superior 8px */
-  color:#0b3b26;                                     /* Color de texto oscuro */
-}                                                    /* Fin de la regla del resumen */
-
-#agenda-detalle-resumen p {                          /* Selector: párrafos dentro del resumen */
-  margin:4px 0;                                      /* Poco espacio vertical entre líneas */
-  font-weight:600;                                   /* Texto del resumen algo más destacado */
-}                                                    /* Fin regla p del resumen */
-
-/* Botones: inline, tamaño más reducido */
-#agenda-detalle-acciones-admin {                     /* Selector: contenedor de los botones de acción */
-  display:flex;                                      /* Flex para poner botones en horizontal */
-  gap:10px;                                          /* 10px de espacio entre botones */
-  margin-top:12px;                                   /* Separación superior 12px respecto al bloque anterior */
-}                                                    /* Fin de regla contenedor de acciones */
-
-#agenda-detalle-acciones-admin button {              /* Selector: botones dentro del contenedor de acciones */
-  width:auto;                                        /* Botones ajustan su ancho al contenido (texto) */
-  padding:8px 12px;                                  /* Relleno interno cómodo */
-  font-size:14px;                                    /* Tamaño de texto 14px */
-  border-radius:10px;                                /* Bordes redondeados */
-  box-shadow:none;                                   /* Sin sombra adicional */
-}                                                    /* Fin de regla para botones de acciones */
-
-#agenda-detalle-acciones-admin button:first-child {  /* Selector: primer botón (Guardar cambios) */
-  background:linear-gradient(135deg,#10b981,#059669);/* Fondo con gradiente verde (dos tonos) */
-}                                                    /* Fin regla primer botón */
-
-#agenda-detalle-acciones-admin button:last-child {   /* Selector: último botón (Eliminar reunión) */
-  background:#dc2626;                                /* Fondo rojo sólido */
-}                                                    /* Fin regla último botón */
-
-/* Mobile: apilar filas (labels arriba) */
-@media (max-width:640px) {                           /* Media query para pantallas con ancho <= 640px */
-  #agenda-detalle-datos .form-row {                  /* Selector: filas de formulario en móvil */
-    flex-direction:column;                           /* Cambia de layout horizontal a vertical (label arriba, campo abajo) */
-    align-items:flex-start;                          /* Alinea al inicio (izquierda) */
-    gap:6px;                                         /* Espacio entre label y campo */
-  }
-  #agenda-detalle-datos .form-row label {            /* Selector: etiquetas en esas filas, en móvil */
-    width:100%;                                      /* Ocupan todo el ancho */
-    min-width:0;                                     /* Sin anchura mínima fija */
-  }
-  #ag-lista-directores .item-director {              /* Selector: filas de directores en móvil */
-    gap:8px;                                         /* Espacio un poco mayor entre elementos */
-  }
-}                                                    /* Fin de la media query */
-
-/* Invitados Agenda: todo en una línea, sin $0 */
-.invitado-row {                                      /* Selector: filas de invitados con clase .invitado-row */
-  align-items: center;                               /* Centra verticalmente los elementos */
-  gap: 6px;                                          /* Espacio entre #, campo, y check */
-}
-.invitado-row label {                                /* Selector: etiquetas dentro de .invitado-row (ej: "#1:", "#2:") */
-  width: 40px;      /* etiqueta #1 / #2 corta */     /* Ancho fijo de 40px para las etiquetas de número */
-  min-width: 40px;                                   /* Y mínimo también 40px para que no se achiquen */
-}
-.invitado-row .field {                               /* Selector: contenedor .field del input del nombre de invitado */
-  flex: 1;                                           /* Ocupa todo el espacio horizontal disponible restante */
-}
-.chk-invitado {                                      /* Selector: contenedor del checkbox y texto "✔" */
-  width: auto !important;                            /* Ancho se ajusta al contenido */
-  min-width: auto !important;                        /* También el mínimo al contenido */
-  font-weight: 700;                                  /* Texto en negrita fuerte */
-  color: #14532d;                                    /* Mismo verde oscuro de etiquetas */
-  display: flex;                                     /* Flexbox para alinear checkbox y "✔" */
-  align-items: center;                               /* Alineado vertical centrado */
-  gap: 4px;                                          /* Espacio entre checkbox y "✔" */
-  margin: 0;                                         /* Sin márgenes extra */
-}
-.chk-invitado input[type="checkbox"] {               /* Selector: checkbox dentro de .chk-invitado */
-  width: 16px;                                       /* Ancho de 16px */
-  height: 16px;                                      /* Alto de 16px */
-  margin: 0;                                         /* Sin margen */
-}
-
-/* Botones de acciones en detalle de reunión: en línea horizontal */
-#agenda-detalle-acciones-admin {                     /* Selector: contenedor de botones de acción */
-  display: flex;                                     /* Flex para alinear en horizontal */
-  gap: 8px;                                          /* Espacio entre botones */
-  justify-content: flex-end; /* o center/space-between según prefieras */ /* Alinea los botones a la derecha (se puede cambiar) */
-  margin-top: 10px;                                  /* Separación superior 10px */
-}
-
-/* Sobrescribir el botón global (que es width:100%) SOLO aquí */
-#agenda-detalle-acciones-admin button {              /* Selector: botones dentro del contenedor de acciones */
-  width: auto !important;                            /* Fuerza que NO usen width:100% del estilo global */
-  flex: 0 0 auto;                                    /* No se estiran, tamaño fijo */
-  padding: 8px 14px;                                 /* Relleno interno */
-  font-size: 14px;                                   /* Tamaño de texto */
-  border-radius: 10px;                               /* Bordes redondeados de 10px */
-  box-shadow: none;                                  /* Sin sombra extra */
-}                                                    /* Fin de regla para los botones */
-
-/* AGENDA: Invitados con mismo estilo visual que Asistentes */
-.invitado-item .director-nombre input[type="text"] {
-  width: 100%;
-  border: 1px solid #d1e7dd;
-  border-radius: 6px;
-  padding: 4px 8px;
+campos con etiqueta a la izquierda y casilleros a la derecha (mismo ancho)
+inputs con box-sizing para no salirse del recuadro blanco
+asistentes e invitados con la misma “tarjetita” y checkbox a la izquierda
+botones centrados y en una sola línea ========================= */
+.agenda-card-compact {
+  line-height: 1.3;
   font-size: 14px;
-  box-sizing: border-box;
+}
+.agenda-card-compact > div { margin-bottom: 2px; }
+.agenda-card-line1 { font-weight: 700; margin-bottom: 3px; }
+.agenda-card-line2,
+.agenda-card-line3,
+.agenda-card-line4,
+.agenda-card-line5 { font-size: 13px; }
+
+/* Contenedor blanco del detalle */
+#agenda-detalle-datos {
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 6px 18px rgba(16,185,129,0.06);
+  color: #0f1720;
+  margin-bottom: 10px;
 }
 
-/* Opcional: texto “Invitados” un poco pegado arriba */
-#ag-invitados h4 {
-  margin-top: 4px;
-  margin-bottom: 6px;
+/* Fila: etiqueta izquierda / casillero derecha */
+#agenda-detalle-datos .form-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
 }
+#agenda-detalle-datos .form-row label {
+  width: 120px;
+  min-width: 120px;
+  font-weight: 700;
+  color: #14532d;
+  margin: 0;
+}
+#agenda-detalle-datos .form-row .field { flex: 1; margin: 0; }
+
+/* Casilleros: mismos anchos y box-sizing para no salirse del recuadro */
+#agenda-detalle-datos input[type="date"],
+#agenda-detalle-datos input[type="time"],
+#agenda-detalle-datos input[type="text"],
+#agenda-detalle-datos input[type="number"],
+#agenda-detalle-datos select,
+#agenda-detalle-datos textarea {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 14px;
+  border-radius: 8px;
+  border: 1px solid #d1e7dd;
+  box-shadow: none;
+  background: #fff;
+  color: #0f1720;
+  box-sizing: border-box;
+}
+#agenda-detalle-datos textarea { resize: vertical; min-height: 32px; }
+
+/* Espaciado de subbloques */
+#ag-bloque-tele,
+#ag-bloque-presencial,
+#ag-lista-directores,
+#ag-invitados { margin-top: 6px; }
+
+/* Asistentes: tarjetita con checkbox + nombre */
+#ag-lista-directores .item-director,
+#ag-lista-directores > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  margin-bottom: 6px;
+  background: #fbfffb;
+  border: 1px solid rgba(0,0,0,0.04);
+  border-radius: 8px;
+}
+#ag-lista-directores label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  cursor: pointer;
+}
+#ag-lista-directores input[type="checkbox"] { width: 18px; height: 18px; margin: 0; flex: 0 0 auto; }
+#ag-lista-directores .director-nombre {
+  flex: 1 1 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 14px;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+/* Invitados: mismo visual que asistentes (label a la izquierda, input a la derecha) /
+#ag-invitados > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  margin-bottom: 6px;
+  background: #fbfffb;
+  border: 1px solid rgba(0,0,0,0.04);
+  border-radius: 8px;
+}
+#ag-invitados > div label:first-child {
+  width: 120px;
+  min-width: 120px;
+  margin: 0;
+  font-weight: 600;
+  color: #14532d;
+}
+#ag-invitados input[type="text"] { flex: 1; width: 100%; box-sizing: border-box; }
+#ag-invitados p { display: none; } / oculta "Pago: $0" si existiera */
+
+/* Resumen de pago */
+#agenda-detalle-resumen {
+  background: #f7fff3;
+  border-left: 4px solid #28a745;
+  padding: 10px;
+  border-radius: 8px;
+  margin-top: 8px;
+  color: #0b3b26;
+}
+#agenda-detalle-resumen p { margin: 4px 0; font-weight: 600; }
+
+/* Botones centrados y en horizontal */
+#agenda-detalle-acciones-admin {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+#agenda-detalle-acciones-admin button {
+  width: auto !important;
+  padding: 8px 14px;
+  font-size: 14px;
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+/* Mobile: apilar etiquetas sobre campos */
+@media (max-width: 640px) {
+  #agenda-detalle-datos .form-row { flex-direction: column; align-items: flex-start; gap: 6px; }
+  #agenda-detalle-datos .form-row label { width: 100%; min-width: 0; }
+  #ag-lista-directores .director-nombre { white-space: normal; }
+}                                                 /* Fin de regla para los botones */
+

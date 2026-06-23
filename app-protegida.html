@@ -805,24 +805,26 @@
     <hr>
     <div id="ag-invitados">
       <h4>Invitados</h4>
-      <div class="item-director invitado-item">
-        <label>
-          <input type="checkbox" id="ag-inv1-asistio">
-          <span class="director-nombre">
-            <input type="text" id="ag-inv1-nombre" placeholder="Nombre invitado 1">
-          </span>
+      <div class="form-row invitado-row">
+        <label for="ag-inv1-nombre">#1:</label>
+        <div class="field">
+          <input type="text" id="ag-inv1-nombre" placeholder="Nombre invitado 1">
+        </div>
+        <label class="chk-invitado" for="ag-inv1-asistio">
+          <input type="checkbox" id="ag-inv1-asistio"> ✔
         </label>
       </div>
-
-      <div class="item-director invitado-item">
-        <label>
-          <input type="checkbox" id="ag-inv2-asistio">
-          <span class="director-nombre">
-            <input type="text" id="ag-inv2-nombre" placeholder="Nombre invitado 2">
-          </span>
+      <div class="form-row invitado-row">
+        <label for="ag-inv2-nombre">#2:</label>
+        <div class="field">
+          <input type="text" id="ag-inv2-nombre" placeholder="Nombre invitado 2">
+        </div>
+        <label class="chk-invitado" for="ag-inv2-asistio">
+          <input type="checkbox" id="ag-inv2-asistio"> ✔
         </label>
       </div>
     </div>
+  </div>
 
   <!-- Bloque 3: Resumen -->
   <div class="mec-seccion-card" id="agenda-detalle-resumen">

@@ -1115,37 +1115,111 @@ input:focus, select:focus, textarea:focus,
   border-radius: 6px;
 }
 
-/* =========================
-   📅 AGENDA FEDERACIÓN – LISTA
-   ========================= */
-
 /* Tarjetas Agenda Federación más compactas */
 .agenda-card-compact {
   line-height: 1.3;
   font-size: 14px;
-  color: #0f172a;
 }
+
 .agenda-card-compact > div {
-  margin-bottom: 2px;
+  margin-bottom: 2px; /* muy poca separación */
 }
+
 .agenda-card-line1 {
   font-weight: 700;
   margin-bottom: 3px;
-  color: #103f1e;
 }
+
 .agenda-card-line2,
 .agenda-card-line3,
 .agenda-card-line4,
 .agenda-card-line5 {
   font-size: 13px;
-  color: #334155;
 }
 
-/* =========================
-   📅 AGENDA – DETALLE REUNIÓN
-   ========================= */
+/* Compactar sección detalle reunión (menos altura y margenes) */
+#agenda-detalle-datos {
+  padding: 10px 12px;            /* menos padding interno */
+}
+#agenda-detalle-datos label,
+#agenda-detalle-datos p,
+#agenda-detalle-datos select,
+#agenda-detalle-datos input,
+#agenda-detalle-datos textarea {
+  margin-bottom: 2px;           /* reducir espacio entre líneas */
+  font-size: 14px;              /* texto ligeramente más compacto */
+  line-height: 1.25;
+}
+#agenda-detalle-datos h3,
+#agenda-detalle-datos .titulo {
+  margin-bottom: 6px;
+}
+#agenda-detalle-datos textarea {
+  padding: 8px;
+  resize: vertical;
+  min-height: 32px;
+}
+#ag-bloque-tele, #ag-bloque-presencial, #ag-lista-directores, #ag-invitados {
+  margin-top: 2px;              /* menos separación entre sub-bloques */
+}
+#agenda-detalle-asistentes .mec-seccion-card,
+#agenda-detalle-resumen {
+  padding: 8px 10px;            /* menos padding en sub tarjetas */
+}
+@media (max-width: 480px) {
+  #agenda-detalle-datos label,
+  #agenda-detalle-datos p,
+  #agenda-detalle-datos select,
+  #agenda-detalle-datos input,
+  #agenda-detalle-datos textarea {
+    font-size: 13px;
+    margin-bottom: 5px;
+  }
+}
 
-/* Contenedor principal del bloque de datos */
+/* Alinear checkbox a la izquierda del nombre, en la misma línea */
+#ag-lista-directores .item-director,
+#ag-lista-directores > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;              /* espacio entre checkbox y texto */
+  padding: 6px 4px;
+}
+
+#ag-lista-directores label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  cursor: pointer;
+}
+
+/* checkbox tamaño y alineación */
+#ag-lista-directores input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+/* texto del nombre ocupa el resto y evita romper la línea */
+#ag-lista-directores .director-nombre {
+  display: inline-block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1 1 auto;
+  font-size: 14px;
+  color: #0f172a;
+}
+
+/* mobile: permitir wrap si es necesario */
+@media (max-width:480px) {
+  #ag-lista-directores label { gap: 8px; }
+  #ag-lista-directores .director-nombre { font-size: 13px; white-space: normal; }
+}
+
+/* Mejora visual: Detalle reunión (alineado, compacto, claro) */
 #agenda-detalle-datos {
   background: #fff;
   border-radius: 12px;
@@ -1155,7 +1229,7 @@ input:focus, select:focus, textarea:focus,
   margin-bottom: 10px;
 }
 
-/* Fila compacta: etiqueta + campo en una misma línea */
+/* Grid compacto: etiquetas a la izquierda, campos a la derecha */
 #agenda-detalle-datos .form-row {
   display: flex;
   gap: 8px;
@@ -1165,13 +1239,13 @@ input:focus, select:focus, textarea:focus,
 #agenda-detalle-datos .form-row label {
   width: 120px;
   min-width: 100px;
-  font-weight: 700;
-  color: #14532d;
-  margin: 0;
+  font-weight:700;
+  color:#14532d;
+  margin:0;
 }
 #agenda-detalle-datos .form-row .field {
-  flex: 1;
-  margin: 0;
+  flex:1;
+  margin:0;
 }
 
 /* Inputs y textarea más compactos */
@@ -1179,76 +1253,74 @@ input:focus, select:focus, textarea:focus,
 #agenda-detalle-datos input[type="time"],
 #agenda-detalle-datos select,
 #agenda-detalle-datos textarea,
-#agenda-detalle-datos input[type="text"],
-#agenda-detalle-datos input[type="number"] {
-  width: 100%;
-  padding: 8px 10px;
-  font-size: 14px;
-  border-radius: 8px;
-  border: 1px solid #d1e7dd;
-  box-shadow: none;
-  background: #fff;
-  color: #0f1720;
-}
-#agenda-detalle-datos textarea {
-  resize: vertical;
-  min-height: 32px;
+#agenda-detalle-datos input[type="text"] {
+  width:100%;
+  padding:8px 10px;
+  font-size:14px;
+  border-radius:8px;
+  border:1px solid #d1e7dd;
+  box-shadow:none;
+  background:#fff;
+  color:#0f1720;
 }
 
-/* Bloques internos más pegados */
-#ag-bloque-tele,
-#ag-bloque-presencial,
-#ag-lista-directores,
-#ag-invitados {
-  margin-top: 4px;
+/* Asistentes: lista limpia en columna, checkbox a la izquierda */
+#ag-lista-directores .item-director {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:8px;
+  background:#fbfffb;
+  border:1px solid rgba(0,0,0,0.04);
+  border-radius:8px;
+  margin-bottom:6px;
+}
+#ag-lista-directores .director-nombre { font-weight:600; color:#0b3b26; }
+
+/* Invitados: inline compacto */
+#ag-invitados > div {
+  display:flex;
+  gap:10px;
+  align-items:center;
+  margin-bottom:6px;
+}
+#ag-invitados label { margin:0; font-weight:600; color:#14532d; }
+
+/* Resumen: tarjeta compacta */
+#agenda-detalle-resumen {
+  background:#f7fff3;
+  border-left:4px solid #28a745;
+  padding:10px;
+  border-radius:8px;
+  margin-top:8px;
+  color:#0b3b26;
+}
+#agenda-detalle-resumen p { margin:4px 0; font-weight:600; }
+
+/* Botones: inline, tamaño más reducido */
+#agenda-detalle-acciones-admin {
+  display:flex;
+  gap:10px;
+  margin-top:12px;
+}
+#agenda-detalle-acciones-admin button {
+  width:auto;
+  padding:8px 12px;
+  font-size:14px;
+  border-radius:10px;
+  box-shadow:none;
+}
+#agenda-detalle-acciones-admin button:first-child { background:linear-gradient(135deg,#10b981,#059669); }
+#agenda-detalle-acciones-admin button:last-child { background:#dc2626; }
+
+/* Mobile: apilar filas (labels arriba) */
+@media (max-width:640px) {
+  #agenda-detalle-datos .form-row { flex-direction:column; align-items:flex-start; gap:6px; }
+  #agenda-detalle-datos .form-row label { width:100%; min-width:0; }
+  #ag-lista-directores .item-director { gap:8px; }
 }
 
-/* =========================
-   👥 AGENDA – ASISTENTES
-   ========================= */
-
-/* Fila de director: tarjeta compacta con checkbox a la izquierda */
-#ag-lista-directores .item-director,
-#ag-lista-directores > div {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
-  background: #fbfffb;
-  border: 1px solid rgba(0,0,0,0.04);
-  border-radius: 8px;
-  margin-bottom: 6px;
-}
-#ag-lista-directores label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  margin: 0;
-  cursor: pointer;
-}
-#ag-lista-directores input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  margin: 0;
-  flex: 0 0 auto;
-}
-#ag-lista-directores .director-nombre {
-  display: inline-block;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex: 1 1 auto;
-  font-size: 14px;
-  color: #0b3b26;
-  font-weight: 600;
-}
-
-/* =========================
-   👤 AGENDA – INVITADOS
-   ========================= */
-
-/* Invitados Agenda: todo en una línea (#, nombre, check ✔) */
+/* Invitados Agenda: todo en una línea, sin $0 */
 .invitado-row {
   align-items: center;
   gap: 6px;
@@ -1256,9 +1328,6 @@ input:focus, select:focus, textarea:focus,
 .invitado-row label {
   width: 40px;      /* etiqueta #1 / #2 corta */
   min-width: 40px;
-  margin: 0;
-  font-weight: 600;
-  color: #14532d;
 }
 .invitado-row .field {
   flex: 1;
@@ -1279,29 +1348,11 @@ input:focus, select:focus, textarea:focus,
   margin: 0;
 }
 
-/* =========================
-   💰 AGENDA – RESUMEN Y BOTONES
-   ========================= */
-
-/* Resumen: tarjeta compacta estilo MEC */
-#agenda-detalle-resumen {
-  background: #f7fff3;
-  border-left: 4px solid #28a745;
-  padding: 10px;
-  border-radius: 8px;
-  margin-top: 8px;
-  color: #0b3b26;
-}
-#agenda-detalle-resumen p {
-  margin: 4px 0;
-  font-weight: 600;
-}
-
-/* Botones de acciones en detalle: en línea horizontal */
+/* Forzar botones de acciones Agenda en línea horizontal */
 #agenda-detalle-acciones-admin {
   display: flex !important;
   gap: 8px;
-  justify-content: center;
+  justify-content: center; /* o center / space-between si prefieres */
   margin-top: 10px;
 }
 
@@ -1315,38 +1366,4 @@ input:focus, select:focus, textarea:focus,
   border-radius: 10px;
   box-shadow: none;
 }
-#agenda-detalle-acciones-admin button:first-child {
-  background: linear-gradient(135deg,#10b981,#059669);
-}
-#agenda-detalle-acciones-admin button:last-child {
-  background:#dc2626;
-}
 
-/* =========================
-   📱 AGENDA – MOBILE
-   ========================= */
-
-@media (max-width: 640px) {
-  #agenda-detalle-datos .form-row {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
-  }
-  #agenda-detalle-datos .form-row label {
-    width: 100%;
-    min-width: 0;
-  }
-  #ag-lista-directores .item-director {
-    gap: 8px;
-  }
-  #ag-lista-directores .director-nombre {
-    white-space: normal;
-  }
-}
-
-@media (max-width: 480px) {
-  .agenda-card-line2,
-  .agenda-card-line3 {
-    font-size: 13px;
-  }
-}

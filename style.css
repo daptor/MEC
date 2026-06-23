@@ -1115,242 +1115,252 @@ input:focus, select:focus, textarea:focus,
   border-radius: 6px;
 }
 
-/* =========================================
-   AGENDA - TARJETAS COMPACTAS
-========================================= */
-.agenda-card-compact { line-height: 1.3; font-size: 14px; }
-.agenda-card-compact > div { margin-bottom: 2px; }
-.agenda-card-line1 { font-weight: 700; margin-bottom: 3px; }
-.agenda-card-line2, .agenda-card-line3, .agenda-card-line4, .agenda-card-line5 { font-size: 13px; }
+/* ======================================================================
+   AGENDA - ESTILOS BASE Y DETALLE (VERSION UNIFICADA Y LIMPIA)
+   Objetivo: Coherencia visual, espaciado armonioso, elementos alineados.
+====================================================================== */
 
-/* =========================================
-   AGENDA - DETALLE REUNIÓN (FONDO BLANCO)
-========================================= */
-#agenda-detalle-datos {
-    background: #fff;
-    border-radius: 12px;
-    padding: 12px;
-    box-shadow: 0 6px 18px rgba(16,185,129,0.06);
-    color: #0f1720;
-    margin-bottom: 10px;
+/* --- 1. Tarjetas de la lista de Agenda (vista compacta) --- */
+.agenda-card-compact {
+  line-height: 1.3;
+  font-size: 14px;
+}
+.agenda-card-compact > div {
+  margin-bottom: 2px; /* Espacio reducido entre líneas internas */
+}
+.agenda-card-line1 {
+  font-weight: 700;
+  margin-bottom: 3px; /* Espacio debajo de la línea principal */
+}
+.agenda-card-line2,
+.agenda-card-line3,
+.agenda-card-line4,
+.agenda-card-line5 {
+  font-size: 13px; /* Líneas secundarias más pequeñas */
 }
 
-/* FILAS: ETIQUETA IZQ / CAMPO DER */
+/* --- 2. Bloque principal: Detalle Reunión (tarjeta blanca) --- */
+#agenda-detalle-datos {
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 6px 18px rgba(16,185,129,0.06);
+  color: #0f1720;
+  margin-bottom: 8px; /* Espacio reducido debajo del bloque general */
+}
+
+/* Reducir espacio entre subtítulos h3 */
+#agenda-detalle-datos h3,
+#agenda-detalle-datos .titulo {
+  margin-bottom: 6px;
+}
+
+/* Espacio reducido entre sub-bloques internos (tele, presencial, listas) */
+#ag-bloque-tele,
+#ag-bloque-presencial,
+#ag-lista-directores,
+#ag-invitados {
+  margin-top: 2px; /* Menos separación entre estos sub-bloques */
+}
+
+/* Espacio reducido en sub-tarjetas (asistentes, resumen) */
+#agenda-detalle-asistentes .mec-seccion-card,
+#agenda-detalle-resumen {
+  padding: 8px 10px; /* Padding interno consistente */
+}
+
+/* --- 3. Filas de formulario (etiqueta izquierda / campo derecha) --- */
 #agenda-detalle-datos .form-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
+  display: flex;
+  align-items: center; /* Alineación vertical */
+  gap: 8px; /* Espacio entre etiqueta y campo */
+  margin-bottom: 6px; /* Altura vertical reducida para compactar */
 }
 #agenda-detalle-datos .form-row label {
-    width: 120px;
-    min-width: 100px;
-    font-weight: 700;
-    color: #14532d;
-    margin: 0;
+  width: 120px; /* Ancho fijo para la columna de etiquetas */
+  min-width: 100px; /* Ancho mínimo para etiquetas */
+  font-weight: 700;
+  color: #14532d;
+  margin: 0;
 }
 #agenda-detalle-datos .form-row .field {
-    flex: 1;
-    margin: 0;
+  flex: 1; /* El campo ocupa el resto del espacio */
+  margin: 0;
 }
 
-/* CASILLEROS DEL MISMO ANCHO (SIN SALIRSE DEL RECUADRO) */
+/* --- 4. Estilo general de inputs, selects, textareas (misma apariencia y ancho) --- */
 #agenda-detalle-datos input[type="date"],
 #agenda-detalle-datos input[type="time"],
 #agenda-detalle-datos input[type="text"],
 #agenda-detalle-datos input[type="number"],
 #agenda-detalle-datos select,
 #agenda-detalle-datos textarea {
-    width: 100%;
-    box-sizing: border-box; /* ESTO EVITA QUE SE SALGAN DEL BLANCO */
-    padding: 8px 10px;
-    font-size: 14px;
-    border-radius: 8px;
-    border: 1px solid #d1e7dd;
-    box-shadow: none;
-    background: #fff;
-    color: #0f1720;
+  width: 100%;
+  box-sizing: border-box; /* ESENCIAL: Evita que el input se salga del recuadro blanco */
+  padding: 8px 10px;
+  font-size: 14px;
+  border-radius: 8px;
+  border: 1px solid #d1e7dd;
+  box-shadow: none;
+  background: #fff;
+  color: #0f1720;
 }
-#agenda-detalle-datos textarea { resize: vertical; min-height: 32px; }
-
-/* =========================================
-   ASISTENTES E INVITADOS (EN UNA LÍNEA)
-========================================= */
-#ag-lista-directores .item-director,
-.invitado-row, #ag-invitados > div {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 6px;
-}
-#ag-lista-directores input[type="checkbox"],
-.chk-invitado input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    margin: 0;
-    flex: 0 0 auto;
-}
-.invitado-row label, #ag-invitados label {
-    margin: 0;
-    font-weight: 600;
-    color: #14532d;
-}
-.invitado-row .field { flex: 1; }
-
-/* =========================================
-   BOTONES CENTRADOS
-========================================= */
-#agenda-detalle-acciones-admin {
-    display: flex;
-    justify-content: center; /* CENTRA LOS BOTONES */
-    gap: 10px;
-    margin-top: 12px;
-}
-#agenda-detalle-acciones-admin button {
-    width: auto !important; /* ANULA EL WIDTH 100% GLOBAL */
-    padding: 8px 14px;
-    font-size: 14px;
-    border-radius: 10px;
-    box-shadow: none;
+#agenda-detalle-datos textarea {
+  resize: vertical;
+  min-height: 32px;
 }
 
-/* =========================================
-   RESPONSIVE (MÓVILES)
-========================================= */
-@media (max-width: 640px) {
-    #agenda-detalle-datos .form-row {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 4px;
-    }
-    #agenda-detalle-datos .form-row label {
-        width: 100%;
-    }
-}
-
-/* =========================================
-   FORZAR BOTONES CENTRADOS Y EN LÍNEA
-========================================= */
-#agenda-detalle-acciones-admin {
-    display: flex !important;
-    flex-direction: row !important; /* Obliga a que estén en horizontal */
-    justify-content: center !important; /* Los centra */
-    align-items: center !important;
-    gap: 15px !important;
-    width: 100% !important;
-}
-
-#agenda-detalle-acciones-admin button {
-    display: inline-flex !important; /* Evita que el botón ocupe toda la línea */
-    width: auto !important;
-    margin: 0 !important;
-    flex: 0 0 auto !important;
-}
-
-/* =========================================
-   FORZAR INVITADOS A VERSE IGUAL QUE ASISTENTES
-========================================= */
-.invitado-row {
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center !important;
-    gap: 8px !important;
-    margin-bottom: 8px !important;
-}
-
-/* Ocultamos el texto "#1:" y "#2:" para que quede limpio como los asistentes */
-.invitado-row > label:first-child {
-    display: none !important; 
-}
-
-/* Movemos el checkbox a la izquierda (al principio) */
-.invitado-row .chk-invitado {
-    order: -1 !important; 
-    margin: 0 !important;
-}
-
-/* El casillero del nombre ocupa el resto del espacio */
-.invitado-row .field {
-    flex: 1 !important;
-    width: 100% !important;
-}
-
-/* =========================================
-   AJUSTES FINOS DE ESPACIADO VERTICAL
-   (Para hacer la interfaz más consistente)
-========================================= */
-
-/* Bloque "Detalle reunión": Reducir el espacio entre sus filas */
-#agenda-detalle-datos .form-row {
-    margin-bottom: 6px !important; /* Originalmente 8px, lo reducimos */
-}
-
-/* Bloque "Asistentes": Aumentar ligeramente el espacio entre cada tarjeta de director */
+/* --- 5. Sección Asistentes (tarjetitas con checkbox e input) --- */
+/* Cada director/asistente: tarjetita con checkbox a la izquierda */
 #ag-lista-directores .item-director {
-    margin-bottom: 10px !important; /* Originalmente 6px, lo aumentamos */
+  display: flex;
+  align-items: center;
+  gap: 8px; /* Espacio entre checkbox y nombre */
+  padding: 6px 8px;
+  background: #fbfffb; /* Fondo ligeramente verdoso */
+  border: 1px solid rgba(0,0,0,0.04);
+  border-radius: 8px;
+  margin-bottom: 10px; /* Altura vertical ligeramente mayor */
+}
+#ag-lista-directores input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  flex: 0 0 auto; /* Evita que el checkbox se estire */
+}
+#ag-lista-directores .director-nombre {
+  flex: 1 1 auto; /* El nombre ocupa el resto del espacio */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* Puntos suspensivos si el nombre es muy largo */
+  font-size: 14px;
+  color: #0f172a;
+  font-weight: 600;
 }
 
-/* Bloque "Invitados": Reducir el espacio entre cada invitado (ya están en una línea) */
-.invitado-row {
-    margin-bottom: 6px !important; /* Originalmente 8px, lo reducimos */
-}
-
-/* Ajuste general del bloque Detalle reunión para compactar un poco más */
-#agenda-detalle-datos {
-    margin-bottom: 8px !important; /* Originalmente 10px */
-    padding-bottom: 8px !important; /* Ajustar padding inferior si se siente muy alto */
-}
-
-/* Ajuste general del bloque Asistentes para darle un poco más de aire */
-#agenda-detalle-asistentes {
-    padding-top: 10px !important; /* Originalmente 8px */
-    padding-bottom: 10px !important; /* Originalmente 8px */
-}
-
-/* =========================================
-   AJUSTES FINOS DE ESPACIADO VERTICAL Y BOTONES
-   (Para corregir inconsistencias y apilamiento)
-========================================= */
-
-/* --- Sección Invitados --- */
+/* --- 6. Sección Invitados (misma estética que Asistentes) --- */
 #ag-invitados h4 {
-    margin-bottom: 6px !important; /* Reduce espacio debajo del título "Invitados" */
-    margin-top: 10px !important; /* Ajusta espacio encima del título "Invitados" */
+    margin-bottom: 6px; /* Espacio debajo del título "Invitados" */
+    margin-top: 10px; /* Espacio encima del título "Invitados" */
 }
 
 .invitado-row {
-    margin-bottom: 4px !important; /* Reduce el espacio vertical entre cada invitado */
+  display: flex; /* Convertir a flexbox para alinear elementos */
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px; /* Altura vertical reducida para compactar */
+  padding: 6px 8px; /* Padding interno consistente */
+  background: #fbfffb; /* Fondo ligeramente verdoso */
+  border: 1px solid rgba(0,0,0,0.04);
+  border-radius: 8px;
+}
+.invitado-row > label[for^="ag-inv"] { /* Oculta los labels #1:, #2: */
+  display: none;
+}
+.invitado-row .chk-invitado {
+  order: -1; /* Mueve el checkbox al principio (izquierda) */
+  margin: 0;
+}
+.invitado-row .field {
+  flex: 1; /* El input de nombre ocupa el resto del espacio */
+  margin: 0;
+}
+.invitado-row .field input[type="text"] { /* Asegura el estilo del input dentro de invitados */
+  width: 100%;
+  box-sizing: border-box;
+  padding: 4px 8px; /* Ajuste de padding más pequeño */
+  font-size: 14px;
+  border-radius: 6px;
+  border: 1px solid #d1e7dd;
+  box-shadow: none;
+  background: #fff;
+  color: #0f1720;
 }
 
-/* --- Sección Resumen de pago --- */
+/* --- 7. Sección Resumen de Pago (tarjeta con borde verde) --- */
 #agenda-detalle-resumen {
-    margin-top: 8px !important; /* Reduce espacio entre Invitados y Resumen de Pago */
-    padding: 10px !important; /* Asegura un padding consistente dentro de la tarjeta */
+  background: #f7fff3; /* Fondo verde muy suave */
+  border-left: 4px solid #28a745; /* Barra verde a la izquierda */
+  padding: 10px;
+  border-radius: 8px;
+  margin-top: 8px; /* Espacio superior */
+  color: #0b3b26;
 }
-
 #agenda-detalle-resumen h3 {
-    margin-bottom: 4px !important; /* Reduce espacio debajo del título "Resumen de pago" */
+    margin-bottom: 4px; /* Espacio debajo del título "Resumen de pago" */
 }
-
 #agenda-detalle-resumen p {
-    margin: 2px 0 !important; /* Reduce el espacio vertical entre las líneas de texto del resumen */
+  margin: 2px 0; /* Espacio reducido entre líneas de resumen */
+  font-weight: 600;
 }
 
-/* --- Botones Guardar y Eliminar (FORZAR HORIZONTAL Y CENTRADOS) --- */
+/* --- 8. Botones de Acción (centrados y horizontales) --- */
 #agenda-detalle-acciones-admin {
-    display: flex !important; /* Asegura que el contenedor sea flex */
-    flex-direction: row !important; /* FUERZA que los botones estén en fila */
-    justify-content: center !important; /* Centra los botones horizontalmente */
-    align-items: center !important; /* Centra los botones verticalmente si tienen diferentes alturas */
-    gap: 15px !important; /* Espacio entre los botones */
-    width: 100% !important; /* Ocupa todo el ancho para centrar bien */
-    margin-top: 15px !important; /* Ajusta el espacio superior de los botones */
+  display: flex;
+  justify-content: center; /* Centra los botones horizontalmente */
+  gap: 15px; /* Espacio entre los botones */
+  margin-top: 15px; /* Espacio superior del contenedor de botones */
+  flex-wrap: wrap; /* Permite que los botones se envuelvan en pantallas muy pequeñas */
+}
+#agenda-detalle-acciones-admin button {
+  width: auto; /* Ancho ajustado al contenido del botón */
+  display: inline-flex; /* Para que el texto e ícono se alineen y no ocupe 100% */
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;
+  font-size: 14px;
+  border-radius: 10px;
+  box-shadow: none;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap; /* Evita que el texto del botón se rompa */
+}
+#agenda-detalle-acciones-admin button:first-child {
+  background: linear-gradient(135deg, #10b981, #059669); /* Gradiente verde para Guardar */
+  color: #fff;
+}
+#agenda-detalle-acciones-admin button:last-child {
+  background: #dc2626; /* Rojo sólido para Eliminar */
+  color: #fff;
 }
 
-#agenda-detalle-acciones-admin button {
-    display: inline-flex !important; /* FUERZA que cada botón se comporte como elemento inline-flex */
-    width: auto !important; /* Permite que el ancho del botón se ajuste a su contenido */
-    flex: 0 0 auto !important; /* Evita que los botones se estiren o encojan */
-    margin: 0 !important; /* Elimina cualquier margen externo que pueda apilarlos */
-    padding: 8px 14px !important; /* Asegura un padding consistente */
+/* --- 9. Responsive (Ajustes para móviles) --- */
+@media (max-width: 640px) {
+  #agenda-detalle-datos .form-row {
+    flex-direction: column; /* Apila etiquetas y campos verticalmente */
+    align-items: flex-start;
+    gap: 4px;
+    margin-bottom: 8px; /* Más espacio vertical en móvil para mejor tacto */
+  }
+  #agenda-detalle-datos .form-row label {
+    width: 100%; /* Etiquetas ocupan todo el ancho en móvil */
+    min-width: 0;
+  }
+  /* Los invitados mantienen su estructura horizontal compacta en móvil, como solicitado */
+  .invitado-row {
+    flex-direction: row; /* Asegura que no se apile como los form-row normales */
+    flex-wrap: wrap; /* Permite que los elementos se envuelvan si no caben */
+    align-items: center;
+    gap: 6px;
+  }
+  .invitado-row .field {
+    flex-basis: 100%; /* Input de invitado ocupa toda la línea si se envuelve */
+  }
+  .invitado-row .chk-invitado {
+    order: 0; /* Si se envuelve, el checkbox vuelve al final visualmente */
+  }
+  #ag-lista-directores .item-director {
+    flex-wrap: wrap; /* Permite que los asistentes se envuelvan si no caben */
+    gap: 6px;
+  }
+  #ag-lista-directores .director-nombre {
+    white-space: normal; /* Permite saltos de línea en nombres largos en móvil */
+  }
+}
+
+/* Ajustes específicos para pantallas muy pequeñas (ej. anchos < 480px) */
+@media (max-width: 480px) {
+  .agenda-card-compact { font-size: 13px; }
+  .agenda-card-line2, .agenda-card-line3, .agenda-card-line4, .agenda-card-line5 { font-size: 12px; }
+  #agenda-detalle-datos input, #agenda-detalle-datos select, #agenda-detalle-datos textarea { font-size: 13px; }
 }

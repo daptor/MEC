@@ -1349,7 +1349,7 @@ input:focus, select:focus, textarea:focus,
 ========================= */
 
 #ag-lista-directores .item-director {
-  margin-bottom: 10px !important; /* más aire entre directores */
+  margin-bottom: 20px !important; /* más aire entre directores */
   padding: 6px 8px;
 }
 
@@ -1374,7 +1374,7 @@ input:focus, select:focus, textarea:focus,
 
 /* INPUT MÁS ANCHO (~30% + extra real usable) */
 .invitado-row .field {
-  flex: 0 0 60% !important; /* antes 30%, ahora ampliado real */
+  flex: 0 0 80% !important; /* antes 30%, ahora ampliado real */
 }
 
 /* input más limpio */

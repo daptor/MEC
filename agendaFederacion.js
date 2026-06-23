@@ -317,7 +317,7 @@ async function abrirDetalleReunionAgenda(id) {
 
       // Clase C: Plenarias Director S/SB
       if (reunion.clase === 'C') {
-        if (txtPres) txtPres.textContent = 'Esta reunión paga $20.000 por día al director sin SB (1 a 3 días).';
+        if (txtPres) txtPres.textContent = '$20.000 por día al director sin SB (1 a 3 días).';
         if (bloqueDias) bloqueDias.style.display = 'block';
         if (inpDias) {
           const dias = Number(reunion.duracion_horas || 1);

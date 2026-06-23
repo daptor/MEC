@@ -1228,4 +1228,50 @@ input:focus, select:focus, textarea:focus,
     }
 }
 
+/* =========================================
+   FORZAR BOTONES CENTRADOS Y EN LÍNEA
+========================================= */
+#agenda-detalle-acciones-admin {
+    display: flex !important;
+    flex-direction: row !important; /* Obliga a que estén en horizontal */
+    justify-content: center !important; /* Los centra */
+    align-items: center !important;
+    gap: 15px !important;
+    width: 100% !important;
+}
+
+#agenda-detalle-acciones-admin button {
+    display: inline-flex !important; /* Evita que el botón ocupe toda la línea */
+    width: auto !important;
+    margin: 0 !important;
+    flex: 0 0 auto !important;
+}
+
+/* =========================================
+   FORZAR INVITADOS A VERSE IGUAL QUE ASISTENTES
+========================================= */
+.invitado-row {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 8px !important;
+    margin-bottom: 8px !important;
+}
+
+/* Ocultamos el texto "#1:" y "#2:" para que quede limpio como los asistentes */
+.invitado-row > label:first-child {
+    display: none !important; 
+}
+
+/* Movemos el checkbox a la izquierda (al principio) */
+.invitado-row .chk-invitado {
+    order: -1 !important; 
+    margin: 0 !important;
+}
+
+/* El casillero del nombre ocupa el resto del espacio */
+.invitado-row .field {
+    flex: 1 !important;
+    width: 100% !important;
+}
 

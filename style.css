@@ -1275,3 +1275,34 @@ input:focus, select:focus, textarea:focus,
     width: 100% !important;
 }
 
+/* =========================================
+   AJUSTES FINOS DE ESPACIADO VERTICAL
+   (Para hacer la interfaz más consistente)
+========================================= */
+
+/* Bloque "Detalle reunión": Reducir el espacio entre sus filas */
+#agenda-detalle-datos .form-row {
+    margin-bottom: 6px !important; /* Originalmente 8px, lo reducimos */
+}
+
+/* Bloque "Asistentes": Aumentar ligeramente el espacio entre cada tarjeta de director */
+#ag-lista-directores .item-director {
+    margin-bottom: 10px !important; /* Originalmente 6px, lo aumentamos */
+}
+
+/* Bloque "Invitados": Reducir el espacio entre cada invitado (ya están en una línea) */
+.invitado-row {
+    margin-bottom: 6px !important; /* Originalmente 8px, lo reducimos */
+}
+
+/* Ajuste general del bloque Detalle reunión para compactar un poco más */
+#agenda-detalle-datos {
+    margin-bottom: 8px !important; /* Originalmente 10px */
+    padding-bottom: 8px !important; /* Ajustar padding inferior si se siente muy alto */
+}
+
+/* Ajuste general del bloque Asistentes para darle un poco más de aire */
+#agenda-detalle-asistentes {
+    padding-top: 10px !important; /* Originalmente 8px */
+    padding-bottom: 10px !important; /* Originalmente 8px */
+}

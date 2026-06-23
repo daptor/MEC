@@ -1323,6 +1323,42 @@ input:focus, select:focus, textarea:focus,
 }
 
 /* =========================
+   👤 AGENDA – INVITADOS (alineado en una línea)
+   ========================= */
+
+/* Invitados Agenda: todo en una línea (#, nombre, check ✔) */
+.invitado-row {
+  align-items: center;
+  gap: 6px;
+  flex-direction: row !important;
+}
+.invitado-row label {
+  width: 40px;      /* etiqueta #1 / #2 corta */
+  min-width: 40px;
+  margin: 0;
+  font-weight: 600;
+  color: #14532d;
+}
+.invitado-row .field {
+  flex: 1;
+}
+.chk-invitado {
+  width: auto !important;
+  min-width: auto !important;
+  font-weight: 700;
+  color: #14532d;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+}
+.chk-invitado input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+/* =========================
    📱 AGENDA – MOBILE
    ========================= */
 
@@ -1342,6 +1378,19 @@ input:focus, select:focus, textarea:focus,
   #ag-lista-directores .director-nombre {
     white-space: normal;
   }
+
+  /* En mobile, mantener invitados en línea horizontal */
+  .invitado-row {
+    flex-direction: row !important;
+    align-items: center;
+  }
+  .invitado-row label {
+    width: 40px;
+    min-width: 40px;
+  }
+  .invitado-row .field {
+    flex: 1;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1350,3 +1399,4 @@ input:focus, select:focus, textarea:focus,
     font-size: 13px;
   }
 }
+

@@ -1374,7 +1374,7 @@ input:focus, select:focus, textarea:focus,
 
 /* INPUT MÁS ANCHO (~30% + extra real usable) */
 .invitado-row .field {
-  flex: 0 0 40% !important; /* antes 30%, ahora ampliado real */
+  flex: 0 0 60% !important; /* antes 30%, ahora ampliado real */
 }
 
 /* input más limpio */

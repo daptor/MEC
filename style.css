@@ -1356,3 +1356,33 @@ input:focus, select:focus, textarea:focus,
   }
 }
 
+/* FORZAR que las filas de detalle usen el grid correcto */
+#agenda-detalle-datos .form-row {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Columna de campo ocupa siempre todo el ancho disponible */
+#agenda-detalle-datos .form-row .field {
+  flex: 1 1 auto;
+}
+
+/* Botones Guardar / Eliminar centrados y en horizontal */
+#agenda-detalle-acciones-admin {
+  display: flex !important;
+  justify-content: center !important;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+/* Sobrescribir botón global SOLO aquí */
+#agenda-detalle-acciones-admin button {
+  display: inline-flex !important;
+  width: auto !important;
+  flex: 0 0 auto !important;
+  padding: 8px 14px;
+  font-size: 14px;
+  border-radius: 10px;
+  box-shadow: none;
+}

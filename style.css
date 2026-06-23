@@ -1135,9 +1135,9 @@ input:focus, select:focus, textarea:focus,
 ========================= */
 
 #agenda-detalle-datos {
-  background: #c1ffbe;
+  background: lab(89.66% -47.24 48.34);
   border-radius: 10px;
-  padding: 10px;
+  padding: 4px;
   box-shadow: 0 3px 10px rgba(16,185,129,0.08);
 }
 

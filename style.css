@@ -1135,7 +1135,7 @@ input:focus, select:focus, textarea:focus,
 ========================= */
 
 #agenda-detalle-datos {
-  background: #ffcfcf;
+  background: #c1ffbe;
   border-radius: 10px;
   padding: 10px;
   box-shadow: 0 3px 10px rgba(16,185,129,0.08);
@@ -1144,7 +1144,7 @@ input:focus, select:focus, textarea:focus,
 #agenda-detalle-datos .form-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   margin-bottom: 4px;
 }
 

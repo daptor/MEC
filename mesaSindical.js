@@ -1457,11 +1457,7 @@ function msd2_cerrarSalaLocal() {
   // 🧹 LIMPIAR REALTIME
   // ------------------------------------------------------
   if (window.msd2_canalRealtime) {
-
-    supabase.removeChannel(
-      window.msd2_canalRealtime
-    );
-
+    supabase.removeChannel(window.msd2_canalRealtime);
     window.msd2_canalRealtime = null;
   }
 
@@ -1470,32 +1466,27 @@ function msd2_cerrarSalaLocal() {
   // ------------------------------------------------------
   // 🧹 LIMPIAR UI
   // ------------------------------------------------------
-  const cola =
-    document.getElementById(
-      "msd2-turnos-cola"
-    );
-
+  const cola = document.getElementById("msd2-turnos-cola");
   if (cola) {
     cola.innerHTML = "";
   }
 
-  const hablando =
-    document.getElementById(
-      "msd2-hablando-nombre"
-    );
-
-  if (hablando) {hablando.textContent = "(Nadie está interviniendo)";}
+  const hablando = document.getElementById("msd2-hablando-nombre");
+  if (hablando) {
+    hablando.textContent = "(Nadie está interviniendo)";
+  }
 
   msd2_actualizarDisplayTurno();
+
+  // 🔇 APAGAR MICRÓFONO AL CERRAR REUNIÓN
+  msd2_apagarMicrofono();
 
   // ------------------------------------------------------
   // 🖥 VOLVER AL MENÚ
   // ------------------------------------------------------
   alert("📴 La reunión fue cerrada.");
-    mostrarPantalla("menu-principal");
-  console.log(
-    "✅ Sala cerrada localmente"
-  );
+  mostrarPantalla("menu-principal");
+  console.log("✅ Sala cerrada localmente");
 }
 
 // ======================================================
@@ -2620,27 +2611,39 @@ document.addEventListener("click",async (e) => {
 // ======================================================
 // 📱 ANDROID BACKGROUND / FOREGROUND
 // ======================================================
-    document.addEventListener(
-    "visibilitychange",
-    async () => {
-        try {
-        if (document.visibilityState ==="visible") {
-            console.log("👁 App visible nuevamente");
-            if (
-            !window.mecAudio ||
-            !window.mecAudio.stream ||
-            !window.mecAudio.stream.active
-            ) {
+document.addEventListener("visibilitychange", async () => {
+  try {
+    if (document.visibilityState !== "visible") return;
 
-            console.warn("⚠️ Stream perdido en background.");
-            await activarMicrofonoMEC();
-            }
-        }
-        } catch (err) {
-        console.error("❌ Error visibilitychange:",err);
-        }
+    console.log("👁 App visible nuevamente");
+
+    // 1) Solo actuar si estamos en Mesa Sindical (sala de reunión)
+    const sala = document.getElementById("pantalla-reunion-sala");
+    if (!sala || sala.style.display === "none") {
+      // Estamos en otra pantalla (análisis, chat, etc.) → no tocar micrófono
+      return;
     }
-);
+
+    // 2) Solo reintentar si el usuario YA activó el micrófono alguna vez
+    if (!window.msd2_microfonoHabilitado) {
+      // Nunca se activó micro en esta sesión → no insistir
+      return;
+    }
+
+    // 3) Si llegamos aquí: estamos en sala + micro habilitado antes
+    if (
+      !window.mecAudio ||
+      !window.mecAudio.stream ||
+      !window.mecAudio.stream.active
+    ) {
+      console.warn("⚠ Stream perdido en background.");
+      await activarMicrofonoMEC();
+    }
+  } catch (err) {
+    console.error("❌ Error visibilitychange:", err);
+  }
+});
+
 
 // ======================================================
 // 💾 Guardar intervención en Storage + BD
@@ -2901,6 +2904,20 @@ async function guardarExposicionPrincipal(blob, reunionId) {
   }
 }
 
+// ======================================================
+// 🔇 APAGAR MICRÓFONO MEC
+// ======================================================
+function msd2_apagarMicrofono() {
+  try {
+ if (window.mecAudio && window.mecAudio.stream) {
+   window.mecAudio.stream.getTracks().forEach(t => t.stop());
+ }
+  } catch (e) {
+ console.warn("Error apagando micrófono MEC:", e);
+  }
+  window.mecAudio = null;
+  window.msd2_microfonoHabilitado = false;
+}
 
 // ========================== fin mesa sindical ==========================
 
@@ -2913,4 +2930,4 @@ window.cerrarDetalleReunion = cerrarDetalleReunion;
 window.activarMicrofonoMEC = activarMicrofonoMEC
 
 
-// ------------------  18 DE JUNIO TODO CORRECTO  --------------------------
+// ------------------  24 DE JUNIO TODO CORRECTO  --------------------------

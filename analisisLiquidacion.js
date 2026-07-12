@@ -7,7 +7,7 @@ const ingresosMinimos = {
     2023: { "ENERO": 410000, "FEBRERO": 410000, "MARZO": 410000, "ABRIL": 410000, "MAYO": 440000, "JUNIO": 440000, "JULIO": 440000, "AGOSTO": 440000, "SEPTIEMBRE": 460000, "OCTUBRE": 460000, "NOVIEMBRE": 460000, "DICIEMBRE": 460000 },
     2024: { "ENERO": 460000, "FEBRERO": 460000, "MARZO": 460000, "ABRIL": 460000, "MAYO": 460000, "JUNIO": 460000, "JULIO": 500000, "AGOSTO": 500000, "SEPTIEMBRE": 500000, "OCTUBRE": 500000, "NOVIEMBRE": 500000, "DICIEMBRE": 500000 },
     2025: { "ENERO": 510636, "FEBRERO": 510636, "MARZO": 510636, "ABRIL": 510500, "MAYO": 510500, "JUNIO": 510500, "JULIO": 529000, "AGOSTO": 529000, "SEPTIEMBRE": 529000, "OCTUBRE": 529000, "NOVIEMBRE": 529000, "DICIEMBRE": 529000 },
-    2026: { "ENERO": 539000, "FEBRERO": 539000, "MARZO": 539000, "ABRIL": 539000, "MAYO": 553.553, "JUNIO": 553.553, "JULIO": 553.553, "AGOSTO": 553.553, "SEPTIEMBRE": 553.553, "OCTUBRE": 553.553, "NOVIEMBRE": 553.553, "DICIEMBRE": 553.553 }
+    2026: { "ENERO": 539000, "FEBRERO": 539000, "MARZO": 539000, "ABRIL": 539000, "MAYO": 539000, "JUNIO": 539000, "JULIO": 539000, "AGOSTO": 539000, "SEPTIEMBRE": 539000, "OCTUBRE": 539000, "NOVIEMBRE": 539000, "DICIEMBRE": 539000 }
 };
 
 // Lista de factores de hora extra
@@ -2412,102 +2412,6 @@ if (!(hayDatosPDF || hayDatosManual || hayComisionNomina)) {
     pagosTxt.push(`<p><strong>Comisión calculada:</strong> ${formatCurrency(comisionCalculada)}</p>`);
 
     mostrarResultadoFreemium(pagosTxt.join('')); }
-}
-
-/**********************************************
- *  MODO MANUAL DE COMISIÓN GRUPAL (Opción 1)
- **********************************************/
-
-// Botón para mostrar/ocultar el ingreso manual
-const btnIngresoManual = document.getElementById("btnIngresoManual");
-const formularioManual = document.getElementById("formularioManual");
-const filePremio = document.getElementById("filePremio");
-
-// Mostrar u ocultar el formulario manual
-if (btnIngresoManual) {
-    btnIngresoManual.addEventListener("click", () => {
-        if (formularioManual.style.display === "none") {
-            formularioManual.style.display = "block";
-            filePremio.style.display = "none";   // Oculta la subida de PDF del premio
-            btnIngresoManual.style.background = "#FF9800";
-            btnIngresoManual.textContent = "Usar archivo PDF nuevamente";
-        } else {
-            formularioManual.style.display = "none";
-            filePremio.style.display = "block";
-            btnIngresoManual.style.background = "#4CAF50";
-            btnIngresoManual.textContent = "Ingresar datos manuales";
-        }
-    });
-}
-
-/**********************************************
- *  CÁLCULO MANUAL DE COMISIÓN GRUPAL
- **********************************************/
-
-// Función principal del cálculo manual
-function calcularComisionManual() {
-
-    const horasAsesor = parseFloat(document.getElementById("manualHorasAsesor").value);
-    const horasDepto = parseFloat(document.getElementById("manualHorasDepto").value);
-    const ventaTienda = parseFloat(document.getElementById("manualVentaTienda").value);
-    const porcentaje = parseFloat(document.getElementById("manualPorcentaje").value);
-
-    if (isNaN(horasAsesor) || isNaN(horasDepto) || isNaN(ventaTienda) || isNaN(porcentaje)) {
-        alert("⚠ Debes ingresar TODOS los datos manuales.");
-        return null;
-    }
-
-    if (horasAsesor <= 0 || horasDepto <= 0 || ventaTienda <= 0 || porcentaje <= 0) {
-        alert("⚠ Ningún dato puede ser 0 o negativo.");
-        return null;
-    }
-
-    // Fórmula oficial
-    const valorHora = (ventaTienda / horasDepto) * porcentaje;
-    const comisionCalculada = valorHora * horasAsesor;
-
-    return {
-        valorHora,
-        comisionCalculada,
-        horasAsesor,
-        horasDepto,
-        ventaTienda,
-        porcentaje
-    };
-}
-
-/**********************************************
- *  BOTÓN CALCULAR MANUAL
- **********************************************/
-
-const btnCalcularManual = document.getElementById("btnCalcularManual");
-
-if (btnCalcularManual) {
-    btnCalcularManual.addEventListener("click", () => {
-
-        const datos = calcularComisionManual();
-        if (!datos) return;
-
-        // Mostrar resultado en pantalla (al mismo contenedor que usas hoy)
-        const contenedor = document.getElementById("resultadoAnalisis");
-
-        contenedor.innerHTML = `
-            <h3>Resultado Comisión Manual</h3>
-            <p><strong>Valor por hora:</strong> ${formatearCLP(datos.valorHora)}</p>
-            <p><strong>Comisión Calculada:</strong> ${formatearCLP(datos.comisionCalculada)}</p>
-            <p><strong>Horas Asesor:</strong> ${datos.horasAsesor}</p>
-            <p><strong>Horas Depto:</strong> ${datos.horasDepto}</p>
-            <p><strong>Venta Tienda:</strong> $${datos.ventaTienda}</p>
-            <p><strong>Porcentaje:</strong> ${datos.porcentaje}</p>
-            <hr>
-            <p style="color: #0288D1;"><strong>Comparación con la liquidación aparecerá cuando termines el análisis completo.</strong></p>
-        `;
-
-        // Guardamos el cálculo manual para integrarlo con analizarArchivo()
-        window.calculoManualMEC = datos;
-
-        alert("✔ Datos manuales listos. Ahora presiona CALCULAR para integrarlos con tu liquidación.");
-    });
 }
 
 // ---------- FIN: ANÁLISIS LIQUIDACION ----------

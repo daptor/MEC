@@ -337,42 +337,47 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Funcionalidad de los botones "Refrescar"
-  const refrescarBtnAnalisis = document.getElementById('refrescarBtnAnalisis');
-  if (refrescarBtnAnalisis) {
-      refrescarBtnAnalisis.addEventListener('click', () => {
-          // Limpiar los resultados previos de análisis
-          document.getElementById('resultadoAnalisis').innerHTML = '';
+// Funcionalidad de los botones "Refrescar"
+const refrescarBtnAnalisis = document.getElementById('refrescarBtnAnalisis');
+if (refrescarBtnAnalisis) {
+  refrescarBtnAnalisis.addEventListener('click', () => {
+    // Limpiar los resultados previos de análisis clásico
+    const res = document.getElementById('resultadoAnalisis');
+    if (res) res.innerHTML = '';
 
-          // Limpiar el contenedor de gratificación
-          const gratificacionMec = document.getElementById('gratificacionMec');
-          if (gratificacionMec) {
-              gratificacionMec.style.display = 'none'; // Esconder el contenedor
-          }
+    // NUEVO: limpiar también el análisis por hora
+    const resHora = document.getElementById('resultadoAnalisisHora');
+    if (resHora) resHora.innerHTML = '';
 
-          // Limpiar el contenido de gratificación calculada
-          const resultadoGratificacion = document.getElementById('resultadoGratificacion');
-          if (resultadoGratificacion) {
-              resultadoGratificacion.innerHTML = ''; // Limpiar la información de gratificación
-          }
+    // Limpiar el contenedor de gratificación
+    const gratificacionMec = document.getElementById('gratificacionMec');
+    if (gratificacionMec) {
+      gratificacionMec.style.display = 'none';
+    }
 
-          // Limpiar el archivo PDF seleccionado
-          const fileInput = document.getElementById('fileInput');
-          if (fileInput) {
-              fileInput.value = ''; // Limpiar el archivo PDF
-          }
+    // Limpiar el contenido de gratificación calculada
+    const resultadoGratificacion = document.getElementById('resultadoGratificacion');
+    if (resultadoGratificacion) {
+      resultadoGratificacion.innerHTML = '';
+    }
 
-          // Resetear el campo de jornada seleccionada
-          const jornadaSelect = document.getElementById('jornada');
-          if (jornadaSelect) {
-              jornadaSelect.value = ''; // Limpiar la selección de jornada
-          }
+    // Limpiar el archivo PDF seleccionado
+    const fileInput = document.getElementById('fileInput');
+    if (fileInput) {
+      fileInput.value = '';
+    }
 
-          // Resetear el campo de informe de ventas de asesor
-            const filePremio = document.getElementById('filePremio');
-            if (filePremio) filePremio.value = "";
-      });
-  }
+    // Resetear el campo de jornada seleccionada
+    const jornadaSelect = document.getElementById('jornada');
+    if (jornadaSelect) {
+      jornadaSelect.value = '';
+    }
+
+    // Resetear el campo de informe de ventas de asesor
+    const filePremio = document.getElementById('filePremio');
+    if (filePremio) filePremio.value = '';
+  });
+}
 
   const refrescarBtnVacaciones = document.getElementById('refrescarBtnVacaciones');
   if (refrescarBtnVacaciones) {

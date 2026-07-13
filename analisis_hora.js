@@ -1,17 +1,20 @@
 // analisis_hora.js
 
-// Si formatearCLP ya es global desde analisisLiquidacion.js, 
+// Si formatearCLP ya es global desde analisisLiquidacion.js,
 // puedes borrar esta función y usar la existente.
 function formatearCLP(valor) {
   if (valor === null || valor === undefined || isNaN(valor)) return "$0";
   return "$" + Math.round(valor).toLocaleString("es-CL");
 }
 
-// Detectar contrato por hora tipo: 
-// S.BASE PART-TIME (HRA) (75.0 $ 181.597
+// Detectar contrato por hora tipo:
+// S.BASE PART-TIME (HRA) (40.1 $ 97.042
 function detectarContratoPorHora(texto) {
-  const regexBaseHora = /S\.?BASE\s+PART-?TIME.*?\(([\d.,]+)\)\s*\$\s*([\d.]+)/i;
+  // Buscamos explícitamente "(HRA)" y luego el segundo paréntesis con horas y monto
+  const regexBaseHora = /S\.?BASE\s+PART-?TIME\s*\(HRA\)\s*\(([\d.,]+)\s*\$\s*([\d.]+)/i;
   const match = texto.match(regexBaseHora);
+
+  console.log("MATCH PART-TIME HRA:", match); // puedes quitarlo después de probar
 
   if (!match) return null;
 
@@ -33,20 +36,21 @@ function detectarContratoPorHora(texto) {
 function analizarHorasExtrasPorHora(texto, datosHora) {
   const { valorHora } = datosHora;
 
-  const regexHE50 = /HORAS\s*EXTRAS\s*50\s*%\s*\(([\d.,]+)\)\s*\$\s*([\d.]+)/i;
-  const regexHEDom = /HORAS\s*EXTRAS\s*DOMINGO\s*\(([\d.,]+)\)\s*\$\s*([\d.]+)/i;
+  const regexHE50   = /HORAS\s*EXTRAS\s*50\s*%\s*\(([\d.,]+)\)\s*\$\s*([\d.]+)/i;
+  const regexHEDom  = /HORAS\s*EXTRAS\s*DOMINGO\s*\(([\d.,]+)\)\s*\$\s*([\d.]+)/i;
   const regexRecDom = /HORAS\s*RECARGO\s*DOMINGO.*?\$\s*([\d.]+)/i;
 
-  const he = texto.match(regexHE50);
+  const he  = texto.match(regexHE50);
   const hed = texto.match(regexHEDom);
-  const rd = texto.match(regexRecDom);
+  const rd  = texto.match(regexRecDom);
 
   const resultado = {};
 
+  // Horas extras 50%
   if (he) {
-    const horas = parseFloat(he[1].replace(',', '.'));
-    const pagado = parseFloat(he[2].replace(/\./g, ''));
-    const esperado = valorHora * 1.5 * horas; // 50% recargo
+    const horas   = parseFloat(he[1].replace(',', '.'));
+    const pagado  = parseFloat(he[2].replace(/\./g, ''));
+    const esperado = valorHora * 1.5 * horas; // 50% recargo sobre hora normal
 
     resultado.horasExtras50 = {
       horas,
@@ -56,10 +60,13 @@ function analizarHorasExtrasPorHora(texto, datosHora) {
     };
   }
 
+  // Horas extras domingo
   if (hed) {
-    const horas = parseFloat(hed[1].replace(',', '.'));
-    const pagado = parseFloat(hed[2].replace(/\./g, ''));
-    const esperado = valorHora * 1.3 * 1.5 * horas; // domingo + extra
+    const horas   = parseFloat(hed[1].replace(',', '.'));
+    const pagado  = parseFloat(hed[2].replace(/\./g, ''));
+    // Esto es una suposición: 30% domingo + 50% extra.
+    // Más adelante podemos ajustar al criterio exacto de la empresa.
+    const esperado = valorHora * 1.3 * 1.5 * horas;
 
     resultado.horasExtrasDomingo = {
       horas,
@@ -69,6 +76,7 @@ function analizarHorasExtrasPorHora(texto, datosHora) {
     };
   }
 
+  // Recargo domingo (sin horas explícitas)
   if (rd) {
     const pagado = parseFloat(rd[1].replace(/\./g, ''));
     resultado.recargoDomingo = { pagado };
@@ -77,11 +85,10 @@ function analizarHorasExtrasPorHora(texto, datosHora) {
   return resultado;
 }
 
-// Mostrar resultados en el nuevo div ------------------
+// Mostrar resultados en el nuevo div
 function mostrarResultadoAnalisisHora(datosHora, resultado) {
   const cont = document.getElementById('resultadoAnalisisHora');
   if (!cont) {
-    // si quieres, puedes dejar un console.log en vez de alert
     console.warn("No encontré el div resultadoAnalisisHora en el HTML");
     return;
   }
@@ -141,14 +148,14 @@ async function analizarLiquidacionPorHora() {
     return;
   }
 
-  const archivo = archivoInput.files[0];
-  const pdfData = await archivo.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+  const archivo  = archivoInput.files[0];
+  const pdfData  = await archivo.arrayBuffer();
+  const pdf      = await pdfjsLib.getDocument({ data: pdfData }).promise;
 
   let textoCompleto = '';
   for (let i = 1; i <= pdf.numPages; i++) {
     const pagina = await pdf.getPage(i);
-    const texto = await pagina.getTextContent();
+    const texto  = await pagina.getTextContent();
     texto.items.forEach(item => textoCompleto += item.str + ' ');
   }
 

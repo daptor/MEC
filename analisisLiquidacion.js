@@ -149,10 +149,19 @@ async function preValidarAntesDeAnalizar() {
         });
 
         // ======================================================
-        // ✅ CONTINUAR ANÁLISIS ORIGINAL
+        // ✅ CONTINUAR ANÁLISIS ORIGINAL / POR HORA
         // ======================================================
+        if (confirmado) {
+            const jornadaValor = document.getElementById('jornada').value;
 
-        analizarArchivo();
+            if (jornadaValor === 'HORA') {
+                // Contrato por hora → nuevo análisis
+                analizarLiquidacionPorHora();
+            } else {
+                // Jornadas normales → flujo clásico
+                analizarArchivo();
+            }
+        }
 
     } catch (error) {
 
@@ -164,6 +173,7 @@ async function preValidarAntesDeAnalizar() {
         alert("❌ Error verificando el documento.");
     }
 }
+
 
 // ======================================================
 // 🎨 MODAL VISUAL VALIDACIÓN

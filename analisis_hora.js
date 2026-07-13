@@ -77,10 +77,13 @@ function analizarHorasExtrasPorHora(texto, datosHora) {
   return resultado;
 }
 
-// Mostrar resultados en el nuevo div
+// Mostrar resultados en el nuevo div ------------------
 function mostrarResultadoAnalisisHora(datosHora, resultado) {
   const cont = document.getElementById('resultadoAnalisisHora');
-  if (!cont) return;
+  if (!cont) {
+    alert("No encontré el div resultadoAnalisisHora en el HTML");
+    return;
+  }
 
   let html = `
     <h2>Análisis contrato por hora</h2>
@@ -89,6 +92,11 @@ function mostrarResultadoAnalisisHora(datosHora, resultado) {
     <p><strong>Valor hora estimado:</strong> ${formatearCLP(datosHora.valorHora)}</p>
     <hr>
   `;
+
+  // Si no hay horas extra ni recargos detectados, igual mostramos algo
+  if (!resultado.horasExtras50 && !resultado.horasExtrasDomingo && !resultado.recargoDomingo) {
+    html += `<p>No se encontraron líneas de horas extra / recargos en el PDF.</p>`;
+  }
 
   if (resultado.horasExtras50) {
     const r = resultado.horasExtras50;
@@ -121,6 +129,7 @@ function mostrarResultadoAnalisisHora(datosHora, resultado) {
 
   cont.innerHTML = html;
 }
+
 
 // Función principal: usa el MISMO fileInput del análisis normal
 async function analizarLiquidacionPorHora() {

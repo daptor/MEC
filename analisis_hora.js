@@ -81,7 +81,8 @@ function analizarHorasExtrasPorHora(texto, datosHora) {
 function mostrarResultadoAnalisisHora(datosHora, resultado) {
   const cont = document.getElementById('resultadoAnalisisHora');
   if (!cont) {
-    alert("No encontré el div resultadoAnalisisHora en el HTML");
+    // si quieres, puedes dejar un console.log en vez de alert
+    console.warn("No encontré el div resultadoAnalisisHora en el HTML");
     return;
   }
 
@@ -130,12 +131,9 @@ function mostrarResultadoAnalisisHora(datosHora, resultado) {
   cont.innerHTML = html;
 }
 
-
 // Función principal: usa el MISMO fileInput del análisis normal
 async function analizarLiquidacionPorHora() {
-  alert("Entré a analizarLiquidacionPorHora");  // ← TEMPORAL, solo para probar
   await esperarPlanUsuario(); // misma guardia de plan que usas hoy
-
 
   const archivoInput = document.getElementById('fileInput');
   if (!archivoInput || !archivoInput.files.length) {

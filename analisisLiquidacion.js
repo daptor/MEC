@@ -2511,6 +2511,29 @@ if (btnCalcularManual) {
 }
 
 // ---------- FIN: ANÁLISIS LIQUIDACION ----------
+// ---------- boton que guia a calculo por hora o jornada ----------
+
+function decidirAnalisis() {
+  const select = document.getElementById('jornada');
+  const valor = select.value;
+
+  if (!valor) {
+    alert("Debes seleccionar una jornada o 'Contrato por hora'.");
+    return;
+  }
+
+  if (valor === 'HORA') {
+    // NUEVO flujo (lo implementaremos con analisis_hora.js)
+    analizarLiquidacionPorHora();
+  } else {
+    // FLUJO ORIGINAL: se mantiene igual que antes
+    preValidarAntesDeAnalizar();
+  }
+}
+
+window.decidirAnalisis = decidirAnalisis;
+
+// ---------- FIN: ANÁLISIS LIQUIDACION ----------
 
 // Hacer accesibles desde HTML / otros scripts
 window.preValidarAntesDeAnalizar = preValidarAntesDeAnalizar;

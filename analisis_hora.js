@@ -124,7 +124,9 @@ function mostrarResultadoAnalisisHora(datosHora, resultado) {
 
 // Función principal: usa el MISMO fileInput del análisis normal
 async function analizarLiquidacionPorHora() {
+  alert("Entré a analizarLiquidacionPorHora");  // ← TEMPORAL, solo para probar
   await esperarPlanUsuario(); // misma guardia de plan que usas hoy
+
 
   const archivoInput = document.getElementById('fileInput');
   if (!archivoInput || !archivoInput.files.length) {

@@ -14,8 +14,6 @@ function detectarContratoPorHora(texto) {
   const regexBaseHora = /S\.?BASE\s+PART-?TIME\s*\(HRA\)\s*\(([\d.,]+)\s*\$\s*([\d.]+)/i;
   const match = texto.match(regexBaseHora);
 
-  console.log("MATCH PART-TIME HRA:", match); // puedes quitarlo después de probar
-
   if (!match) return null;
 
   const horasBase = parseFloat(match[1].replace(',', '.'));

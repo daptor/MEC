@@ -2522,6 +2522,35 @@ if (btnCalcularManual) {
 
 // ---------- FIN: ANÁLISIS LIQUIDACION ----------
 
+// ---------- boton que guia a calculo por hora o jornada ----------
+
+function decidirAnalisis() {
+  const select = document.getElementById('jornada');
+  const valor = select.value;
+
+  if (!valor) {
+    alert("Debes seleccionar una jornada o 'Contrato por hora'.");
+    return;
+  }
+
+  if (valor === 'HORA') {
+    // NUEVO flujo (lo implementaremos con analisis_hora.js)
+    analizarLiquidacionPorHora();
+  } else {
+    // FLUJO ORIGINAL: se mantiene igual que antes
+    preValidarAntesDeAnalizar();
+  }
+}
+
+window.decidirAnalisis = decidirAnalisis;
+
+// ---------- FIN: ANÁLISIS LIQUIDACION ----------
+
+// Hacer accesibles desde HTML / otros scripts
+window.preValidarAntesDeAnalizar = preValidarAntesDeAnalizar;
+window.analizarArchivo = analizarArchivo;
+window.mostrarResultadoFreemium = mostrarResultadoFreemium;
+
 // =====================================================
 // HELPER COMPARTIDO: ASIGNACIONES DESDE TEXTO
 // (Movilización, Colación, Caja + diferencias y días totales)
@@ -2646,31 +2675,120 @@ function extraerAsignacionesDesdeTexto(textoCompleto) {
   };
 }
 
-// ---------- boton que guia a calculo por hora o jornada ----------
+// =====================================================
+// HELPER COMPARTIDO: COMISIONES + SEMANA CORRIDA
+// (solo datos, sin tocar resumenAnalisis)
+// =====================================================
+function extraerComisionesYSemanaCorridaDesdeTexto(textoCompleto, diasTotalesMovilizacion) {
+  // 1) Comisiones individuales
+  let totalComisiones = 0;
+  const detallesComisiones = [];
+  const comisionesSeparadas = {
+    "CONCURSO FPAY": 0,
+    "DIF CONCURSO FPAY": 0
+  };
 
-function decidirAnalisis() {
-  const select = document.getElementById('jornada');
-  const valor = select.value;
+  listaComision.forEach(comision => {
+    const regex = new RegExp(
+      `${comision.replace('.', '\\.')}(?:\\s|\\S)*?\\$\\s*((?:\\d{1,3}\\.){0,2}\\d{1,3}(?:,\\d{1,2})?)`,
+      'gi'
+    );
+    const matches = [...textoCompleto.matchAll(regex)];
+    matches.forEach(match => {
+      const monto = parseFloat(match[1].replace(/\./g, '').replace(',', '.'));
+      if (comision === "CONCURSO FPAY") {
+        comisionesSeparadas["CONCURSO FPAY"] = monto;
+      } else if (comision === "DIF CONCURSO FPAY") {
+        comisionesSeparadas["DIF CONCURSO FPAY"] = monto;
+      } else {
+        totalComisiones += monto;
+        detallesComisiones.push({ item: comision, monto });
+      }
+    });
+  });
 
-  if (!valor) {
-    alert("Debes seleccionar una jornada o 'Contrato por hora'.");
-    return;
+  if (comisionesSeparadas["CONCURSO FPAY"] > 0) {
+    detallesComisiones.push({ item: "CONCURSO FPAY", monto: comisionesSeparadas["CONCURSO FPAY"] });
+    totalComisiones += comisionesSeparadas["CONCURSO FPAY"];
+  }
+  if (comisionesSeparadas["DIF CONCURSO FPAY"] > 0) {
+    detallesComisiones.push({ item: "DIF CONCURSO FPAY", monto: comisionesSeparadas["DIF CONCURSO FPAY"] });
+    totalComisiones += comisionesSeparadas["DIF CONCURSO FPAY"];
   }
 
-  if (valor === 'HORA') {
-    // NUEVO flujo (lo implementaremos con analisis_hora.js)
-    analizarLiquidacionPorHora();
+  // 2) Semana corrida
+  const regexSemanaCorrida = /SEMANA\s*CORRIDA\s*\((\d+)\)\s*\$\s*([\d.,]+)/i;
+  const matchSemanaCorrida = textoCompleto.match(regexSemanaCorrida);
+
+  let montoSemanaCorrida = 0;
+  let valorEsperadoSemanaCorrida = 0;
+  let diasSemanaCorrida = "No especificados";
+  let estadoSemanaCorrida = "info";
+  let diferenciaSemanaCorrida = 0;
+
+  if (matchSemanaCorrida) {
+    diasSemanaCorrida = parseInt(matchSemanaCorrida[1], 10);
+    montoSemanaCorrida = parseFloat(matchSemanaCorrida[2].replace('.', '').replace(',', '.'));
   } else {
-    // FLUJO ORIGINAL: se mantiene igual que antes
-    preValidarAntesDeAnalizar();
+    montoSemanaCorrida = 0;
   }
+
+  // misma lógica que el análisis normal: usar días de mov. y, si >23, probar 21/22/23
+  let diasParaSemanaCorrida = diasTotalesMovilizacion || 0;
+
+  if (diasParaSemanaCorrida > 23) {
+    let mejorValor = 21;
+    let menorDiscrepancia = Infinity;
+
+    const valorEsperado21 = (totalComisiones / 21) * (diasSemanaCorrida === "No especificados" ? 0 : diasSemanaCorrida);
+    const discrepancia21 = Math.abs(valorEsperado21 - montoSemanaCorrida);
+
+    const valorEsperado22 = (totalComisiones / 22) * (diasSemanaCorrida === "No especificados" ? 0 : diasSemanaCorrida);
+    const discrepancia22 = Math.abs(valorEsperado22 - montoSemanaCorrida);
+
+    const valorEsperado23 = (totalComisiones / 23) * (diasSemanaCorrida === "No especificados" ? 0 : diasSemanaCorrida);
+    const discrepancia23 = Math.abs(valorEsperado23 - montoSemanaCorrida);
+
+    if (discrepancia22 < discrepancia21 && discrepancia22 < discrepancia23) {
+      diasParaSemanaCorrida = 22;
+    } else if (discrepancia23 < discrepancia21 && discrepancia23 < discrepancia22) {
+      diasParaSemanaCorrida = 23;
+    } else {
+      diasParaSemanaCorrida = 21;
+    }
+  }
+
+  if (totalComisiones <= 0) {
+    // No hay comisiones → no aplica
+    estadoSemanaCorrida = "info";
+  } else if (
+    diasSemanaCorrida !== "No especificados" &&
+    diasParaSemanaCorrida > 0
+  ) {
+    const valorDiarioComisiones = totalComisiones / diasParaSemanaCorrida;
+    valorEsperadoSemanaCorrida = valorDiarioComisiones * diasSemanaCorrida;
+    diferenciaSemanaCorrida = montoSemanaCorrida - valorEsperadoSemanaCorrida;
+
+    if (Math.abs(diferenciaSemanaCorrida) < 1) {
+      estadoSemanaCorrida = "ok";
+    } else {
+      estadoSemanaCorrida = "error";
+    }
+  } else {
+    // Información insuficiente
+    estadoSemanaCorrida = "warning";
+  }
+
+  return {
+    totalComisiones,
+    detallesComisiones,
+    semanaCorrida: {
+      diasSemanaCorrida,
+      montoSemanaCorrida,
+      diasParaSemanaCorrida,
+      valorEsperadoSemanaCorrida,
+      diferenciaSemanaCorrida,
+      estadoSemanaCorrida
+    }
+  };
 }
-
-window.decidirAnalisis = decidirAnalisis;
-
-// ---------- FIN: ANÁLISIS LIQUIDACION ----------
-
-// Hacer accesibles desde HTML / otros scripts
-window.preValidarAntesDeAnalizar = preValidarAntesDeAnalizar;
-window.analizarArchivo = analizarArchivo;
-window.mostrarResultadoFreemium = mostrarResultadoFreemium;

@@ -82,8 +82,51 @@ function analizarHorasExtrasPorHora(texto, datosHora) {
   return resultado;
 }
 
+// === GRATIFICACIÓN BÁSICA PARA MODO HORA (25% suma haberes) ===
+function calcularGratificacionPorHora(textoCompleto, datosHora, resultadoHoras, comisionesYCorrida) {
+  // 1) Haberes “gratificables” según la misma lógica del análisis normal
+  let gratificables = [];
+  let totalGratificables = 0;
+
+  if (typeof identificarGratificables === "function" && typeof calcularTotalGratificacion === "function") {
+    gratificables = identificarGratificables(textoCompleto) || [];
+    totalGratificables = calcularTotalGratificacion(gratificables);
+  }
+
+  // 2) Otros haberes relevantes
+  const montoBase = datosHora.montoBase || 0;
+
+  const montoHE50   = resultadoHoras.horasExtras50      ? (resultadoHoras.horasExtras50.pagado      || 0) : 0;
+  const montoHEDom  = resultadoHoras.horasExtrasDomingo ? (resultadoHoras.horasExtrasDomingo.pagado || 0) : 0;
+  const montoRecDom = resultadoHoras.recargoDomingo     ? (resultadoHoras.recargoDomingo.pagado     || 0) : 0;
+
+  const totalComisiones = comisionesYCorrida ? (comisionesYCorrida.totalComisiones || 0) : 0;
+  const montoSemanaCorrida = comisionesYCorrida ? (comisionesYCorrida.semanaCorrida.montoSemanaCorrida || 0) : 0;
+
+  // 3) Suma total haberes para gratificación (versión simple para modo hora)
+  const totalHaberes =
+    montoBase +
+    montoHE50 +
+    montoHEDom +
+    montoRecDom +
+    totalComisiones +
+    montoSemanaCorrida +
+    totalGratificables;
+
+  const valor25 = totalHaberes * 0.25;
+
+  return {
+    totalHaberes,
+    valor25,
+    gratificables,
+    totalGratificables
+  };
+}
+
+
 // Mostrar resultados en el nuevo div
-function mostrarResultadoAnalisisHora(datosHora, resultadoHoras, asignaciones, comisionesYCorrida) {
+function mostrarResultadoAnalisisHora(datosHora, resultadoHoras, asignaciones, comisionesYCorrida, gratificacionHora) {
+
   const cont = document.getElementById('resultadoAnalisisHora');
   if (!cont) {
     console.warn("No encontré el div resultadoAnalisisHora en el HTML");
@@ -227,6 +270,33 @@ function mostrarResultadoAnalisisHora(datosHora, resultadoHoras, asignaciones, c
     }
   }
 
+    // === BLOQUE: Gratificación 25% (modo hora, cuantitativo) ===
+  if (gratificacionHora && gratificacionHora.totalHaberes > 0) {
+    const g = gratificacionHora;
+
+    html += `<hr><h3>Gratificación (cálculo básico 25%)</h3>`;
+
+    // mostrarValor viene de analisisLiquidacion.js; si no existe, usamos formatearCLP
+    const fmt = (typeof mostrarValor === "function") ? mostrarValor : formatearCLP;
+
+    html += `
+      <p><strong>Suma total haberes (base para gratificación):</strong> ${fmt(g.totalHaberes)}</p>
+      <p><strong>25% de suma haberes:</strong> ${fmt(g.valor25)}</p>
+    `;
+
+    if (g.gratificables && g.gratificables.length > 0) {
+      html += `<p><strong>Haberes gratificables detectados:</strong></p><ul>`;
+      g.gratificables
+        .filter(item => item.monto > 0)
+        .forEach(item => {
+          html += `<li>${item.item}: ${fmt(item.monto)}</li>`;
+        });
+      html += `</ul>`;
+    } else {
+      html += `<p>No se detectaron haberes gratificables específicos.</p>`;
+    }
+  }
+
   cont.innerHTML = html;
 }
 
@@ -265,7 +335,22 @@ async function analizarLiquidacionPorHora() {
   const diasTotalesMov = asignacionesHora.movilizacion.diasTotales || asignacionesHora.movilizacion.dias || 0;
   const comisionesYCorrida = extraerComisionesYSemanaCorridaDesdeTexto(textoCompleto, diasTotalesMov);
 
-  mostrarResultadoAnalisisHora(datosHora, resultadoHoras, asignacionesHora, comisionesYCorrida);
+  // Gratificación básica para modo hora (25% suma haberes)
+  const gratificacionHora = calcularGratificacionPorHora(
+    textoCompleto,
+    datosHora,
+    resultadoHoras,
+    comisionesYCorrida
+  );
+
+  mostrarResultadoAnalisisHora(
+    datosHora,
+    resultadoHoras,
+    asignacionesHora,
+    comisionesYCorrida,
+    gratificacionHora
+  );
+
 
 }
 

@@ -2521,6 +2521,131 @@ if (btnCalcularManual) {
 }
 
 // ---------- FIN: ANÁLISIS LIQUIDACION ----------
+
+// =====================================================
+// HELPER COMPARTIDO: ASIGNACIONES DESDE TEXTO
+// (Movilización, Colación, Caja + diferencias y días totales)
+// =====================================================
+function extraerAsignacionesDesdeTexto(textoCompleto) {
+  const regexMovilizacion = /MOVILIZACION\s*\((\d+)\)\s*\$\s*([\d.,]+)/i;
+  const regexColacion = /COLACION\s*\((\d+)\)\s*\$\s*([\d.,]+)/i;
+  const regexDiferenciaMovilizacion = /DIFERENCIA\s*MOVILIZACION\s*\$\s*([\d.,]+)/i;
+  const regexDiferenciaColacion = /DIFERENCIA\s*COLACION\s*\$\s*([\d.,]+)/i;
+  const regexCaja = /CAJA\s*\((\d+)\)\s*\$\s*([\d.]+)/i;
+  const regexDiferenciaCaja = /DIF(?:ERENCIA)?(?:\s+ASIG\.?)?(?:\s+DE)?\s*CAJA.*?\$\s*([\d\.]+)/i;
+
+  // *********** MOVILIZACIÓN ***********
+  const matchMovilizacion = textoCompleto.match(regexMovilizacion);
+  let diasMovilizacion = 21;
+  let montoMovilizacion = null;
+  let valorDiaMovilizacion = 0;
+
+  if (matchMovilizacion) {
+    diasMovilizacion = parseInt(matchMovilizacion[1], 10);
+    montoMovilizacion = parseFloat(matchMovilizacion[2].replace('.', '').replace(',', '.'));
+    if (diasMovilizacion > 0) {
+      valorDiaMovilizacion = montoMovilizacion / diasMovilizacion;
+    }
+  }
+
+  const matchDiferenciaMovilizacion = textoCompleto.match(regexDiferenciaMovilizacion);
+  let montoDiferenciaMovilizacion = 0;
+  let diasDiferenciaMovilizacion = 0;
+  let diasTotalesMovilizacion = diasMovilizacion;
+
+  if (matchDiferenciaMovilizacion) {
+    montoDiferenciaMovilizacion = parseFloat(matchDiferenciaMovilizacion[1].replace('.', '').replace(',', '.'));
+    if (valorDiaMovilizacion > 0) {
+      diasDiferenciaMovilizacion = montoDiferenciaMovilizacion / valorDiaMovilizacion;
+      diasTotalesMovilizacion += diasDiferenciaMovilizacion;
+    }
+  }
+
+  // *********** COLACIÓN ***********
+  const matchColacion = textoCompleto.match(regexColacion);
+  let diasColacion = 21;
+  let montoColacion = null;
+  let valorDiaColacion = 0;
+
+  if (matchColacion) {
+    diasColacion = parseInt(matchColacion[1], 10);
+    montoColacion = parseFloat(matchColacion[2].replace('.', '').replace(',', '.'));
+    if (diasColacion > 0) {
+      valorDiaColacion = montoColacion / diasColacion;
+    }
+  }
+
+  const matchDiferenciaColacion = textoCompleto.match(regexDiferenciaColacion);
+  let montoDiferenciaColacion = 0;
+  let diasDiferenciaColacion = 0;
+  let diasTotalesColacion = diasColacion;
+
+  if (matchDiferenciaColacion) {
+    montoDiferenciaColacion = parseFloat(matchDiferenciaColacion[1].replace('.', '').replace(',', '.'));
+    if (valorDiaColacion > 0) {
+      diasDiferenciaColacion = montoDiferenciaColacion / valorDiaColacion;
+      diasTotalesColacion += diasDiferenciaColacion;
+    }
+  }
+
+  // *********** CAJA ***********
+  const matchCaja = textoCompleto.match(regexCaja);
+  let diasCaja = 21;
+  let montoCaja = null;
+  let valorDiaCaja = 0;
+
+  if (matchCaja) {
+    diasCaja = parseInt(matchCaja[1], 10);
+    montoCaja = parseFloat(matchCaja[2].replace('.', '').replace(',', '.'));
+    if (diasCaja > 0) {
+      valorDiaCaja = montoCaja / diasCaja;
+    }
+  }
+
+  const matchDiferenciaCaja = textoCompleto.match(regexDiferenciaCaja);
+  let montoDiferenciaCaja = 0;
+  let diasDiferenciaCaja = 0;
+  let diasTotalesCaja = diasCaja;
+
+  if (matchDiferenciaCaja) {
+    montoDiferenciaCaja = parseFloat(matchDiferenciaCaja[1].replace('.', '').replace(',', '.'));
+    if (valorDiaCaja > 0) {
+      diasDiferenciaCaja = montoDiferenciaCaja / valorDiaCaja;
+      diasTotalesCaja += diasDiferenciaCaja;
+    }
+  }
+
+  let estadoAsignaciones = "ok";
+  if (montoDiferenciaMovilizacion > 0 || montoDiferenciaColacion > 0 || montoDiferenciaCaja > 0) {
+    estadoAsignaciones = "warning";
+  }
+
+  return {
+    movilizacion: {
+      dias: diasMovilizacion,
+      monto: montoMovilizacion,
+      valorDia: valorDiaMovilizacion,
+      diferencia: montoDiferenciaMovilizacion,
+      diasTotales: diasTotalesMovilizacion
+    },
+    colacion: {
+      dias: diasColacion,
+      monto: montoColacion,
+      valorDia: valorDiaColacion,
+      diferencia: montoDiferenciaColacion,
+      diasTotales: diasTotalesColacion
+    },
+    caja: {
+      dias: diasCaja,
+      monto: montoCaja,
+      valorDia: valorDiaCaja,
+      diferencia: montoDiferenciaCaja,
+      diasTotales: diasTotalesCaja
+    },
+    estadoAsignaciones
+  };
+}
+
 // ---------- boton que guia a calculo por hora o jornada ----------
 
 function decidirAnalisis() {

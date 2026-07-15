@@ -48,8 +48,8 @@ function analizarHorasExtrasPorHora(texto, datosHora) {
 
   // Horas extras 50%
   if (he) {
-    const horas   = parseFloat(he[1].replace(',', '.'));
-    const pagado  = parseFloat(he[2].replace(/\./g, ''));
+    const horas    = parseFloat(he[1].replace(',', '.'));
+    const pagado   = parseFloat(he[2].replace(/\./g, ''));
     const esperado = valorHora * 1.5 * horas; // 50% recargo sobre hora normal
 
     resultado.horasExtras50 = {
@@ -62,10 +62,9 @@ function analizarHorasExtrasPorHora(texto, datosHora) {
 
   // Horas extras domingo
   if (hed) {
-    const horas   = parseFloat(hed[1].replace(',', '.'));
-    const pagado  = parseFloat(hed[2].replace(/\./g, ''));
-    // Esto es una suposición: 30% domingo + 50% extra.
-    // Más adelante podemos ajustar al criterio exacto de la empresa.
+    const horas    = parseFloat(hed[1].replace(',', '.'));
+    const pagado   = parseFloat(hed[2].replace(/\./g, ''));
+    // 30% domingo + 50% extra (mismo criterio que en el análisis general)
     const esperado = valorHora * 1.3 * 1.5 * horas;
 
     resultado.horasExtrasDomingo = {
@@ -86,7 +85,7 @@ function analizarHorasExtrasPorHora(texto, datosHora) {
 }
 
 // Mostrar resultados en el nuevo div
-function mostrarResultadoAnalisisHora(datosHora, resultado) {
+function mostrarResultadoAnalisisHora(datosHora, resultadoHoras, asignaciones) {
   const cont = document.getElementById('resultadoAnalisisHora');
   if (!cont) {
     console.warn("No encontré el div resultadoAnalisisHora en el HTML");
@@ -101,13 +100,13 @@ function mostrarResultadoAnalisisHora(datosHora, resultado) {
     <hr>
   `;
 
-  // Si no hay horas extra ni recargos detectados, igual mostramos algo
-  if (!resultado.horasExtras50 && !resultado.horasExtrasDomingo && !resultado.recargoDomingo) {
+  // === Horas extras / recargos ===
+  if (!resultadoHoras.horasExtras50 && !resultadoHoras.horasExtrasDomingo && !resultadoHoras.recargoDomingo) {
     html += `<p>No se encontraron líneas de horas extra / recargos en el PDF.</p>`;
   }
 
-  if (resultado.horasExtras50) {
-    const r = resultado.horasExtras50;
+  if (resultadoHoras.horasExtras50) {
+    const r = resultadoHoras.horasExtras50;
     html += `
       <h3>Horas Extras 50%</h3>
       <p>Horas: ${r.horas}</p>
@@ -117,8 +116,8 @@ function mostrarResultadoAnalisisHora(datosHora, resultado) {
     `;
   }
 
-  if (resultado.horasExtrasDomingo) {
-    const r = resultado.horasExtrasDomingo;
+  if (resultadoHoras.horasExtrasDomingo) {
+    const r = resultadoHoras.horasExtrasDomingo;
     html += `
       <h3>Horas Extras Domingo</h3>
       <p>Horas: ${r.horas}</p>
@@ -128,11 +127,58 @@ function mostrarResultadoAnalisisHora(datosHora, resultado) {
     `;
   }
 
-  if (resultado.recargoDomingo) {
+  if (resultadoHoras.recargoDomingo) {
     html += `
       <h3>Recargo Domingo</h3>
-      <p>Pagado (sin horas explícitas): ${formatearCLP(resultado.recargoDomingo.pagado)}</p>
+      <p>Pagado (sin horas explícitas): ${formatearCLP(resultadoHoras.recargoDomingo.pagado)}</p>
     `;
+  }
+
+  // === BLOQUE: Asignaciones (reutilizando extraerAsignacionesDesdeTexto) ===
+  if (asignaciones && (asignaciones.movilizacion.monto || asignaciones.colacion.monto || asignaciones.caja.monto)) {
+    html += `<hr><h3>Asignaciones</h3>`;
+
+    if (asignaciones.movilizacion.monto !== null) {
+      const a = asignaciones.movilizacion;
+      html += `
+        <h4>Movilización</h4>
+        <p>Días base: ${a.dias}</p>
+        <p>Monto base: ${formatearCLP(a.monto)}</p>
+        <p>Valor por día: ${formatearCLP(a.valorDia)}</p>
+        <p>Días totales (con diferencias): ${Math.round(a.diasTotales)}</p>
+        ${a.diferencia ? `<p>Diferencia: ${formatearCLP(a.diferencia)}</p>` : ''}
+      `;
+    }
+
+    if (asignaciones.colacion.monto !== null) {
+      const a = asignaciones.colacion;
+      html += `
+        <h4>Colación</h4>
+        <p>Días base: ${a.dias}</p>
+        <p>Monto base: ${formatearCLP(a.monto)}</p>
+        <p>Valor por día: ${formatearCLP(a.valorDia)}</p>
+        <p>Días totales (con diferencias): ${Math.round(a.diasTotales)}</p>
+        ${a.diferencia ? `<p>Diferencia: ${formatearCLP(a.diferencia)}</p>` : ''}
+      `;
+    }
+
+    if (asignaciones.caja.monto !== null) {
+      const a = asignaciones.caja;
+      html += `
+        <h4>Caja</h4>
+        <p>Días base: ${a.dias}</p>
+        <p>Monto base: ${formatearCLP(a.monto)}</p>
+        <p>Valor por día: ${formatearCLP(a.valorDia)}</p>
+        <p>Días totales (con diferencias): ${Math.round(a.diasTotales)}</p>
+        ${a.diferencia ? `<p>Diferencia: ${formatearCLP(a.diferencia)}</p>` : ''}
+      `;
+    }
+
+    if (asignaciones.estadoAsignaciones === "warning") {
+      html += `<p style="color:orange;"><strong>⚠ Se detectaron diferencias en asignaciones (mov/colación/caja).</strong></p>`;
+    }
+  } else {
+    html += `<hr><p>No se detectaron asignaciones de movilización/colación/caja en el PDF.</p>`;
   }
 
   cont.innerHTML = html;
@@ -165,9 +211,11 @@ async function analizarLiquidacionPorHora() {
     return;
   }
 
-  const resultado = analizarHorasExtrasPorHora(textoCompleto, datosHora);
-  mostrarResultadoAnalisisHora(datosHora, resultado);
+  const resultadoHoras   = analizarHorasExtrasPorHora(textoCompleto, datosHora);
+  const asignacionesHora = extraerAsignacionesDesdeTexto(textoCompleto);
+
+  mostrarResultadoAnalisisHora(datosHora, resultadoHoras, asignacionesHora);
 }
 
-// Hacer accesible desde decidirAnalisis()
+// Hacer accesible desde preValidarAntesDeAnalizar()
 window.analizarLiquidacionPorHora = analizarLiquidacionPorHora;

@@ -85,7 +85,7 @@ function analizarHorasExtrasPorHora(texto, datosHora) {
 }
 
 // Mostrar resultados en el nuevo div
-function mostrarResultadoAnalisisHora(datosHora, resultadoHoras, asignaciones) {
+function mostrarResultadoAnalisisHora(datosHora, resultadoHoras, asignaciones, comisionesYCorrida) {
   const cont = document.getElementById('resultadoAnalisisHora');
   if (!cont) {
     console.warn("No encontré el div resultadoAnalisisHora en el HTML");
@@ -181,6 +181,54 @@ function mostrarResultadoAnalisisHora(datosHora, resultadoHoras, asignaciones) {
     html += `<hr><p>No se detectaron asignaciones de movilización/colación/caja en el PDF.</p>`;
   }
 
+    // === BLOQUE: Comisiones + Semana Corrida ===
+  if (comisionesYCorrida) {
+    const { totalComisiones, detallesComisiones, semanaCorrida } = comisionesYCorrida;
+
+    html += `<hr><h3>Comisiones y Semana Corrida</h3>`;
+
+    // Detalle de comisiones
+    if (detallesComisiones && detallesComisiones.length > 0) {
+      html += `<p><strong>Detalle de comisiones:</strong></p><ul>`;
+      detallesComisiones.forEach(c => {
+        html += `<li>${c.item}: ${formatearCLP(c.monto)}</li>`;
+      });
+      html += `</ul>`;
+    } else if (totalComisiones > 0) {
+      html += `<p>Se detectaron comisiones, pero sin detalle individual.</p>`;
+    } else {
+      html += `<p>No se detectaron comisiones individuales.</p>`;
+    }
+
+    html += `<p><strong>Total Comisiones:</strong> ${formatearCLP(totalComisiones || 0)}</p>`;
+
+    // Semana corrida
+    if (totalComisiones <= 0) {
+      html += `<p><strong>Semana Corrida:</strong> No aplica (no existen comisiones).</p>`;
+    } else {
+      const s = semanaCorrida;
+      html += `
+        <p><strong>Semana Corrida:</strong></p>
+        <p>Domingos/Festivos: ${s.diasSemanaCorrida !== "No especificados" ? s.diasSemanaCorrida : "No especificado"} días</p>
+        <p>Monto pagado: ${formatearCLP(s.montoSemanaCorrida || 0)}</p>
+      `;
+
+      if (s.estadoSemanaCorrida === "ok") {
+        html += `<p style="color:green;">✅ Cálculo correcto de semana corrida.</p>`;
+      } else if (s.estadoSemanaCorrida === "error") {
+        html += `
+          <p>Valor esperado (según comisiones): ${formatearCLP(s.valorEsperadoSemanaCorrida || 0)}</p>
+          <p>Diferencia: ${formatearCLP(s.diferenciaSemanaCorrida || 0)}</p>
+          <p style="color:red;">❌ Discrepancia detectada en semana corrida.</p>
+        `;
+      } else if (s.estadoSemanaCorrida === "warning") {
+        html += `<p style="color:orange;">⚠ Información insuficiente para calcular semana corrida.</p>`;
+      } else {
+        html += `<p>Semana corrida no calculada.</p>`;
+      }
+    }
+  }
+
   cont.innerHTML = html;
 }
 
@@ -214,7 +262,13 @@ async function analizarLiquidacionPorHora() {
   const resultadoHoras   = analizarHorasExtrasPorHora(textoCompleto, datosHora);
   const asignacionesHora = extraerAsignacionesDesdeTexto(textoCompleto);
 
-  mostrarResultadoAnalisisHora(datosHora, resultadoHoras, asignacionesHora);
+  // Usamos los días totales de movilización como base para semana corrida,
+  // igual que en el análisis normal.
+  const diasTotalesMov = asignacionesHora.movilizacion.diasTotales || asignacionesHora.movilizacion.dias || 0;
+  const comisionesYCorrida = extraerComisionesYSemanaCorridaDesdeTexto(textoCompleto, diasTotalesMov);
+
+  mostrarResultadoAnalisisHora(datosHora, resultadoHoras, asignacionesHora, comisionesYCorrida);
+
 }
 
 // Hacer accesible desde preValidarAntesDeAnalizar()

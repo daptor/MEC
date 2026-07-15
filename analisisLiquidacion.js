@@ -2792,3 +2792,37 @@ function extraerComisionesYSemanaCorridaDesdeTexto(textoCompleto, diasTotalesMov
     }
   };
 }
+
+// =====================================================
+// HELPER COMPARTIDO: BASE DE HABERES PARA GRATIFICACIÓN
+// (misma idea que mostrarGratificacionMec)
+// =====================================================
+function calcularBaseHaberesGratificacion(opciones) {
+  const {
+    sueldoBase,          // sueldo proporcional (modo normal) o montoBase (modo HORA)
+    montoHE,             // Hrs Extras 50%
+    montoHEDom,          // Hrs Extras Domingo
+    montoRecDom,         // Recargo Domingo
+    montoRecFest,        // Recargo festivo 50%
+    totalComisiones,     // suma de comisiones
+    montoSemanaCorrida,  // valor esperado / pagado de semana corrida
+    totalGratificables   // suma de haberes gratificables
+  } = opciones;
+
+  const valoresConsolidados = [
+    sueldoBase || 0,
+    montoHE || 0,
+    montoHEDom || 0,
+    montoRecDom || 0,
+    montoRecFest || 0,
+    totalComisiones || 0,
+    montoSemanaCorrida || 0
+  ];
+
+  const valorTotalGratificacion = valoresConsolidados.reduce(
+    (total, valor) => total + (parseFloat(valor) || 0),
+    totalGratificables || 0
+  );
+
+  return valorTotalGratificacion;
+}

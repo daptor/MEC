@@ -93,25 +93,44 @@ function calcularGratificacionPorHora(textoCompleto, datosHora, resultadoHoras, 
     totalGratificables = calcularTotalGratificacion(gratificables);
   }
 
-  // 2) Otros haberes relevantes
-  const montoBase = datosHora.montoBase || 0;
+  // 2) Otros haberes relevantes (usamos mismos tipos que en el análisis normal)
+  const sueldoBase = datosHora.montoBase || 0;
 
-  const montoHE50   = resultadoHoras.horasExtras50      ? (resultadoHoras.horasExtras50.pagado      || 0) : 0;
-  const montoHEDom  = resultadoHoras.horasExtrasDomingo ? (resultadoHoras.horasExtrasDomingo.pagado || 0) : 0;
+  const montoHE   = resultadoHoras.horasExtras50      ? (resultadoHoras.horasExtras50.pagado      || 0) : 0;
+  const montoHEDom = resultadoHoras.horasExtrasDomingo ? (resultadoHoras.horasExtrasDomingo.pagado || 0) : 0;
   const montoRecDom = resultadoHoras.recargoDomingo     ? (resultadoHoras.recargoDomingo.pagado     || 0) : 0;
 
-  const totalComisiones = comisionesYCorrida ? (comisionesYCorrida.totalComisiones || 0) : 0;
+  // En modo HORA aún no parseamos recargo festivo, lo dejamos en 0
+  const montoRecFest = 0;
+
+  const totalComisiones   = comisionesYCorrida ? (comisionesYCorrida.totalComisiones || 0) : 0;
   const montoSemanaCorrida = comisionesYCorrida ? (comisionesYCorrida.semanaCorrida.montoSemanaCorrida || 0) : 0;
 
-  // 3) Suma total haberes para gratificación (versión simple para modo hora)
-  const totalHaberes =
-    montoBase +
-    montoHE50 +
-    montoHEDom +
-    montoRecDom +
-    totalComisiones +
-    montoSemanaCorrida +
-    totalGratificables;
+  // 3) Base de haberes para gratificación, usando el helper compartido
+  let totalHaberes = 0;
+  if (typeof calcularBaseHaberesGratificacion === "function") {
+    totalHaberes = calcularBaseHaberesGratificacion({
+      sueldoBase,
+      montoHE,
+      montoHEDom,
+      montoRecDom,
+      montoRecFest,
+      totalComisiones,
+      montoSemanaCorrida,
+      totalGratificables
+    });
+  } else {
+    // Fallback (por si el helper no está, pero en nuestro caso sí está)
+    totalHaberes =
+      sueldoBase +
+      montoHE +
+      montoHEDom +
+      montoRecDom +
+      montoRecFest +
+      totalComisiones +
+      montoSemanaCorrida +
+      totalGratificables;
+  }
 
   const valor25 = totalHaberes * 0.25;
 
@@ -122,7 +141,6 @@ function calcularGratificacionPorHora(textoCompleto, datosHora, resultadoHoras, 
     totalGratificables
   };
 }
-
 
 // Mostrar resultados en el nuevo div
 function mostrarResultadoAnalisisHora(datosHora, resultadoHoras, asignaciones, comisionesYCorrida, gratificacionHora) {

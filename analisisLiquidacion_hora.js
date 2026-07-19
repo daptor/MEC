@@ -1,6 +1,6 @@
 // analisisLiquidacion_hora.js - PARTE 1/8
 // ARCHIVO UNIFICADO Y BLINDADO - CÁLCULO POR HORA (HRA)
-// Este script sobreescribe la validación original para evitar el error de "factor no encontrado".
+// Este script anula la validación del archivo original para evitar el alert de "factor".
 
 (function () {
     const NS = window.MEC_HORA = window.MEC_HORA || {};
@@ -47,13 +47,13 @@
         return "$" + Math.round(v).toLocaleString("es-CL");
     }
 
-    function getIMM(mes, año) {
+    function getIMMmensual(mes, año) {
         const m = (mes || "ENERO").toUpperCase();
         const a = año || 2024;
         return (INGRESOS_MINIMOS[a] && INGRESOS_MINIMOS[a][m]) ? INGRESOS_MINIMOS[a][m] : 460000;
     }
 
-    function getJMax(mesStr, añoNum) {
+    function getJornadaMaxima(mesStr, añoNum) {
         const mesesIdx = { ENERO:1, FEBRERO:2, MARZO:3, ABRIL:4, MAYO:5, JUNIO:6, JULIO:7, AGOSTO:8, SEPTIEMBRE:9, OCTUBRE:10, NOVIEMBRE:11, DICIEMBRE:12 };
         const mi = mesesIdx[(mesStr || "ENERO").toUpperCase()] || 1;
         if (añoNum > 2026 || (añoNum === 2026 && mi >= 4)) return 42;
@@ -69,7 +69,6 @@
     async function analizarArchivoPorHora_autonomo(texto, jornada) {
         jornada = Number(jornada) || 30;
         
-        // Regex robusta para capturar S.BASE PART-TIME (HRA)
         const rxHRA = /S\.?BASE\s*PART-?TIME\s*\(HRA\)[^\d\(]*\(?\s*([\d.,]+)\s*\)?[^\$]*\$\s*([\d.]+)/i;
         const mH = texto.match(rxHRA);
         let sueldo = mH ? procMonto(mH[1]) : null;
@@ -79,7 +78,6 @@
             const mSB = texto.match(rxSB);
             if (mSB) sueldo = procMonto(mSB[1]);
         }
-
         if (!sueldo) return null;
 
         const rxFecha = /(\b(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\b)\s*de\s*(\d{4})/i;
@@ -88,7 +86,7 @@
         const año = mf ? parseInt(mf[2]) : 2024;
 
         const valorHora = sueldo / (jornada * SEMANAS_POR_MES);
-        const immH = getIMM(mes, año) / (getJMax(mes, año) * SEMANAS_POR_MES);
+        const immH = getIMMmensual(mes, año) / (getJornadaMaxima(mes, año) * SEMANAS_POR_MES);
 
         addResumen("Sueldo Base (HRA)", (valorHora >= immH - 1) ? "ok" : "error", Math.max(0, immH - valorHora));
 
@@ -148,78 +146,75 @@
 
         cont.innerHTML = `
             <div style="border:2px solid #0056b3; padding:15px; border-radius:12px; background:#f9fbff; font-family:sans-serif">
-                <h2 style="color:#0056b3; margin-top:0">Resultado Análisis HRA</h2>
+                <h2 style="color:#0056b3; margin-top:0">Resultado Análisis por Hora (HRA)</h2>
                 <p><strong>Valor Hora Contractual:</strong> ${fmtCLP(res.valorHora)}</p>
-                <p><strong>IMM por Hora (Ref):</strong> ${fmtCLP(res.immPorHora)}</p>
+                <p><strong>IMM por Hora (Referencia):</strong> ${fmtCLP(res.immPorHora)}</p>
                 <hr>
-                <h4>Sobretiempo</h4>
+                <h4>Detalle de Cálculos</h4>
                 <p>HE 50%: Pagado ${fmtCLP(extras.he50.pagado)} | Esperado ${fmtCLP(extras.he50.esperado)}</p>
-                <p>Recargo Dom: Pagado ${fmtCLP(extras.rdom.pagado)} | Esperado ${fmtCLP(extras.rdom.esperado)}</p>
-                <hr>
-                <h4>Gratificación</h4>
-                <p>Pagada ${fmtCLP(vars.pagG)} | Esperado (25%) ${fmtCLP(vars.espG)}</p>
+                <p>Gratificación: Pagada ${fmtCLP(vars.pagG)} | Esperada ${fmtCLP(vars.espG)}</p>
             </div>
         `;
 
         const resCont = document.getElementById('resumenMecContainer');
         if (resCont) {
-            resCont.innerHTML = `<h3>Resumen HRA</h3>` + window._resumenHora.map(it => `
-                <div style="padding:6px; border-left:4px solid ${it.estado === 'error' ? '#d32f2f' : (it.estado === 'warning' ? '#f57c00' : '#388e3c')}; margin-bottom:4px; background:#fff">
+            resCont.innerHTML = `<h3>Resumen de Estados</h3>` + window._resumenHora.map(it => `
+                <div style="padding:6px; border-left:4px solid ${it.estado === 'error' ? '#d32f2f' : '#388e3c'}; margin-bottom:4px; background:#fff">
                     <strong>${it.modulo}</strong>: ${it.estado.toUpperCase()} ${it.diferencia > 0 ? ' (Dif: ' + fmtCLP(it.diferencia) + ')' : ''}
                 </div>
             `).join('');
         }
     }
     // analisisLiquidacion_hora.js - PARTE 8/8
-    // Guardamos la función original de MEC
-    const originalPrevalidar = window.preValidarAntesDeAnalizar;
+    // Esta parte es la que secuestra la validación original para que NO salga el alert.
+    
+    const interval = setInterval(() => {
+        if (typeof window.preValidarAntesDeAnalizar === 'function') {
+            const originalFunction = window.preValidarAntesDeAnalizar;
 
-    // Sobreescribimos la función principal para que nuestro código mande
-    window.preValidarAntesDeAnalizar = async function() {
-        const sel = document.getElementById('jornada');
-        
-        // SI ES MODO HORA, EJECUTAMOS NUESTRA LÓGICA
-        if (sel && sel.value === 'HORA') {
-            const fileEl = document.getElementById('fileInput');
-            if (!fileEl?.files[0]) { alert("Sube el PDF primero"); return; }
-            
-            const jUser = prompt("Ingresa la jornada semanal pactada (ej: 30, 20, 18):", "30");
-            if (!jUser) return;
+            // SOBREESCRIBIMOS LA FUNCIÓN GLOBAL
+            window.preValidarAntesDeAnalizar = async function() {
+                const sel = document.getElementById('jornada');
+                
+                // SI ES HORA, TOMAMOS EL CONTROL Y EL ORIGINAL SE DETIENE
+                if (sel && sel.value === 'HORA') {
+                    const fileEl = document.getElementById('fileInput');
+                    if (!fileEl?.files[0]) { alert("Sube el PDF primero"); return; }
+                    
+                    const jUser = prompt("Ingresa la jornada semanal pactada (30, 20, 18):", "30");
+                    if (!jUser) return;
 
-            try {
-                window._resumenHora = [];
-                const data = await fileEl.files[0].arrayBuffer();
-                const pdf = await window.pdfjsLib.getDocument({ data: data }).promise;
-                let texto = "";
-                for (let i = 1; i <= pdf.numPages; i++) {
-                    const page = await pdf.getPage(i);
-                    const content = await page.getTextContent();
-                    texto += content.items.map(it => it.str).join(' ') + '\n';
+                    try {
+                        window._resumenHora = [];
+                        const data = await fileEl.files[0].arrayBuffer();
+                        const pdf = await window.pdfjsLib.getDocument({ data: data }).promise;
+                        let texto = "";
+                        for (let i = 1; i <= pdf.numPages; i++) {
+                            const page = await pdf.getPage(i);
+                            const content = await page.getTextContent();
+                            texto += content.items.map(it => it.str).join(' ') + '\n';
+                        }
+                        const res = await analizarArchivoPorHora_autonomo(texto, jUser);
+                        if (!res) { alert("No se detectó sueldo base en el PDF"); return; }
+                        const extras = calcularSobretiempoHRA(texto, res.valorHora);
+                        const vars = calcularVariablesHRA(texto, res.valorHora, Number(jUser));
+                        renderHRA(res, extras, vars);
+                    } catch (e) { console.error("Error HRA:", e); }
+                } else {
+                    // SI NO ES HORA, LLAMAMOS AL ORIGINAL (MENSUAL)
+                    return originalFunction();
                 }
-                const res = await analizarArchivoPorHora_autonomo(texto, jUser);
-                if (!res) { alert("No se encontró el sueldo en el PDF."); return; }
-                const extras = calcularSobretiempoHRA(texto, res.valorHora);
-                const vars = calcularVariablesHRA(texto, res.valorHora, Number(jUser));
-                renderHRA(res, extras, vars);
-            } catch (e) { console.error("Error HRA:", e); }
-        } else {
-            // SI ES CUALQUIER OTRA OPCIÓN, LLAMAMOS AL SCRIPT ORIGINAL
-            if (typeof originalPrevalidar === 'function') {
-                return originalPrevalidar();
-            } else {
-                alert("Error: No se pudo cargar el análisis original.");
-            }
-        }
-    };
+            };
 
-    // Añadir la opción al menú apenas cargue
-    setTimeout(() => {
-        const sel = document.getElementById('jornada');
-        if (sel && ![...sel.options].some(o => o.value === 'HORA')) {
-            const opt = document.createElement('option');
-            opt.value = 'HORA'; opt.text = 'CÁLCULO POR HORA (HRA)';
-            opt.style.fontWeight = 'bold'; opt.style.backgroundColor = '#d1e7ff';
-            sel.appendChild(opt);
+            // Inyectamos la opción en el menú
+            const sel = document.getElementById('jornada');
+            if (sel && ![...sel.options].some(o => o.value === 'HORA')) {
+                const opt = document.createElement('option');
+                opt.value = 'HORA'; opt.text = 'CÁLCULO POR HORA (HRA)';
+                opt.style.fontWeight = 'bold'; opt.style.backgroundColor = '#d1e7ff';
+                sel.appendChild(opt);
+            }
+            clearInterval(interval);
         }
-    }, 1500);
-})(); // FIN DEL BLOQUE
+    }, 500);
+})(); // FIN

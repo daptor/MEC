@@ -687,7 +687,7 @@ if (cargoEncontrado) {
 // Ejemplo de línea:
 // S.BASE PART-TIME (HRA) (40.1 $ 97.042
 const regexBaseHRA =
- /S\.?\s*BASE\s*PART-?TIME\s*\(HRA\)\s*\(([\d.,]+)\s*\$\s*([\d.]+)/i;
+ /S\.?\s*BASE\s*PART-?TIME\s*\(HRA\)[^\d\(]*\(?\s*([\d.,]+)\s*\)?[^\$]*\$\s*([\d.]+)/i;
 const matchBaseHRA = textoCompleto.match(regexBaseHRA);
 
 // Variables específicas HRA

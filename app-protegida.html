@@ -136,8 +136,6 @@
           <option value="25">Parcial (25 hrs)</option>
           <option value="20">Parcial (20 hrs)</option>
           <option value="18">Parcial (18 hrs)</option>
-          <option value="HORA">Contrato por hora (PART-TIME HRA)</option>
-
       </select>
       <p><label for="fileInput">Ingresa una liquidación de sueldo en formato PDF</label></p>
       <input type="file" id="fileInput">
@@ -175,8 +173,6 @@
       <button onclick="preValidarAntesDeAnalizar()">Calcular</button>
       <button onclick="mostrarPantalla('menu-principal')">↩ Menu</button>
       <div id="resultadoAnalisis"></div>
-      <!-- NUEVO: resultado específico para contratos por hora -->
-      <div id="resultadoAnalisisHora"></div>
       <div class="container gratificacion-container" id="gratificacionMec" style="display: none;">
           <h3>Gratificación Mec</h3>
           <div id="listaGratificables"></div>
@@ -298,7 +294,6 @@
   <button onclick="volverAlMenu()">↩ Menú</button>
 </div>
 
-
   <!-- Pantalla de Admin para gestionar chats privados -->
   <div id="pantalla-admin-chat" class="pantalla" style="display:none;">
       <h1>Chats Privados</h1>
@@ -363,9 +358,9 @@
       <select id="select-sindicato" onchange="mostrarClaveInput()">
           <option value=""selected>Seleccione una opción</option> 
           <option value="AgendaFederacion">📅 Agenda Federación</option>
-          <option value="AsistenciaFederacion">📊 Asistencia/Estadísticas</option>          
+          <option value="ReunionFederacion">⏳ Reunión Federación</option>     
           <option value="RendicionFederacion">💲 Rendir Federación</option>
-          <option value="ReunionFederacion">⏳ Reunión Federación</option>
+          <option value="AsistenciaFederacion">📊 Asistencia/Estadísticas</option>            
           <option value="Iquique">Archivo Iquique</option>
           <option value="Costanera">Archivo Costanera</option>
           <option value="PlazaNorte">Archivo Plaza Norte</option>
@@ -486,12 +481,9 @@
         <li>Cargando...</li>
         </ul>
     </div>
-
     <br>
-
     <button onclick="mostrarPantalla('pantalla-archivosindical')">↩ Volver a Herramientas</button>
     </div>
-
 
 <!-- ===================================================== -->
 <!-- 🧑‍⚖️ MESA SINDICAL DIGITAL — SALA FEDERATIVA         -->
@@ -843,7 +835,6 @@
   </div>
 </div>
 
-
 <!-- ====================================================== -->
 <!-- 🧑‍⚖️ MESA SINDICAL DIGITAL -->
 <!-- ====================================================== -->
@@ -1128,7 +1119,6 @@
 <script src="script.js"></script>
 
 <script src="analisisLiquidacion.js"></script>
-<script src="analisis_hora.js"></script>
 <script src="mesaSindical.js"></script>
 <script src="agendaFederacion.js"></script>
 <script src="chat.js"></script>   

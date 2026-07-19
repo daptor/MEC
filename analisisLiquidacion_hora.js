@@ -679,245 +679,170 @@ if (cargoEncontrado) {
     cargo = cargoEncontrado;
 }
 
-const regexSueldoBaseContractual =
-    /SUELDO\s*BASE.*?\$\s*(\d[\d.]*)/i;
+// =====================================================
+// 🔁 VERSIÓN HRA: SUELDO BASE POR HORA + IMM POR HORA
+// =====================================================
 
-const matchSueldoBaseContractual =
-    textoCompleto.match(regexSueldoBaseContractual);
+// 1) EXTRAER BASE PART-TIME (HRA)
+// Ejemplo de línea:
+// S.BASE PART-TIME (HRA) (40.1 $ 97.042
+const regexBaseHRA =
+ /S\.?\s*BASE\s*PART-?TIME\s*\(HRA\)\s*\(([\d.,]+)\s*\$\s*([\d.]+)/i;
+const matchBaseHRA = textoCompleto.match(regexBaseHRA);
 
+// Variables específicas HRA
+let horasBaseContrato = null;
+let montoBasePagadoMes = null;
+let valorHoraContractual = null;
+
+// Variables usadas en otras partes del informe (las dejamos, aunque aquí no se usen igual)
 let sueldoBaseContractual = null;
-
-if (matchSueldoBaseContractual) {
-
-    sueldoBaseContractual = parseFloat(
-        matchSueldoBaseContractual[1]
-            .replace('.', '')
-            .replace(',', '.')
-    );
-}
-
-const regexSueldoBaseProporcional =
-    /SUELDO\s*BASE\s*\((\d+)\)\s*\$\s*(\d[\d.]*)/i;
-
-const matchSueldoBaseProporcional =
-    textoCompleto.match(regexSueldoBaseProporcional);
-
 let diasTrabajados = null;
 let sueldoProporcional = null;
 let resultadoProporcional = '';
 
-// =====================================================
-// 💰 VALIDACIÓN PROPORCIONAL SUELDO BASE
-// =====================================================
-if (matchSueldoBaseProporcional && sueldoBaseContractual) {
-    diasTrabajados =
-        parseInt(matchSueldoBaseProporcional[1]);
+// -----------------------------
+// 1.1 Asignar datos desde línea HRA
+// -----------------------------
+if (matchBaseHRA) {
+  // Ej: 40.1
+  horasBaseContrato = parseFloat(
+    matchBaseHRA[1]
+      .replace('.', '')
+      .replace(',', '.')
+  );
+  // Ej: 97.042 → 97042
+  montoBasePagadoMes = parseFloat(
+    matchBaseHRA[2]
+      .replace(/\./g, '')
+      .replace(',', '.')
+  );
 
-    sueldoProporcional = parseFloat(
-        matchSueldoBaseProporcional[2]
-            .replace('.', '')
-            .replace(',', '.')
-    );
-
-    const diasDelMes = 30;
-    const sueldoEsperado =
-        (sueldoBaseContractual / diasDelMes)
-        * diasTrabajados;
-
-    const diferenciaSueldo =
-        sueldoProporcional - sueldoEsperado;
-
-    // ⚠ SOLO INFORMAR
-    // ⚠ NO alimentar resumen MEC
-    if (Math.abs(diferenciaSueldo) < 1) {
-
-        resultadoProporcional = `
-            <span style="color: green;">
-                ✅ Cálculo correcto
-            </span>
-        `;
-
-    } else {
-
-        resultadoProporcional = `
-            <span style="color: red;">
-                ❌ Discrepancia detectada:
-                Se esperaba ${formatearCLP(sueldoEsperado)}
-            </span>
-        `;
-    }
+  if (horasBaseContrato > 0 && montoBasePagadoMes > 0) {
+    valorHoraContractual = montoBasePagadoMes / horasBaseContrato;
+  }
 }
 
 // =====================================================
-// 💰 VALIDACIÓN SUELDO BASE VS IMM
+// 💰 VALIDACIÓN SUELDO BASE VS IMM (POR HORA)
 // =====================================================
-let jornadaMaxima = 45;
 
+// Mantener lógica de jornada máxima legal según año/mes
+let jornadaMaxima = 45;
 // 42 horas desde abril 2026
 if (
-    año > 2026 ||
-    (
-        año === 2026 &&
-        [
-            "ABRIL","MAYO","JUNIO","JULIO",
-            "AGOSTO","SEPTIEMBRE","OCTUBRE",
-            "NOVIEMBRE","DICIEMBRE"
-        ].includes(mes)
-    )
+  año > 2026 ||
+  (
+    año === 2026 &&
+    [
+      "ABRIL","MAYO","JUNIO","JULIO",
+      "AGOSTO","SEPTIEMBRE","OCTUBRE",
+      "NOVIEMBRE","DICIEMBRE"
+    ].includes(mes)
+  )
 ) {
-
-    jornadaMaxima = 42;
-
-// 44 horas desde mayo 2024
+  jornadaMaxima = 42;
+  // 44 horas desde mayo 2024
 } else if (
-    año > 2024 ||
-    (
-        año === 2024 &&
-        [
-            "MAYO","JUNIO","JULIO","AGOSTO",
-            "SEPTIEMBRE","OCTUBRE",
-            "NOVIEMBRE","DICIEMBRE"
-        ].includes(mes)
-    )
+  año > 2024 ||
+  (
+    año === 2024 &&
+    [
+      "MAYO","JUNIO","JULIO","AGOSTO",
+      "SEPTIEMBRE","OCTUBRE",
+      "NOVIEMBRE","DICIEMBRE"
+    ].includes(mes)
+  )
 ) {
-
-    jornadaMaxima = 44;
+  jornadaMaxima = 44;
 }
 
+// IMM mensual vigente
 const inm =
-    ingresosMinimos[año] &&
-    ingresosMinimos[año][mes.toUpperCase()]
-        ? ingresosMinimos[año][mes.toUpperCase()]
-        : 0;
+  ingresosMinimos[año] &&
+  ingresosMinimos[año][mes.toUpperCase()]
+    ? ingresosMinimos[año][mes.toUpperCase()]
+    : 0;
 
-let inmProporcional = inm;
-
-// Jornada parcial → IMM proporcional
-if (Number(jornadaSeleccionada) <= 30) {
-
-    inmProporcional =
-        (inm / jornadaMaxima)
-        * Number(jornadaSeleccionada);
+// IMM por hora
+let valorImmHora = 0;
+if (inm > 0 && jornadaMaxima > 0) {
+  valorImmHora = inm / jornadaMaxima;
 }
 
+// Comparación por hora
 let mensajeVariacion = '';
-
-const diferenciaIMM =
-    sueldoBaseContractual - inmProporcional;
-
-// =====================================================
-// 💰 INTERPRETACIÓN JURÍDICA SUELDO BASE VS IMM
-// =====================================================
-const porcentajeSobreIMM =
-    inmProporcional > 0
-        ? (
-            (sueldoBaseContractual - inmProporcional)
-            / inmProporcional
-        ) * 100
-        : 0;
-
-const porcentajeRedondeado =
-    Math.round(porcentajeSobreIMM * 10) / 10;
-
-// =====================================================
-// 📊 ESTADO LEGAL SUELDO BASE → RESUMEN MEC
-// =====================================================
-let estadoResumenSueldoBase = "ok";
+let estadoResumenSueldoBase = "info";
 let diferenciaResumenSueldoBase = 0;
 
-// =====================================================
-// 🟢 CUMPLE IMM
-// =====================================================
-if (diferenciaIMM >= 0) {
+if (valorHoraContractual && valorImmHora) {
+  const diferenciaHora = valorHoraContractual - valorImmHora;
+  const porcentajeSobreIMM =
+    (diferenciaHora / valorImmHora) * 100;
+  const porcentajeRedondeado =
+    Math.round(porcentajeSobreIMM * 10) / 10;
 
-    // -------------------------------------------------
-    // ✅ Mostrar cálculo proporcional SOLO si cumple IMM
-    // -------------------------------------------------
-    if (
-        typeof diferenciaSueldo !== "undefined" &&
-        Math.abs(diferenciaSueldo) < 1
-    ) {
+  if (diferenciaHora >= 0) {
+    // Cumple IMM por hora
+    estadoResumenSueldoBase = "ok";
+    diferenciaResumenSueldoBase = 0;
 
-        resultadoProporcional = `
-            <span style="color: green;">
-                ✅ Cálculo correcto
-            </span>
-        `;
-    }
-
-    // Jornada parcial
-    if (Number(jornadaSeleccionada) <= 30) {
-
-        mensajeVariacion = `
-            <span style="color: green;">
-                ✅ El sueldo base es un ${porcentajeRedondeado}% superior al IMM proporcional vigente para una jornada de ${jornadaSeleccionada} horas.
-            </span>
-        `;
-
-    // Jornada ordinaria
-    } else {
-
-        mensajeVariacion = `
-            <span style="color: green;">
-                ✅ El sueldo base supera el IMM vigente en ${porcentajeRedondeado}%.
-            </span>
-        `;
-    }
-
-// =====================================================
-// 🔴 NO CUMPLE IMM
-// =====================================================
-} else {
-
+    mensajeVariacion = `
+      <span style="color: green;">
+        ✅ El valor hora contractual (${formatearCLP(valorHoraContractual)})
+        es un ${porcentajeRedondeado}% superior al ingreso mínimo por hora
+        (${formatearCLP(valorImmHora)}).
+      </span>
+    `;
+  } else {
+    // No cumple IMM por hora
     estadoResumenSueldoBase = "error";
 
-    diferenciaResumenSueldoBase =
-        Math.abs(diferenciaIMM);
+    // Diferencia total aproximada en el mes (opcional)
+    const diferenciaHoraAbs = Math.abs(diferenciaHora);
+    const diferenciaMes =
+      horasBaseContrato
+        ? diferenciaHoraAbs * horasBaseContrato
+        : 0;
 
-    // -------------------------------------------------
-    // ❌ Ocultar "Cálculo correcto"
-    // si existe incumplimiento IMM
-    // -------------------------------------------------
-    resultadoProporcional = '';
+    diferenciaResumenSueldoBase = diferenciaMes;
 
-    // Jornada parcial
-    if (Number(jornadaSeleccionada) <= 30) {
-
-        mensajeVariacion = `
-            <span style="color: red;">
-                ❌ El sueldo base es inferior al IMM proporcional vigente para una jornada de ${jornadaSeleccionada} horas.
-                <br>
-                Diferencia detectada:
-                ${formatearCLP(
-                    Math.abs(diferenciaIMM)
-                )}
-            </span>
-        `;
-
-    // Jornada ordinaria
-    } else {
-
-        mensajeVariacion = `
-            <span style="color: red;">
-                ❌ El sueldo base es inferior al IMM vigente.
-                <br>
-                Diferencia detectada:
-                ${formatearCLP(
-                    Math.abs(diferenciaIMM)
-                )}
-            </span>
-        `;
-    }
+    mensajeVariacion = `
+      <span style="color: red;">
+        ❌ El valor hora contractual (${formatearCLP(valorHoraContractual)})
+        es inferior al ingreso mínimo por hora (${formatearCLP(valorImmHora)}).
+        <br>
+        Diferencia por hora: ${formatearCLP(diferenciaHoraAbs)}
+        ${
+          horasBaseContrato
+            ? `<br>Diferencia aproximada en el mes (${horasBaseContrato} horas): ${
+                formatearCLP(diferenciaMes)
+              }`
+            : ''
+        }
+      </span>
+    `;
+  }
+} else {
+  mensajeVariacion = `
+    <span style="color: orange;">
+      ⚠ No fue posible determinar correctamente el valor hora contractual
+      o el ingreso mínimo por hora para este período.
+    </span>
+  `;
+  estadoResumenSueldoBase = "warning";
+  diferenciaResumenSueldoBase = 0;
 }
 
 // =====================================================
-// 🚦 RESUMEN MEC → SOLO VALIDACIÓN LEGAL IMM
+// RESUMEN MEC → VALIDACIÓN LEGAL SUELDO BASE (HRA)
 // =====================================================
 agregarResultadoResumen(
-    "Sueldo Base",
-    estadoResumenSueldoBase,
-    diferenciaResumenSueldoBase
+  "Sueldo Base (HRA)",
+  estadoResumenSueldoBase,
+  diferenciaResumenSueldoBase
 );
+
 
     // ----- HORAS EXTRAS 50% -----
     let resultadoHorasExtras = '';
@@ -2303,9 +2228,116 @@ if (btnCalcularManual) {
     });
 }
 
-// ---------- FIN: ANÁLISIS LIQUIDACION ----------
+// ---------- FIN: ANÁLISIS LIQUIDACION HORA----------
 
-// Hacer accesibles desde HTML / otros scripts
-window.preValidarAntesDeAnalizar = preValidarAntesDeAnalizar;
-window.analizarArchivoHora = analizarArchivoHora; 
+// 1) Guardar referencia a la prevalidación ORIGINAL (mensual),
+//    que fue definida en analisisLiquidacion.js
+const preValidarAntesDeAnalizarMensual = window.preValidarAntesDeAnalizar;
+
+// 2) Versión HRA de la prevalidación.
+//    COPIA EXACTA del cuerpo original de preValidarAntesDeAnalizar,
+//    con una sola diferencia en la última línea: llama a analizarArchivoHora().
+async function preValidarAntesDeAnalizarHora() {
+  try {
+    const archivoInput = document.getElementById('fileInput');
+    if (!archivoInput || !archivoInput.files.length) {
+      alert("⚠ Debes seleccionar una liquidación.");
+      return;
+    }
+
+    const archivo = archivoInput.files[0];
+    const arrayBuffer = await archivo.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+    let textoCompleto = "";
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      const strings = content.items.map(item => item.str);
+      textoCompleto += strings.join(" ") + "\n";
+    }
+
+    // ===== EXTRAER FECHA (MISMO REGEX QUE ORIGINAL) =====
+    let fechaDetectada = "Fecha no detectada";
+    const matchFecha = textoCompleto.match(
+      /(ENERO|FEBRERO|MARZO|ABRIL|MAYO|JUNIO|JULIO|AGOSTO|SEPTIEMBRE|OCTUBRE|NOVIEMBRE|DICIEMBRE)\s+DE\s+\d{4}/i
+    );
+    if (matchFecha) {
+      fechaDetectada = matchFecha[0];
+    }
+
+    // ===== EXTRAER NOMBRE Y RUT (MISMO QUE ORIGINAL) =====
+    let nombreDetectado = "Trabajador no identificado";
+    let rutDetectado = "RUT no detectado";
+    const matchTrabajador = textoCompleto.match(
+      /NOMBRE\s+RUT\s+SUELDO\s+BASE\s+([A-ZÁÉÍÓÚÑ\s]+?)\s+(\d{1,2}\.\d{3}\.\d{3}-[\dkK])/i
+    );
+    if (matchTrabajador) {
+      nombreDetectado = matchTrabajador[1]
+        .trim()
+        .replace(/\s+/g, " ");
+      rutDetectado = matchTrabajador[2].trim();
+    }
+
+    // ===== PLAN ACTUAL =====
+    const plan = window.userPlan || "free";
+
+    // ===== JORNADA SELECCIONADA (TEXTO) =====
+    const selectJornada = document.getElementById('jornada');
+    const jornadaTexto = selectJornada &&
+      selectJornada.options[selectJornada.selectedIndex]
+        ? selectJornada.options[selectJornada.selectedIndex].text
+        : "";
+
+    // ===== MODAL DE VALIDACIÓN (MISMA FUNCIÓN ORIGINAL) =====
+    const confirmado = await mostrarModalValidacion({
+      fecha: fechaDetectada,
+      nombre: nombreDetectado,
+      rut: rutDetectado,
+      mostrarNombre: (plan === "pro" || plan === "pro_pending"),
+      jornada: jornadaTexto
+    });
+
+    if (!confirmado) {
+      return;
+    }
+
+    // ===== AQUÍ VIENE LA ÚNICA DIFERENCIA CON LA ORIGINAL =====
+    // En vez de analizarArchivo(), llamamos a la versión por hora:
+    analizarArchivoHora();
+
+  } catch (error) {
+    console.error("❌ Error prevalidando documento (HRA):", error);
+    alert("❌ Error verificando el documento (HRA).");
+  }
+}
+
+// 3) Criterio para considerar “modo HRA”.
+//    Por ahora: solo cuando el valor del select jornada sea exactamente "HORAS".
+function esJornadaPorHoraMEC(jornada) {
+  return jornada === "HORAS";
+}
+
+// 4) Dispatcher que decide: mensual vs HRA
+async function preValidarAntesDeAnalizarDispatcher() {
+  const selectJornada = document.getElementById('jornada');
+  const jornadaSeleccionada = selectJornada ? selectJornada.value : "";
+
+  if (esJornadaPorHoraMEC(jornadaSeleccionada)) {
+    // Ruta por hora (usa el módulo HRA)
+    return preValidarAntesDeAnalizarHora();
+  } else {
+    // Ruta mensual (usa el módulo original, que ya funcionaba bien)
+    return preValidarAntesDeAnalizarMensual();
+  }
+}
+
+// 5) Exponer en window:
+//    - Sobrescribimos la función global con el dispatcher.
+//    - Exponemos la versión HRA explícita.
+//    - Exponemos la función de análisis por hora.
+window.preValidarAntesDeAnalizar = preValidarAntesDeAnalizarDispatcher;
+window.preValidarAntesDeAnalizarHora = preValidarAntesDeAnalizarHora;
+window.analizarArchivoHora = analizarArchivoHora;
 window.mostrarResultadoFreemium = mostrarResultadoFreemium;
+

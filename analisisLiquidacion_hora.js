@@ -1,12 +1,13 @@
 // analisisLiquidacion_hora.js
 // Versión unificada y corregida - Cálculo por HORA (HRA)
-// Se eliminó la dependencia de listaHoraExtra para evitar errores de "factor no encontrado".
+// Se elimina la dependencia del factor de jornada original para evitar errores de búsqueda.
 
 (function () {
     const NS = window.MEC_HORA = window.MEC_HORA || {};
 
+    // ==================== CONFIGURACIÓN ====================
     const TOLERANCIA = 1; 
-    const SEMANAS_POR_MES = 4.33; 
+    const SEMANAS_POR_MES = 4.33; // Factor de conversión legal
 
     const INGRESOS_MINIMOS = {
         2020: { "ENERO": 301000, "FEBRERO": 301000, "MARZO": 301000, "ABRIL": 301000, "MAYO": 301000, "JUNIO": 301000, "JULIO": 320500, "AGOSTO": 320500, "SEPTIEMBRE": 326500, "OCTUBRE": 326500, "NOVIEMBRE": 326500, "DICIEMBRE": 326500 },
@@ -17,6 +18,13 @@
         2025: { "ENERO": 510636, "FEBRERO": 510636, "MARZO": 510636, "ABRIL": 510500, "MAYO": 510500, "JUNIO": 510500, "JULIO": 529000, "AGOSTO": 529000, "SEPTIEMBRE": 529000, "OCTUBRE": 529000, "NOVIEMBRE": 529000, "DICIEMBRE": 529000 },
         2026: { "ENERO": 539000, "FEBRERO": 539000, "MARZO": 539000, "ABRIL": 539000, "MAYO": 553553, "JUNIO": 553553, "JULIO": 553553, "AGOSTO": 553553, "SEPTIEMBRE": 553553, "OCTUBRE": 553553, "NOVIEMBRE": 553553, "DICIEMBRE": 553553 }
     };
+    const LISTA_CARGOS = [
+        "ASESOR DE CLIENTES", "ASESOR DE COMPRAS", "ASESOR DE MARCA", "ASESOR DE MARCA ETAM", 
+        "ASISTENTE DE DISPLAY", "ASISTENTE DE VISUAL", "CAJERA(O) - EMPAQUE", "CONSULTOR DE PERFUMERIA", 
+        "COORDINADORA DE VENTAS", "GUARDIA", "OPERADOR DE CCTV", "TRAINEE TIENDA", 
+        "VENDEDOR JORNADA PARCIAL MAÑANA", "VENDEDOR", "VENDEDOR JORNADA PARCIAL", 
+        "ASISTENTE DE BODEGA", "ASISTENTE DE PROBADORES"
+    ];
 
     const LISTA_COMISIONES = [
         "COM.EFECTIVAS", "COMISION CYD", "CONCURSO FPAY", "COMISION DIGITA Y GANA", "COMISIÓN SEGURO DE VIDA", 
@@ -36,7 +44,6 @@
         "PREMIO VENTA TIENDA", "PREMIO VENTA TIENDA AUT.", "PROMEDIOS VARIOS", "QUIEBRE DE STOCK", "QUINQUENIO", 
         "BONO BRIGADISTA", "VACACIONES PT", "INCENTIVO PRODUC CAJAS AUT"
     ];
-
     function procMonto(txt) {
         if (!txt) return 0;
         return parseFloat(String(txt).replace(/\./g, '').replace(',', '.')) || 0;
@@ -48,12 +55,12 @@
     }
 
     function getIMMmensual(mes, año) {
-        if (!mes || !año) return 0;
-        const m = mes.toUpperCase();
-        return (INGRESOS_MINIMOS[año] && INGRESOS_MINIMOS[año][m]) ? INGRESOS_MINIMOS[año][m] : 0;
+        const m = (mes || "ENERO").toUpperCase();
+        const a = año || new Date().getFullYear();
+        return (INGRESOS_MINIMOS[a] && INGRESOS_MINIMOS[a][m]) ? INGRESOS_MINIMOS[a][m] : 0;
     }
 
-    function obtenerJornadaMaxima(mesStr, añoNum) {
+    function getJornadaMaxima(mesStr, añoNum) {
         const mesesIdx = { ENERO:1, FEBRERO:2, MARZO:3, ABRIL:4, MAYO:5, JUNIO:6, JULIO:7, AGOSTO:8, SEPTIEMBRE:9, OCTUBRE:10, NOVIEMBRE:11, DICIEMBRE:12 };
         const mi = mesesIdx[(mesStr || "ENERO").toUpperCase()] || 1;
         if (añoNum > 2026 || (añoNum === 2026 && mi >= 4)) return 42;
@@ -65,17 +72,17 @@
         window._resumenHora = window._resumenHora || [];
         window._resumenHora.push({ modulo, estado, diferencia });
     }
-
     async function analizarArchivoPorHora_autonomo(texto, jornada) {
         jornada = Number(jornada) || 0;
         if (!texto || jornada <= 0) return null;
 
+        // Detectar S.BASE PART-TIME (HRA) o fallback SUELDO BASE
         const rxHRA = /S\.?BASE\s*PART-?TIME\s*\(HRA\)[^\d\(]*\(?\s*([\d.,]+)\s*\)?[^\$]*\$\s*([\d.]+)/i;
         const mH = texto.match(rxHRA);
         let sueldo = mH ? procMonto(mH[1]) : null;
 
-        const rxSB = /SUELDO\s*BASE.*?\$?\s*([\d\.,]+)/i;
         if (!sueldo) {
+            const rxSB = /SUELDO\s*BASE.*?\$?\s*([\d\.,]+)/i;
             const mSB = texto.match(rxSB);
             if (mSB) sueldo = procMonto(mSB[1]);
         }
@@ -85,25 +92,24 @@
         const rxFecha = /(\b(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\b)\s*de\s*(\d{4})/i;
         const mf = texto.match(rxFecha);
         const mes = mf ? mf[1].toUpperCase() : "ENERO";
-        const año = mf ? parseInt(mf[2]) : (new Date()).getFullYear();
+        const año = mf ? parseInt(mf[2]) : new Date().getFullYear();
 
         const valorHora = sueldo / (jornada * SEMANAS_POR_MES);
-        const jornadaMax = obtenerJornadaMaxima(mes, año);
-        const immPorHora = getIMMmensual(mes, año) / (jornadaMax * SEMANAS_POR_MES);
+        const jMax = getJornadaMaxima(mes, año);
+        const immH = getIMMmensual(mes, año) / (jMax * SEMANAS_POR_MES);
 
-        let estadoS = (valorHora >= immPorHora - TOLERANCIA) ? "ok" : "error";
-        let diffS = Math.round(Math.max(0, immPorHora - valorHora) * (jornada * SEMANAS_POR_MES));
+        let estadoS = (valorHora >= immH - TOLERANCIA) ? "ok" : "error";
+        let diffS = Math.max(0, immH - valorHora) * (jornada * SEMANAS_POR_MES);
 
-        addResumen("Sueldo Base (HRA)", estadoS, diffS);
+        addResumen("Sueldo por hora (HRA)", estadoS, Math.round(diffS));
 
-        return { sueldo, valorHora, immPorHora, estadoS, diffS, mes, año, jornadaMax };
+        return { sueldo, valorHora, immPorHora: immH, estado: estadoS, diff: diffS, mes, año, jornada };
     }
-
-    function calcularHorasExtrasYRecargos(texto, valorHora) {
+    function calcularSobretiempoHRA(texto, valorHora) {
         const r = {};
         const config = [
             { id: 'he50', label: 'Horas Extras 50%', rx: /HORAS\s*EXTRAS\s*50\s*%\s*\(([\d.,]+)\)\s*\$\s*([\d.,]+)/i, m: 1.5 },
-            { id: 'hedom', label: 'Horas Extras Domingo', rx: /HORAS\s*EXTRAS\s*DOMINGO\s*\(([\d.,]+)\)\s*\$\s*([\d.,]+)/i, m: 1.95 },
+            { id: 'hedom', label: 'Horas Extras Domingo', rx: /HORAS\s*EXTRAS\s*DOMINGO\s*\(([\d.,]+)\)\s*\$\s*([\d.,]+)/i, m: 1.3 * 1.5 },
             { id: 'rdom', label: 'Recargo Domingo', rx: /HORAS\s*RECARGO\s*DOMINGO\s*\(([\d.,]+)\)\s*\$\s*([\d.,]+)/i, m: 0.3 }
         ];
 
@@ -123,7 +129,6 @@
         });
         return r;
     }
-
     function calcularVariablesHRA(texto, valorHora, jornada) {
         let totalCom = 0;
         LISTA_COMISIONES.forEach(c => {
@@ -140,30 +145,27 @@
 
         const mG = texto.match(/GRATIFICACION\s*25\s*%.*?\$\s*([\d.,]+)/i);
         const pagG = mG ? procMonto(mG[1]) : 0;
-        const haberBase = (valorHora * jornada * SEMANAS_POR_MES) + totalCom;
-        const espG = Math.round(haberBase * 0.25);
+        const haberG = (valorHora * jornada * SEMANAS_POR_MES) + totalCom;
+        const espG = Math.round(haberG * 0.25);
         addResumen("Gratificación (HRA)", (Math.abs(pagG - espG) < 500) ? "ok" : "warning", Math.abs(pagG - espG));
 
         return { totalCom, pagSem, espSem, pagG, espG };
     }
-
-    function renderResultadosHRA(res, extras, vars) {
+    function renderHRA(res, extras, vars) {
         const cont = document.getElementById('resultadoAnalisis');
         if (!cont) return;
 
         cont.innerHTML = `
-            <div style="border:2px solid #0056b3; padding:15px; border-radius:12px; background:#f9fbff; font-family:Arial">
+            <div style="border:2px solid #0056b3; padding:15px; border-radius:12px; background:#f9fbff; font-family:sans-serif">
                 <h2 style="color:#0056b3; margin-top:0">Resultado Análisis HRA</h2>
                 <p><strong>Valor Hora Contractual:</strong> ${fmtCLP(res.valorHora)}</p>
-                <p><strong>IMM por Hora (Referencia):</strong> ${fmtCLP(res.immPorHora)}</p>
+                <p><strong>IMM por Hora (Ref):</strong> ${fmtCLP(res.immPorHora)}</p>
                 <hr>
-                <h4>Sobretiempo y Recargos</h4>
+                <h4>Sobretiempo</h4>
                 <p>HE 50%: Pagado ${fmtCLP(extras.he50.pagado)} | Esperado ${fmtCLP(extras.he50.esperado)}</p>
-                <p>HE Domingo: Pagado ${fmtCLP(extras.hedom.pagado)} | Esperado ${fmtCLP(extras.hedom.esperado)}</p>
                 <p>Recargo Dom: Pagado ${fmtCLP(extras.rdom.pagado)} | Esperado ${fmtCLP(extras.rdom.esperado)}</p>
                 <hr>
-                <h4>Semana Corrida y Gratificación</h4>
-                <p>S. Corrida: Pagado ${fmtCLP(vars.pagSem)} | Esperado ${fmtCLP(vars.espSem)}</p>
+                <h4>Variables</h4>
                 <p>Gratificación: Pagada ${fmtCLP(vars.pagG)} | Esperada ${fmtCLP(vars.espG)}</p>
             </div>
         `;
@@ -177,7 +179,6 @@
             `).join('');
         }
     }
-
     function hookHRA() {
         const sel = document.getElementById('jornada');
         if (!sel) return;
@@ -190,8 +191,12 @@
             sel.appendChild(opt);
         }
 
-        sel.addEventListener('change', async () => {
+        sel.addEventListener('change', async (e) => {
             if (sel.value !== 'HORA') return;
+            
+            // Fix crítico: Evitamos que el listener original se ejecute y lance el alert del factor
+            e.stopImmediatePropagation();
+
             const fileEl = document.getElementById('fileInput');
             if (!fileEl?.files[0]) { alert("Sube el PDF primero"); sel.value = ""; return; }
 
@@ -200,8 +205,8 @@
 
             try {
                 window._resumenHora = [];
-                const pdfData = await fileEl.files[0].arrayBuffer();
-                const pdf = await window.pdfjsLib.getDocument({ data: pdfData }).promise;
+                const data = await fileEl.files[0].arrayBuffer();
+                const pdf = await window.pdfjsLib.getDocument({ data }).promise;
                 let texto = "";
                 for (let i = 1; i <= pdf.numPages; i++) {
                     const page = await pdf.getPage(i);
@@ -210,16 +215,16 @@
                 }
 
                 const res = await analizarArchivoPorHora_autonomo(texto, jUser);
-                if (!res) { alert("PDF no compatible con HRA o Sueldo Base no encontrado"); return; }
+                if (!res) { alert("PDF no compatible con HRA"); return; }
 
-                const extras = calcularHorasExtrasYRecargos(texto, res.valorHora);
+                const extras = calcularSobretiempoHRA(texto, res.valorHora);
                 const vars = calcularVariablesHRA(texto, res.valorHora, Number(jUser));
-                
-                renderResultadosHRA(res, extras, vars);
-            } catch (e) { console.error("Error en flujo HRA:", e); }
+                renderHRA(res, extras, vars);
+            } catch (err) { console.error("Error HRA:", err); }
         });
     }
 
     setTimeout(hookHRA, 500);
-})(); // FIN
+})();
+
 

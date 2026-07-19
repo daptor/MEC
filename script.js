@@ -2694,4 +2694,4 @@ async function as_admin_eliminarArchivo(idArchivo) {
   alert("Archivo eliminado correctamente.");
 }
 
-// ------------------  22 DE JUNIO TODO CORRECTO  --------------------------
+// ------------------  14 DE julio TODO CORRECTO  --------------------------

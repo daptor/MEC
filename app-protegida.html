@@ -99,16 +99,11 @@
 <button onclick="mostrarPantalla('screen-finiquito')" class="btn-pro-lock">🔐 👋 Cálculo de Finiquito</button>
 <button onclick="mostrarPantalla('pantalla-horas')" class="btn-pro-lock">🔐 ⏳ Cálculo de Horas</button>
 <button onclick="mostrarPantalla('pantalla-recursos')">✅ Recursos Útiles</button>
-
 <button onclick="ingresarAlChat()" id="btnChatMenu" class="btn-chat" type="button">
   <span>📢 Chat Grupal y Privado</span>
-  <span id="badgeChat" class="badge-chat" aria-live="polite">0</span>
-</button>
-
+  <span id="badgeChat" class="badge-chat" aria-live="polite">0</span></button>
 <button onclick="mostrarPantalla('pantalla-archivosindical')" class="btn-pro-lock">
-  🔐 📂 Herramientas Federacion
-</button>
-
+  🔐 📂 Herramientas Federacion</button>
 
 <div id="bloqueUsuario" style="display:flex; flex-direction:column; gap:4px; margin-top:4px;">
   <button id="btnLogout">Cerrar: </button>
@@ -155,13 +150,10 @@
 
     <label for="manualHorasAsesor">Horas trabajadas por el asesor:</label>
     <input type="number" id="manualHorasAsesor" placeholder="Ej: 160">
-
     <label for="manualHorasDepto">Horas totales del departamento:</label>
     <input type="number" id="manualHorasDepto" placeholder="Ej: 450">
-
     <label for="manualVentaTienda">Venta tienda total:</label>
     <input type="number" id="manualVentaTienda" placeholder="Ej: 145000000">
-
     <label for="manualPorcentaje">Porcentaje tienda (decimal):</label>
     <input type="number" step="0.001" id="manualPorcentaje" placeholder="Ej: 0.26">
 
@@ -236,6 +228,7 @@
           <option value="25">25 horas</option>
           <option value="20">20 horas</option>
           <option value="18">18 horas</option>
+          <option value="HORAS">Cálculo por Hora (HRA)</option>
       </select>
       <label for="horas-horasExtras">Horas Extras Realizadas:</label>
       <input type="number" id="horas-horasExtras" placeholder="Ingrese cantidad de horas extras">
@@ -337,7 +330,7 @@
       <li><a href="https://www.dt.gob.cl/legislacion/1624/w3-article-95516.html" target="_blank">Descargar Código del Trabajo</a></li>
       <li><a href="https://www.dt.gob.cl/portal/1626/w3-channel.html" target="_blank">Dirección del Trabajo</a></li>
       <li><a href="https://www.dt.gob.cl/portal/1626/w3-article-99712.html" target="_blank">DT-Organizacion Sindical Base</a></li>
-          <li><a href="https://tramites.dirtrab.cl/ventanillarrll/ingreso2.aspx" target="_blank">DT-Ventanilla Sindical</a></li>
+      <li><a href="https://tramites.dirtrab.cl/ventanillarrll/ingreso2.aspx" target="_blank">DT-Ventanilla Sindical</a></li>
       <li><a href="https://www.dt.gob.cl/portal/1626/w3-propertyname-2556.html" target="_blank">DT-Ley de 40 horas</a></li><hr>
       <li><a href="https://mi3.chileatiende.gob.cl/micha/inicio" target="_blank">Mi Chileatiende</a></li>
       <li><a href="https://nuevo.fonasa.gob.cl/" target="_blank">FONASA</a></li>
@@ -405,9 +398,7 @@
     <!-- Formulario de subida -->
     <div id="as-form-subida" style="margin-bottom: 12px; padding: 10px; border-radius: 8px; background:#f9fafb;">
       <p><strong>Subir nuevo archivo</strong></p>
-
       <input type="file" id="as-file" />
-
       <input
         type="text"
         id="as-nombre"
@@ -494,9 +485,7 @@
     style="display:none;"
 >
     <h1>🧑‍⚖️ Mesa Sindical Digital</h1>
-
     <div class="contenedor-sala-federativa">
-
         <!-- Moderador + código visibles para todos -->
         <p id="msd2-moderador-info"
            style="font-weight:bold; margin-bottom:4px;">
@@ -506,15 +495,14 @@
             Código reunión:
             <span id="msd2-codigo-reunion">---</span>
         </p>
-
         <hr>
 
-        <!-- HABLANDO AHORA: reloj único y grande -->
-<h3>🗣 Hablando ahora</h3>
-<p id="msd2-hablando-nombre"
-   style="font-weight:bold; margin-bottom:6px;">
-    (Nadie está interviniendo)
-</p>
+      <!-- HABLANDO AHORA: reloj único y grande -->
+      <h3>🗣 Hablando ahora</h3>
+      <p id="msd2-hablando-nombre"
+        style="font-weight:bold; margin-bottom:6px;">
+          (Nadie está interviniendo)
+      </p>
 
 <div
     id="msd2-hablando-display"
@@ -864,7 +852,7 @@
     <!-- BLOQUE B: INGRESAR A REUNIÓN (TODOS) -->
     <h2>Ingresar a reunión</h2>
     <p style="font-size:14px; color:#4b5563;">
-        Ingresa el código de la reunión que te envió tu dirigencia (ej: LP14Y4).
+        Ingresa el código de la reunión (ej: LP14Y4).
     </p>
     <input
         type="text"

@@ -612,26 +612,35 @@ if (window.userPlan === "pro") {
     await actualizarContadorAnalisisUI(); // 👈 ACTUALIZA EN TIEMPO REAL
 }
 
-    const archivo = document.getElementById('fileInput').files[0];
-    const jornadaSeleccionada = document.getElementById('jornada').value;
-    const regexMovilizacion = /MOVILIZACION\s*\((\d+)\)\s*\$\s*([\d.,]+)/i;
-    const regexColacion = /COLACION\s*\((\d+)\)\s*\$\s*([\d.,]+)/i;
-    const regexDiferenciaMovilizacion = /DIFERENCIA\s*MOVILIZACION\s*\$\s*([\d.,]+)/i;
-    const regexDiferenciaColacion = /DIFERENCIA\s*COLACION\s*\$\s*([\d.,]+)/i;
-    const regexCaja = /CAJA\s*\((\d+)\)\s*\$\s*([\d.]+)/i;
-    const regexDiferenciaCaja = /DIF(?:ERENCIA)?(?:\s+ASIG\.?)?(?:\s+DE)?\s*CAJA.*?\$\s*([\d\.]+)/i;
+const archivo = document.getElementById('fileInput').files[0];
+const jornadaSeleccionada = document.getElementById('jornada').value;
+const regexMovilizacion = /MOVILIZACION\s*\((\d+)\)\s*\$\s*([\d.,]+)/i;
+const regexColacion = /COLACION\s*\((\d+)\)\s*\$\s*([\d.,]+)/i;
+const regexDiferenciaMovilizacion = /DIFERENCIA\s*MOVILIZACION\s*\$\s*([\d.,]+)/i;
+const regexDiferenciaColacion = /DIFERENCIA\s*COLACION\s*\$\s*([\d.,]+)/i;
+const regexCaja = /CAJA\s*\((\d+)\)\s*\$\s*([\d.]+)/i;
+const regexDiferenciaCaja = /DIF(?:ERENCIA)?(?:\s+ASIG\.?)?(?:\s+DE)?\s*CAJA.*?\$\s*([\d\.]+)/i;
 
-    if (!archivo || !jornadaSeleccionada) {
-      alert('Por favor, selecciona una jornada y un archivo PDF.');
-      return;
-  }
-  
-  const factorObj = listaHoraExtra.find(item => item.horas === jornadaSeleccionada);
-if (!factorObj) {
-    alert('No se encontró el factor de horas extras para esta jornada.');
-    return;
+if (!archivo || !jornadaSeleccionada) {
+  alert('Por favor, selecciona una jornada y un archivo PDF.');
+  return;
 }
-const factor = factorObj.factor;
+
+// Factor de horas extras
+let factor = 0;
+const factorObj = listaHoraExtra.find(item => item.horas === jornadaSeleccionada);
+
+if (factorObj) {
+  // Jornadas normales (45, 44, 30, etc.)
+  factor = factorObj.factor;
+} else if (jornadaSeleccionada === "HORAS") {
+  // Modo HRA: no usamos la tabla de factores por ahora.
+  factor = 0;
+} else {
+  alert('No se encontró el factor de horas extras para esta jornada.');
+  return;
+}
+
 const pdfData = await archivo.arrayBuffer();
 const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
 

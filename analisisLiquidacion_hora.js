@@ -332,7 +332,7 @@ async function analizarArchivoHora() {
             ❌ Horas base inválidas en “S.BASE PART-TIME (HRA)”.
           </span>
         `;
-        agregarResultadoResumenHRA("Sueldo Base (HRA)", "error", 0);
+        agregarResultadoResumenHRA("Sueldo Base Part-time por hora", "error", 0);
       } else {
         valorHoraContractual = montoBasePagadoMes / horasBaseContrato;
 

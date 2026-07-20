@@ -306,7 +306,13 @@ async function analizarArchivoHora() {
     let mensajeLegal = "";
 
     let jornadaMaxima = obtenerJornadaMaximaHRA(mes, año);
-    let valorImmHora = jornadaMaxima > 0 ? (inm / jornadaMaxima) : 0;
+
+    // IMM por hora (misma conversión que usa MEC para valor hora normal)
+    // (IMM/30) * 28 / (4 * jornadaMaxima)
+    let valorImmHora = 0;
+    if (inm > 0 && jornadaMaxima > 0) {
+      valorImmHora = (inm / 30) * 28 / (4 * jornadaMaxima);
+    }
 
     if (!matchBaseHRA) {
       mensajeLegal = `

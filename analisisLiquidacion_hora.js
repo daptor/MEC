@@ -676,7 +676,7 @@ contenedor.innerHTML = `
   <h2>2. Sobretiempo por Hora</h2>
   <p><strong>Horas Extras 50%:</strong> ${resultadoHorasExtras}</p>
   ${estadoHorasExtras === "info" ? "" : `
-    <p style="font-size:13px; color:#374151;">
+    <p>
       <em>Pagado:</em> ${formatCurrencyHRA(montoPagadoHorasExtras)} |
       <em>Esperado:</em> ${formatCurrencyHRA(montoEsperadoHorasExtras)} |
       <em>Horas:</em> ${horasExtrasRealizadas}
@@ -685,7 +685,7 @@ contenedor.innerHTML = `
 
   <p><strong>Horas Extras Domingo:</strong> ${resultadoHorasExtrasDomingo}</p>
   ${estadoHorasExtrasDomingo === "info" ? "" : `
-    <p style="font-size:16px; color:#374151;">
+    <p>
       <em>Pagado:</em> ${formatCurrencyHRA(montoPagadoHorasExtrasDomingo)} |
       <em>Esperado:</em> ${formatCurrencyHRA(montoEsperadoHorasExtrasDomingo)} |
       <em>Horas:</em> ${horasExtrasDomingoRealizadas}
@@ -694,7 +694,7 @@ contenedor.innerHTML = `
 
   <p><strong>Horas Recargo Domingo:</strong> ${resultadoRecargoDomingo}</p>
   ${(estadoRecargoDomingo === "ok" || estadoRecargoDomingo === "error") ? `
-    <p style="font-size:13px; color:#374151;">
+    <p>
       <em>Pagado:</em> ${formatCurrencyHRA(montoPagadoRecargoDomingo)} |
       <em>Esperado:</em> ${formatCurrencyHRA(montoEsperadoRecargoDomingo)} |
       <em>Horas:</em> ${horasRecargoDomingo}
@@ -703,7 +703,7 @@ contenedor.innerHTML = `
 
   <p><strong>Recargo 50% Festivo:</strong> ${resultadoRecargoFestivo}</p>
   ${estadoRecargoFestivo === "info" ? "" : `
-    <p style="font-size:13px; color:#374151;">
+    <p>
       <em>Pagado:</em> ${formatCurrencyHRA(montoPagadoRecargoFestivo)} |
       <em>Esperado:</em> ${formatCurrencyHRA(montoEsperadoRecargoFestivo)} |
       <em>Horas:</em> ${horasRecargoFestivoRealizadas}

@@ -815,8 +815,8 @@ else if (diasPorSemanaEstimados < MIN_DIAS_SEMANA_SC || diasPorSemanaEstimados >
     estadoSemanaCorridaResumen = "ok";
     resultadoSemanaCorrida = `
       <span style="color: green;">
-        ✅ No corresponde semana corrida (HRA) según distribución semanal inferida:
-        <b>${diasPorSemanaEstimados.toFixed(1)} días/semana</b> (fuera de 5–6).
+        ✅ No corresponde pago según distribución semanal:
+        <b>${diasPorSemanaEstimados.toFixed(1)} días/semana</b> (Art. 45 CT).
       </span>
     `;
   }
@@ -944,23 +944,14 @@ contenedor.innerHTML = `
   <p><strong>Total Comisiones:</strong> ${formatCurrencyHRA(totalComisiones)}</p>
   <hr>
 
-  <hr>
-<h2>5. Semana Corrida (HRA)</h2>
+<h2>5. Semana Corrida </h2>
 
-<p><strong>Días trabajados del mes (estimados):</strong> ${diasMesTrabajadosEstimados}</p>
-<p><strong>Días por semana (inferidos):</strong> ${diasPorSemanaEstimados ? diasPorSemanaEstimados.toFixed(1) : "0.0"} días/semana</p>
-
-<p style="font-size:13px; color:#6b7280; margin-top:6px;">
-  <strong>Fórmula inferencia días/semana:</strong>
-  (días trabajados del mes × 7) ÷ 30
-</p>
-
+<p><strong>Días trabajados (mes):</strong> ${diasMesTrabajadosEstimados}</p>
+<p><strong>Días x Semana (Inferidos):</strong> ${diasPorSemanaEstimados ? diasPorSemanaEstimados.toFixed(1) : "0.0"} días/semana</p>
 <p><strong>Semana Corrida en liquidación:</strong>
 ${diasSemanaCorridaPDF != null ? `(${diasSemanaCorridaPDF} días) ${formatCurrencyHRA(montoSemanaCorridaPagado)}` : '⛔ No encontrada en la liquidación (se asume $0).'}
 </p>
-
 <p><strong>Comisiones consideradas:</strong> ${formatCurrencyHRA(totalComisiones)}</p>
-
 <p><strong>Análisis:</strong> ${resultadoSemanaCorrida}</p>
 
 ${(totalComisiones > 0 && diasMesTrabajadosEstimados > 0 && diasSemanaCorridaPDF != null && diasPorSemanaEstimados >= 5 && diasPorSemanaEstimados <= 6) ? `

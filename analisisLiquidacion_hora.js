@@ -572,7 +572,7 @@ contenedor.innerHTML = `
 
   <p><strong>Horas Extras Domingo:</strong> ${resultadoHorasExtrasDomingo}</p>
   ${estadoHorasExtrasDomingo === "info" ? "" : `
-    <p style="font-size:13px; color:#374151;">
+    <p style="font-size:16px; color:#374151;">
       <em>Pagado:</em> ${formatCurrencyHRA(montoPagadoHorasExtrasDomingo)} |
       <em>Esperado:</em> ${formatCurrencyHRA(montoEsperadoHorasExtrasDomingo)} |
       <em>Horas:</em> ${horasExtrasDomingoRealizadas}

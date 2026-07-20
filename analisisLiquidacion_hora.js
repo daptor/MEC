@@ -122,7 +122,7 @@ function generarResumenAnalisisHTMLHRA() {
       background:#fafafa;
     ">
       <h2 style="margin-top:0; margin-bottom:15px;">
-        🚦 Análisis MEC: Sueldo x Hora
+        🚦 Análisis MEC por Hora
       </h2>
       ${resumenHTML}
     </div>

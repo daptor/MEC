@@ -388,7 +388,7 @@ async function analizarArchivoHora() {
       <p><strong>Mes y Año:</strong> ${mes} DE ${año}</p>
       <p><strong>IMM mensual utilizado:</strong> ${inm ? formatCurrencyHRA(inm) : "No encontrado"}</p>
       <p><strong>Jornada máxima legal usada para IMM/hora:</strong> ${jornadaMaxima || "No encontrado"} horas</p>
-      <p style="font-size:13px; color:#6b7280; margin-top:6px;"><strong>Fórmula IMM por hora usada:</strong>
+      <p style="font-size:13px; color:#6b7280; margin-top:6px;"><strong>IMM por hora:</strong>
       (IMM ÷ 30) × 28 ÷ (4 × jornada máxima legal)</p>
       <p><strong>IMM por hora:</strong> ${valorImmHora ? formatCurrencyHRA(valorImmHora) : "No encontrado"}</p>
       <hr>

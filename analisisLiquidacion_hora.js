@@ -385,14 +385,12 @@ async function analizarArchivoHora() {
       </div>
       <hr>
       <p><strong>Mes y Año:</strong> ${mes} DE ${año}</p>
-      <p><strong>Modo:</strong> Cálculo por Hora (HRA)</p>
       <p><strong>IMM mensual utilizado:</strong> ${inm ? formatCurrencyHRA(inm) : "No encontrado"}</p>
       <p><strong>Jornada máxima legal usada para IMM/hora:</strong> ${jornadaMaxima || "No encontrado"} horas</p>
       <p><strong>IMM por hora:</strong> ${valorImmHora ? formatCurrencyHRA(valorImmHora) : "No encontrado"}</p>
       <hr>
 
       <h2>1. Sueldo por hora </h2>
-      <p><strong>Ítem detectado:</strong> S.BASE PART-TIME (HRA)</p>
       <p><strong>Horas base contrato:</strong> ${horasBaseContrato != null ? horasBaseContrato : "No encontrado"}</p>
       <p><strong>Monto base pagado:</strong> ${montoBasePagadoMes != null ? formatCurrencyHRA(montoBasePagadoMes) : "No encontrado"}</p>
       <p><strong>Valor hora contractual:</strong> ${valorHoraContractual != null ? formatCurrencyHRA(valorHoraContractual) : "No encontrado"}</p>

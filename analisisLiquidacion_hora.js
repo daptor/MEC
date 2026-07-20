@@ -321,7 +321,7 @@ async function analizarArchivoHora() {
           <br>Verifica que el PDF incluya ese renglón.
         </span>
       `;
-      agregarResultadoResumenHRA("Sueldo Base (HRA)", "error", 0);
+      agregarResultadoResumenHRA("Sueldo Base Part-time por hora", "error", 0);
     } else {
       horasBaseContrato = parseFloat(String(matchBaseHRA[1]).replace(',', '.'));
       montoBasePagadoMes = procesarMontoHRA(matchBaseHRA[2]);

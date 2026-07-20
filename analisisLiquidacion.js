@@ -57,7 +57,7 @@ const listaGratificables = [
 // 🔎 PREVALIDACIÓN DE DOCUMENTO ANTES DEL ANÁLISIS
 // ======================================================
 
-async function preValidarAntesDeAnalizar() {
+async function preValidarAntesDeAnalizarMensual() {
     try {
         const archivoInput = document.getElementById('fileInput');
         if (!archivoInput || !archivoInput.files.length) {
@@ -155,6 +155,28 @@ async function preValidarAntesDeAnalizar() {
         alert("❌ Error verificando el documento.");
     }
 }
+
+// ============================================================
+// DISPATCHER: mantiene el nombre que usa el botón HTML (-------------NUEVA---------)
+// ============================================================
+function esJornadaPorHora(jornada) {
+  return String(jornada).toUpperCase() === "HRA";
+}
+
+async function preValidarAntesDeAnalizar() {
+  const jornadaSeleccionada = document.getElementById('jornada')?.value || "";
+
+  if (esJornadaPorHora(jornadaSeleccionada)) {
+    if (typeof window.preValidarAntesDeAnalizarHora !== "function") {
+      alert("❌ No está cargado el módulo HRA (preValidarAntesDeAnalizarHora).");
+      return;
+    }
+    return window.preValidarAntesDeAnalizarHora();
+  }
+
+  return preValidarAntesDeAnalizarMensual();
+}
+
 
 // ======================================================
 // 🎨 MODAL VISUAL VALIDACIÓN

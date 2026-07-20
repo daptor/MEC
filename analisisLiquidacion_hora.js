@@ -712,7 +712,7 @@ contenedor.innerHTML = `
 
   <hr>
 
-  <h2>3. Asignaciones (HRA)</h2>
+  <h2>3. Asignaciones </h2>
 
   <p><strong>Movilización:</strong>
   ${matchMovilizacion ? `Días: ${diasMovilizacion} | Monto: ${formatCurrencyHRA(montoMovilizacion)}` : '⛔ No tiene movilización.'}

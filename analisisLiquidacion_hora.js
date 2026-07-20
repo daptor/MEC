@@ -731,11 +731,6 @@ agregarResultadoResumenHRA("Comisiones", estadoComisiones, 0);
 
 // ======================================================
 // BLOQUE 5 — SEMANA CORRIDA (HRA) — CRITERIO POR DÍAS/SEMANA
-// Regla operativa MEC-HRA (según distribución semanal inferida):
-// - Inferimos días por semana desde días trabajados del mes:
-//   diasPorSemana = diasMes * 7 / 30
-// - Solo corresponde semana corrida si 5 ≤ diasPorSemana ≤ 6
-// - Si diasPorSemana < 5 o > 6 => NO corresponde (part-time u otra distribución)
 // ======================================================
 
 // 1) Extraer semana corrida desde PDF (si existe)
@@ -760,16 +755,15 @@ const diasEstCol = Number.isFinite(diasTotalesColacion) ? Math.round(diasTotales
 // Usamos el mayor como aproximación más segura
 const diasMesTrabajadosEstimados = Math.max(diasEstMov, diasEstCol);
 
-// 3) Inferir días por semana (aprox)
-// semanasMes ≈ 30/7 => diasPorSemana = diasMes * 7 / 30
+// 3) Inferir días por semana (aprox): diasPorSemana = diasMes * 7 / 30
 const diasPorSemanaCrudo = diasMesTrabajadosEstimados > 0
   ? (diasMesTrabajadosEstimados * 7) / 30
   : 0;
 
-// ✅ Regla conservadora: para decisión legal usamos “hacia abajo”
+// Criterio legal conservador: redondeo hacia abajo
 const diasPorSemanaLegal = Math.floor(diasPorSemanaCrudo);
 
-// Umbrales (dejados como “config” para futuro)
+// Umbrales
 const MIN_DIAS_SEMANA_SC = 5;
 const MAX_DIAS_SEMANA_SC = 6;
 
@@ -785,58 +779,52 @@ if (!totalComisiones || totalComisiones <= 0) {
   estadoSemanaCorridaResumen = "info";
 }
 
-// B) No podemos inferir días del mes => info/warning
+// B) No podemos inferir días del mes
 else if (!diasMesTrabajadosEstimados || diasMesTrabajadosEstimados <= 0) {
   resultadoSemanaCorrida = `
     <span style="color: orange;">
       ⚠ No se pudieron inferir días trabajados del mes (no hay MOVILIZACIÓN/COLACIÓN con días).
-      <br>No es posible determinar si corresponde semana corrida en HRA.
     </span>
   `;
   estadoSemanaCorridaResumen = "warning";
 }
 
-// C) Distribución semanal fuera de 5–6 => NO corresponde
-  else if (diasPorSemanaLegal < MIN_DIAS_SEMANA_SC || diasPorSemanaLegal > MAX_DIAS_SEMANA_SC) {
+// C) Fuera de 5–6 => NO corresponde
+else if (diasPorSemanaLegal < MIN_DIAS_SEMANA_SC || diasPorSemanaLegal > MAX_DIAS_SEMANA_SC) {
   valorEsperadoSemanaCorrida = 0;
 
   if (montoSemanaCorridaPagado > 0) {
-    // Pagaron semana corrida aunque por criterio no correspondería => revisar
     estadoSemanaCorridaResumen = "warning";
     diferenciaSemanaCorridaResumen = montoSemanaCorridaPagado;
 
     resultadoSemanaCorrida = `
       <span style="color: orange;">
-        ⚠ Según días trabajados estimados del mes (${diasMesTrabajadosEstimados}),
-        la distribución semanal inferida es <b>${diasPorSemanaEstimados.toFixed(1)} días/semana</b>.
-        <br>Al no estar entre ${MIN_DIAS_SEMANA_SC} y ${MAX_DIAS_SEMANA_SC} días/semana, no correspondería semana corrida en este criterio HRA.
+        ⚠ No corresponde semana corrida según distribución semanal (criterio legal: ${diasPorSemanaLegal} días/semana).
         <br>Monto pagado en liquidación: <b>${formatCurrencyHRA(montoSemanaCorridaPagado)}</b>
       </span>
     `;
   } else {
-    // No pagaron y no corresponde => OK
     estadoSemanaCorridaResumen = "ok";
     resultadoSemanaCorrida = `
-      <span style="color: green;">✅ No corresponde pago según distribución semanal:
-      <b>${diasPorSemanaCrudo.toFixed(1)} días/semana (legal: ${diasPorSemanaLegal})</b>
+      <span style="color: green;">
+        ✅ No corresponde semana corrida (criterio legal: ${diasPorSemanaLegal} días/semana).
       </span>
     `;
   }
 }
 
-// D) Distribución semanal dentro de 5–6 => corresponde calcular
+// D) Dentro de 5–6 => corresponde calcular (si está el ítem en PDF)
 else {
-  // Necesitamos días de SC del PDF para calcular
   if (diasSemanaCorridaPDF == null) {
     estadoSemanaCorridaResumen = "warning";
     resultadoSemanaCorrida = `
       <span style="color: orange;">
-        ⚠ Correspondería semana corrida según distribución semanal inferida (${diasPorSemanaEstimados.toFixed(1)} días/semana),
-        pero no se encontró el ítem “SEMANA CORRIDA (x)” en la liquidación para validar el cálculo.
+        ⚠ Correspondería semana corrida (criterio legal: ${diasPorSemanaLegal} días/semana),
+        pero no se encontró el ítem “SEMANA CORRIDA (x)” en la liquidación para validar.
       </span>
     `;
   } else {
-    // Fórmula: (totalComisiones / días trabajados del mes) * (días SC del PDF)
+    // Fórmula: (totalComisiones / días mes trabajados) * (días SC del PDF)
     valorEsperadoSemanaCorrida = (totalComisiones / diasMesTrabajadosEstimados) * diasSemanaCorridaPDF;
     const diferenciaSemanaCorrida = montoSemanaCorridaPagado - valorEsperadoSemanaCorrida;
 
@@ -946,23 +934,26 @@ contenedor.innerHTML = `
   <p><strong>Total Comisiones:</strong> ${formatCurrencyHRA(totalComisiones)}</p>
   <hr>
 
-<h2>5. Semana Corrida </h2>
+<h2>5. Semana Corrida</h2>
 
 <p><strong>Días trabajados (mes):</strong> ${diasMesTrabajadosEstimados}</p>
 <p><strong>Días x semana (inferidos):</strong> ${diasPorSemanaCrudo ? diasPorSemanaCrudo.toFixed(1) : "0.0"} días/semana</p>
 <p><strong>Días x semana (criterio legal):</strong> ${diasPorSemanaLegal}</p>
+
 <p><strong>Semana Corrida en liquidación:</strong>
 ${diasSemanaCorridaPDF != null ? `(${diasSemanaCorridaPDF} días) ${formatCurrencyHRA(montoSemanaCorridaPagado)}` : '⛔ No encontrada en la liquidación (se asume $0).'}
 </p>
+
 <p><strong>Comisiones consideradas:</strong> ${formatCurrencyHRA(totalComisiones)}</p>
 <p><strong>Análisis:</strong> ${resultadoSemanaCorrida}</p>
 
-${(totalComisiones > 0 && diasMesTrabajadosEstimados > 0 && diasSemanaCorridaPDF != null && diasPorSemanaEstimados >= 5 && diasPorSemanaEstimados <= 6) ? `
+${(totalComisiones > 0 && diasMesTrabajadosEstimados > 0 && diasSemanaCorridaPDF != null && diasPorSemanaLegal >= 5 && diasPorSemanaLegal <= 6) ? `
   <p style="font-size:13px; color:#374151;">
     Fórmula usada: (${formatCurrencyHRA(totalComisiones)} ÷ ${diasMesTrabajadosEstimados}) × ${diasSemanaCorridaPDF}
     = ${formatCurrencyHRA(valorEsperadoSemanaCorrida)}
   </p>
 ` : ''}
+
 
 
   <p style="font-size:13px; color:#6b7280;">

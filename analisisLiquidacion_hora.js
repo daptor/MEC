@@ -762,9 +762,12 @@ const diasMesTrabajadosEstimados = Math.max(diasEstMov, diasEstCol);
 
 // 3) Inferir días por semana (aprox)
 // semanasMes ≈ 30/7 => diasPorSemana = diasMes * 7 / 30
-const diasPorSemanaEstimados = diasMesTrabajadosEstimados > 0
+const diasPorSemanaCrudo = diasMesTrabajadosEstimados > 0
   ? (diasMesTrabajadosEstimados * 7) / 30
   : 0;
+
+// ✅ Regla conservadora: para decisión legal usamos “hacia abajo”
+const diasPorSemanaLegal = Math.floor(diasPorSemanaCrudo);
 
 // Umbrales (dejados como “config” para futuro)
 const MIN_DIAS_SEMANA_SC = 5;
@@ -794,7 +797,7 @@ else if (!diasMesTrabajadosEstimados || diasMesTrabajadosEstimados <= 0) {
 }
 
 // C) Distribución semanal fuera de 5–6 => NO corresponde
-else if (diasPorSemanaEstimados < MIN_DIAS_SEMANA_SC || diasPorSemanaEstimados > MAX_DIAS_SEMANA_SC) {
+  else if (diasPorSemanaLegal < MIN_DIAS_SEMANA_SC || diasPorSemanaLegal > MAX_DIAS_SEMANA_SC) {
   valorEsperadoSemanaCorrida = 0;
 
   if (montoSemanaCorridaPagado > 0) {
@@ -814,9 +817,8 @@ else if (diasPorSemanaEstimados < MIN_DIAS_SEMANA_SC || diasPorSemanaEstimados >
     // No pagaron y no corresponde => OK
     estadoSemanaCorridaResumen = "ok";
     resultadoSemanaCorrida = `
-      <span style="color: green;">
-        ✅ No corresponde pago según distribución semanal:
-        <b>${diasPorSemanaEstimados.toFixed(1)} días/semana</b> (Art. 45 CT).
+      <span style="color: green;">✅ No corresponde pago según distribución semanal:
+      <b>${diasPorSemanaCrudo.toFixed(1)} días/semana (legal: ${diasPorSemanaLegal})</b>
       </span>
     `;
   }
@@ -947,7 +949,8 @@ contenedor.innerHTML = `
 <h2>5. Semana Corrida </h2>
 
 <p><strong>Días trabajados (mes):</strong> ${diasMesTrabajadosEstimados}</p>
-<p><strong>Días x Semana (Inferidos):</strong> ${diasPorSemanaEstimados ? diasPorSemanaEstimados.toFixed(1) : "0.0"} días/semana</p>
+<p><strong>Días x semana (inferidos):</strong> ${diasPorSemanaCrudo ? diasPorSemanaCrudo.toFixed(1) : "0.0"} días/semana</p>
+<p><strong>Días x semana (criterio legal):</strong> ${diasPorSemanaLegal}</p>
 <p><strong>Semana Corrida en liquidación:</strong>
 ${diasSemanaCorridaPDF != null ? `(${diasSemanaCorridaPDF} días) ${formatCurrencyHRA(montoSemanaCorridaPagado)}` : '⛔ No encontrada en la liquidación (se asume $0).'}
 </p>

@@ -373,6 +373,168 @@ async function analizarArchivoHora() {
       }
     }
 
+    // ======================================================
+    // BLOQUE 2 — SOBRETIEMPO (HRA)
+    // Usa como hora normal: valorHoraContractual
+    // ======================================================
+    let resultadoHorasExtras = '';
+    let estadoHorasExtras = "info";
+    let diferenciaHorasExtras = 0;
+    let horasExtrasRealizadas = null;
+    let montoPagadoHorasExtras = null;
+    let montoEsperadoHorasExtras = null;
+
+    // HORAS EXTRAS 50% (ej: HORAS EXTRAS 50 % (1.5) $ 12.345)
+    const regexHorasExtras = /HORAS\s*EXTRAS\s*50\s*%\s*\(([\d.,]+)\)\s*\$\s*([\d\.,]+)/i;
+    const matchHorasExtras = textoCompleto.match(regexHorasExtras);
+
+    if (matchHorasExtras) {
+      horasExtrasRealizadas = parseFloat(String(matchHorasExtras[1]).replace(',', '.'));
+      montoPagadoHorasExtras = procesarMontoHRA(matchHorasExtras[2]);
+
+      montoEsperadoHorasExtras = valorHoraContractual * 1.5 * horasExtrasRealizadas;
+      diferenciaHorasExtras = montoPagadoHorasExtras - montoEsperadoHorasExtras;
+
+      if (Math.abs(diferenciaHorasExtras) < 1) {
+        estadoHorasExtras = "ok";
+        resultadoHorasExtras = `<span style="color: green;">✅ Cálculo correcto</span>`;
+      } else {
+        estadoHorasExtras = "error";
+        resultadoHorasExtras = `<span style="color: red;">❌ Discrepancia detectada: ${formatearCLPHRA(diferenciaHorasExtras)}</span>`;
+      }
+    } else {
+      estadoHorasExtras = "info";
+      resultadoHorasExtras = `<span style="color: orange;">⛔ No se realizaron.</span>`;
+    }
+
+    // HORAS EXTRAS DOMINGO (ej: HORAS EXTRAS DOMINGO (.18) $ 849)
+    let resultadoHorasExtrasDomingo = '';
+    let estadoHorasExtrasDomingo = "info";
+    let diferenciaHorasExtrasDomingo = 0;
+    let horasExtrasDomingoRealizadas = null;
+    let montoPagadoHorasExtrasDomingo = null;
+    let montoEsperadoHorasExtrasDomingo = null;
+
+    const regexHorasExtrasDomingo = /HORAS\s*EXTRAS\s*DOMINGO\s*\(([\d.,]+)\)\s*\$\s*([\d\.,]+)/i;
+    const matchHorasExtrasDomingo = textoCompleto.match(regexHorasExtrasDomingo);
+
+    if (matchHorasExtrasDomingo) {
+      horasExtrasDomingoRealizadas = parseFloat(String(matchHorasExtrasDomingo[1]).replace(',', '.'));
+      montoPagadoHorasExtrasDomingo = procesarMontoHRA(matchHorasExtrasDomingo[2]);
+
+      // Manteniendo lógica MEC: domingo recargo 30% y extra 50% => 1.3 * 1.5
+      montoEsperadoHorasExtrasDomingo = valorHoraContractual * 1.3 * 1.5 * horasExtrasDomingoRealizadas;
+      diferenciaHorasExtrasDomingo = montoPagadoHorasExtrasDomingo - montoEsperadoHorasExtrasDomingo;
+
+      if (Math.abs(diferenciaHorasExtrasDomingo) < 1) {
+        estadoHorasExtrasDomingo = "ok";
+        resultadoHorasExtrasDomingo = `<span style="color: green;">✅ Cálculo correcto</span>`;
+      } else {
+        estadoHorasExtrasDomingo = "error";
+        resultadoHorasExtrasDomingo = `<span style="color: red;">❌ Discrepancia detectada: ${formatearCLPHRA(diferenciaHorasExtrasDomingo)}</span>`;
+      }
+    } else {
+      estadoHorasExtrasDomingo = "info";
+      resultadoHorasExtrasDomingo = `<span style="color: orange;">⛔ No se realizaron.</span>`;
+    }
+
+    // HORAS RECARGO DOMINGO (mixto: con horas o sin horas)
+    let resultadoRecargoDomingo = '';
+    let estadoRecargoDomingo = "info";
+    let diferenciaRecargoDomingo = 0;
+    let horasRecargoDomingo = null;
+    let montoPagadoRecargoDomingo = null;
+    let montoEsperadoRecargoDomingo = null;
+
+    // con horas: HORAS RECARGO DOMINGO (x.xx) $ 15.050
+    const regexRecargoDomingoConHoras = /HORAS\s*RECARGO\s*DOMINGO\s*\(([\d.,]+)\)\s*\$\s*([\d\.,]+)/i;
+    const matchRecargoConHoras = textoCompleto.match(regexRecargoDomingoConHoras);
+
+    if (matchRecargoConHoras) {
+      horasRecargoDomingo = parseFloat(String(matchRecargoConHoras[1]).replace(',', '.'));
+      montoPagadoRecargoDomingo = procesarMontoHRA(matchRecargoConHoras[2]);
+
+      montoEsperadoRecargoDomingo = valorHoraContractual * 0.3 * horasRecargoDomingo;
+      diferenciaRecargoDomingo = montoPagadoRecargoDomingo - montoEsperadoRecargoDomingo;
+
+      if (Math.abs(diferenciaRecargoDomingo) < 1) {
+        estadoRecargoDomingo = "ok";
+        resultadoRecargoDomingo = `<span style="color: green;">✅ Cálculo correcto</span>`;
+      } else {
+        estadoRecargoDomingo = "error";
+        resultadoRecargoDomingo = `<span style="color: red;">❌ Discrepancia detectada: ${formatearCLPHRA(diferenciaRecargoDomingo)}</span>`;
+      }
+    } else {
+      // sin horas: HORAS RECARGO DOMINGO $ 15.050
+      const regexRecargoDomingoSinHoras = /HORAS\s*RECARGO\s*DOMINGO.*?\$\s*([\d\.,]+)/i;
+      const matchRecargoSinHoras = textoCompleto.match(regexRecargoDomingoSinHoras);
+
+      if (matchRecargoSinHoras) {
+        montoPagadoRecargoDomingo = procesarMontoHRA(matchRecargoSinHoras[1]);
+        estadoRecargoDomingo = "warning";
+        resultadoRecargoDomingo = `<span style="color: orange;">⚠ Falta el tiempo realizado (horas). No se puede validar el cálculo.</span>`;
+      } else {
+        estadoRecargoDomingo = "info";
+        resultadoRecargoDomingo = `<span style="color: orange;">⛔ No se realizaron.</span>`;
+      }
+    }
+
+    // RECARGO 50% FESTIVO (ej: RECARGO 50% FESTIVO (x.xx) $ monto)
+    let resultadoRecargoFestivo = '';
+    let estadoRecargoFestivo = "info";
+    let diferenciaRecargoFestivo = 0;
+    let horasRecargoFestivoRealizadas = null;
+    let montoPagadoRecargoFestivo = null;
+    let montoEsperadoRecargoFestivo = null;
+
+    const regexRecargoFestivo = /RECARGO\s*50%\s*FESTIVO\s*\(([\d.,]+)\)\s*\$\s*([\d\.,]+)/i;
+    const matchRecargoFestivo = textoCompleto.match(regexRecargoFestivo);
+
+    if (matchRecargoFestivo) {
+      horasRecargoFestivoRealizadas = parseFloat(String(matchRecargoFestivo[1]).replace(',', '.'));
+      montoPagadoRecargoFestivo = procesarMontoHRA(matchRecargoFestivo[2]);
+
+      // Manteniendo lógica MEC: recargo festivo 50% => 1.5
+      montoEsperadoRecargoFestivo = valorHoraContractual * 1.5 * horasRecargoFestivoRealizadas;
+      diferenciaRecargoFestivo = montoPagadoRecargoFestivo - montoEsperadoRecargoFestivo;
+
+      if (Math.abs(diferenciaRecargoFestivo) < 1) {
+        estadoRecargoFestivo = "ok";
+        resultadoRecargoFestivo = `<span style="color: green;">✅ Cálculo correcto</span>`;
+      } else {
+        estadoRecargoFestivo = "error";
+        resultadoRecargoFestivo = `<span style="color: red;">❌ Discrepancia detectada: ${formatearCLPHRA(diferenciaRecargoFestivo)}</span>`;
+      }
+    } else {
+      estadoRecargoFestivo = "info";
+      resultadoRecargoFestivo = `<span style="color: orange;">⛔ No se realizaron.</span>`;
+    }
+
+    // ======================================================
+    // RESUMEN BLOQUE 2: "Sobretiempo"
+    // ======================================================
+    const estadosSobretiempo = [
+      estadoHorasExtras,
+      estadoHorasExtrasDomingo,
+      estadoRecargoDomingo,
+      estadoRecargoFestivo
+    ];
+
+    let estadoSobretiempo = "ok";
+    if (estadosSobretiempo.includes("error")) estadoSobretiempo = "error";
+    else if (estadosSobretiempo.includes("warning")) estadoSobretiempo = "warning";
+    else if (estadosSobretiempo.every(e => e === "info")) estadoSobretiempo = "info";
+
+    const diferenciaTotalSobretiempo = [
+      diferenciaHorasExtras,
+      diferenciaHorasExtrasDomingo,
+      diferenciaRecargoDomingo,
+      diferenciaRecargoFestivo
+    ].reduce((acc, val) => acc + Math.abs(val || 0), 0);
+
+    agregarResultadoResumenHRA("Sobretiempo", estadoSobretiempo, diferenciaTotalSobretiempo);
+
+  
     // HTML final (por ahora solo Bloque 1 + resumen)
     const contenedor = document.getElementById('resultadoAnalisis');
     if (!contenedor) {
@@ -380,29 +542,69 @@ async function analizarArchivoHora() {
       return;
     }
 
-    contenedor.innerHTML = `
-      <div id="resumenMecContainer">
-        ${generarResumenAnalisisHTMLHRA()}
-      </div>
-      <hr>
-      <p><strong>Mes y Año:</strong> ${mes} DE ${año}</p>
-      <p><strong>IMM mensual utilizado:</strong> ${inm ? formatCurrencyHRA(inm) : "No encontrado"}</p>
-      <p><strong>Jornada máxima legal usada para IMM/hora:</strong> ${jornadaMaxima || "No encontrado"} horas</p>
-      <p><strong>IMM por hora:</strong> (IMM ÷ 30) × 28 ÷ (4 × jornada máxima legal)</p>
-      <p><strong>IMM por hora:</strong> ${valorImmHora ? formatCurrencyHRA(valorImmHora) : "No encontrado"}</p>
-      <hr>
+contenedor.innerHTML = `
+  <div id="resumenMecContainer">
+    ${generarResumenAnalisisHTMLHRA()}
+  </div>
 
-      <h2>1. Sueldo por hora </h2>
-      <p><strong>Horas base contrato:</strong> ${horasBaseContrato != null ? horasBaseContrato : "No encontrado"}</p>
-      <p><strong>Monto base pagado:</strong> ${montoBasePagadoMes != null ? formatCurrencyHRA(montoBasePagadoMes) : "No encontrado"}</p>
-      <p><strong>Valor hora contractual:</strong> ${valorHoraContractual != null ? formatCurrencyHRA(valorHoraContractual) : "No encontrado"}</p>
-      <p><strong>Análisis legal:</strong> ${mensajeLegal}</p>
-      <hr>
+  <hr>
+  <p><strong>Mes y Año:</strong> ${mes} DE ${año}</p>
+  <p><strong>IMM mensual utilizado:</strong> ${inm ? formatCurrencyHRA(inm) : "No encontrado"}</p>
+  <p><strong>Jornada máxima legal usada para IMM/hora:</strong> ${jornadaMaxima || "No encontrado"} horas</p>
+  <p><strong>IMM por hora:</strong> ${valorImmHora ? formatCurrencyHRA(valorImmHora) : "No encontrado"}</p>
+  <p><strong>Fórmula IMM por hora:</strong>(IMM ÷ 30) × 28 ÷ (4 × jornada máxima legal)</p>
+  <hr>
+  <h2>1. Sueldo por Hora</h2>
+  <p><strong>Horas base contrato:</strong> ${horasBaseContrato != null ? horasBaseContrato : "No encontrado"}</p>
+  <p><strong>Monto base pagado:</strong> ${montoBasePagadoMes != null ? formatCurrencyHRA(montoBasePagadoMes) : "No encontrado"}</p>
+  <p><strong>Valor hora contractual:</strong> ${valorHoraContractual != null ? formatCurrencyHRA(valorHoraContractual) : "No encontrado"}</p>
+  <p><strong>Análisis legal:</strong> ${mensajeLegal}</p>
+  <hr>
+  <h2>2. Sobretiempo (HRA)</h2>
+  <p><strong>Horas Extras 50%:</strong> ${resultadoHorasExtras}</p>
+  ${estadoHorasExtras === "info" ? "" : `
+    <p style="font-size:13px; color:#374151;">
+      <em>Pagado:</em> ${formatCurrencyHRA(montoPagadoHorasExtras)} |
+      <em>Esperado:</em> ${formatCurrencyHRA(montoEsperadoHorasExtras)} |
+      <em>Horas:</em> ${horasExtrasRealizadas}
+    </p>
+  `}
 
-      <p style="font-size:13px; color:#6b7280;">
-        Nota: Este es el primer bloque del análisis HRA. Luego integraremos sobretiempo, asignaciones, semana corrida y gratificación.
-      </p>
-    `;
+  <p><strong>Horas Extras Domingo:</strong> ${resultadoHorasExtrasDomingo}</p>
+  ${estadoHorasExtrasDomingo === "info" ? "" : `
+    <p style="font-size:13px; color:#374151;">
+      <em>Pagado:</em> ${formatCurrencyHRA(montoPagadoHorasExtrasDomingo)} |
+      <em>Esperado:</em> ${formatCurrencyHRA(montoEsperadoHorasExtrasDomingo)} |
+      <em>Horas:</em> ${horasExtrasDomingoRealizadas}
+    </p>
+  `}
+
+  <p><strong>Horas Recargo Domingo:</strong> ${resultadoRecargoDomingo}</p>
+  ${(estadoRecargoDomingo === "ok" || estadoRecargoDomingo === "error") ? `
+    <p style="font-size:13px; color:#374151;">
+      <em>Pagado:</em> ${formatCurrencyHRA(montoPagadoRecargoDomingo)} |
+      <em>Esperado:</em> ${formatCurrencyHRA(montoEsperadoRecargoDomingo)} |
+      <em>Horas:</em> ${horasRecargoDomingo}
+    </p>
+  ` : ""}
+
+  <p><strong>Recargo 50% Festivo:</strong> ${resultadoRecargoFestivo}</p>
+  ${estadoRecargoFestivo === "info" ? "" : `
+    <p style="font-size:13px; color:#374151;">
+      <em>Pagado:</em> ${formatCurrencyHRA(montoPagadoRecargoFestivo)} |
+      <em>Esperado:</em> ${formatCurrencyHRA(montoEsperadoRecargoFestivo)} |
+      <em>Horas:</em> ${horasRecargoFestivoRealizadas}
+    </p>
+  `}
+
+  <hr>
+
+  <p style="font-size:13px; color:#6b7280;">
+    Nota: Ya están implementados Bloque 1 (Sueldo HRA) y Bloque 2 (Sobretiempo).
+    Luego integraremos asignaciones, comisiones, semana corrida y gratificación.
+  </p>
+`;
+
 
   } catch (error) {
     console.error("❌ Error en analizarArchivoHora():", error);

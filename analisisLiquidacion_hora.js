@@ -761,7 +761,17 @@ const diasPorSemanaCrudo = diasMesTrabajadosEstimados > 0
   : 0;
 
 // Criterio legal conservador: redondeo hacia abajo
-const diasPorSemanaLegal = Math.floor(diasPorSemanaCrudo);
+function redondeoLegalDiasSemana(valor) {
+  if (!valor || valor <= 0) return 0;
+
+  // regla especial: entre 1.5 y <2 => 2 días
+  if (valor >= 1.5 && valor < 2) return 2;
+
+  // para el resto: conservador hacia abajo
+  return Math.floor(valor);
+}
+
+const diasPorSemanaLegal = redondeoLegalDiasSemana(diasPorSemanaCrudo);
 
 // Umbrales
 const MIN_DIAS_SEMANA_SC = 5;

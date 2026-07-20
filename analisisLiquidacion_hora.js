@@ -15,6 +15,16 @@ const ingresosMinimosHRA = {
   2026: { "ENERO": 539000, "FEBRERO": 539000, "MARZO": 539000, "ABRIL": 539000, "MAYO": 553553, "JUNIO": 553553, "JULIO": 553553, "AGOSTO": 553553, "SEPTIEMBRE": 553553, "OCTUBRE": 553553, "NOVIEMBRE": 553553, "DICIEMBRE": 553553 }
 };
 
+// ==================== LISTA COMISIONES (HRA) ====================
+// Copiada desde analisisLiquidacion.js para independencia
+const listaComisionHRA = [
+    "COM.EFECTIVAS", "COMISION CYD", "CONCURSO FPAY", "COMISION DIGITA Y GANA","COMISIÓN SEGURO DE VIDA",
+    "COMI. KIOSCO OTRAS EMPRESAS", "APERTURA CTA CTE", "ESCANEA Y PAGA", "DIF. ESCANEA Y PAGA","INCENTIVO SELF CHECK OUT AUT",
+    "COMPENSACION PERMISO", "DIF CONCURSO FPAY", "PROMOCIONES CMR", "COMISION CONNECT", "DIF. COMISIONES",
+    "INCENTIVO PRODUC CAJAS AUT","AVANCE CMR","DIF. INCENTI PRODUCT CAJAS"
+];
+
+
 // ==================== HELPERS ====================
 const formatCurrencyHRA = (value) =>
   new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(value);
@@ -542,7 +552,7 @@ async function analizarArchivoHora() {
       return;
     }
 
-    // ======================================================
+// ======================================================
 // BLOQUE 3 — ASIGNACIONES (HRA)
 // (copiado del mensual, misma lógica)
 // ======================================================
@@ -654,6 +664,71 @@ if (
 
 agregarResultadoResumenHRA("Asignaciones", estadoAsignaciones, 0);
 
+// ======================================================
+// BLOQUE 4 — COMISIONES (HRA)
+// (copiado desde mensual, misma lógica)
+// ======================================================
+let totalComisiones = 0;
+const detallesComisiones = [];
+
+// Separación especial (igual que mensual)
+const comisionesSeparadas = {
+  "CONCURSO FPAY": 0,
+  "DIF CONCURSO FPAY": 0
+};
+
+listaComisionHRA.forEach(comision => {
+  const safe = comision.replace('.', '\\.');
+  const regex = new RegExp(
+    `${safe}(?:\\s|\\S)*?\\$\\s*((?:\\d{1,3}\\.){0,2}\\d{1,3}(?:,\\d{1,2})?)`,
+    'gi'
+  );
+
+  const matches = [...textoCompleto.matchAll(regex)];
+  matches.forEach(match => {
+    const monto = procesarMontoHRA(match[1]);
+
+    if (comision === "CONCURSO FPAY") {
+      comisionesSeparadas["CONCURSO FPAY"] = monto;
+    } else if (comision === "DIF CONCURSO FPAY") {
+      comisionesSeparadas["DIF CONCURSO FPAY"] = monto;
+    } else {
+      totalComisiones += monto;
+      detallesComisiones.push({ item: comision, monto });
+    }
+  });
+});
+
+// Agregar separadas al final (igual que mensual)
+if (comisionesSeparadas["CONCURSO FPAY"] > 0) {
+  detallesComisiones.push({ item: "CONCURSO FPAY", monto: comisionesSeparadas["CONCURSO FPAY"] });
+  totalComisiones += comisionesSeparadas["CONCURSO FPAY"];
+}
+if (comisionesSeparadas["DIF CONCURSO FPAY"] > 0) {
+  detallesComisiones.push({ item: "DIF CONCURSO FPAY", monto: comisionesSeparadas["DIF CONCURSO FPAY"] });
+  totalComisiones += comisionesSeparadas["DIF CONCURSO FPAY"];
+}
+
+// HTML detalle
+let detalleComisionesHTML = detallesComisiones
+  .map(c => `<li>${c.item}: ${formatCurrencyHRA(c.monto)}</li>`)
+  .join('');
+
+if (detallesComisiones.length === 0) {
+  detalleComisionesHTML = '⛔ No tiene comisiones individuales.';
+}
+
+// ======================================================
+// RESUMEN COMISIONES
+// ======================================================
+let estadoComisiones = "ok";
+if (detallesComisiones.length === 0 && totalComisiones === 0) {
+  estadoComisiones = "info";
+} else if (detallesComisiones.length > 0 && totalComisiones === 0) {
+  estadoComisiones = "warning";
+}
+agregarResultadoResumenHRA("Comisiones", estadoComisiones, 0);
+
 
 contenedor.innerHTML = `
   <div id="resumenMecContainer">
@@ -732,6 +807,12 @@ contenedor.innerHTML = `
   ${montoDiferenciaCaja > 0 ? `<p><strong>Dif. Caja:</strong> ${formatCurrencyHRA(montoDiferenciaCaja)}</p>` : ''}
   ${matchCaja ? `<p><strong>Días Totales Caja:</strong> ${Math.round(diasTotalesCaja)}</p>` : ''}
  
+  <hr>
+  <h2>4. Comisiones</h2>
+  <ul>
+    ${detalleComisionesHTML}
+  </ul>
+  <p><strong>Total Comisiones:</strong> ${formatCurrencyHRA(totalComisiones)}</p>
   <hr>
 
   <p style="font-size:13px; color:#6b7280;">

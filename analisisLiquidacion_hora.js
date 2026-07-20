@@ -665,7 +665,7 @@ contenedor.innerHTML = `
   <p><strong>IMM mensual utilizado:</strong> ${inm ? formatCurrencyHRA(inm) : "No encontrado"}</p>
   <p><strong>Jornada máxima legal usada para IMM/hora:</strong> ${jornadaMaxima || "No encontrado"} horas</p>
   <p><strong>IMM por hora:</strong> ${valorImmHora ? formatCurrencyHRA(valorImmHora) : "No encontrado"}</p>
-  <p><strong>Fórmula IMM por hora:</strong>(IMM ÷ 30) × 28 ÷ (4 × jornada máxima legal)</p>
+  <p><strong>IMM por hora:</strong>(IMM ÷ 30) × 28 ÷ (4 × jornada máxima legal)</p>
   <hr>
   <h2>1. Sueldo por Hora</h2>
   <p><strong>Horas base contrato:</strong> ${horasBaseContrato != null ? horasBaseContrato : "No encontrado"}</p>
@@ -673,7 +673,7 @@ contenedor.innerHTML = `
   <p><strong>Valor hora contractual:</strong> ${valorHoraContractual != null ? formatCurrencyHRA(valorHoraContractual) : "No encontrado"}</p>
   <p><strong>Análisis legal:</strong> ${mensajeLegal}</p>
   <hr>
-  <h2>2. Sobretiempo (HRA)</h2>
+  <h2>2. Sobretiempo por Hora</h2>
   <p><strong>Horas Extras 50%:</strong> ${resultadoHorasExtras}</p>
   ${estadoHorasExtras === "info" ? "" : `
     <p style="font-size:13px; color:#374151;">

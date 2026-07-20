@@ -542,6 +542,119 @@ async function analizarArchivoHora() {
       return;
     }
 
+    // ======================================================
+// BLOQUE 3 — ASIGNACIONES (HRA)
+// (copiado del mensual, misma lógica)
+// ======================================================
+const regexMovilizacion = /MOVILIZACION\s*\((\d+)\)\s*\$\s*([\d.,]+)/i;
+const regexColacion = /COLACION\s*\((\d+)\)\s*\$\s*([\d.,]+)/i;
+const regexDiferenciaMovilizacion = /DIFERENCIA\s*MOVILIZACION\s*\$\s*([\d.,]+)/i;
+const regexDiferenciaColacion = /DIFERENCIA\s*COLACION\s*\$\s*([\d.,]+)/i;
+
+const regexCaja = /CAJA\s*\((\d+)\)\s*\$\s*([\d.]+)/i;
+const regexDiferenciaCaja = /DIF(?:ERENCIA)?(?:\s+ASIG\.?)?(?:\s+DE)?\s*CAJA.*?\$\s*([\d\.]+)/i;
+
+// -------- MOVILIZACIÓN --------
+const matchMovilizacion = textoCompleto.match(regexMovilizacion);
+let diasMovilizacion = 0;
+let montoMovilizacion = 0;
+let valorDiaMovilizacion = 0;
+
+if (matchMovilizacion) {
+  diasMovilizacion = parseInt(matchMovilizacion[1], 10);
+  montoMovilizacion = procesarMontoHRA(matchMovilizacion[2]);
+  if (diasMovilizacion > 0) valorDiaMovilizacion = montoMovilizacion / diasMovilizacion;
+}
+
+const matchDiferenciaMovilizacion = textoCompleto.match(regexDiferenciaMovilizacion);
+let montoDiferenciaMovilizacion = 0;
+let diasDiferenciaMovilizacion = 0;
+let diasTotalesMovilizacion = diasMovilizacion;
+
+if (matchDiferenciaMovilizacion) {
+  montoDiferenciaMovilizacion = procesarMontoHRA(matchDiferenciaMovilizacion[1]);
+  if (valorDiaMovilizacion > 0) {
+    diasDiferenciaMovilizacion = montoDiferenciaMovilizacion / valorDiaMovilizacion;
+    diasTotalesMovilizacion += diasDiferenciaMovilizacion;
+  }
+}
+
+// -------- COLACIÓN --------
+const matchColacion = textoCompleto.match(regexColacion);
+let diasColacion = 0;
+let montoColacion = 0;
+let valorDiaColacion = 0;
+
+if (matchColacion) {
+  diasColacion = parseInt(matchColacion[1], 10);
+  montoColacion = procesarMontoHRA(matchColacion[2]);
+  if (diasColacion > 0) valorDiaColacion = montoColacion / diasColacion;
+}
+
+const matchDiferenciaColacion = textoCompleto.match(regexDiferenciaColacion);
+let montoDiferenciaColacion = 0;
+let diasDiferenciaColacion = 0;
+let diasTotalesColacion = diasColacion;
+
+if (matchDiferenciaColacion) {
+  montoDiferenciaColacion = procesarMontoHRA(matchDiferenciaColacion[1]);
+  if (valorDiaColacion > 0) {
+    diasDiferenciaColacion = montoDiferenciaColacion / valorDiaColacion;
+    diasTotalesColacion += diasDiferenciaColacion;
+  }
+}
+
+// -------- CAJA --------
+const matchCaja = textoCompleto.match(regexCaja);
+let diasCaja = 0;
+let montoCaja = 0;
+let valorDiaCaja = 0;
+
+if (matchCaja) {
+  diasCaja = parseInt(matchCaja[1], 10);
+  montoCaja = procesarMontoHRA(matchCaja[2]);
+  if (diasCaja > 0) valorDiaCaja = montoCaja / diasCaja;
+}
+
+const matchDiferenciaCaja = textoCompleto.match(regexDiferenciaCaja);
+let montoDiferenciaCaja = 0;
+let diasDiferenciaCaja = 0;
+let diasTotalesCaja = diasCaja;
+
+if (matchDiferenciaCaja) {
+  montoDiferenciaCaja = procesarMontoHRA(matchDiferenciaCaja[1]);
+  if (valorDiaCaja > 0) {
+    diasDiferenciaCaja = montoDiferenciaCaja / valorDiaCaja;
+    diasTotalesCaja += diasDiferenciaCaja;
+  }
+}
+
+// ======================================================
+// RESUMEN ASIGNACIONES (MOVILIZACIÓN + COLACIÓN + CAJA)
+// ======================================================
+let estadoAsignaciones = "info";
+
+// Si no existe ninguna asignación en la liquidación:
+const hayMov = !!matchMovilizacion || montoDiferenciaMovilizacion > 0;
+const hayCol = !!matchColacion || montoDiferenciaColacion > 0;
+const hayCaja = !!matchCaja || montoDiferenciaCaja > 0;
+
+if (hayMov || hayCol || hayCaja) {
+  estadoAsignaciones = "ok";
+}
+
+// Si hay diferencias pagadas, lo marcamos warning (como “revisar”)
+if (
+  montoDiferenciaMovilizacion > 0 ||
+  montoDiferenciaColacion > 0 ||
+  montoDiferenciaCaja > 0
+) {
+  estadoAsignaciones = "warning";
+}
+
+agregarResultadoResumenHRA("Asignaciones", estadoAsignaciones, 0);
+
+
 contenedor.innerHTML = `
   <div id="resumenMecContainer">
     ${generarResumenAnalisisHTMLHRA()}
@@ -599,12 +712,33 @@ contenedor.innerHTML = `
 
   <hr>
 
+  <h2>3. Asignaciones (HRA)</h2>
+
+  <p><strong>Movilización:</strong>
+  ${matchMovilizacion ? `Días: ${diasMovilizacion} | Monto: ${formatCurrencyHRA(montoMovilizacion)}` : '⛔ No tiene movilización.'}
+  </p>
+  ${montoDiferenciaMovilizacion > 0 ? `<p><strong>Dif. Movilización:</strong> ${formatCurrencyHRA(montoDiferenciaMovilizacion)}</p>` : ''}
+  ${matchMovilizacion ? `<p><strong>Días Totales Movilización:</strong> ${Math.round(diasTotalesMovilizacion)}</p>` : ''}
+
+  <p><strong>Colación:</strong>
+  ${matchColacion ? `Días: ${diasColacion} | Monto: ${formatCurrencyHRA(montoColacion)}` : '⛔ No tiene colación.'}
+  </p>
+  ${montoDiferenciaColacion > 0 ? `<p><strong>Dif. Colación:</strong> ${formatCurrencyHRA(montoDiferenciaColacion)}</p>` : ''}
+  ${matchColacion ? `<p><strong>Días Totales Colación:</strong> ${Math.round(diasTotalesColacion)}</p>` : ''}
+
+  <p><strong>Caja:</strong>
+  ${matchCaja ? `Días: ${diasCaja} | Monto: ${formatCurrencyHRA(montoCaja)}` : '⛔ No tiene asignación de caja.'}
+  </p>
+  ${montoDiferenciaCaja > 0 ? `<p><strong>Dif. Caja:</strong> ${formatCurrencyHRA(montoDiferenciaCaja)}</p>` : ''}
+  ${matchCaja ? `<p><strong>Días Totales Caja:</strong> ${Math.round(diasTotalesCaja)}</p>` : ''}
+ 
+  <hr>
+
   <p style="font-size:13px; color:#6b7280;">
     Nota: Ya están implementados Bloque 1 (Sueldo HRA) y Bloque 2 (Sobretiempo).
     Luego integraremos asignaciones, comisiones, semana corrida y gratificación.
   </p>
 `;
-
 
   } catch (error) {
     console.error("❌ Error en analizarArchivoHora():", error);

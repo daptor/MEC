@@ -24,6 +24,19 @@ const listaComisionHRA = [
     "INCENTIVO PRODUC CAJAS AUT","AVANCE CMR","DIF. INCENTI PRODUCT CAJAS"
 ];
 
+// ==================== LISTA GRATIFICABLES (HRA) ====================
+// Copiada desde analisisLiquidacion.js para independencia
+const listaGratificablesHRA = [
+  "BONO ASISTENCIA","BONO ASISTENCIA AUT.","BONO CERTIFICACION","BONO CLICK AND COLLECT","BONO CUMPLIMIENTO DE ",
+  "BONO CYBER","BONO DICIEMBRE","BONO INVENTARIO","BONO PUNTUALIDAD AUT.","BONO VACACIONES",
+  "COMISION VACACIONES","DIF BONO CUMPLIMIENTO DE HP.","DIF PREMIO CLICK AND COLLECT","DIF PREMIO VENTA TIENDA",
+  "DIF. CONTING. MES ANTERIOR","DIF. SB MES ANTERIOR","DIF. SUELDO BASE","DIF.HORAS EXTRAS ","DIF.SUELDO BASE CONTINGENCIA",
+  "DIFERENCIA 70%","DIFERENCIA CONTINGENCIA","DIFERENCIA SEMANA CORRIDA","GARANTIZADO","HORAS RECARGO NAVIDAD",
+  "HORAS TRABAJO SIND.","INCENTIVO CONFIABILIDAD","INCENTIVO RECUPERO","INCENTIVO TIENDA CD/SFS","PREMIO CLICK AND COLLECT",
+  "PREMIO CUMPL.GRUPAL NPS","PREMIO CUMPL.GRUPAL VTAS","PREMIO CUMPLIMIENTO DE PLAN","PREMIO NPS","PREMIO VENTA TIENDA",
+  "PREMIO VENTA TIENDA AUT.","PROMEDIOS VARIOS","QUIEBRE DE STOCK","QUINQUENIO","BONO BRIGADISTA","VACACIONES PT",
+  "INCENTIVO PRODUC CAJAS AUT"
+];
 
 // ==================== HELPERS ====================
 const formatCurrencyHRA = (value) =>
@@ -228,6 +241,31 @@ async function preValidarAntesDeAnalizarHora() {
     console.error("❌ Error prevalidando documento (HRA):", error);
     alert("❌ Error verificando el documento.");
   }
+}
+
+function identificarGratificablesHRA(texto) {
+  let encontrados = [];
+  let textoRestante = String(texto || "").replace(/\s+/g, " ").trim();
+  textoRestante = textoRestante.replace(/[^\x20-\x7E]/g, " ");
+
+  listaGratificablesHRA.forEach(item => {
+    const regex = new RegExp(
+      `${item.replace(/\s+/g, '\\s*')}\\s*(?:\\(\\d+\\))?\\s*\\$\\s*([\\d.,]+)`,
+      'i'
+    );
+    const match = textoRestante.match(regex);
+    if (match) {
+      encontrados.push({ item, monto: procesarMontoHRA(match[1]) });
+      // remover primera ocurrencia para evitar dobles
+      textoRestante = textoRestante.replace(new RegExp(match[0].replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'i'), '').trim();
+    }
+  });
+
+  return encontrados;
+}
+
+function totalGratificablesHRA(gratificables) {
+  return (gratificables || []).reduce((acc, g) => acc + (g.monto || 0), 0);
 }
 
 // ======================================================
@@ -817,7 +855,7 @@ else if (diasPorSemanaLegal < MIN_DIAS_SEMANA_SC || diasPorSemanaLegal > MAX_DIA
     estadoSemanaCorridaResumen = "ok";
     resultadoSemanaCorrida = `
       <span style="color: green;">
-        ✅ No corresponde semana corrida (criterio legal: ${diasPorSemanaLegal} días/semana).
+        ✅ No corresponde semana corrida (criterio legal: ${diasPorSemanaLegal} días/semana, Art. 45 Codigo del Trabajo).
       </span>
     `;
   }
@@ -857,6 +895,68 @@ else {
 
 agregarResultadoResumenHRA("Semana Corrida", estadoSemanaCorridaResumen, diferenciaSemanaCorridaResumen);
 
+// ======================================================
+// BLOQUE 6 — HABERES GRATIFICABLES (HRA)
+// ======================================================
+const gratificables = identificarGratificablesHRA(textoCompleto);
+const totalGratificables = totalGratificablesHRA(gratificables);
+
+let listaGratificablesHTML = (gratificables || [])
+  .filter(g => (g.monto || 0) !== 0)
+  .map(g => `<li><strong>${g.item}:</strong> ${formatCurrencyHRA(g.monto)}</li>`)
+  .join("");
+
+if (!listaGratificablesHTML) {
+  listaGratificablesHTML = "<li>⛔ No se detectaron haberes gratificables (o vienen en $0).</li>";
+}
+
+// ======================================================
+// BLOQUE 7 — GRATIFICACIÓN 25% (HRA) — SIN TOPE
+// Base = montoBasePagadoMes + sobretiempo pagado + comisiones + semana corrida pagada + gratificables
+// ======================================================
+
+// 1) Extraer gratificación pagada del PDF
+// Ej: "GRATIFICACION 25% C.T. $ 43.498" (igual lo tomamos, aunque diga C.T.)
+const regexGratificacionPDF = /GRATIFICACION\s*25\s*%.*?\$\s*([\d.,]+)/i;
+const matchGratificacionPDF = textoCompleto.match(regexGratificacionPDF);
+const gratificacionPDF = matchGratificacionPDF ? procesarMontoHRA(matchGratificacionPDF[1]) : 0;
+
+// 2) Base de cálculo HRA (usamos montos PAGADOS, no “esperados”)
+const baseHRA = (
+  (montoBasePagadoMes || 0) +
+  (montoPagadoHorasExtras || 0) +
+  (montoPagadoHorasExtrasDomingo || 0) +
+  (montoPagadoRecargoDomingo || 0) +
+  (montoPagadoRecargoFestivo || 0) +
+  (totalComisiones || 0) +
+  (montoSemanaCorridaPagado || 0) +
+  (totalGratificables || 0)
+);
+
+const gratificacionCalculada = Math.round(baseHRA * 0.25);
+const diferenciaGratificacion = gratificacionPDF - gratificacionCalculada;
+
+let estadoGratificacion = "ok";
+let resultadoGratificacion = "";
+
+if (!matchGratificacionPDF) {
+  estadoGratificacion = "warning";
+  resultadoGratificacion = `<span style="color: orange;">⚠ No se encontró “GRATIFICACION 25%” en la liquidación para validar.</span>`;
+} else if (Math.abs(diferenciaGratificacion) < 1) {
+  estadoGratificacion = "ok";
+  resultadoGratificacion = `<span style="color: green;">✅ Cálculo correcto</span>`;
+} else {
+  estadoGratificacion = "error";
+  resultadoGratificacion = `
+    <span style="color: red;">
+      ❌ Discrepancia detectada.
+      Se esperaba ${formatearCLPHRA(gratificacionCalculada)}.
+      Diferencia: ${formatearCLPHRA(diferenciaGratificacion)}.
+    </span>
+  `;
+}
+
+agregarResultadoResumenHRA("Gratificación", estadoGratificacion, Math.abs(diferenciaGratificacion || 0));
 
 
 contenedor.innerHTML = `
@@ -963,6 +1063,25 @@ ${(totalComisiones > 0 && diasMesTrabajadosEstimados > 0 && diasSemanaCorridaPDF
     = ${formatCurrencyHRA(valorEsperadoSemanaCorrida)}
   </p>
 ` : ''}
+
+<hr>
+<h2>6. Haberes Gratificables </h2>
+<ul>
+  ${listaGratificablesHTML}
+</ul>
+<p><strong>Total haberes gratificables detectados:</strong> ${formatCurrencyHRA(totalGratificables)}</p>
+
+<hr>
+<h2>7. Gratificación 25% — sin tope</h2>
+
+<p><strong>Base usada para 25%:</strong> ${formatCurrencyHRA(baseHRA)}</p>
+<p style="font-size:13px; color:#6b7280; margin-top:6px;">
+  <strong>Base incluye:</strong> Sueldo HRA + Sobretiempo pagado + Comisiones + Semana Corrida pagada + Haberes gratificables.
+</p>
+
+<p><strong>Gratificación calculada (25%):</strong> ${formatCurrencyHRA(gratificacionCalculada)}</p>
+<p><strong>Gratificación pagada (PDF):</strong> ${formatCurrencyHRA(gratificacionPDF)}</p>
+<p><strong>Análisis:</strong> ${resultadoGratificacion}</p>
 
 `;
 

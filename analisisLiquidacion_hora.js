@@ -964,12 +964,6 @@ ${(totalComisiones > 0 && diasMesTrabajadosEstimados > 0 && diasSemanaCorridaPDF
   </p>
 ` : ''}
 
-
-
-  <p style="font-size:13px; color:#6b7280;">
-    Nota: Ya están implementados Bloque 1 (Sueldo HRA) y Bloque 2 (Sobretiempo).
-    Luego integraremos asignaciones, comisiones, semana corrida y gratificación.
-  </p>
 `;
 
   } catch (error) {

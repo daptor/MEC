@@ -122,7 +122,7 @@ function generarResumenAnalisisHTMLHRA() {
       background:#fafafa;
     ">
       <h2 style="margin-top:0; margin-bottom:15px;">
-        Resumen: Análisis MEC (HRA)
+        🚦 Análisis MEC: Sueldo x Hora
       </h2>
       ${resumenHTML}
     </div>
@@ -148,9 +148,9 @@ function obtenerJornadaMaximaHRA(mes, año) {
   return 45;
 }
 
-// ======================================================
+// ========================================================
 // PREVALIDACIÓN HRA (llamada desde dispatcher del mensual)
-// ======================================================
+// ========================================================
 async function preValidarAntesDeAnalizarHora() {
   try {
     const archivoInput = document.getElementById('fileInput');
@@ -391,7 +391,7 @@ async function analizarArchivoHora() {
       <p><strong>IMM por hora:</strong> ${valorImmHora ? formatCurrencyHRA(valorImmHora) : "No encontrado"}</p>
       <hr>
 
-      <h2>1. Sueldo (HRA)</h2>
+      <h2>1. Sueldo por hora </h2>
       <p><strong>Ítem detectado:</strong> S.BASE PART-TIME (HRA)</p>
       <p><strong>Horas base contrato:</strong> ${horasBaseContrato != null ? horasBaseContrato : "No encontrado"}</p>
       <p><strong>Monto base pagado:</strong> ${montoBasePagadoMes != null ? formatCurrencyHRA(montoBasePagadoMes) : "No encontrado"}</p>

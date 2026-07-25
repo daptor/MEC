@@ -1071,7 +1071,7 @@ ${(totalComisiones > 0 && diasMesTrabajadosEstimados > 0 && diasSemanaCorridaPDF
 <p><strong>Total haberes gratificables detectados:</strong> ${formatCurrencyHRA(totalGratificables)}</p>
 
 <hr>
-<h2>7. Gratificación 25% — sin tope</h2>
+<h2>7. Gratificación 25%</h2>
 
 <p><strong>Base usada para 25%:</strong> ${formatCurrencyHRA(baseHRA)}</p>
 <p style="font-size:13px; color:#6b7280; margin-top:6px;">

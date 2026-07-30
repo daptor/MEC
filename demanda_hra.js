@@ -1,16 +1,22 @@
 // ======================================================
 // MEC — MÓDULO DEMANDA (HRA / SUELDO BASE)
 // Recalcula base demandable:
+//
 // SC = SUELDO BASE o S.BASE PART-TIME (HRA)
 //      + BONO ASISTENCIA AUT.
 //      + BONO PUNTUALIDAD AUT.
 //
 // Soporta:
 // - SUELDO BASE (30) $ 465.785
-// - S.BASE PART-TIME (HRA) (86.7 $ 215.351
+// - S.BASE PART-TIME (HRA) (86.7) $ 215.351
 //
-// Revalida sobretiempo con fórmula MEC:
-// valorHoraBase = (sueldo / 30) * (28 / (jornada * 4))
+// Criterio corregido:
+// - Si es sueldo mensual: usa fórmula MEC mensual.
+//   valorHoraBase = (SC / 30) * (28 / (jornada * 4))
+//
+// - Si es part-time HRA: NO infiere jornada.
+//   Usa directamente las horas HRA del PDF.
+//   valorHoraBase = SC / horasHRA
 // ======================================================
 
 (function () {
@@ -23,6 +29,14 @@
   function formatearCLP(valor) {
     if (valor === null || valor === undefined || isNaN(valor)) return "$0";
     return "$" + Math.round(valor).toLocaleString("es-CL");
+  }
+
+  function formatearNumero(valor, decimales = 3) {
+    if (valor === null || valor === undefined || isNaN(valor)) return "—";
+    return Number(valor).toLocaleString("es-CL", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: decimales,
+    });
   }
 
   function normalizarTextoPlano(s) {
@@ -180,8 +194,12 @@
   }
 
   function normalizarBonosPactados(baut, bpaut) {
-    // Regla:
-    // Si uno es 0 y el otro tiene valor, ambos se asumen iguales.
+    /*
+      Regla:
+      - Si uno aparece en $0 y el otro tiene valor, ambos se asumen iguales.
+      - Si ambos aparecen en $0, se pide ingreso manual.
+    */
+
     let bautNorm = baut || 0;
     let bpautNorm = bpaut || 0;
 
@@ -236,7 +254,7 @@
       baut,
       bpaut,
 
-      // Bonos pactados inferidos
+      // Bonos pactados normalizados
       bautNorm,
       bpautNorm,
       ambosCero,
@@ -306,12 +324,78 @@
     };
   }
 
-  // -------------------- Cálculo MEC --------------------
-  function calcularValorHoraBaseMEC(sueldoMensual, jornadaHorasSemana) {
+  // -------------------- Cálculo Valor Hora --------------------
+  function calcularValorHoraMensualMEC(sueldoMensual, jornadaHorasSemana) {
+    /*
+      Fórmula MEC para sueldo mensual:
+      valorHoraBase = (sueldo / 30) * (28 / (jornada semanal * 4))
+    */
+
     if (!sueldoMensual || sueldoMensual <= 0) return null;
     if (!jornadaHorasSemana || jornadaHorasSemana <= 0) return null;
 
     return (sueldoMensual / 30) * (28 / (Number(jornadaHorasSemana) * 4));
+  }
+
+  function calcularValorHoraHRA(sueldoConvenido, horasHRA) {
+    /*
+      Fórmula correcta para part-time HRA:
+      No se infiere jornada.
+      Se divide el sueldo convenido por las horas pagadas HRA del PDF.
+    */
+
+    if (!sueldoConvenido || sueldoConvenido <= 0) return null;
+    if (!horasHRA || horasHRA <= 0) return null;
+
+    return sueldoConvenido / horasHRA;
+  }
+
+  function calcularValorHoraBaseDemanda(params) {
+    const {
+      tipoSueldoBase,
+      sc,
+      horasBaseDetectadas,
+      jornada,
+    } = params;
+
+    if (tipoSueldoBase === "part-time-hra") {
+      const valorHoraBase = calcularValorHoraHRA(sc, horasBaseDetectadas);
+
+      return {
+        valorHoraBase,
+        metodoCalculo: "part-time-hra",
+        descripcionMetodo:
+          "Part-time HRA: valorHoraBase = SC / horas HRA detectadas en el PDF.",
+        warning:
+          valorHoraBase == null
+            ? "No se pudo calcular valor hora HRA porque no se detectaron horas HRA válidas."
+            : "",
+      };
+    }
+
+    if (tipoSueldoBase === "mensual") {
+      const valorHoraBase = calcularValorHoraMensualMEC(sc, jornada);
+
+      return {
+        valorHoraBase,
+        metodoCalculo: "mensual-mec",
+        descripcionMetodo:
+          "Sueldo mensual: valorHoraBase = (SC / 30) × (28 / (jornada × 4)).",
+        warning:
+          valorHoraBase == null
+            ? "No se pudo calcular valor hora mensual porque no se detectó jornada semanal válida."
+            : "",
+      };
+    }
+
+    return {
+      valorHoraBase: null,
+      metodoCalculo: "no-detectado",
+      descripcionMetodo:
+        "No se pudo determinar método de cálculo porque no se detectó sueldo base válido.",
+      warning:
+        "No se detectó sueldo base válido. No es posible calcular valor hora.",
+    };
   }
 
   function calcularEsperados(st, valorHoraBase) {
@@ -404,9 +488,6 @@
   function renderReporte(contenedor, data) {
     const {
       jornada,
-      jornadaInferida,
-      jornadaParaCalculo,
-      warningJornada,
 
       tipoSueldoBase,
       glosaSueldoBase,
@@ -422,6 +503,9 @@
 
       sc,
       valorHoraBase,
+      metodoCalculo,
+      descripcionMetodo,
+      warningCalculo,
 
       st,
       esperado,
@@ -467,6 +551,38 @@
         </div>
       `
       : "";
+
+    const bloqueMetodoHRA =
+      tipoSueldoBase === "part-time-hra"
+        ? `
+          <div>Horas HRA detectadas: <strong>${escapeHtml(
+            String(horasBaseDetectadas ?? "No detectadas")
+          )}</strong></div>
+          <div style="margin-top:8px;">Fórmula aplicada:</div>
+          <div><strong>valorHoraBase = SC / horas HRA</strong></div>
+          <div style="font-size:12px;color:#6b7280;">
+            No se infiere jornada semanal. Se usa directamente la cantidad de horas HRA del PDF.
+          </div>
+        `
+        : "";
+
+    const bloqueMetodoMensual =
+      tipoSueldoBase === "mensual"
+        ? `
+          <div>Jornada seleccionada: <strong>${
+            jornada == null ? "No detectada" : escapeHtml(String(jornada))
+          }</strong></div>
+          <div style="margin-top:8px;">Fórmula aplicada:</div>
+          <div><strong>valorHoraBase = (SC / 30) × (28 / (jornada × 4))</strong></div>
+        `
+        : "";
+
+    const bloqueMetodoNoDetectado =
+      tipoSueldoBase !== "part-time-hra" && tipoSueldoBase !== "mensual"
+        ? `
+          <div>No se detectó un sueldo base válido.</div>
+        `
+        : "";
 
     contenedor.innerHTML =
       '<div style="border:2px solid #ddd; border-radius:12px; padding:14px; background:#fafafa; margin-bottom:16px;">' +
@@ -522,25 +638,29 @@
 
       "</div>" +
 
-      // Bloque Fórmula MEC
+      // Bloque Fórmula aplicada
       '<div style="background:#fff; border:1px solid #eee; border-radius:10px; padding:10px;">' +
-      '<h3 style="margin:0 0 8px 0; font-size:16px;">Fórmula MEC aplicada</h3>' +
-      "<div>Jornada seleccionada: <strong>" +
-      (jornada == null ? "No detectada" : escapeHtml(String(jornada))) +
+      '<h3 style="margin:0 0 8px 0; font-size:16px;">Cálculo valor hora aplicado</h3>' +
+      '<div>Método: <strong>' +
+      escapeHtml(metodoCalculo || "no-detectado") +
       "</strong></div>" +
-      "<div>Jornada inferida por HRA: <strong>" +
-      (jornadaInferida == null ? "No aplica" : escapeHtml(String(jornadaInferida.toFixed(3)))) +
-      "</strong></div>" +
-      "<div>Jornada usada para cálculo: <strong>" +
-      (jornadaParaCalculo == null ? "No detectada" : escapeHtml(String(jornadaParaCalculo))) +
-      "</strong></div>" +
-      "<div style='margin-top:8px;'>valorHoraBase = (SC/30) × (28 / (jornada×4))</div>" +
+      '<div style="font-size:12px;color:#6b7280; margin-bottom:8px;">' +
+      escapeHtml(descripcionMetodo || "") +
+      "</div>" +
+      bloqueMetodoHRA +
+      bloqueMetodoMensual +
+      bloqueMetodoNoDetectado +
       '<div style="margin-top:8px;">valorHoraBase: <strong>' +
       (valorHoraBase == null ? "—" : formatearCLP(valorHoraBase)) +
       "</strong></div>" +
-      (warningJornada
+      (valorHoraBase != null
+        ? '<div style="font-size:12px;color:#6b7280;">Valor exacto: ' +
+          escapeHtml(formatearNumero(valorHoraBase, 6)) +
+          "</div>"
+        : "") +
+      (warningCalculo
         ? '<div style="margin-top:8px;color:#b45309;"><strong>' +
-          escapeHtml(warningJornada) +
+          escapeHtml(warningCalculo) +
           "</strong></div>"
         : "") +
       "</div>" +
@@ -628,42 +748,19 @@
       st,
     } = params;
 
-    let jornadaInferida = null;
+    const calc = calcularValorHoraBaseDemanda({
+      tipoSueldoBase,
+      sc,
+      horasBaseDetectadas,
+      jornada,
+    });
 
-    if (horasBaseDetectadas != null && horasBaseDetectadas > 0) {
-      jornadaInferida = horasBaseDetectadas / 4;
-    }
-
-    /*
-      Criterio:
-      - Si hay jornada seleccionada, se usa esa.
-      - Si no hay seleccionada y existe HRA, se usa HRA/4.
-    */
-    let jornadaParaCalculo = null;
-    let warningJornada = "";
-
-    if (jornada != null && jornada > 0) {
-      jornadaParaCalculo = jornada;
-    } else if (jornadaInferida != null && jornadaInferida > 0) {
-      jornadaParaCalculo = jornadaInferida;
-      warningJornada =
-        "No había jornada seleccionada. Se usó jornada inferida por HRA: " +
-        jornadaInferida.toFixed(3) +
-        " horas/semana.";
-    } else {
-      warningJornada =
-        "No se detectó jornada. Selecciona #horas-jornada para calcular sobretiempo.";
-    }
-
-    const valorHoraBase = calcularValorHoraBaseMEC(sc, jornadaParaCalculo);
+    const valorHoraBase = calc.valorHoraBase;
     const esperado = calcularEsperados(st, valorHoraBase);
     const difs = calcularDiferencias(st, esperado);
 
     return {
       jornada,
-      jornadaInferida,
-      jornadaParaCalculo,
-      warningJornada,
 
       tipoSueldoBase,
       glosaSueldoBase,
@@ -679,6 +776,9 @@
 
       sc,
       valorHoraBase,
+      metodoCalculo: calc.metodoCalculo,
+      descripcionMetodo: calc.descripcionMetodo,
+      warningCalculo: calc.warning,
 
       st,
       esperado,

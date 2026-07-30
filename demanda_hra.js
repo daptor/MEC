@@ -739,7 +739,7 @@
 
       // Bloque SC
       '<div style="background:#fff; border:1px solid #eee; border-radius:10px; padding:10px;">' +
-      '<h3 style="margin:0 0 8px 0; font-size:16px;">Base “Demanda” — Sueldo Convenido</h3>' +
+      '<h3 style="margin:0 0 8px 0; font-size:16px;">Sueldo Convenido</h3>' +
 
       "<div>" +
       escapeHtml(glosaSueldoBase || "Sueldo base") +
@@ -778,7 +778,7 @@
       "</strong></div>" +
 
       '<div style="margin-top:8px;">SC = Sueldo base + bonos pactados</div>' +
-      '<div style="font-size:18px; margin-top:4px;">SUELDO CONVENIDO: <strong>' +
+      '<div style="font-size:18px; margin-top:4px;">Sueldo Convenido: <strong>' +
       formatearCLP(sc) +
       "</strong></div>" +
 
@@ -836,8 +836,10 @@
       '<th style="text-align:right; padding:8px; border-bottom:2px solid #eee;">Diferencia adeudada</th>' +
       "</tr>" +
       "</thead>" +
-      "<tbody>" +
-      filaComparacion(
+"<tbody>" +
+(
+  st.horasExtras50Encontrado
+    ? filaComparacion(
         "HORAS EXTRAS 50%",
         st.pagadoHorasExtras50,
         esperado.horasExtras50,
@@ -848,8 +850,12 @@
           esperado.horasUsadas.horasExtras50,
           esperado.horasSonEstimadas.horasExtras50
         )
-      ) +
-      filaComparacion(
+      )
+    : ""
+) +
+(
+  st.horasExtrasDomingoEncontrado
+    ? filaComparacion(
         "HORAS EXTRAS DOMINGO",
         st.pagadoHorasExtrasDomingo,
         esperado.horasExtrasDomingo,
@@ -860,8 +866,12 @@
           esperado.horasUsadas.horasExtrasDomingo,
           esperado.horasSonEstimadas.horasExtrasDomingo
         )
-      ) +
-      filaComparacion(
+      )
+    : ""
+) +
+(
+  st.recargoDomingoEncontrado
+    ? filaComparacion(
         "HORAS RECARGO DOMINGO",
         st.pagadoRecargoDomingo,
         esperado.recargoDomingo,
@@ -872,8 +882,12 @@
           esperado.horasUsadas.horasRecargoDomingo,
           esperado.horasSonEstimadas.horasRecargoDomingo
         )
-      ) +
-      filaComparacion(
+      )
+    : ""
+) +
+(
+  st.recargoFestivoEncontrado
+    ? filaComparacion(
         "RECARGO 50% FESTIVO",
         st.pagadoRecargoFestivo,
         esperado.recargoFestivo,
@@ -884,8 +898,10 @@
           esperado.horasUsadas.horasRecargoFestivo,
           esperado.horasSonEstimadas.horasRecargoFestivo
         )
-      ) +
-      "</tbody>" +
+      )
+    : ""
+) +
+"</tbody>" +
       "</table>" +
       '<div style="margin-top:10px; font-size:12px; color:#6b7280;">' +
       "* Diferencia adeudada = Esperado con SC - Pagado empresa. Si |diferencia| &lt; 1 peso, se considera correcto." +

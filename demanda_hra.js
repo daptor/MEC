@@ -1,6 +1,6 @@
 // ======================================================
 // MEC — MÓDULO DEMANDA (HRA)
-// Recalcula base (SC) = SB(11) + BONO ASISTENCIA AUT. + BONO PUNTUALIDAD AUT.
+// Recalcula base (SC) = S.BASE PART-TIME (HRA) + BONO ASISTENCIA AUT. + BONO PUNTUALIDAD AUT.
 // y revalida sobretiempo con fórmula MEC:
 // valorHoraBase = (sueldo / 30) * (28 / (jornada * 4))
 // ======================================================
@@ -19,7 +19,7 @@
 
   function normalizarTextoPlano(s) {
     return String(s || "")
-      .replace(/[^\S\r\n]+/g, " ")     // colapsa espacios
+      .replace(/[^\S\r\n]+/g, " ") // colapsa espacios
       .replace(/[^\x20-\x7EÁÉÍÓÚÜÑáéíóúüñ().,%$\/\-]/g, " ") // limpia raros manteniendo acentos típicos
       .trim();
   }
@@ -58,17 +58,38 @@
 
   // -------------------- Extractores “Demanda” --------------------
   function extraerMontoPorGlosa(textoCompleto, glosaRegex) {
-    const m = textoCompleto.match(glosaRegex);
+    const m = String(textoCompleto || "").match(glosaRegex);
     if (!m) return 0;
     return procesarMontoCLP(m[1]);
   }
 
+  function extraerSueldoBasePartTimeHRA(textoCompleto) {
+    // Trabajamos con el texto ya normalizado por leerPdfComoTextoCompleto()
+    const t = String(textoCompleto || "");
+
+    // Captura:
+    //  1) horas (ej: 86.7 o 86,7)
+    //  2) monto (ej: 215.351 o 215351)
+    const re =
+      /S\.BASE\s+PART-?TIME\s*\(HRA\)\s*\(?\s*([0-9]+(?:[.,][0-9]+)?)\s*\)?\s*\$?\s*([0-9]{1,3}(?:\.[0-9]{3})*|[0-9]+)\b/i;
+
+    const m = t.match(re);
+    if (!m) return null;
+
+    const horas = parseFloat(String(m[1]).replace(",", "."));
+    const monto = procesarMontoCLP(m[2]);
+
+    return {
+      glosa: "S.BASE PART-TIME (HRA)",
+      horas: Number.isFinite(horas) ? horas : null,
+      monto: monto || 0
+    };
+  }
+
   function extraerSC(textoCompleto) {
-    // SB(11) típico: "SB(11) $ 123.456" o "SB (11) $123.456"
-    const sb11 = extraerMontoPorGlosa(
-      textoCompleto,
-      /SB\s*\(\s*11\s*\).*?\$\s*([\d.,]+)/i
-    );
+    // Nuevo: usar S.BASE PART-TIME (HRA) en vez de SB(11)
+    const sbHRA = extraerSueldoBasePartTimeHRA(textoCompleto);
+    const sb11 = sbHRA?.monto || 0;
 
     const baut = extraerMontoPorGlosa(
       textoCompleto,
@@ -80,7 +101,13 @@
       /BONO\s*PUNTUALIDAD\s*AUT\.?.*?\$\s*([\d.,]+)/i
     );
 
-    return { sb11, baut, bpaut, sc: (sb11 || 0) + (baut || 0) + (bpaut || 0) };
+    return {
+      sb11,
+      sbHRA_horas: sbHRA?.horas ?? null,
+      baut,
+      bpaut,
+      sc: (sb11 || 0) + (baut || 0) + (bpaut || 0)
+    };
   }
 
   function extraerSobretiempoPagado(textoCompleto) {
@@ -89,11 +116,13 @@
     // HORAS EXTRAS DOMINGO (.18) $ 849
     // HORAS RECARGO DOMINGO (x.xx) $ 15.050  (o sin horas)
     // RECARGO 50% FESTIVO (x.xx) $ monto
-    const hx = textoCompleto.match(/HORAS\s*EXTRAS\s*50\s*%\s*\(([\d.,]+)\)\s*\$\s*([\d.,]+)/i);
-    const hxd = textoCompleto.match(/HORAS\s*EXTRAS\s*DOMINGO\s*\(([\d.,]+)\)\s*\$\s*([\d.,]+)/i);
-    const rdConHoras = textoCompleto.match(/HORAS\s*RECARGO\s*DOMINGO\s*\(([\d.,]+)\)\s*\$\s*([\d.,]+)/i);
-    const rdSinHoras = textoCompleto.match(/HORAS\s*RECARGO\s*DOMINGO.*?\$\s*([\d.,]+)/i);
-    const rf = textoCompleto.match(/RECARGO\s*50%\s*FESTIVO\s*\(([\d.,]+)\)\s*\$\s*([\d.,]+)/i);
+    const t = String(textoCompleto || "");
+
+    const hx = t.match(/HORAS\s*EXTRAS\s*50\s*%\s*\(([\d.,]+)\)\s*\$\s*([\d.,]+)/i);
+    const hxd = t.match(/HORAS\s*EXTRAS\s*DOMINGO\s*\(([\d.,]+)\)\s*\$\s*([\d.,]+)/i);
+    const rdConHoras = t.match(/HORAS\s*RECARGO\s*DOMINGO\s*\(([\d.,]+)\)\s*\$\s*([\d.,]+)/i);
+    const rdSinHoras = t.match(/HORAS\s*RECARGO\s*DOMINGO.*?\$\s*([\d.,]+)/i);
+    const rf = t.match(/RECARGO\s*50%\s*FESTIVO\s*\(([\d.,]+)\)\s*\$\s*([\d.,]+)/i);
 
     return {
       horasExtras50: hx ? parseFloat(String(hx[1]).replace(",", ".")) : null,
@@ -103,7 +132,9 @@
       pagadoHorasExtrasDomingo: hxd ? procesarMontoCLP(hxd[2]) : 0,
 
       horasRecargoDomingo: rdConHoras ? parseFloat(String(rdConHoras[1]).replace(",", ".")) : null,
-      pagadoRecargoDomingo: rdConHoras ? procesarMontoCLP(rdConHoras[2]) : (rdSinHoras ? procesarMontoCLP(rdSinHoras[1]) : 0),
+      pagadoRecargoDomingo: rdConHoras
+        ? procesarMontoCLP(rdConHoras[2])
+        : (rdSinHoras ? procesarMontoCLP(rdSinHoras[1]) : 0),
       recargoDomingoTieneHoras: !!rdConHoras,
 
       horasRecargoFestivo: rf ? parseFloat(String(rf[1]).replace(",", ".")) : null,
@@ -120,7 +151,9 @@
   // -------------------- UI principal --------------------
   async function analizarArchivoDemandaHora() {
     try {
-      const file = document.getElementById("fileInput")?.files?.[0];
+      const fileEl = document.getElementById("fileInput");
+      const file = fileEl && fileEl.files ? fileEl.files[0] : null;
+
       const contenedor = document.getElementById("resultadoAnalisis");
 
       if (!file) {
@@ -140,13 +173,14 @@
       const textoCompleto = await leerPdfComoTextoCompleto(file);
 
       // 1) Extraer SC
-      const { sb11, baut, bpaut, sc } = extraerSC(textoCompleto);
+      const { sb11, sbHRA_horas, baut, bpaut, sc } = extraerSC(textoCompleto);
 
       // 2) Recalcular valor hora base con MEC usando sueldo=SC
       let valorHoraBase = null;
       let warningJornada = "";
       if (!jornada || jornada <= 0) {
-        warningJornada = "⚠ No se detectó jornada (horas/semana). Selecciona #horas-jornada para recalcular.";
+        warningJornada =
+          "⚠ No se detectó jornada (horas/semana). Selecciona #horas-jornada para recalcular.";
       } else {
         valorHoraBase = calcularValorHoraBaseMEC(sc, jornada);
       }
@@ -155,91 +189,163 @@
       const st = extraerSobretiempoPagado(textoCompleto);
 
       const esperado = {
-        horasExtras50: (valorHoraBase != null && st.horasExtras50 != null) ? (valorHoraBase * 1.5 * st.horasExtras50) : null,
-        horasExtrasDomingo: (valorHoraBase != null && st.horasExtrasDomingo != null) ? (valorHoraBase * 1.3 * 1.5 * st.horasExtrasDomingo) : null,
-        recargoDomingo: (valorHoraBase != null && st.horasRecargoDomingo != null) ? (valorHoraBase * 0.30 * st.horasRecargoDomingo) : null,
-        recargoFestivo: (valorHoraBase != null && st.horasRecargoFestivo != null) ? (valorHoraBase * 1.5 * st.horasRecargoFestivo) : null
+        horasExtras50:
+          valorHoraBase != null && st.horasExtras50 != null
+            ? valorHoraBase * 1.5 * st.horasExtras50
+            : null,
+        horasExtrasDomingo:
+          valorHoraBase != null && st.horasExtrasDomingo != null
+            ? valorHoraBase * 1.3 * 1.5 * st.horasExtrasDomingo
+            : null,
+        recargoDomingo:
+          valorHoraBase != null && st.horasRecargoDomingo != null
+            ? valorHoraBase * 0.3 * st.horasRecargoDomingo
+            : null,
+        recargoFestivo:
+          valorHoraBase != null && st.horasRecargoFestivo != null
+            ? valorHoraBase * 1.5 * st.horasRecargoFestivo
+            : null
       };
 
       const difs = {
-        horasExtras50: (esperado.horasExtras50 != null) ? (st.pagadoHorasExtras50 - esperado.horasExtras50) : null,
-        horasExtrasDomingo: (esperado.horasExtrasDomingo != null) ? (st.pagadoHorasExtrasDomingo - esperado.horasExtrasDomingo) : null,
-        recargoDomingo: (esperado.recargoDomingo != null && st.recargoDomingoTieneHoras) ? (st.pagadoRecargoDomingo - esperado.recargoDomingo) : null,
-        recargoFestivo: (esperado.recargoFestivo != null) ? (st.pagadoRecargoFestivo - esperado.recargoFestivo) : null
+        horasExtras50:
+          esperado.horasExtras50 != null ? st.pagadoHorasExtras50 - esperado.horasExtras50 : null,
+        horasExtrasDomingo:
+          esperado.horasExtrasDomingo != null
+            ? st.pagadoHorasExtrasDomingo - esperado.horasExtrasDomingo
+            : null,
+        recargoDomingo:
+          esperado.recargoDomingo != null && st.recargoDomingoTieneHoras
+            ? st.pagadoRecargoDomingo - esperado.recargoDomingo
+            : null,
+        recargoFestivo:
+          esperado.recargoFestivo != null ? st.pagadoRecargoFestivo - esperado.recargoFestivo : null
       };
 
-      function filaComparacion(nombre, pagado, esp, dif, notaExtra = "") {
+      function filaComparacion(nombre, pagado, esp, dif, notaExtra) {
         const estado =
-          (esp == null)
-            ? "⚪"
-            : (Math.abs(dif) < 1 ? "🟢" : "🔴");
+          esp == null ? "⚪" : (Math.abs(dif) < 1 ? "🟢" : "🔴");
 
-        const difTxt = (dif == null) ? "—" : formatearCLP(dif);
-        const espTxt = (esp == null) ? "—" : formatearCLP(esp);
+        const difTxt = dif == null ? "—" : formatearCLP(dif);
+        const espTxt = esp == null ? "—" : formatearCLP(esp);
 
-        return `
-          <tr>
-            <td style="padding:8px; border-bottom:1px solid #eee;">${estado} ${nombre}${notaExtra ? `<div style="font-size:12px;color:#6b7280;">${notaExtra}</div>` : ""}</td>
-            <td style="padding:8px; border-bottom:1px solid #eee; text-align:right;">${formatearCLP(pagado || 0)}</td>
-            <td style="padding:8px; border-bottom:1px solid #eee; text-align:right;">${espTxt}</td>
-            <td style="padding:8px; border-bottom:1px solid #eee; text-align:right;"><strong>${difTxt}</strong></td>
-          </tr>
-        `;
+        return (
+          '<tr>' +
+          '<td style="padding:8px; border-bottom:1px solid #eee;">' +
+          estado +
+          " " +
+          nombre +
+          (notaExtra
+            ? '<div style="font-size:12px;color:#6b7280;">' + notaExtra + "</div>"
+            : "") +
+          "</td>" +
+          '<td style="padding:8px; border-bottom:1px solid #eee; text-align:right;">' +
+          formatearCLP(pagado || 0) +
+          "</td>" +
+          '<td style="padding:8px; border-bottom:1px solid #eee; text-align:right;">' +
+          espTxt +
+          "</td>" +
+          '<td style="padding:8px; border-bottom:1px solid #eee; text-align:right;"><strong>' +
+          difTxt +
+          "</strong></td>" +
+          "</tr>"
+        );
       }
 
-      contenedor.innerHTML = `
-        <div style="border:2px solid #ddd; border-radius:12px; padding:14px; background:#fafafa; margin-bottom:16px;">
-          <h2 style="margin:0 0 10px 0;">MEC — Demanda (HRA)</h2>
-
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-            <div style="background:#fff; border:1px solid #eee; border-radius:10px; padding:10px;">
-              <h3 style="margin:0 0 8px 0; font-size:16px;">Base “Demanda” (SC)</h3>
-              <div>SB(11): <strong>${formatearCLP(sb11)}</strong></div>
-              <div>BONO ASISTENCIA AUT.: <strong>${formatearCLP(baut)}</strong></div>
-              <div>BONO PUNTUALIDAD AUT.: <strong>${formatearCLP(bpaut)}</strong></div>
-              <div style="margin-top:8px;">SC = <strong>${formatearCLP(sc)}</strong></div>
-            </div>
-
-            <div style="background:#fff; border:1px solid #eee; border-radius:10px; padding:10px;">
-              <h3 style="margin:0 0 8px 0; font-size:16px;">Fórmula MEC aplicada</h3>
-              <div>jornada (horas/semana): <strong>${jornada ?? "No detectada"}</strong></div>
-              <div>valorHoraBase = (SC/30) × (28 / (jornada×4))</div>
-              <div style="margin-top:8px;">valorHoraBase: <strong>${valorHoraBase == null ? "—" : formatearCLP(valorHoraBase)}</strong></div>
-              ${warningJornada ? `<div style="margin-top:8px;color:#b45309;"><strong>${warningJornada}</strong></div>` : ""}
-            </div>
-          </div>
-        </div>
-
-        <div style="border:1px solid #eee; border-radius:12px; padding:14px; background:#fff;">
-          <h2 style="margin:0 0 10px 0;">Comparación sobretiempo (pagado vs esperado con SC)</h2>
-
-          <table style="width:100%; border-collapse:collapse;">
-            <thead>
-              <tr>
-                <th style="text-align:left; padding:8px; border-bottom:2px solid #eee;">Ítem</th>
-                <th style="text-align:right; padding:8px; border-bottom:2px solid #eee;">Pagado (PDF)</th>
-                <th style="text-align:right; padding:8px; border-bottom:2px solid #eee;">Esperado (SC)</th>
-                <th style="text-align:right; padding:8px; border-bottom:2px solid #eee;">Diferencia</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${filaComparacion("HORAS EXTRAS 50%", st.pagadoHorasExtras50, esperado.horasExtras50, difs.horasExtras50, st.horasExtras50 != null ? `Horas: ${st.horasExtras50}` : "No encontrado")}
-              ${filaComparacion("HORAS EXTRAS DOMINGO", st.pagadoHorasExtrasDomingo, esperado.horasExtrasDomingo, difs.horasExtrasDomingo, st.horasExtrasDomingo != null ? `Horas: ${st.horasExtrasDomingo}` : "No encontrado")}
-              ${
-                st.recargoDomingoTieneHoras
-                  ? filaComparacion("HORAS RECARGO DOMINGO", st.pagadoRecargoDomingo, esperado.recargoDomingo, difs.recargoDomingo, st.horasRecargoDomingo != null ? `Horas: ${st.horasRecargoDomingo}` : "")
-                  : filaComparacion("HORAS RECARGO DOMINGO", st.pagadoRecargoDomingo, null, null, "⚠ El PDF no trae horas (no validable).")
-              }
-              ${filaComparacion("RECARGO 50% FESTIVO", st.pagadoRecargoFestivo, esperado.recargoFestivo, difs.recargoFestivo, st.horasRecargoFestivo != null ? `Horas: ${st.horasRecargoFestivo}` : "No encontrado")}
-            </tbody>
-          </table>
-
-          <div style="margin-top:10px; font-size:12px; color:#6b7280;">
-            * Regla de comparación: si |diferencia| &lt; 1 peso → se considera correcto.
-          </div>
-        </div>
-      `;
-
+      contenedor.innerHTML =
+        '<div style="border:2px solid #ddd; border-radius:12px; padding:14px; background:#fafafa; margin-bottom:16px;">' +
+        '<h2 style="margin:0 0 10px 0;">MEC — Demanda (HRA)</h2>' +
+        '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">' +
+        '<div style="background:#fff; border:1px solid #eee; border-radius:10px; padding:10px;">' +
+        '<h3 style="margin:0 0 8px 0; font-size:16px;">Base “Demanda” (SC)</h3>' +
+        "<div>S.BASE PART-TIME (HRA): <strong>" +
+        formatearCLP(sb11) +
+        "</strong>" +
+        '<div style="font-size:12px;color:#6b7280;">Horas: <strong>' +
+        (sbHRA_horas == null ? "No detectadas" : sbHRA_horas) +
+        "</strong></div>" +
+        "</div>" +
+        "<div>BONO ASISTENCIA AUT.: <strong>" +
+        formatearCLP(baut) +
+        "</strong></div>" +
+        "<div>BONO PUNTUALIDAD AUT.: <strong>" +
+        formatearCLP(bpaut) +
+        "</strong></div>" +
+        '<div style="margin-top:8px;">SC = <strong>' +
+        formatearCLP(sc) +
+        "</strong></div>" +
+        "</div>" +
+        '<div style="background:#fff; border:1px solid #eee; border-radius:10px; padding:10px;">' +
+        '<h3 style="margin:0 0 8px 0; font-size:16px;">Fórmula MEC aplicada</h3>' +
+        "<div>jornada (horas/semana): <strong>" +
+        (jornada == null ? "No detectada" : jornada) +
+        "</strong></div>" +
+        "<div>valorHoraBase = (SC/30) × (28 / (jornada×4))</div>" +
+        '<div style="margin-top:8px;">valorHoraBase: <strong>' +
+        (valorHoraBase == null ? "—" : formatearCLP(valorHoraBase)) +
+        "</strong></div>" +
+        (warningJornada
+          ? '<div style="margin-top:8px;color:#b45309;"><strong>' +
+            warningJornada +
+            "</strong></div>"
+          : "") +
+        "</div>" +
+        "</div>" +
+        "</div>" +
+        '<div style="border:1px solid #eee; border-radius:12px; padding:14px; background:#fff;">' +
+        '<h2 style="margin:0 0 10px 0;">Comparación sobretiempo (pagado vs esperado con SC)</h2>' +
+        '<table style="width:100%; border-collapse:collapse;">' +
+        "<thead>" +
+        "<tr>" +
+        '<th style="text-align:left; padding:8px; border-bottom:2px solid #eee;">Ítem</th>' +
+        '<th style="text-align:right; padding:8px; border-bottom:2px solid #eee;">Pagado (PDF)</th>' +
+        '<th style="text-align:right; padding:8px; border-bottom:2px solid #eee;">Esperado (SC)</th>' +
+        '<th style="text-align:right; padding:8px; border-bottom:2px solid #eee;">Diferencia</th>' +
+        "</tr>" +
+        "</thead>" +
+        "<tbody>" +
+        filaComparacion(
+          "HORAS EXTRAS 50%",
+          st.pagadoHorasExtras50,
+          esperado.horasExtras50,
+          difs.horasExtras50,
+          st.horasExtras50 != null ? "Horas: " + st.horasExtras50 : "No encontrado"
+        ) +
+        filaComparacion(
+          "HORAS EXTRAS DOMINGO",
+          st.pagadoHorasExtrasDomingo,
+          esperado.horasExtrasDomingo,
+          difs.horasExtrasDomingo,
+          st.horasExtrasDomingo != null ? "Horas: " + st.horasExtrasDomingo : "No encontrado"
+        ) +
+        (st.recargoDomingoTieneHoras
+          ? filaComparacion(
+              "HORAS RECARGO DOMINGO",
+              st.pagadoRecargoDomingo,
+              esperado.recargoDomingo,
+              difs.recargoDomingo,
+              st.horasRecargoDomingo != null ? "Horas: " + st.horasRecargoDomingo : ""
+            )
+          : filaComparacion(
+              "HORAS RECARGO DOMINGO",
+              st.pagadoRecargoDomingo,
+              null,
+              null,
+              "⚠ El PDF no trae horas (no validable)."
+            )) +
+        filaComparacion(
+          "RECARGO 50% FESTIVO",
+          st.pagadoRecargoFestivo,
+          esperado.recargoFestivo,
+          difs.recargoFestivo,
+          st.horasRecargoFestivo != null ? "Horas: " + st.horasRecargoFestivo : "No encontrado"
+        ) +
+        "</tbody>" +
+        "</table>" +
+        '<div style="margin-top:10px; font-size:12px; color:#6b7280;">' +
+        "* Regla de comparación: si |diferencia| &lt; 1 peso → se considera correcto." +
+        "</div>" +
+        "</div>";
     } catch (e) {
       console.error("❌ Error en analizarArchivoDemandaHora():", e);
       alert("❌ Error analizando Demanda (HRA). Revisa consola.");

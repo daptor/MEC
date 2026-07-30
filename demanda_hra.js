@@ -606,4 +606,245 @@
       "</tbody>" +
       "</table>" +
       '<div style="margin-top:10px; font-size:12px; color:#6b7280;">' +
-      "* Diferencia adeudada = Esperado con SC - Pagado empresa. Si |diferencia| &lt; 1 peso, se considera correct
+      "* Diferencia adeudada = Esperado con SC - Pagado empresa. Si |diferencia| &lt; 1 peso, se considera correcto." +
+      "</div>" +
+      "</div>";
+  }
+
+  function construirDataReporte(params) {
+    const {
+      jornada,
+      tipoSueldoBase,
+      glosaSueldoBase,
+      sueldoBaseDetectado,
+      horasBaseDetectadas,
+      diasBaseDetectados,
+      baut,
+      bpaut,
+      bautNorm,
+      bpautNorm,
+      ambosCero,
+      sc,
+      st,
+    } = params;
+
+    let jornadaInferida = null;
+
+    if (horasBaseDetectadas != null && horasBaseDetectadas > 0) {
+      jornadaInferida = horasBaseDetectadas / 4;
+    }
+
+    /*
+      Criterio:
+      - Si hay jornada seleccionada, se usa esa.
+      - Si no hay seleccionada y existe HRA, se usa HRA/4.
+    */
+    let jornadaParaCalculo = null;
+    let warningJornada = "";
+
+    if (jornada != null && jornada > 0) {
+      jornadaParaCalculo = jornada;
+    } else if (jornadaInferida != null && jornadaInferida > 0) {
+      jornadaParaCalculo = jornadaInferida;
+      warningJornada =
+        "No había jornada seleccionada. Se usó jornada inferida por HRA: " +
+        jornadaInferida.toFixed(3) +
+        " horas/semana.";
+    } else {
+      warningJornada =
+        "No se detectó jornada. Selecciona #horas-jornada para calcular sobretiempo.";
+    }
+
+    const valorHoraBase = calcularValorHoraBaseMEC(sc, jornadaParaCalculo);
+    const esperado = calcularEsperados(st, valorHoraBase);
+    const difs = calcularDiferencias(st, esperado);
+
+    return {
+      jornada,
+      jornadaInferida,
+      jornadaParaCalculo,
+      warningJornada,
+
+      tipoSueldoBase,
+      glosaSueldoBase,
+      sueldoBaseDetectado,
+      horasBaseDetectadas,
+      diasBaseDetectados,
+
+      baut,
+      bpaut,
+      bautNorm,
+      bpautNorm,
+      ambosCero,
+
+      sc,
+      valorHoraBase,
+
+      st,
+      esperado,
+      difs,
+    };
+  }
+
+  // Guardamos el último estado para permitir recalcular bonos manuales
+  let __demandaCtx = null;
+
+  function wireBotonesManual(contenedor) {
+    const btn = document.getElementById("demanda_btn_recalcular");
+    const btnIgual = document.getElementById("demanda_btn_usar_igual");
+
+    if (!btn || !btnIgual) return;
+
+    btn.addEventListener("click", function () {
+      if (!__demandaCtx) return;
+
+      const inBaut = document.getElementById("demanda_baut_manual");
+      const inBpaut = document.getElementById("demanda_bpaut_manual");
+
+      let bautManual = procesarMontoCLP(inBaut ? inBaut.value : 0);
+      let bpautManual = procesarMontoCLP(inBpaut ? inBpaut.value : 0);
+
+      // Si solo llena uno, asumimos que ambos son iguales.
+      if (bautManual > 0 && bpautManual === 0) {
+        bpautManual = bautManual;
+      }
+
+      if (bpautManual > 0 && bautManual === 0) {
+        bautManual = bpautManual;
+      }
+
+      const bautNorm = bautManual || 0;
+      const bpautNorm = bpautManual || 0;
+
+      const sc =
+        (__demandaCtx.sueldoBaseDetectado || 0) + bautNorm + bpautNorm;
+
+      const data = construirDataReporte({
+        jornada: __demandaCtx.jornada,
+
+        tipoSueldoBase: __demandaCtx.tipoSueldoBase,
+        glosaSueldoBase: __demandaCtx.glosaSueldoBase,
+        sueldoBaseDetectado: __demandaCtx.sueldoBaseDetectado,
+        horasBaseDetectadas: __demandaCtx.horasBaseDetectadas,
+        diasBaseDetectados: __demandaCtx.diasBaseDetectados,
+
+        baut: __demandaCtx.baut,
+        bpaut: __demandaCtx.bpaut,
+
+        bautNorm,
+        bpautNorm,
+        ambosCero: false,
+
+        sc,
+        st: __demandaCtx.st,
+      });
+
+      renderReporte(contenedor, data);
+      wireBotonesManual(contenedor);
+    });
+
+    btnIgual.addEventListener("click", function () {
+      const inBaut = document.getElementById("demanda_baut_manual");
+      const inBpaut = document.getElementById("demanda_bpaut_manual");
+
+      if (inBaut && inBpaut) {
+        inBpaut.value = inBaut.value;
+      }
+    });
+  }
+
+  // -------------------- UI principal --------------------
+  async function analizarArchivoDemandaHora() {
+    try {
+      const fileEl = document.getElementById("fileInput");
+      const file = fileEl && fileEl.files ? fileEl.files[0] : null;
+
+      const contenedor = document.getElementById("resultadoAnalisis");
+
+      if (!file) {
+        alert("⚠ Debes seleccionar una liquidación PDF.");
+        return;
+      }
+
+      if (!contenedor) {
+        alert("❌ No existe #resultadoAnalisis en el HTML.");
+        return;
+      }
+
+      if (typeof pdfjsLib === "undefined") {
+        alert("❌ No está cargado pdfjsLib.");
+        return;
+      }
+
+      const jornada = obtenerJornadaSeleccionada();
+      const textoCompleto = await leerPdfComoTextoCompleto(file);
+
+      // 1) Extraer sueldo convenido
+      const scObj = extraerSC(textoCompleto);
+
+      const {
+        tipoSueldoBase,
+        glosaSueldoBase,
+        sueldoBaseDetectado,
+        horasBaseDetectadas,
+        diasBaseDetectados,
+        baut,
+        bpaut,
+        bautNorm,
+        bpautNorm,
+        ambosCero,
+        sc,
+      } = scObj;
+
+      // 2) Extraer sobretiempo pagado
+      const st = extraerSobretiempoPagado(textoCompleto);
+
+      // 3) Armar reporte
+      const data = construirDataReporte({
+        jornada,
+
+        tipoSueldoBase,
+        glosaSueldoBase,
+        sueldoBaseDetectado,
+        horasBaseDetectadas,
+        diasBaseDetectados,
+
+        baut,
+        bpaut,
+        bautNorm,
+        bpautNorm,
+        ambosCero,
+
+        sc,
+        st,
+      });
+
+      renderReporte(contenedor, data);
+
+      // 4) Guardar contexto para recalcular manual
+      __demandaCtx = {
+        jornada,
+
+        tipoSueldoBase,
+        glosaSueldoBase,
+        sueldoBaseDetectado,
+        horasBaseDetectadas,
+        diasBaseDetectados,
+
+        baut,
+        bpaut,
+
+        st,
+      };
+
+      // 5) Conectar botones manuales si aparecen
+      wireBotonesManual(contenedor);
+    } catch (e) {
+      console.error("❌ Error en analizarArchivoDemandaHora():", e);
+      alert("❌ Error analizando Demanda. Revisa consola.");
+    }
+  }
+
+  // Exponer al global
+  window.analizarArchivoDemandaHora = analizarArchivoDemandaHora;
+})();

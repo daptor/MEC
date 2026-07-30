@@ -17,6 +17,11 @@
 // - Si es part-time HRA: NO infiere jornada.
 //   Usa directamente las horas HRA del PDF.
 //   valorHoraBase = SC / horasHRA
+//
+// Ítems de sobretiempo:
+// - Si el PDF trae horas, usa horas detectadas.
+// - Si el PDF trae solo monto pagado, estima horas usando valor hora empresa.
+// - Luego recalcula esperado usando valor hora corregido con SC.
 // ======================================================
 
 (function () {
@@ -62,14 +67,12 @@
   }
 
   function obtenerJornadaSeleccionada() {
-    // Preferencia: pantalla horas MEC
     const selHoras = document.getElementById("horas-jornada");
     if (selHoras && selHoras.value) {
       const n = parseFloat(String(selHoras.value).replace(",", "."));
       return Number.isFinite(n) ? n : null;
     }
 
-    // Alternativa: select general #jornada
     const sel = document.getElementById("jornada");
     if (sel && sel.value) {
       const n = parseFloat(String(sel.value).replace(",", "."));
@@ -92,25 +95,29 @@
     return Number.isFinite(n) ? n : null;
   }
 
+  function parseHoras(txt) {
+    if (txt === null || txt === undefined) return null;
+    const n = parseFloat(String(txt).replace(",", "."));
+    return Number.isFinite(n) ? n : null;
+  }
+
   // -------------------- Extractores Base Demanda --------------------
   function extraerMontoPorGlosa(textoCompleto, glosaRegex) {
     const m = String(textoCompleto || "").match(glosaRegex);
     if (!m) return 0;
-    return procesarMontoCLP(m[1]);
+
+    // Usa el último grupo capturado no vacío.
+    for (let i = m.length - 1; i >= 1; i--) {
+      if (m[i] !== undefined && m[i] !== null && String(m[i]).trim() !== "") {
+        return procesarMontoCLP(m[i]);
+      }
+    }
+
+    return 0;
   }
 
   function extraerSueldoBasePartTimeHRA(textoCompleto) {
     const t = String(textoCompleto || "");
-
-    /*
-      Soporta:
-
-      S.BASE PART-TIME (HRA) (86.7 $ 215.351
-      S.BASE PART-TIME (HRA) (86,7 $ 215.351
-      S.BASE PART-TIME (HRA) 86.7 $ 215.351
-      S.BASE PART TIME (HRA) (86.7) $ 215.351
-      S. BASE PART-TIME (HRA) (86.7 $ 215.351
-    */
 
     const re =
       /S\.?\s*BASE\s+PART-?TIME\s*\(HRA\)\s*\(?\s*([0-9]+(?:[.,][0-9]+)?)\s*\)?\s*\$?\s*([0-9]{1,3}(?:\.[0-9]{3})*|[0-9]+)\b/i;
@@ -118,7 +125,7 @@
     const m = t.match(re);
     if (!m) return null;
 
-    const horas = parseFloat(String(m[1]).replace(",", "."));
+    const horas = parseHoras(m[1]);
     const monto = procesarMontoCLP(m[2]);
 
     return {
@@ -133,23 +140,13 @@
   function extraerSueldoBaseMensual(textoCompleto) {
     const t = String(textoCompleto || "");
 
-    /*
-      Soporta:
-
-      SUELDO BASE (30) $ 465.785
-      SUELDO BASE(30)$465.785
-      SUELDO BASE $ 465.785
-
-      No captura S.BASE PART-TIME porque busca explícitamente "SUELDO BASE".
-    */
-
     const re =
       /\bSUELDO\s+BASE\s*(?:\(\s*([0-9]+(?:[.,][0-9]+)?)\s*\))?\s*\$?\s*([0-9]{1,3}(?:\.[0-9]{3})*|[0-9]+)\b/i;
 
     const m = t.match(re);
     if (!m) return null;
 
-    const dias = m[1] != null ? parseFloat(String(m[1]).replace(",", ".")) : null;
+    const dias = m[1] != null ? parseHoras(m[1]) : null;
     const monto = procesarMontoCLP(m[2]);
 
     return {
@@ -162,11 +159,9 @@
   }
 
   function extraerSueldoBaseDemanda(textoCompleto) {
-    // Prioridad 1: part-time HRA
     const sbHRA = extraerSueldoBasePartTimeHRA(textoCompleto);
     if (sbHRA && sbHRA.monto > 0) return sbHRA;
 
-    // Prioridad 2: sueldo base mensual
     const sbMensual = extraerSueldoBaseMensual(textoCompleto);
     if (sbMensual && sbMensual.monto > 0) return sbMensual;
 
@@ -182,24 +177,18 @@
   function extraerBonoAsistenciaAut(textoCompleto) {
     return extraerMontoPorGlosa(
       textoCompleto,
-      /BONO\s+ASISTENCIA\s+AUT\.?\s*\$?\s*([0-9]{1,3}(?:\.[0-9]{3})*|[0-9]+)\b/i
+      /BONO\s+ASISTENCIA\s+AUT\.?.{0,50}?\$\s*([0-9]{1,3}(?:\.[0-9]{3})*|[0-9]+)\b/i
     );
   }
 
   function extraerBonoPuntualidadAut(textoCompleto) {
     return extraerMontoPorGlosa(
       textoCompleto,
-      /BONO\s+PUNTUALIDAD\s+AUT\.?\s*\$?\s*([0-9]{1,3}(?:\.[0-9]{3})*|[0-9]+)\b/i
+      /BONO\s+PUNTUALIDAD\s+AUT\.?.{0,50}?\$\s*([0-9]{1,3}(?:\.[0-9]{3})*|[0-9]+)\b/i
     );
   }
 
   function normalizarBonosPactados(baut, bpaut) {
-    /*
-      Regla:
-      - Si uno aparece en $0 y el otro tiene valor, ambos se asumen iguales.
-      - Si ambos aparecen en $0, se pide ingreso manual.
-    */
-
     let bautNorm = baut || 0;
     let bpautNorm = bpaut || 0;
 
@@ -246,15 +235,12 @@
       horasBaseDetectadas,
       diasBaseDetectados,
 
-      // Compatibilidad con nombres anteriores
       sb11: sueldoBaseDetectado,
       sbHRA_horas: horasBaseDetectadas,
 
-      // Bonos detectados en PDF
       baut,
       bpaut,
 
-      // Bonos pactados normalizados
       bautNorm,
       bpautNorm,
       ambosCero,
@@ -264,73 +250,129 @@
   }
 
   // -------------------- Extractores Sobretiempo --------------------
+  function extraerItemConHoras(texto, regex) {
+    const m = String(texto || "").match(regex);
+    if (!m) {
+      return {
+        horas: null,
+        pagado: 0,
+        tieneHoras: false,
+        encontrado: false,
+      };
+    }
+
+    return {
+      horas: parseHoras(m[1]),
+      pagado: procesarMontoCLP(m[2]),
+      tieneHoras: true,
+      encontrado: true,
+    };
+  }
+
+  function extraerItemSoloMonto(texto, regex) {
+    const m = String(texto || "").match(regex);
+    if (!m) {
+      return {
+        pagado: 0,
+        encontrado: false,
+      };
+    }
+
+    return {
+      pagado: procesarMontoCLP(m[1]),
+      encontrado: true,
+    };
+  }
+
   function extraerSobretiempoPagado(textoCompleto) {
     const t = String(textoCompleto || "");
 
-    /*
-      Soporta:
-
-      HORAS EXTRAS 50 % (.47) $ 1.703
-      HORAS EXTRAS 50 % (1.5) $ 12.345
-      HORAS EXTRAS DOMINGO (.4) $ 1.937
-      HORAS RECARGO DOMINGO (2.0) $ 15.050
-      HORAS RECARGO DOMINGO $ 27.822
-      RECARGO 50% FESTIVO (x.xx) $ monto
-    */
-
-    const hx = t.match(
+    // HORAS EXTRAS 50%
+    const hxConHoras = extraerItemConHoras(
+      t,
       /HORAS\s*EXTRAS\s*50\s*%\s*\(\s*([0-9]*[.,]?[0-9]+)\s*\)\s*\$?\s*([0-9]{1,3}(?:\.[0-9]{3})*|[0-9]+)\b/i
     );
 
-    const hxd = t.match(
+    const hxSinHoras = !hxConHoras.encontrado
+      ? extraerItemSoloMonto(
+          t,
+          /HORAS\s*EXTRAS\s*50\s*%\s*\$?\s*([0-9]{1,3}(?:\.[0-9]{3})*|[0-9]+)\b/i
+        )
+      : { pagado: 0, encontrado: false };
+
+    // HORAS EXTRAS DOMINGO
+    const hxdConHoras = extraerItemConHoras(
+      t,
       /HORAS\s*EXTRAS\s*DOMINGO\s*\(\s*([0-9]*[.,]?[0-9]+)\s*\)\s*\$?\s*([0-9]{1,3}(?:\.[0-9]{3})*|[0-9]+)\b/i
     );
 
-    const rdConHoras = t.match(
+    const hxdSinHoras = !hxdConHoras.encontrado
+      ? extraerItemSoloMonto(
+          t,
+          /HORAS\s*EXTRAS\s*DOMINGO\s*\$?\s*([0-9]{1,3}(?:\.[0-9]{3})*|[0-9]+)\b/i
+        )
+      : { pagado: 0, encontrado: false };
+
+    // HORAS RECARGO DOMINGO
+    const rdConHoras = extraerItemConHoras(
+      t,
       /HORAS\s*RECARGO\s*DOMINGO\s*\(\s*([0-9]*[.,]?[0-9]+)\s*\)\s*\$?\s*([0-9]{1,3}(?:\.[0-9]{3})*|[0-9]+)\b/i
     );
 
-    const rdSinHoras = t.match(
-      /HORAS\s*RECARGO\s*DOMINGO\s*\$?\s*([0-9]{1,3}(?:\.[0-9]{3})*|[0-9]+)\b/i
-    );
+    const rdSinHoras = !rdConHoras.encontrado
+      ? extraerItemSoloMonto(
+          t,
+          /HORAS\s*RECARGO\s*DOMINGO\s*\$?\s*([0-9]{1,3}(?:\.[0-9]{3})*|[0-9]+)\b/i
+        )
+      : { pagado: 0, encontrado: false };
 
-    const rf = t.match(
+    // RECARGO 50% FESTIVO
+    const rfConHoras = extraerItemConHoras(
+      t,
       /RECARGO\s*50\s*%\s*FESTIVO\s*\(\s*([0-9]*[.,]?[0-9]+)\s*\)\s*\$?\s*([0-9]{1,3}(?:\.[0-9]{3})*|[0-9]+)\b/i
     );
 
+    const rfSinHoras = !rfConHoras.encontrado
+      ? extraerItemSoloMonto(
+          t,
+          /RECARGO\s*50\s*%\s*FESTIVO\s*\$?\s*([0-9]{1,3}(?:\.[0-9]{3})*|[0-9]+)\b/i
+        )
+      : { pagado: 0, encontrado: false };
+
     return {
-      horasExtras50: hx ? parseFloat(String(hx[1]).replace(",", ".")) : null,
-      pagadoHorasExtras50: hx ? procesarMontoCLP(hx[2]) : 0,
+      horasExtras50: hxConHoras.horas,
+      pagadoHorasExtras50: hxConHoras.encontrado
+        ? hxConHoras.pagado
+        : hxSinHoras.pagado,
+      horasExtras50TieneHoras: hxConHoras.tieneHoras,
+      horasExtras50Encontrado: hxConHoras.encontrado || hxSinHoras.encontrado,
 
-      horasExtrasDomingo: hxd
-        ? parseFloat(String(hxd[1]).replace(",", "."))
-        : null,
-      pagadoHorasExtrasDomingo: hxd ? procesarMontoCLP(hxd[2]) : 0,
+      horasExtrasDomingo: hxdConHoras.horas,
+      pagadoHorasExtrasDomingo: hxdConHoras.encontrado
+        ? hxdConHoras.pagado
+        : hxdSinHoras.pagado,
+      horasExtrasDomingoTieneHoras: hxdConHoras.tieneHoras,
+      horasExtrasDomingoEncontrado:
+        hxdConHoras.encontrado || hxdSinHoras.encontrado,
 
-      horasRecargoDomingo: rdConHoras
-        ? parseFloat(String(rdConHoras[1]).replace(",", "."))
-        : null,
-      pagadoRecargoDomingo: rdConHoras
-        ? procesarMontoCLP(rdConHoras[2])
-        : rdSinHoras
-        ? procesarMontoCLP(rdSinHoras[1])
-        : 0,
-      recargoDomingoTieneHoras: !!rdConHoras,
+      horasRecargoDomingo: rdConHoras.horas,
+      pagadoRecargoDomingo: rdConHoras.encontrado
+        ? rdConHoras.pagado
+        : rdSinHoras.pagado,
+      recargoDomingoTieneHoras: rdConHoras.tieneHoras,
+      recargoDomingoEncontrado: rdConHoras.encontrado || rdSinHoras.encontrado,
 
-      horasRecargoFestivo: rf
-        ? parseFloat(String(rf[1]).replace(",", "."))
-        : null,
-      pagadoRecargoFestivo: rf ? procesarMontoCLP(rf[2]) : 0,
+      horasRecargoFestivo: rfConHoras.horas,
+      pagadoRecargoFestivo: rfConHoras.encontrado
+        ? rfConHoras.pagado
+        : rfSinHoras.pagado,
+      recargoFestivoTieneHoras: rfConHoras.tieneHoras,
+      recargoFestivoEncontrado: rfConHoras.encontrado || rfSinHoras.encontrado,
     };
   }
 
   // -------------------- Cálculo Valor Hora --------------------
   function calcularValorHoraMensualMEC(sueldoMensual, jornadaHorasSemana) {
-    /*
-      Fórmula MEC para sueldo mensual:
-      valorHoraBase = (sueldo / 30) * (28 / (jornada semanal * 4))
-    */
-
     if (!sueldoMensual || sueldoMensual <= 0) return null;
     if (!jornadaHorasSemana || jornadaHorasSemana <= 0) return null;
 
@@ -338,12 +380,6 @@
   }
 
   function calcularValorHoraHRA(sueldoConvenido, horasHRA) {
-    /*
-      Fórmula correcta para part-time HRA:
-      No se infiere jornada.
-      Se divide el sueldo convenido por las horas pagadas HRA del PDF.
-    */
-
     if (!sueldoConvenido || sueldoConvenido <= 0) return null;
     if (!horasHRA || horasHRA <= 0) return null;
 
@@ -351,12 +387,7 @@
   }
 
   function calcularValorHoraBaseDemanda(params) {
-    const {
-      tipoSueldoBase,
-      sc,
-      horasBaseDetectadas,
-      jornada,
-    } = params;
+    const { tipoSueldoBase, sc, horasBaseDetectadas, jornada } = params;
 
     if (tipoSueldoBase === "part-time-hra") {
       const valorHoraBase = calcularValorHoraHRA(sc, horasBaseDetectadas);
@@ -398,39 +429,136 @@
     };
   }
 
-  function calcularEsperados(st, valorHoraBase) {
+  function calcularValorHoraEmpresaMEC(baseEmpresa, tipoBase, horasBaseDetectadas, jornadaHorasSemana) {
+    /*
+      Usa la base que aparentemente usó la empresa, sin bonos pactados normalizados.
+
+      Para HRA:
+      valorHoraEmpresa = sueldoBaseDetectado / horasHRA
+
+      Para mensual:
+      valorHoraEmpresa = (sueldoBaseDetectado / 30) × (28 / (jornada × 4))
+    */
+
+    if (!baseEmpresa || baseEmpresa <= 0) return null;
+
+    if (tipoBase === "part-time-hra") {
+      if (!horasBaseDetectadas || horasBaseDetectadas <= 0) return null;
+      return baseEmpresa / horasBaseDetectadas;
+    }
+
+    if (tipoBase === "mensual") {
+      if (!jornadaHorasSemana || jornadaHorasSemana <= 0) return null;
+      return (baseEmpresa / 30) * (28 / (Number(jornadaHorasSemana) * 4));
+    }
+
+    return null;
+  }
+
+  function estimarHorasDesdeMonto(pagado, valorHoraEmpresa, factor) {
+    if (!pagado || pagado <= 0) return null;
+    if (!valorHoraEmpresa || valorHoraEmpresa <= 0) return null;
+    if (!factor || factor <= 0) return null;
+
+    const horas = pagado / (valorHoraEmpresa * factor);
+
+    return Number.isFinite(horas) && horas > 0 ? horas : null;
+  }
+
+  function construirHorasEstimadas(st, valorHoraEmpresa) {
     return {
       horasExtras50:
-        valorHoraBase != null && st.horasExtras50 != null
-          ? valorHoraBase * 1.5 * st.horasExtras50
+        st.horasExtras50 == null && st.pagadoHorasExtras50 > 0
+          ? estimarHorasDesdeMonto(st.pagadoHorasExtras50, valorHoraEmpresa, 1.5)
           : null,
 
       horasExtrasDomingo:
-        valorHoraBase != null && st.horasExtrasDomingo != null
-          ? valorHoraBase * 1.3 * 1.5 * st.horasExtrasDomingo
+        st.horasExtrasDomingo == null && st.pagadoHorasExtrasDomingo > 0
+          ? estimarHorasDesdeMonto(
+              st.pagadoHorasExtrasDomingo,
+              valorHoraEmpresa,
+              1.3 * 1.5
+            )
           : null,
 
-      recargoDomingo:
-        valorHoraBase != null && st.horasRecargoDomingo != null
-          ? valorHoraBase * 0.3 * st.horasRecargoDomingo
+      horasRecargoDomingo:
+        st.horasRecargoDomingo == null && st.pagadoRecargoDomingo > 0
+          ? estimarHorasDesdeMonto(st.pagadoRecargoDomingo, valorHoraEmpresa, 0.3)
           : null,
 
-      recargoFestivo:
-        valorHoraBase != null && st.horasRecargoFestivo != null
-          ? valorHoraBase * 1.5 * st.horasRecargoFestivo
+      horasRecargoFestivo:
+        st.horasRecargoFestivo == null && st.pagadoRecargoFestivo > 0
+          ? estimarHorasDesdeMonto(st.pagadoRecargoFestivo, valorHoraEmpresa, 1.5)
           : null,
     };
   }
 
+  function calcularEsperados(st, valorHoraBase, horasEstimadas) {
+    horasEstimadas = horasEstimadas || {};
+
+    const horasExtras50Usadas =
+      st.horasExtras50 != null ? st.horasExtras50 : horasEstimadas.horasExtras50;
+
+    const horasExtrasDomingoUsadas =
+      st.horasExtrasDomingo != null
+        ? st.horasExtrasDomingo
+        : horasEstimadas.horasExtrasDomingo;
+
+    const horasRecargoDomingoUsadas =
+      st.horasRecargoDomingo != null
+        ? st.horasRecargoDomingo
+        : horasEstimadas.horasRecargoDomingo;
+
+    const horasRecargoFestivoUsadas =
+      st.horasRecargoFestivo != null
+        ? st.horasRecargoFestivo
+        : horasEstimadas.horasRecargoFestivo;
+
+    return {
+      horasExtras50:
+        valorHoraBase != null && horasExtras50Usadas != null
+          ? valorHoraBase * 1.5 * horasExtras50Usadas
+          : null,
+
+      horasExtrasDomingo:
+        valorHoraBase != null && horasExtrasDomingoUsadas != null
+          ? valorHoraBase * 1.3 * 1.5 * horasExtrasDomingoUsadas
+          : null,
+
+      recargoDomingo:
+        valorHoraBase != null && horasRecargoDomingoUsadas != null
+          ? valorHoraBase * 0.3 * horasRecargoDomingoUsadas
+          : null,
+
+      recargoFestivo:
+        valorHoraBase != null && horasRecargoFestivoUsadas != null
+          ? valorHoraBase * 1.5 * horasRecargoFestivoUsadas
+          : null,
+
+      horasUsadas: {
+        horasExtras50: horasExtras50Usadas,
+        horasExtrasDomingo: horasExtrasDomingoUsadas,
+        horasRecargoDomingo: horasRecargoDomingoUsadas,
+        horasRecargoFestivo: horasRecargoFestivoUsadas,
+      },
+
+      horasSonEstimadas: {
+        horasExtras50:
+          st.horasExtras50 == null && horasEstimadas.horasExtras50 != null,
+        horasExtrasDomingo:
+          st.horasExtrasDomingo == null &&
+          horasEstimadas.horasExtrasDomingo != null,
+        horasRecargoDomingo:
+          st.horasRecargoDomingo == null &&
+          horasEstimadas.horasRecargoDomingo != null,
+        horasRecargoFestivo:
+          st.horasRecargoFestivo == null &&
+          horasEstimadas.horasRecargoFestivo != null,
+      },
+    };
+  }
+
   function calcularDiferencias(st, esperado) {
-    /*
-      Diferencia demandable:
-      Esperado con SC - Pagado Empresa
-
-      Si da positivo, la empresa pagó menos.
-      Si da negativo, la empresa pagó más.
-    */
-
     return {
       horasExtras50:
         esperado.horasExtras50 != null
@@ -443,7 +571,7 @@
           : null,
 
       recargoDomingo:
-        esperado.recargoDomingo != null && st.recargoDomingoTieneHoras
+        esperado.recargoDomingo != null
           ? esperado.recargoDomingo - st.pagadoRecargoDomingo
           : null,
 
@@ -452,6 +580,25 @@
           ? esperado.recargoFestivo - st.pagadoRecargoFestivo
           : null,
     };
+  }
+
+  function notaHorasItem(encontrado, horasDetectadas, horasUsadas, esEstimado) {
+    if (esEstimado && horasUsadas != null) {
+      return (
+        "Horas estimadas desde monto pagado empresa: " +
+        formatearNumero(horasUsadas, 2)
+      );
+    }
+
+    if (horasDetectadas != null) {
+      return "Horas detectadas en PDF: " + formatearNumero(horasDetectadas, 3);
+    }
+
+    if (encontrado) {
+      return "Ítem encontrado, pero no fue posible estimar horas.";
+    }
+
+    return "No encontrado";
   }
 
   function filaComparacion(nombre, pagado, esp, dif, notaExtra) {
@@ -503,6 +650,7 @@
 
       sc,
       valorHoraBase,
+      valorHoraEmpresa,
       metodoCalculo,
       descripcionMetodo,
       warningCalculo,
@@ -650,12 +798,20 @@
       bloqueMetodoHRA +
       bloqueMetodoMensual +
       bloqueMetodoNoDetectado +
-      '<div style="margin-top:8px;">valorHoraBase: <strong>' +
+      '<div style="margin-top:8px;">Valor hora corregido con SC: <strong>' +
       (valorHoraBase == null ? "—" : formatearCLP(valorHoraBase)) +
       "</strong></div>" +
       (valorHoraBase != null
-        ? '<div style="font-size:12px;color:#6b7280;">Valor exacto: ' +
+        ? '<div style="font-size:12px;color:#6b7280;">Valor exacto SC: ' +
           escapeHtml(formatearNumero(valorHoraBase, 6)) +
+          "</div>"
+        : "") +
+      '<div style="margin-top:8px;">Valor hora empresa estimado: <strong>' +
+      (valorHoraEmpresa == null ? "—" : formatearCLP(valorHoraEmpresa)) +
+      "</strong></div>" +
+      (valorHoraEmpresa != null
+        ? '<div style="font-size:12px;color:#6b7280;">Valor exacto empresa: ' +
+          escapeHtml(formatearNumero(valorHoraEmpresa, 6)) +
           "</div>"
         : "") +
       (warningCalculo
@@ -686,47 +842,59 @@
         st.pagadoHorasExtras50,
         esperado.horasExtras50,
         difs.horasExtras50,
-        st.horasExtras50 != null ? "Horas: " + st.horasExtras50 : "No encontrado"
+        notaHorasItem(
+          st.horasExtras50Encontrado,
+          st.horasExtras50,
+          esperado.horasUsadas.horasExtras50,
+          esperado.horasSonEstimadas.horasExtras50
+        )
       ) +
       filaComparacion(
         "HORAS EXTRAS DOMINGO",
         st.pagadoHorasExtrasDomingo,
         esperado.horasExtrasDomingo,
         difs.horasExtrasDomingo,
-        st.horasExtrasDomingo != null
-          ? "Horas: " + st.horasExtrasDomingo
-          : "No encontrado"
+        notaHorasItem(
+          st.horasExtrasDomingoEncontrado,
+          st.horasExtrasDomingo,
+          esperado.horasUsadas.horasExtrasDomingo,
+          esperado.horasSonEstimadas.horasExtrasDomingo
+        )
       ) +
-      (st.recargoDomingoTieneHoras
-        ? filaComparacion(
-            "HORAS RECARGO DOMINGO",
-            st.pagadoRecargoDomingo,
-            esperado.recargoDomingo,
-            difs.recargoDomingo,
-            st.horasRecargoDomingo != null
-              ? "Horas: " + st.horasRecargoDomingo
-              : ""
-          )
-        : filaComparacion(
-            "HORAS RECARGO DOMINGO",
-            st.pagadoRecargoDomingo,
-            null,
-            null,
-            "El PDF no trae horas, solo monto pagado. No validable."
-          )) +
+      filaComparacion(
+        "HORAS RECARGO DOMINGO",
+        st.pagadoRecargoDomingo,
+        esperado.recargoDomingo,
+        difs.recargoDomingo,
+        notaHorasItem(
+          st.recargoDomingoEncontrado,
+          st.horasRecargoDomingo,
+          esperado.horasUsadas.horasRecargoDomingo,
+          esperado.horasSonEstimadas.horasRecargoDomingo
+        )
+      ) +
       filaComparacion(
         "RECARGO 50% FESTIVO",
         st.pagadoRecargoFestivo,
         esperado.recargoFestivo,
         difs.recargoFestivo,
-        st.horasRecargoFestivo != null
-          ? "Horas: " + st.horasRecargoFestivo
-          : "No encontrado"
+        notaHorasItem(
+          st.recargoFestivoEncontrado,
+          st.horasRecargoFestivo,
+          esperado.horasUsadas.horasRecargoFestivo,
+          esperado.horasSonEstimadas.horasRecargoFestivo
+        )
       ) +
       "</tbody>" +
       "</table>" +
       '<div style="margin-top:10px; font-size:12px; color:#6b7280;">' +
       "* Diferencia adeudada = Esperado con SC - Pagado empresa. Si |diferencia| &lt; 1 peso, se considera correcto." +
+      "</div>" +
+      '<div style="margin-top:6px; font-size:12px; color:#6b7280;">' +
+      "* Si el PDF no informa horas, pero sí informa monto pagado, las horas se estiman dividiendo el monto pagado por el valor hora empresa y el factor del ítem." +
+      "</div>" +
+      '<div style="margin-top:6px; font-size:12px; color:#6b7280;">' +
+      "* Las horas estimadas deben revisarse, porque no son un dato directo del PDF sino un cálculo inverso." +
       "</div>" +
       "</div>";
   }
@@ -756,7 +924,17 @@
     });
 
     const valorHoraBase = calc.valorHoraBase;
-    const esperado = calcularEsperados(st, valorHoraBase);
+
+    const valorHoraEmpresa = calcularValorHoraEmpresaMEC(
+      sueldoBaseDetectado || 0,
+      tipoSueldoBase,
+      horasBaseDetectadas,
+      jornada
+    );
+
+    const horasEstimadas = construirHorasEstimadas(st, valorHoraEmpresa);
+
+    const esperado = calcularEsperados(st, valorHoraBase, horasEstimadas);
     const difs = calcularDiferencias(st, esperado);
 
     return {
@@ -776,10 +954,12 @@
 
       sc,
       valorHoraBase,
+      valorHoraEmpresa,
       metodoCalculo: calc.metodoCalculo,
       descripcionMetodo: calc.descripcionMetodo,
       warningCalculo: calc.warning,
 
+      horasEstimadas,
       st,
       esperado,
       difs,
@@ -804,7 +984,6 @@
       let bautManual = procesarMontoCLP(inBaut ? inBaut.value : 0);
       let bpautManual = procesarMontoCLP(inBpaut ? inBpaut.value : 0);
 
-      // Si solo llena uno, asumimos que ambos son iguales.
       if (bautManual > 0 && bpautManual === 0) {
         bpautManual = bautManual;
       }

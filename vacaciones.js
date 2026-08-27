@@ -53,18 +53,39 @@ const listaComisionVacaciones = [
 
 function extraerItemsDePDF(texto) {
     let items = [];
-    // texto se espera normalizado (mayúsculas, sin tildes)
     listaComisionVacaciones.forEach(item => {
         const esc = item.replace(/([.+*?^${}()|\[\]\/\\])/g, "\\$1");
-        // regex tolerante: nombre (opcional (n)) opcional $ y monto (con puntos o comas)
-        const regex = new RegExp(`${esc}(?:\\s*\\(\\d+\\))?\\s*\\$?\\s*([0-9]+(?:[\\.,][0-9]{1,3})*)`, "i");
-        const resultado = texto.match(regex);
-        if (resultado && resultado[1]) {
-            items.push({ nombre: item, monto: procesarMonto(resultado[1]) });
+
+        // 1) Patrón principal: acepta paréntesis con decimales (ej. (8.33)) entre nombre y monto
+        const regex1 = new RegExp(`${esc}(?:\\s*\\([0-9]+(?:[\\.,][0-9]+)?\\))?\\s*\\$?\\s*([0-9]+(?:[\\.,][0-9]{1,3})*)`, "i");
+        const res1 = texto.match(regex1);
+        if (res1 && res1[1]) {
+            items.push({ nombre: item, monto: procesarMonto(res1[1]) });
+            return;
+        }
+
+        // 2) Patrón tolerante: busca la línea que contiene el nombre y toma el último monto en esa línea
+        const lineRegex = new RegExp(`(^|\\n).*${esc}.*$`, 'im');
+        const lineMatch = texto.match(lineRegex);
+        if (lineMatch && lineMatch[0]) {
+            // Buscar el último monto en esa línea
+            const montosEnLinea = lineMatch[0].match(/([0-9]+(?:[\\.,][0-9]{1,3})*)/g);
+            if (montosEnLinea && montosEnLinea.length > 0) {
+                const ultimo = montosEnLinea[montosEnLinea.length - 1];
+                items.push({ nombre: item, monto: procesarMonto(ultimo) });
+                return;
+            }
+        }
+
+        // 3) Si encontramos el nombre pero no montaje detectable, logear para auditoría
+        const foundName = new RegExp(`${esc}`, 'i');
+        if (foundName.test(texto)) {
+            console.warn(`Se detectó el concepto "${item}" pero no se pudo extraer monto automáticamente.`);
         }
     });
     return items;
 }
+
 
 // Función para obtener días trabajados (se espera 30 para liquidaciones válidas)
 function obtenerDiasTrabajados(texto) {

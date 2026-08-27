@@ -1,9 +1,29 @@
+// Normalizar texto (quita tildes, espacios múltiples y lleva a mayúsculas)
+function normalizarTexto(str) {
+    if (!str) return '';
+    return str
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // quitar tildes
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toUpperCase();
+}
+
 function formatearMonto(monto) {
     return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(monto);
 }
 
 function procesarMonto(textoMonto) {
-    return parseFloat(textoMonto.replace(/\./g, '').replace(',', '.'));
+    if (textoMonto === null || textoMonto === undefined) return 0;
+    const s = textoMonto.toString().trim();
+    if (s === '') return 0;
+    // quitar todo lo que no sea dígito, punto, coma o guión/menos
+    const cleaned = s.replace(/[^\d.,-]/g, '').replace(/\./g, '').replace(',', '.');
+    const n = parseFloat(cleaned);
+    if (Number.isNaN(n)) {
+        console.warn('procesarMonto: no se pudo parsear ->', textoMonto, 'limpio->', cleaned);
+        return 0;
+    }
+    return n;
 }
 
 async function extraerTextoDePDF(archivo) {
@@ -15,10 +35,10 @@ async function extraerTextoDePDF(archivo) {
         const texto = await pagina.getTextContent();
         texto.items.forEach(item => textoCompleto += item.str + ' ');
     }
-    return textoCompleto;
+    return normalizarTexto(textoCompleto);
 }
 
-// Lista de comisiones (se incluye "COMISION VACACIONES")
+// Lista de comisiones (se incluye "COMISION VACACIONES") - se normaliza al usar
 const listaComisionVacaciones = [
     "COM.EFECTIVAS", "COMISION CYD", "CONCURSO FPAY", "COMISION DIGITA Y GANA", "COMI. KIOSCO OTRAS EMPRESAS",
     "APERTURA CTA CTE", "ESCANEA Y PAGA", "DIF. ESCANEA Y PAGA", "COMPENSACION PERMISO", "DIF CONCURSO FPAY",
@@ -28,16 +48,18 @@ const listaComisionVacaciones = [
     "INCENTIVO SELF CHECK OUT", "INCENTIVO TIENDA CD/SFS", "PREMIO CLICK AND COLLECT", "PREMIO CUMPL.GRUPAL NPS",
     "PREMIO CUMPL.GRUPAL VTAS", "PREMIO CUMPLIMIENTO DE PLAN", "PREMIO NPS", "PREMIO VENTA TIENDA", "PREMIO VENTA TIENDA AUT.",
     "PROMEDIOS VARIOS", "QUIEBRE DE STOCK", "HORAS RECARGO NAVIDAD", "DIFERENCIA SEMANA CORRIDA", "BONO CERTIFICACION", "DIF. COMISIONES",
-    "COMISION VACACIONES","DIF COMISION DIGITA Y GANA","COMISIÓN SEGURO DE VIDA","NS OMNICANAL","NPS OMNICANAL"
-];
+    "COMISION VACACIONES","DIF COMISION DIGITA Y GANA","COMISION SEGURO DE VIDA","NPS OMNICANAL"
+].map(s => normalizarTexto(s));
 
 function extraerItemsDePDF(texto) {
     let items = [];
+    // texto se espera normalizado (mayúsculas, sin tildes)
     listaComisionVacaciones.forEach(item => {
-        let itemRegex = item.replace(/([.+*?^${}()|\[\]\/\\])/g, "\\$1");
-        const regex = new RegExp(`${itemRegex}(?:\\s*\\(\\d+\\))?\\s*\\$\\s*([0-9]+(?:\.[0-9]{3})*)`, "i");
+        const esc = item.replace(/([.+*?^${}()|\[\]\/\\])/g, "\\$1");
+        // regex tolerante: nombre (opcional (n)) opcional $ y monto (con puntos o comas)
+        const regex = new RegExp(`${esc}(?:\\s*\\(\\d+\\))?\\s*\\$?\\s*([0-9]+(?:[\\.,][0-9]{1,3})*)`, "i");
         const resultado = texto.match(regex);
-        if (resultado) {
+        if (resultado && resultado[1]) {
             items.push({ nombre: item, monto: procesarMonto(resultado[1]) });
         }
     });
@@ -53,7 +75,7 @@ function obtenerDiasTrabajados(texto) {
 
 // Obtener comisión de vacaciones del PDF evaluado
 function obtenerComisionVacaciones(texto) {
-    const regex = /COMISION VACACIONES\s*\(?(\d+)\)?\s*\$\s*([\d.]+)/i;
+    const regex = /COMISION VACACIONES\s*\(?(\d+)\)?\s*\$?\s*([0-9.,]+)/i;
     const resultado = texto.match(regex);
     if (resultado) {
         return {
@@ -66,113 +88,62 @@ function obtenerComisionVacaciones(texto) {
 
 // Obtener el mes y año del texto (ej: "JULIO de 2023")
 function obtenerMesYAnio(texto) {
-    const regex = /\b([A-Za-z]+)\s+de\s+(\d{4})\b/i;
+    const regex = /\b([A-ZÇÑ]+)\s+DE\s+(\d{4})\b/i; // asume texto normalizado
     const resultado = texto.match(regex);
     return resultado ? `${resultado[1].toUpperCase()} de ${resultado[2]}` : 'Fecha no encontrada';
 }
 
-// ----- Funciones para selección de liquidaciones (promedio) -----
-// Determina si mesAnioAnterior es el mes inmediatamente anterior a mesAnioPosterior.
-function esMesConsecutivo(mesAnioAnterior, mesAnioPosterior) {
-    if (!mesAnioAnterior || !mesAnioPosterior) {
-        return false;  // Retorna false si algún mes o año no está definido
-    }
-
+function parseMesAnio(mesAnio) {
+    if (!mesAnio) return null;
     const meses = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
-    const [mesA, anioA] = mesAnioAnterior.split(' de ');
-    const [mesB, anioB] = mesAnioPosterior.split(' de ');
+    const parts = mesAnio.split(' de ').map(p => p.trim().toUpperCase());
+    if (parts.length !== 2) return null;
+    const idx = meses.indexOf(parts[0]);
+    const anio = parseInt(parts[1], 10);
+    if (idx === -1 || Number.isNaN(anio)) return null;
+    return { mesIndex: idx, anio, label: `${parts[0]} de ${parts[1]}` };
+}
 
-    const idxA = meses.indexOf(mesA.toUpperCase());
-    const idxB = meses.indexOf(mesB.toUpperCase());
-
-    const yearA = parseInt(anioA, 10);
-    const yearB = parseInt(anioB, 10);
-
-    if (yearB === yearA && idxB === idxA + 1) return true;
-    if (yearB === yearA + 1 && idxA === 11 && idxB === 0) return true;
+// ----- Funciones para selección de liquidaciones (promedio) -----
+function esMesConsecutivo(mesAnioAnterior, mesAnioPosterior) {
+    if (!mesAnioAnterior || !mesAnioPosterior) return false;
+    const a = parseMesAnio(mesAnioAnterior);
+    const b = parseMesAnio(mesAnioPosterior);
+    if (!a || !b) return false;
+    if (b.anio === a.anio && b.mesIndex === a.mesIndex + 1) return true;
+    if (b.anio === a.anio + 1 && a.mesIndex === 11 && b.mesIndex === 0) return true;
     return false;
 }
 
-// Selecciona 3 liquidaciones para el promedio siguiendo las reglas:
-// - Se descarta el PDF evaluado.
-// - Solo se consideran liquidaciones con 30 días trabajados.
-// - Se intenta seleccionar 3 liquidaciones NO consecutivas al PDF evaluado.
-// - Si no se logra, se notifica la necesidad de una liquidación adicional.
-// Ajustar la función 'seleccionarLiquidacionesParaPromedio' para evitar errores de acceso a propiedades no definidas
 function seleccionarLiquidacionesParaPromedio(datos, pdfSeleccionado) {
-    // Excluir el PDF evaluado y solo considerar liquidaciones de 30 días
-    let candidatos = datos.filter(pdf => pdf.nombre !== pdfSeleccionado.nombre && pdf.dias === 30);
+    const parsedEvaluado = parseMesAnio(pdfSeleccionado.mesAnio);
+    if (!parsedEvaluado) return { error: true, mensaje: 'Mes evaluado inválido' };
 
-    // Ordenar cronológicamente de más antiguo a más reciente
-    const meses = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
-    candidatos.sort((a, b) => {
-        const [mesA, anioA] = a.mesAnio ? a.mesAnio.split(' de ') : ['', ''];
-        const [mesB, anioB] = b.mesAnio ? b.mesAnio.split(' de ') : ['', ''];
-        const yearA = parseInt(anioA, 10);
-        const yearB = parseInt(anioB, 10);
-        const idxA = meses.indexOf(mesA.toUpperCase());
-        const idxB = meses.indexOf(mesB.toUpperCase());
+    let candidatos = datos
+        .filter(p => p.nombre !== pdfSeleccionado.nombre && p.dias === 30)
+        .map(p => ({ ...p, parsed: parseMesAnio(p.mesAnio) }))
+        .filter(p => p.parsed)
+        .filter(p => (p.parsed.anio < parsedEvaluado.anio) || (p.parsed.anio === parsedEvaluado.anio && p.parsed.mesIndex < parsedEvaluado.mesIndex))
+        .sort((a, b) => a.parsed.anio !== b.parsed.anio ? a.parsed.anio - b.parsed.anio : a.parsed.mesIndex - b.parsed.mesIndex);
 
-        // Verificar que mesA y mesB son válidos antes de comparar
-        if (idxA === -1 || idxB === -1) return 0;  // Si algún mes no es válido, no ordenar
+    if (candidatos.length < 3) return { error: true, mensaje: "No hay suficientes liquidaciones válidas para el cálculo." };
 
-        return (yearA === yearB) ? (idxA - idxB) : (yearA - yearB);
-    });
-
-    // Filtrar solo PDFs anteriores al evaluado
-    candidatos = candidatos.filter(pdf => {
-        const [mesCandidato, anioCandidato] = pdf.mesAnio ? pdf.mesAnio.split(' de ') : ['', ''];
-        const [mesEvaluado, anioEvaluado] = pdfSeleccionado.mesAnio.split(' de ');
-
-        const idxCandidato = meses.indexOf(mesCandidato.toUpperCase());
-        const idxEvaluado = meses.indexOf(mesEvaluado.toUpperCase());
-
-        const yearCandidato = parseInt(anioCandidato, 10);
-        const yearEvaluado = parseInt(anioEvaluado, 10);
-
-        return (yearCandidato < yearEvaluado) || (yearCandidato === yearEvaluado && idxCandidato < idxEvaluado);
-    });
-
-    // Buscar si hay PDFs con "COMISION VACACIONES"
-    let pdfsConComision = candidatos.filter(pdf => pdf.items.some(item => item.nombre === "COMISION VACACIONES"));
-
-    // Si los meses seleccionados son consecutivos, no incluir PDFs con "COMISION VACACIONES"
-    let consecutivos = esMesConsecutivo(candidatos[candidatos.length - 3]?.mesAnio, candidatos[candidatos.length - 2]?.mesAnio) &&
-                       esMesConsecutivo(candidatos[candidatos.length - 2]?.mesAnio, candidatos[candidatos.length - 1]?.mesAnio);
-
-    if (consecutivos) {
-        // Si son consecutivos, no incluir PDFs con "COMISION VACACIONES"
-        candidatos = candidatos.filter(pdf => !pdfsConComision.includes(pdf));
+    // Buscar 3 últimos no-consecutivos (desde más recientes hacia atrás)
+    for (let i = candidatos.length - 1; i >= 2; i--) {
+        const c3 = candidatos[i], c2 = candidatos[i-1], c1 = candidatos[i-2];
+        if (!(esMesConsecutivo(c1.mesAnio, c2.mesAnio) && esMesConsecutivo(c2.mesAnio, c3.mesAnio))) {
+            return { error: false, seleccion: [c1, c2, c3] };
+        }
     }
 
-    // Si no son consecutivos, incluir PDFs con "COMISION VACACIONES" solo si no son posteriores al mes evaluado
-    pdfsConComision = pdfsConComision.filter(pdf => {
-        const [mesCandidato, anioCandidato] = pdf.mesAnio.split(' de ');
-        const [mesEvaluado, anioEvaluado] = pdfSeleccionado.mesAnio.split(' de ');
-        const idxCandidato = meses.indexOf(mesCandidato.toUpperCase());
-        const idxEvaluado = meses.indexOf(mesEvaluado.toUpperCase());
-        // Incluir solo si es anterior o igual al mes evaluado
-        return (parseInt(anioCandidato) < parseInt(anioEvaluado)) ||
-               (parseInt(anioCandidato) === parseInt(anioEvaluado) && idxCandidato <= idxEvaluado);
-    });
-
-    // Agregar PDFs con "COMISION VACACIONES" si no son posteriores
-    candidatos.push(...pdfsConComision);
-
-    // Si hay al menos 3 candidatos, devolverlos
-    if (candidatos.length >= 3) {
-        return { error: false, seleccion: candidatos.slice(-3) };
-    }
-
-    return { error: true, mensaje: "No hay suficientes liquidaciones válidas para el cálculo." };
+    // Si no hay no-consecutivos, retornar las 3 más recientes con advertencia
+    return { error: false, seleccion: candidatos.slice(-3), advertencia: 'Se usaron 3 meses consecutivos' };
 }
 
-// Ajuste en la función 'calcularVacaciones' para manejar la lógica de selección de liquidaciones con "COMISIÓN VACACIONES"
+// Evento de cálculo
 document.getElementById('calcularVacacionesBtn').addEventListener('click', async () => {
-
-    // 🔒 BLOQUEO CORRECTO PARA VACACIONES (usa el feature definido en permissions.js)
     if (!PERMISSIONS.requireFeature(PERMISSIONS.FEATURES.VACACIONES, "Cálculo de Vacaciones")) return;
-    
+
     const archivos = document.getElementById('vacacionInput').files;
     const resultadoDiv = document.getElementById('resultadoVacaciones');
     resultadoDiv.innerHTML = '';
@@ -183,99 +154,123 @@ document.getElementById('calcularVacacionesBtn').addEventListener('click', async
     }
 
     const datos = [];
-    const pdfsConComisionVacaciones = [];
 
-
-    // Procesar cada PDF subido
     for (let archivo of archivos) {
-        const texto = await extraerTextoDePDF(archivo);
-        const diasTrabajados = obtenerDiasTrabajados(texto);
-        const mesAnio = obtenerMesYAnio(texto);
-        const comisionVacaciones = obtenerComisionVacaciones(texto);
-        const items = extraerItemsDePDF(texto);
+        try {
+            const texto = await extraerTextoDePDF(archivo); // ya normalizado
+            const diasTrabajados = obtenerDiasTrabajados(texto);
+            const mesAnio = obtenerMesYAnio(texto);
+            const comisionVacaciones = obtenerComisionVacaciones(texto);
+            const items = extraerItemsDePDF(texto);
 
-        datos.push({ nombre: archivo.name, dias: diasTrabajados, mesAnio, comisionVacaciones, items });
-
-        if (comisionVacaciones) {
-            pdfsConComisionVacaciones.push({ nombre: archivo.name, comisionVacaciones, mesAnio });
+            // Guardar referencia completa
+            datos.push({ nombre: archivo.name, dias: diasTrabajados, mesAnio, comisionVacaciones, items });
+        } catch (err) {
+            console.error('Error procesando', archivo.name, err);
+            resultadoDiv.innerHTML = `<p style="color:red;">Error leyendo ${archivo.name}: ${err.message}</p>`;
+            return;
         }
     }
 
-    // Ordenar PDFs con "COMISIÓN VACACIONES" cronológicamente
-    pdfsConComisionVacaciones.sort((a, b) => {
-        const meses = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
-        const [mesA, anioA] = a.mesAnio.split(' de ');
-        const [mesB, anioB] = b.mesAnio.split(' de ');
+    const pdfsConComisionVacaciones = datos.filter(d => d.comisionVacaciones);
 
-        const idxA = meses.indexOf(mesA.toUpperCase()), idxB = meses.indexOf(mesB.toUpperCase());
-        return (parseInt(anioA) - parseInt(anioB)) || (idxA - idxB);
+    if (pdfsConComisionVacaciones.length === 0) {
+        resultadoDiv.innerHTML = '<p style="color: red;">No se encontraron PDFs con "COMISION VACACIONES".</p>';
+        return;
+    }
+
+    // Ordenar cronológicamente
+    pdfsConComisionVacaciones.sort((a,b) => {
+        const pa = parseMesAnio(a.mesAnio), pb = parseMesAnio(b.mesAnio);
+        if (!pa || !pb) return 0;
+        return (pa.anio - pb.anio) || (pa.mesIndex - pb.mesIndex);
     });
 
-    // Si hay PDFs consecutivos con "COMISIÓN VACACIONES", ambos deben usar el mismo cálculo
-    for (let i = 0; i < pdfsConComisionVacaciones.length - 1; i++) {
-        if (esMesConsecutivo(pdfsConComisionVacaciones[i].mesAnio, pdfsConComisionVacaciones[i + 1].mesAnio)) {
-            const seleccion = seleccionarLiquidacionesParaPromedio(datos, pdfsConComisionVacaciones[i]);
-            if (!seleccion.error) {
-                realizarCalculo(datos, pdfsConComisionVacaciones[i], seleccion.seleccion);
-                realizarCalculo(datos, pdfsConComisionVacaciones[i + 1], seleccion.seleccion);
-                return;
-            }
-        }
-    }
-
-    // Si solo hay un PDF con "COMISIÓN VACACIONES", hacer el cálculo normal
+    // Manejo cuando hay varios con comisión vacaciones
     if (pdfsConComisionVacaciones.length === 1) {
         realizarCalculo(datos, pdfsConComisionVacaciones[0]);
-    } else if (pdfsConComisionVacaciones.length > 1) {
-        const opcionesValidas = pdfsConComisionVacaciones.filter(pdf => {
-            const seleccion = seleccionarLiquidacionesParaPromedio(datos, pdf);
-            return !seleccion.error;
-        });
+        return;
+    } else {
+        // Buscar opciones válidas
+        const opcionesValidas = pdfsConComisionVacaciones.map(pdf => {
+            const sel = seleccionarLiquidacionesParaPromedio(datos, pdf);
+            return { pdf, valido: !sel.error, sel };
+        }).filter(x => x.valido);
 
-        if (opcionesValidas.length > 0) {
-            const opciones = opcionesValidas.map((pdf, idx) =>
-                `<button class="opcion" data-index="${idx}">${pdf.mesAnio}</button>`).join('');
-            resultadoDiv.innerHTML = `<hr><strong>Elige un período con 'Comisión Vacaciones':</strong><hr> ${opciones}`;
+        if (opcionesValidas.length === 0) {
+            resultadoDiv.innerHTML = '<p style="color: red;">No hay PDFs con "COMISION VACACIONES" que cumplan las reglas para el cálculo.</p>';
+            return;
+        }
 
+        if (opcionesValidas.length > 1) {
+            const botones = opcionesValidas.map((op, idx) => `<button class="opcion" data-index="${idx}">${op.pdf.mesAnio}</button>`).join(' ');
+            resultadoDiv.innerHTML = `<hr><strong>Elige un período con 'Comisión Vacaciones':</strong><hr> ${botones}`;
             document.querySelectorAll('.opcion').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    const index = btn.dataset.index;
-                    realizarCalculo(datos, opcionesValidas[index]);
+                    const idx = Number(btn.dataset.index);
+                    realizarCalculo(datos, opcionesValidas[idx].pdf, opcionesValidas[idx].sel.seleccion);
                 });
             });
-        } else {
-            resultadoDiv.innerHTML = '<p style="color: red;">No hay PDFs con "COMISIÓN VACACIONES" que cumplan las reglas para el cálculo.</p>';
+            return;
         }
-    } else {
-        resultadoDiv.innerHTML = '<p style="color: red;">No se encontraron PDFs con "COMISIÓN VACACIONES".</p>';
+
+        realizarCalculo(datos, opcionesValidas[0].pdf, opcionesValidas[0].sel.seleccion);
+        return;
     }
 });
 
-// Función que realiza el cálculo usando la liquidación evaluada y las 3 para promedio
+// Función que realiza el cálculo y muestra detalle por liquidación
 function realizarCalculo(datos, pdfSeleccionado, seleccion) {
     const resultadoDiv = document.getElementById('resultadoVacaciones');
-    const seleccionResult = seleccion || seleccionarLiquidacionesParaPromedio(datos, pdfSeleccionado).seleccion;
 
-    if (!seleccionResult) {
+    if (!pdfSeleccionado || !pdfSeleccionado.comisionVacaciones) {
+        resultadoDiv.innerHTML = `<p style="color: red;">PDF seleccionado no contiene "COMISION VACACIONES".</p>`;
+        return;
+    }
+
+    const seleccionResult = seleccion || (seleccionarLiquidacionesParaPromedio(datos, pdfSeleccionado).seleccion);
+
+    if (!seleccionResult || seleccionResult.length < 3) {
         resultadoDiv.innerHTML = `<p style="color: red;">No hay suficientes liquidaciones válidas para el cálculo.</p>`;
         return;
     }
 
-    // Calcular el total de haberes en las liquidaciones seleccionadas
-    const totalItems = seleccionResult.reduce((acc, pdf) =>
-        acc + pdf.items.reduce((sum, item) => sum + item.monto, 0)
-    , 0);
-
-    // Calcular el promedio diario
-    const promedioVacaciones = (totalItems / 3) / 30 * pdfSeleccionado.comisionVacaciones.dias;
-    const diferencia = promedioVacaciones - pdfSeleccionado.comisionVacaciones.monto;
-
-    resultadoDiv.innerHTML +=
-        `<h3>Cálculo de Vacaciones:</h3>
+    let detalleHTML = `<h3>Cálculo de Vacaciones:</h3>
         <p>Mes evaluado: ${pdfSeleccionado.mesAnio}</p>
         <p>Liquidaciones usadas para promedio: ${seleccionResult.map(pdf => pdf.mesAnio).join(', ')}</p>
-        <p>Comisión calculada: ${formatearMonto(promedioVacaciones)}</p>
-        <p>Comisión pagada: ${formatearMonto(pdfSeleccionado.comisionVacaciones.monto)}</p>
-        <p>Diferencia: ${formatearMonto(diferencia)}</p>`;
-}
+        <hr>
+        <h4>Detalle por liquidación:</h4>
+        <ul>`;
 
+    const subtotales = seleccionResult.map(pdf => {
+        const items = Array.isArray(pdf.items) ? pdf.items : [];
+        const subtotal = items.reduce((s, it) => s + (Number(it.monto) || 0), 0);
+        const itemsHtml = items.map(it => `<li>${it.nombre}: ${formatearMonto(it.monto)}</li>`).join('');
+        detalleHTML += `<li><strong>${pdf.mesAnio}:</strong> subtotal = ${formatearMonto(subtotal)}<ul>${itemsHtml}</ul></li>`;
+        return { mesAnio: pdf.mesAnio, subtotal, items };
+    });
+
+    detalleHTML += `</ul><hr>`;
+
+    const totalItems = subtotales.reduce((s, x) => s + x.subtotal, 0);
+    const promedioMensual = totalItems / 3;
+    const promedioDiario = promedioMensual / 30;
+    const diasVac = pdfSeleccionado.comisionVacaciones.dias || 30;
+    const promedioVacaciones = promedioDiario * diasVac;
+    const montoPagado = pdfSeleccionado.comisionVacaciones.monto || 0;
+    const diferencia = promedioVacaciones - montoPagado;
+
+    detalleHTML += `<h4>Resumen cálculo:</h4>
+        <p>Total items (suma 3 liquidaciones): ${formatearMonto(totalItems)} <small>(${totalItems})</small></p>
+        <p>Promedio mensual: ${formatearMonto(promedioMensual)} <small>(${promedioMensual})</small></p>
+        <p>Promedio diario: ${formatearMonto(promedioDiario)} <small>(${promedioDiario})</small></p>
+        <p>Días vacaciones (en la liquidación): ${diasVac}</p>
+        <p>Comisión calculada: ${formatearMonto(promedioVacaciones)} <small>(${promedioVacaciones})</small></p>
+        <p>Comisión pagada: ${formatearMonto(montoPagado)} <small>(${montoPagado})</small></p>
+        <p><strong>Diferencia: ${formatearMonto(diferencia)} <small>(${diferencia})</small></strong></p>`;
+
+    resultadoDiv.innerHTML = detalleHTML;
+
+    console.log('Detalle subtotales:', subtotales);
+    console.log('TotalItems:', totalItems, 'promMensual:', promedioMensual, 'promDiario:', promedioDiario, 'diasVac:', diasVac, 'calculado:', promedioVacaciones, 'pagado:', montoPagado, 'diferencia:', diferencia);
+}

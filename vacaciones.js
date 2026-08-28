@@ -328,6 +328,4 @@ function realizarCalculo(datos, pdfSeleccionado, seleccion) {
 
     resultadoDiv.innerHTML = detalleHTML;
 
-    console.log('Detalle subtotales:', subtotales);
-    console.log('TotalItems:', totalItems, 'promMensual:', promedioMensual, 'promDiario:', promedioDiario, 'diasVac:', diasVac, 'calculado:', promedioVacaciones, 'pagado:', montoPagado, 'diferencia:', diferencia);
 }

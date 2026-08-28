@@ -48,10 +48,10 @@ const listaComisionVacaciones = [
     "INCENTIVO SELF CHECK OUT", "INCENTIVO TIENDA CD/SFS", "PREMIO CLICK AND COLLECT", "PREMIO CUMPL.GRUPAL NPS",
     "PREMIO CUMPL.GRUPAL VTAS", "PREMIO CUMPLIMIENTO DE PLAN", "PREMIO NPS", "PREMIO VENTA TIENDA", "PREMIO VENTA TIENDA AUT.",
     "PROMEDIOS VARIOS", "QUIEBRE DE STOCK", "HORAS RECARGO NAVIDAD", "DIFERENCIA SEMANA CORRIDA", "BONO CERTIFICACION", "DIF. COMISIONES",
-    "COMISION VACACIONES","DIF COMISION DIGITA Y GANA","COMISION SEGURO DE VIDA","NPS OMNICANAL"
+    "COMISION VACACIONES","DIF COMISION DIGITA Y GANA","COMISION SEGURO DE VIDA","NPS OMNICANAL","BONO CUMPLIMIENTO DE"
 ].map(s => normalizarTexto(s));
 
-// ORDENAR POR LONGITUD DE MAYOR A MENOR PARA EVITAR COLISIONES
+// Ordenar por longitud para priorizar conceptos más específicos (ej. "PREMIO VENTA TIENDA AUT." antes que "PREMIO VENTA TIENDA")
 const listaOrdenadaPorLongitud = [...listaComisionVacaciones].sort((a, b) => b.length - a.length);
 
 function escaparRegex(s) {
@@ -60,46 +60,30 @@ function escaparRegex(s) {
 
 function extraerItemsDePDF(texto) {
     const items = [];
-    const lineas = texto.split(/\r?\n/);
-    
-    // Set para recordar qué líneas ya han aportado un concepto,
-    // evitando que un concepto más corto vuelva a leer la misma línea.
-    const lineasUsadas = new Set();
+    let textoRestante = texto;
 
     for (const item of listaOrdenadaPorLongitud) {
         const itemRegex = escaparRegex(item);
 
-        for (let i = 0; i < lineas.length; i++) {
-            if (lineasUsadas.has(i)) continue; // Si la línea ya se usó, saltar
+        // REGEX SEGURA: Busca el concepto + opcionalmente "(dias)" + máximo 30 caracteres QUE NO SEAN LETRAS (ej. espacios, signos $) + MONTO.
+        // Al usar [^A-Za-z], evitamos que salte a buscar cuentas bancarias o ruts al final del documento.
+        const regex = new RegExp(`(${itemRegex}(?:\\s*\\([0-9]+(?:[\\.,][0-9]+)?\\))?[^A-Za-z]{0,30}?)([0-9]+(?:\\.[0-9]{3})*(?:,[0-9]+)?)`, "i");
 
-            const linea = lineas[i];
-            
-            // Buscar el concepto asegurando que tenga un separador válido después
-            const regexConcepto = new RegExp(
-                `${itemRegex}(?:\\s*\\([0-9]+(?:[\\.,][0-9]+)?\\))?(?:\\s|:|\\(|\\$|$)`,
-                "i"
-            );
-
-            if (!regexConcepto.test(linea)) continue;
-
-            // Extraer todos los posibles montos de la línea
-            const montosEnLinea = linea.match(/([0-9]+(?:\.[0-9]{3})*(?:,[0-9]+)?)/g);
-            
-            if (montosEnLinea && montosEnLinea.length > 0) {
-                // Tomar el último número de la línea (generalmente el monto final en las liquidaciones)
-                const ultimoMonto = montosEnLinea[montosEnLinea.length - 1];
-                const monto = procesarMonto(ultimoMonto);
-
-                if (monto > 0) { // Solo agregar si hay un monto real
-                    items.push({ nombre: item, monto });
-                    lineasUsadas.add(i); // Marcar la línea como usada
-                    break; // Pasar al siguiente concepto en la lista ordenada
-                }
+        const resultado = textoRestante.match(regex);
+        
+        if (resultado && resultado[2]) {
+            const monto = procesarMonto(resultado[2]);
+            if (monto > 0) {
+                items.push({ nombre: item, monto });
+                
+                // ENMASCARAMIENTO: Borramos exactamente la porción leída reemplazándola con espacios.
+                // Así un concepto más corto no colisionará ni leerá esto de nuevo.
+                textoRestante = textoRestante.replace(resultado[0], " ".repeat(resultado[0].length));
             }
         }
     }
 
-    // Deduplicar por nombre exacto por si hubiera algún error de lectura en el PDF
+    // Deduplicar por nombre exacto
     const dedup = [];
     const vistos = new Set();
     for (const it of items) {

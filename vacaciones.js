@@ -38,20 +38,20 @@ async function extraerTextoDePDF(archivo) {
     return normalizarTexto(textoCompleto);
 }
 
-// Lista de comisiones (se incluye "COMISION VACACIONES")
+// Lista de comisiones (se incluye "COMISION VACACIONES") - se normaliza al usar
 const listaComisionVacaciones = [
     "COM.EFECTIVAS", "COMISION CYD", "CONCURSO FPAY", "COMISION DIGITA Y GANA", "COMI. KIOSCO OTRAS EMPRESAS",
     "APERTURA CTA CTE", "ESCANEA Y PAGA", "DIF. ESCANEA Y PAGA", "COMPENSACION PERMISO", "DIF CONCURSO FPAY",
-    "PROMOCIONES CMR", "COMISION CONNECT", "SEMANA CORRIDA", "BONO CLICK AND COLLECT", "HORAS RECARGO DOMINGO",
+    "PROMOCIONES CMR", "COMISION CONNECT", "SEMANA CORRIDA", "BONO CLICK AND COLLECT","HORAS RECARGO DOMINGO",
     "BONO CYBER", "BONO DICIEMBRE", "BONO INVENTARIO", "DIF PREMIO CLICK AND COLLECT", "DIF PREMIO VENTA TIENDA",
     "GARANTIZADO", "INCENTIVO CONFIABILIDAD", "INCENTIVO PRODUC CAJAS AUT", "INCENTIVO RECUPERO",
     "INCENTIVO SELF CHECK OUT", "INCENTIVO TIENDA CD/SFS", "PREMIO CLICK AND COLLECT", "PREMIO CUMPL.GRUPAL NPS",
     "PREMIO CUMPL.GRUPAL VTAS", "PREMIO CUMPLIMIENTO DE PLAN", "PREMIO NPS", "PREMIO VENTA TIENDA", "PREMIO VENTA TIENDA AUT.",
     "PROMEDIOS VARIOS", "QUIEBRE DE STOCK", "HORAS RECARGO NAVIDAD", "DIFERENCIA SEMANA CORRIDA", "BONO CERTIFICACION", "DIF. COMISIONES",
-    "COMISION VACACIONES", "DIF COMISION DIGITA Y GANA", "COMISION SEGURO DE VIDA", "NPS OMNICANAL"
+    "COMISION VACACIONES","DIF COMISION DIGITA Y GANA","COMISION SEGURO DE VIDA","NPS OMNICANAL"
 ].map(s => normalizarTexto(s));
 
-// Ordenar por longitud para priorizar conceptos más específicos
+// ORDENAR POR LONGITUD DE MAYOR A MENOR PARA EVITAR COLISIONES
 const listaOrdenadaPorLongitud = [...listaComisionVacaciones].sort((a, b) => b.length - a.length);
 
 function escaparRegex(s) {
@@ -132,9 +132,9 @@ function obtenerComisionVacaciones(texto) {
     return null;
 }
 
-// Obtener el mes y año del texto
+// Obtener el mes y año del texto (ej: "JULIO de 2023")
 function obtenerMesYAnio(texto) {
-    const regex = /\b([A-ZÇÑ]+)\s+DE\s+(\d{4})\b/i;
+    const regex = /\b([A-ZÇÑ]+)\s+DE\s+(\d{4})\b/i; // asume texto normalizado
     const resultado = texto.match(regex);
     return resultado ? `${resultado[1].toUpperCase()} de ${resultado[2]}` : 'Fecha no encontrada';
 }
@@ -174,6 +174,7 @@ function seleccionarLiquidacionesParaPromedio(datos, pdfSeleccionado) {
 
     if (candidatos.length < 3) return { error: true, mensaje: "No hay suficientes liquidaciones válidas para el cálculo." };
 
+    // Buscar 3 últimos no-consecutivos (desde más recientes hacia atrás)
     for (let i = candidatos.length - 1; i >= 2; i--) {
         const c3 = candidatos[i], c2 = candidatos[i-1], c1 = candidatos[i-2];
         if (!(esMesConsecutivo(c1.mesAnio, c2.mesAnio) && esMesConsecutivo(c2.mesAnio, c3.mesAnio))) {
@@ -181,6 +182,7 @@ function seleccionarLiquidacionesParaPromedio(datos, pdfSeleccionado) {
         }
     }
 
+    // Si no hay no-consecutivos, retornar las 3 más recientes con advertencia
     return { error: false, seleccion: candidatos.slice(-3), advertencia: 'Se usaron 3 meses consecutivos' };
 }
 
@@ -201,12 +203,13 @@ document.getElementById('calcularVacacionesBtn').addEventListener('click', async
 
     for (let archivo of archivos) {
         try {
-            const texto = await extraerTextoDePDF(archivo);
+            const texto = await extraerTextoDePDF(archivo); // ya normalizado
             const diasTrabajados = obtenerDiasTrabajados(texto);
             const mesAnio = obtenerMesYAnio(texto);
             const comisionVacaciones = obtenerComisionVacaciones(texto);
             const items = extraerItemsDePDF(texto);
 
+            // Guardar referencia completa
             datos.push({ nombre: archivo.name, dias: diasTrabajados, mesAnio, comisionVacaciones, items });
         } catch (err) {
             console.error('Error procesando', archivo.name, err);
@@ -222,16 +225,19 @@ document.getElementById('calcularVacacionesBtn').addEventListener('click', async
         return;
     }
 
-    pdfsConComisionVacaciones.sort((a, b) => {
+    // Ordenar cronológicamente
+    pdfsConComisionVacaciones.sort((a,b) => {
         const pa = parseMesAnio(a.mesAnio), pb = parseMesAnio(b.mesAnio);
         if (!pa || !pb) return 0;
         return (pa.anio - pb.anio) || (pa.mesIndex - pb.mesIndex);
     });
 
+    // Manejo cuando hay varios con comisión vacaciones
     if (pdfsConComisionVacaciones.length === 1) {
         realizarCalculo(datos, pdfsConComisionVacaciones[0]);
         return;
     } else {
+        // Buscar opciones válidas
         const opcionesValidas = pdfsConComisionVacaciones.map(pdf => {
             const sel = seleccionarLiquidacionesParaPromedio(datos, pdf);
             return { pdf, valido: !sel.error, sel };
@@ -275,6 +281,7 @@ function realizarCalculo(datos, pdfSeleccionado, seleccion) {
         return;
     }
 
+    // Inyectar estilos si no están
     if (!document.getElementById('estilosVacaciones')) {
         const styleEl = document.createElement('style');
         styleEl.id = 'estilosVacaciones';
@@ -303,10 +310,12 @@ function realizarCalculo(datos, pdfSeleccionado, seleccion) {
         document.head.appendChild(styleEl);
     }
 
+    // Armado estético del detalle
     let detalleHTML = `<h3>Cálculo de Vacaciones:</h3>
         <p class="meta">Mes evaluado: <strong>${pdfSeleccionado.mesAnio}</strong></p>
         <p class="promedio-liquidaciones">Promedio Liquidaciones: ${seleccionResult.map(pdf => pdf.mesAnio).join(', ')}</p>`;
 
+    // Construir subtotales (por si quieres usarlos o mostrarlos)
     const subtotales = seleccionResult.map(p => {
         const subtotal = Array.isArray(p.items) ? p.items.reduce((s, it) => s + (Number(it.monto) || 0), 0) : 0;
         return { mesAnio: p.mesAnio, subtotal };
@@ -323,13 +332,14 @@ function realizarCalculo(datos, pdfSeleccionado, seleccion) {
         detalleHTML += `</ul></div>`;
     });
 
+    // Cálculos (una sola vez, usando seleccionResult)
     const totalItems = seleccionResult.reduce((s, p) => s + (Array.isArray(p.items) ? p.items.reduce((ss, it) => ss + (Number(it.monto) || 0), 0) : 0), 0);
     const promedioMensual = totalItems / 3;
     const promedioDiario = promedioMensual / 30;
     const diasVac = (pdfSeleccionado.comisionVacaciones && pdfSeleccionado.comisionVacaciones.dias) ? pdfSeleccionado.comisionVacaciones.dias : 30;
     const promedioVacaciones = promedioDiario * diasVac;
     const montoPagado = (pdfSeleccionado.comisionVacaciones && pdfSeleccionado.comisionVacaciones.monto) ? pdfSeleccionado.comisionVacaciones.monto : 0;
-    const diferencia = Math.round(promedioVacaciones) - Math.round(montoPagado);
+    const diferencia = Math.round(promedioVacaciones) - Math.round(montoPagado); // diferencia redondeada
 
     detalleHTML += `
         <div class="resumen">
@@ -343,4 +353,5 @@ function realizarCalculo(datos, pdfSeleccionado, seleccion) {
         </div>`;
 
     resultadoDiv.innerHTML = detalleHTML;
+
 }

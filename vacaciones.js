@@ -1,7 +1,3 @@
-// vacaciones.js
-// Archivo completo (~332 líneas) con la corrección mínima en extraerItemsDePDF
-// Mantengo todas tus funciones, estilos y logs originales salvo la mínima corrección en la extracción.
-
 // Normalizar texto (quita tildes, espacios múltiples y lleva a mayúsculas)
 function normalizarTexto(str) {
     if (!str) return '';
@@ -20,7 +16,6 @@ function procesarMonto(textoMonto) {
     if (textoMonto === null || textoMonto === undefined) return 0;
     const s = textoMonto.toString().trim();
     if (s === '') return 0;
-    // quitar todo lo que no sea dígito, punto, coma o guión/menos
     const cleaned = s.replace(/[^\d.,-]/g, '').replace(/\./g, '').replace(',', '.');
     const n = parseFloat(cleaned);
     if (Number.isNaN(n)) {
@@ -42,99 +37,95 @@ async function extraerTextoDePDF(archivo) {
     return normalizarTexto(textoCompleto);
 }
 
-// Lista de comisiones (se incluye "COMISION VACACIONES") - se normaliza al usar
+// Lista de comisiones
+// IMPORTANTE: se ordena de mayor a menor longitud para priorizar conceptos largos
 const listaComisionVacaciones = [
     "COM.EFECTIVAS", "COMISION CYD", "CONCURSO FPAY", "COMISION DIGITA Y GANA", "COMI. KIOSCO OTRAS EMPRESAS",
     "APERTURA CTA CTE", "ESCANEA Y PAGA", "DIF. ESCANEA Y PAGA", "COMPENSACION PERMISO", "DIF CONCURSO FPAY",
-    "PROMOCIONES CMR", "COMISION CONNECT", "SEMANA CORRIDA", "BONO CLICK AND COLLECT","HORAS RECARGO DOMINGO",
+    "PROMOCIONES CMR", "COMISION CONNECT", "SEMANA CORRIDA", "BONO CLICK AND COLLECT", "HORAS RECARGO DOMINGO",
     "BONO CYBER", "BONO DICIEMBRE", "BONO INVENTARIO", "DIF PREMIO CLICK AND COLLECT", "DIF PREMIO VENTA TIENDA",
     "GARANTIZADO", "INCENTIVO CONFIABILIDAD", "INCENTIVO PRODUC CAJAS AUT", "INCENTIVO RECUPERO",
     "INCENTIVO SELF CHECK OUT", "INCENTIVO TIENDA CD/SFS", "PREMIO CLICK AND COLLECT", "PREMIO CUMPL.GRUPAL NPS",
-    "PREMIO CUMPL.GRUPAL VTAS", "PREMIO CUMPLIMIENTO DE PLAN", "PREMIO NPS", "PREMIO VENTA TIENDA", "PREMIO VENTA TIENDA AUT.",
-    "PROMEDIOS VARIOS", "QUIEBRE DE STOCK", "HORAS RECARGO NAVIDAD", "DIFERENCIA SEMANA CORRIDA", "BONO CERTIFICACION", "DIF. COMISIONES",
-    "COMISION VACACIONES","DIF COMISION DIGITA Y GANA","COMISION SEGURO DE VIDA","NPS OMNICANAL"
-].map(s => normalizarTexto(s));
+    "PREMIO CUMPL.GRUPAL VTAS", "PREMIO CUMPLIMIENTO DE PLAN", "PREMIO VENTA TIENDA AUT.", "PREMIO VENTA TIENDA",
+    "PREMIO NPS", "PROMEDIOS VARIOS", "QUIEBRE DE STOCK", "HORAS RECARGO NAVIDAD", "DIFERENCIA SEMANA CORRIDA",
+    "BONO CERTIFICACION", "DIF. COMISIONES", "COMISION VACACIONES", "DIF COMISION DIGITA Y GANA",
+    "COMISION SEGURO DE VIDA", "NPS OMNICANAL"
+]
+    .map(s => normalizarTexto(s))
+    .sort((a, b) => b.length - a.length);
 
-/*
-  Función extraerItemsDePDF corregida (mínimos cambios):
-  - Usa listaOrdenadaPorLongitud (descendente) para priorizar conceptos largos.
-  - Exige separador justo después del concepto (\s | : | ( | $ | fin).
-  - Búsqueda principal con límite de distancia al monto.
-  - Fallback por línea que toma el último monto pero evita reasignar montos ya usados en la misma línea
-    (por ejemplo cuando existe "PREMIO VENTA TIENDA AUT." y luego "PREMIO VENTA TIENDA" en la misma línea).
-  - No se modifica nada más del archivo ni se añaden logs nuevos.
-*/
+function construirRegexConcepto(concepto) {
+    const esc = concepto.replace(/([.+*?^${}()|\[\]\/\\])/g, "\\$1");
+    // Coincidencia estricta por límites de palabra/espacio para evitar que un concepto corto
+    // capture dentro de uno largo.
+    return new RegExp(`(^|\\s)${esc}(?=\\s|\\(|\\$|$)`, 'i');
+}
+
+function extraerMontoDesdeLinea(linea, conceptoNormalizado) {
+    const conceptoEsc = conceptoNormalizado.replace(/([.+*?^${}()|\[\]\/\\])/g, "\\$1");
+
+    // 1) Patrón principal: concepto + opcional (x.xx) + monto
+    const regex1 = new RegExp(
+        `${conceptoEsc}(?:\\s*\\([0-9]+(?:[\\.,][0-9]+)?\\))?\\s*\\$?\\s*([0-9]+(?:[\\.,][0-9]{1,3})*)`,
+        "i"
+    );
+    const res1 = linea.match(regex1);
+    if (res1 && res1[1]) return procesarMonto(res1[1]);
+
+    // 2) Buscar cualquier monto posterior en la misma línea
+    const pos = linea.search(construirRegexConcepto(conceptoNormalizado));
+    if (pos !== -1) {
+        const resto = linea.slice(pos + conceptoNormalizado.length);
+        const montos = resto.match(/-?\d[\d.,]*/g);
+        if (montos && montos.length > 0) {
+            return procesarMonto(montos[0]);
+        }
+    }
+
+    return null;
+}
+
 function extraerItemsDePDF(texto) {
     const items = [];
+    const lineas = texto.split(/\n+/).map(l => l.trim()).filter(Boolean);
 
-    // Asegurarse de tener la lista ordenada por longitud (descendente)
-    const listaOrdenadaPorLongitud = (typeof listaComisionVacaciones !== 'undefined' ? listaComisionVacaciones : []).slice().sort((a,b) => b.length - a.length);
+    for (const linea of lineas) {
+        const lineaNormalizada = normalizarTexto(linea);
+        const conceptosEncontrados = [];
 
-    const separadorDespues = '(?:\\s|:|\\(|\\$|$)'; // obligatorio tras el concepto
-    const textoLines = texto.split(/\r?\n/);
+        // Procesar primero los conceptos más largos para evitar confusiones
+        for (const item of listaComisionVacaciones) {
+            const regexConcepto = construirRegexConcepto(item);
 
-    // Trackeo de montos ya usados por línea index -> [montos]
-    const lineUsedMontos = {};
+            if (!regexConcepto.test(lineaNormalizada)) continue;
 
-    // Helper para escapar regex
-    const escapeRegex = (s) => s.replace(/([.+*?^${}()|\[\]\/\\])/g, "\\$1");
+            const monto = extraerMontoDesdeLinea(lineaNormalizada, item);
 
-    for (const concepto of listaOrdenadaPorLongitud) {
-        const esc = escapeRegex(concepto);
-
-        // 1) Búsqueda principal: concepto seguido de separador y monto cercano (hasta 40 chars)
-        const regexPrincipal = new RegExp(`${esc}${separadorDespues}(?:[\\s\\S]{0,40}?)\\$?\\s*([0-9]+(?:[\\.,][0-9]{1,3})*)`, 'i');
-        const matchPrim = texto.match(regexPrincipal);
-        if (matchPrim && matchPrim[1]) {
-            const monto = procesarMonto(matchPrim[1]);
-            items.push({ nombre: concepto, monto });
-            // No registrar en lineUsedMontos aquí porque no sabemos la línea exacta — evita falsos negativos.
-            continue;
-        }
-
-        // 2) Fallback por línea: solo si la línea contiene el concepto seguido del separador
-        for (let li = 0; li < textoLines.length; li++) {
-            const linea = textoLines[li];
-            const lineConceptRegex = new RegExp(`${esc}${separadorDespues}`, 'i');
-            if (!lineConceptRegex.test(linea)) continue;
-
-            // Obtener todos los montos en la línea
-            const montosEnLinea = linea.match(/([0-9]+(?:[.,][0-9]{1,3})*)/g);
-            if (!montosEnLinea || montosEnLinea.length === 0) continue;
-
-            // Candidate: último monto de la línea (criterio establecido)
-            const ultimo = montosEnLinea[montosEnLinea.length - 1];
-            const monto = procesarMonto(ultimo);
-
-            // Verificar si ya fue usado en esta línea (por un concepto más específico)
-            const usados = lineUsedMontos[li] || [];
-            const yaUsado = usados.some(m => Math.abs(m - monto) < 0.5); // tolerancia pequeña
-
-            if (yaUsado) {
-                // Si ya fue usado, NO reasignamos a este concepto corto
-                // continuar al siguiente concepto
-                break;
+            if (monto !== null && !Number.isNaN(monto)) {
+                conceptosEncontrados.push({ nombre: item, monto });
             }
+        }
 
-            // Registrar y agregar
-            if (!lineUsedMontos[li]) lineUsedMontos[li] = [];
-            lineUsedMontos[li].push(monto);
-            items.push({ nombre: concepto, monto });
-            break; // pasar al siguiente concepto
+        if (conceptosEncontrados.length > 0) {
+            // Eliminar duplicados exactos por nombre+monto
+            const vistos = new Set();
+            for (const it of conceptosEncontrados) {
+                const key = `${it.nombre}|${it.monto}`;
+                if (vistos.has(key)) continue;
+                vistos.add(key);
+                items.push(it);
+            }
         }
     }
 
-    // Deduplicar por nombre, manteniendo la primera aparición
-    const dedup = [];
-    const seen = new Set();
+    // Última limpieza: evitar duplicados globales exactos
+    const dedupe = new Map();
     for (const it of items) {
-        if (!seen.has(it.nombre)) {
-            dedup.push(it);
-            seen.add(it.nombre);
-        }
+        const key = `${it.nombre}|${it.monto}`;
+        if (!dedupe.has(key)) dedupe.set(key, it);
     }
 
-    return dedup;
+    return Array.from(dedupe.values());
 }
 
 // Función para obtener días trabajados (se espera 30 para liquidaciones válidas)
@@ -159,7 +150,7 @@ function obtenerComisionVacaciones(texto) {
 
 // Obtener el mes y año del texto (ej: "JULIO de 2023")
 function obtenerMesYAnio(texto) {
-    const regex = /\b([A-ZÇÑ]+)\s+DE\s+(\d{4})\b/i; // asume texto normalizado
+    const regex = /\b([A-ZÇÑ]+)\s+DE\s+(\d{4})\b/i;
     const resultado = texto.match(regex);
     return resultado ? `${resultado[1].toUpperCase()} de ${resultado[2]}` : 'Fecha no encontrada';
 }
@@ -199,15 +190,13 @@ function seleccionarLiquidacionesParaPromedio(datos, pdfSeleccionado) {
 
     if (candidatos.length < 3) return { error: true, mensaje: "No hay suficientes liquidaciones válidas para el cálculo." };
 
-    // Buscar 3 últimos no-consecutivos (desde más recientes hacia atrás)
     for (let i = candidatos.length - 1; i >= 2; i--) {
-        const c3 = candidatos[i], c2 = candidatos[i-1], c1 = candidatos[i-2];
+        const c3 = candidatos[i], c2 = candidatos[i - 1], c1 = candidatos[i - 2];
         if (!(esMesConsecutivo(c1.mesAnio, c2.mesAnio) && esMesConsecutivo(c2.mesAnio, c3.mesAnio))) {
             return { error: false, seleccion: [c1, c2, c3] };
         }
     }
 
-    // Si no hay no-consecutivos, retornar las 3 más recientes con advertencia
     return { error: false, seleccion: candidatos.slice(-3), advertencia: 'Se usaron 3 meses consecutivos' };
 }
 
@@ -228,13 +217,12 @@ document.getElementById('calcularVacacionesBtn').addEventListener('click', async
 
     for (let archivo of archivos) {
         try {
-            const texto = await extraerTextoDePDF(archivo); // ya normalizado
+            const texto = await extraerTextoDePDF(archivo);
             const diasTrabajados = obtenerDiasTrabajados(texto);
             const mesAnio = obtenerMesYAnio(texto);
             const comisionVacaciones = obtenerComisionVacaciones(texto);
             const items = extraerItemsDePDF(texto);
 
-            // Guardar referencia completa
             datos.push({ nombre: archivo.name, dias: diasTrabajados, mesAnio, comisionVacaciones, items });
         } catch (err) {
             console.error('Error procesando', archivo.name, err);
@@ -250,19 +238,16 @@ document.getElementById('calcularVacacionesBtn').addEventListener('click', async
         return;
     }
 
-    // Ordenar cronológicamente
-    pdfsConComisionVacaciones.sort((a,b) => {
+    pdfsConComisionVacaciones.sort((a, b) => {
         const pa = parseMesAnio(a.mesAnio), pb = parseMesAnio(b.mesAnio);
         if (!pa || !pb) return 0;
         return (pa.anio - pb.anio) || (pa.mesIndex - pb.mesIndex);
     });
 
-    // Manejo cuando hay varios con comisión vacaciones
     if (pdfsConComisionVacaciones.length === 1) {
         realizarCalculo(datos, pdfsConComisionVacaciones[0]);
         return;
     } else {
-        // Buscar opciones válidas
         const opcionesValidas = pdfsConComisionVacaciones.map(pdf => {
             const sel = seleccionarLiquidacionesParaPromedio(datos, pdf);
             return { pdf, valido: !sel.error, sel };
@@ -306,7 +291,6 @@ function realizarCalculo(datos, pdfSeleccionado, seleccion) {
         return;
     }
 
-    // Inyectar estilos si no están
     if (!document.getElementById('estilosVacaciones')) {
         const styleEl = document.createElement('style');
         styleEl.id = 'estilosVacaciones';
@@ -335,12 +319,10 @@ function realizarCalculo(datos, pdfSeleccionado, seleccion) {
         document.head.appendChild(styleEl);
     }
 
-    // Armado estético del detalle
     let detalleHTML = `<h3>Cálculo de Vacaciones:</h3>
         <p class="meta">Mes evaluado: <strong>${pdfSeleccionado.mesAnio}</strong></p>
         <p class="promedio-liquidaciones">Promedio Liquidaciones: ${seleccionResult.map(pdf => pdf.mesAnio).join(', ')}</p>`;
 
-    // Construir subtotales (por si quieres usarlos o mostrarlos)
     const subtotales = seleccionResult.map(p => {
         const subtotal = Array.isArray(p.items) ? p.items.reduce((s, it) => s + (Number(it.monto) || 0), 0) : 0;
         return { mesAnio: p.mesAnio, subtotal };
@@ -357,14 +339,13 @@ function realizarCalculo(datos, pdfSeleccionado, seleccion) {
         detalleHTML += `</ul></div>`;
     });
 
-    // Cálculos (una sola vez, usando seleccionResult)
     const totalItems = seleccionResult.reduce((s, p) => s + (Array.isArray(p.items) ? p.items.reduce((ss, it) => ss + (Number(it.monto) || 0), 0) : 0), 0);
     const promedioMensual = totalItems / 3;
     const promedioDiario = promedioMensual / 30;
     const diasVac = (pdfSeleccionado.comisionVacaciones && pdfSeleccionado.comisionVacaciones.dias) ? pdfSeleccionado.comisionVacaciones.dias : 30;
     const promedioVacaciones = promedioDiario * diasVac;
     const montoPagado = (pdfSeleccionado.comisionVacaciones && pdfSeleccionado.comisionVacaciones.monto) ? pdfSeleccionado.comisionVacaciones.monto : 0;
-    const diferencia = Math.round(promedioVacaciones) - Math.round(montoPagado); // diferencia redondeada
+    const diferencia = Math.round(promedioVacaciones) - Math.round(montoPagado);
 
     detalleHTML += `
         <div class="resumen">

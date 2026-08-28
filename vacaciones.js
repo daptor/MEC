@@ -20,7 +20,7 @@ function procesarMonto(textoMonto) {
     const cleaned = s.replace(/[^\d.,-]/g, '').replace(/\./g, '').replace(',', '.');
     const n = parseFloat(cleaned);
     if (Number.isNaN(n)) {
-        console.warn('procesarMonto: no se pudo parsear ->', textoMonto, 'limpio->', cleaned);
+        // Retornar 0 si no se parsea
         return 0;
     }
     return n;
@@ -38,7 +38,7 @@ async function extraerTextoDePDF(archivo) {
     return normalizarTexto(textoCompleto);
 }
 
-// Lista de comisiones (se incluye "COMISION VACACIONES") - se normaliza al usar
+// Lista de comisiones (se normaliza al usar)
 const listaComisionVacaciones = [
     "COM.EFECTIVAS", "COMISION CYD", "CONCURSO FPAY", "COMISION DIGITA Y GANA", "COMI. KIOSCO OTRAS EMPRESAS",
     "APERTURA CTA CTE", "ESCANEA Y PAGA", "DIF. ESCANEA Y PAGA", "COMPENSACION PERMISO", "DIF CONCURSO FPAY",
@@ -51,24 +51,28 @@ const listaComisionVacaciones = [
     "COMISION VACACIONES","DIF COMISION DIGITA Y GANA","COMISION SEGURO DE VIDA","NPS OMNICANAL"
 ].map(s => normalizarTexto(s));
 
+// Ordenar lista por longitud descendente para evitar colisiones (p.ej. PREMIO VENTA TIENDA AUT. vs PREMIO VENTA TIENDA)
+const listaOrdenadaPorLongitud = [...listaComisionVacaciones].sort((a,b) => b.length - a.length);
+
 function extraerItemsDePDF(texto) {
-    let items = [];
-    listaComisionVacaciones.forEach(item => {
+    const items = [];
+
+    listaOrdenadaPorLongitud.forEach(item => {
         const esc = item.replace(/([.+*?^${}()|\[\]\/\\])/g, "\\$1");
 
         // 1) Patrón principal: acepta paréntesis con decimales (ej. (8.33)) entre nombre y monto
-        const regex1 = new RegExp(`${esc}(?:\\s*\\([0-9]+(?:[\\.,][0-9]+)?\\))?\\s*\\$?\\s*([0-9]+(?:[\\.,][0-9]{1,3})*)`, "i");
+        // Exigir separador tras concepto y limitar distancia hasta el monto (hasta 30 chars)
+        const regex1 = new RegExp(`${esc}(?:\\s*\\([0-9]+(?:[\\.,][0-9]+)?\\))?[^\\n]{0,60}?\\$?\\s*([0-9]+(?:[\\.,][0-9]{1,3})*)`, "i");
         const res1 = texto.match(regex1);
         if (res1 && res1[1]) {
             items.push({ nombre: item, monto: procesarMonto(res1[1]) });
             return;
         }
 
-        // 2) Patrón tolerante: busca la línea que contiene el nombre y toma el último monto en esa línea
+        // 2) Fallback: buscar la línea que contiene el nombre y tomar el último monto en esa línea
         const lineRegex = new RegExp(`(^|\\n).*${esc}.*$`, 'im');
         const lineMatch = texto.match(lineRegex);
         if (lineMatch && lineMatch[0]) {
-            // Buscar el último monto en esa línea
             const montosEnLinea = lineMatch[0].match(/([0-9]+(?:[.,][0-9]{1,3})*)/g);
             if (montosEnLinea && montosEnLinea.length > 0) {
                 const ultimo = montosEnLinea[montosEnLinea.length - 1];
@@ -77,12 +81,13 @@ function extraerItemsDePDF(texto) {
             }
         }
 
-        // 3) Si encontramos el nombre pero no montaje detectable, logear para auditoría
+        // 3) Si aparece el nombre pero no se extrajo monto, añadir con monto 0 para auditoría
         const foundName = new RegExp(`${esc}`, 'i');
         if (foundName.test(texto)) {
-            console.warn(`Se detectó el concepto "${item}" pero no se pudo extraer monto automáticamente.`);
+            items.push({ nombre: item, monto: 0 });
         }
     });
+
     return items;
 }
 
@@ -186,7 +191,6 @@ document.getElementById('calcularVacacionesBtn').addEventListener('click', async
             // Guardar referencia completa
             datos.push({ nombre: archivo.name, dias: diasTrabajados, mesAnio, comisionVacaciones, items });
         } catch (err) {
-            console.error('Error procesando', archivo.name, err);
             resultadoDiv.innerHTML = `<p style="color:red;">Error leyendo ${archivo.name}: ${err.message}</p>`;
             return;
         }
@@ -327,5 +331,4 @@ function realizarCalculo(datos, pdfSeleccionado, seleccion) {
         </div>`;
 
     resultadoDiv.innerHTML = detalleHTML;
-
 }

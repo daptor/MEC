@@ -69,7 +69,7 @@ function extraerItemsDePDF(texto) {
         const lineMatch = texto.match(lineRegex);
         if (lineMatch && lineMatch[0]) {
             // Buscar el último monto en esa línea
-            const montosEnLinea = lineMatch[0].match(/([0-9]+(?:[\\.,][0-9]{1,3})*)/g);
+            const montosEnLinea = lineMatch[0].match(/([0-9]+(?:[.,][0-9]{1,3})*)/g);
             if (montosEnLinea && montosEnLinea.length > 0) {
                 const ultimo = montosEnLinea[montosEnLinea.length - 1];
                 items.push({ nombre: item, monto: procesarMonto(ultimo) });
@@ -85,7 +85,6 @@ function extraerItemsDePDF(texto) {
     });
     return items;
 }
-
 
 // Función para obtener días trabajados (se espera 30 para liquidaciones válidas)
 function obtenerDiasTrabajados(texto) {
@@ -256,90 +255,76 @@ function realizarCalculo(datos, pdfSeleccionado, seleccion) {
         return;
     }
 
-// Inyectar estilos si no están
-if (!document.getElementById('estilosVacaciones')) {
-    const styleEl = document.createElement('style');
-    styleEl.id = 'estilosVacaciones';
-    styleEl.textContent = `
-      #resultadoVacaciones { font-family: Arial, Helvetica, sans-serif; color: #222; line-height: 1.4; }
-      #resultadoVacaciones h3 { margin: 0 0 8px 0; font-size: 1.2rem; }
-      #resultadoVacaciones p.meta { margin: 4px 0 12px 0; font-size: 0.95rem; }
-      .promedio-liquidaciones { margin: 10px 0 18px 0; font-weight: 600; }
-      .detalle-liquidacion { margin: 12px 0; padding: 10px 12px; background: #fafafa; border-radius: 6px; border: 1px solid #eee; }
-      .liq-titulo { font-weight: 700; font-size: 1rem; margin-bottom: 6px; }
-      .liq-subtotal { font-weight: 700; display: inline-block; margin-left: 8px; color: #111; }
-      .items-list { margin: 6px 0 0 16px; padding: 0; list-style: none; }
-      .items-list li { font-size: 0.88rem; margin: 3px 0; color: #333; }
-      .items-list li .monto { float: right; font-weight: 600; }
-      .items-list li .concepto { display: inline-block; max-width: 70%; }
-      .resumen { margin-top: 18px; padding: 10px 12px; background: #fff; border-radius: 6px; border: 1px solid #eee; }
-      .resumen p { margin: 6px 0; font-size: 0.95rem; }
-      .resumen p .valor { font-weight: 700; margin-left: 8px; }
-      .diferencia-positivo { color: green; }
-      .diferencia-negativo { color: red; }
-      @media (max-width: 480px) {
-        .items-list li { font-size: 0.82rem; }
-        .liq-titulo { font-size: 0.95rem; }
-      }
-    `;
-    document.head.appendChild(styleEl);
-}
+    // Inyectar estilos si no están
+    if (!document.getElementById('estilosVacaciones')) {
+        const styleEl = document.createElement('style');
+        styleEl.id = 'estilosVacaciones';
+        styleEl.textContent = `
+          #resultadoVacaciones { font-family: Arial, Helvetica, sans-serif; color: #222; line-height: 1.4; }
+          #resultadoVacaciones h3 { margin: 0 0 8px 0; font-size: 1.2rem; }
+          #resultadoVacaciones p.meta { margin: 4px 0 12px 0; font-size: 0.95rem; }
+          .promedio-liquidaciones { margin: 10px 0 18px 0; font-weight: 600; }
+          .detalle-liquidacion { margin: 12px 0; padding: 10px 12px; background: #fafafa; border-radius: 6px; border: 1px solid #eee; }
+          .liq-titulo { font-weight: 700; font-size: 1rem; margin-bottom: 6px; }
+          .liq-subtotal { font-weight: 700; display: inline-block; margin-left: 8px; color: #111; }
+          .items-list { margin: 6px 0 0 16px; padding: 0; list-style: none; }
+          .items-list li { font-size: 0.88rem; margin: 3px 0; color: #333; }
+          .items-list li .monto { float: right; font-weight: 600; }
+          .items-list li .concepto { display: inline-block; max-width: 70%; }
+          .resumen { margin-top: 18px; padding: 10px 12px; background: #fff; border-radius: 6px; border: 1px solid #eee; }
+          .resumen p { margin: 6px 0; font-size: 0.95rem; }
+          .resumen p .valor { font-weight: 700; margin-left: 8px; }
+          .diferencia-positivo { color: green; }
+          .diferencia-negativo { color: red; }
+          @media (max-width: 480px) {
+            .items-list li { font-size: 0.82rem; }
+            .liq-titulo { font-size: 0.95rem; }
+          }
+        `;
+        document.head.appendChild(styleEl);
+    }
 
-// Armado estético del detalle
-let detalleHTML = `<h3>Cálculo de Vacaciones:</h3>
-    <p class="meta">Mes evaluado: <strong>${pdfSeleccionado.mesAnio}</strong></p>
-    <p class="promedio-liquidaciones">Promedio Liquidaciones: ${seleccionResult.map(pdf => pdf.mesAnio).join(', ')}</p>`;
+    // Armado estético del detalle
+    let detalleHTML = `<h3>Cálculo de Vacaciones:</h3>
+        <p class="meta">Mes evaluado: <strong>${pdfSeleccionado.mesAnio}</strong></p>
+        <p class="promedio-liquidaciones">Promedio Liquidaciones: ${seleccionResult.map(pdf => pdf.mesAnio).join(', ')}</p>`;
 
-seleccionResult.forEach(pdf => {
-    const subtotal = (Array.isArray(pdf.items) ? pdf.items.reduce((s, it) => s + (Number(it.monto) || 0), 0) : 0);
-    detalleHTML += `<div class="detalle-liquidacion">
-        <div class="liq-titulo">${pdf.mesAnio}: <span class="liq-subtotal">${formatearMonto(subtotal)}</span></div>
-        <ul class="items-list">`;
-    (pdf.items || []).forEach(it => {
-        detalleHTML += `<li><span class="concepto">${it.nombre}</span><span class="monto">${formatearMonto(it.monto)}</span></li>`;
+    // Construir subtotales (por si quieres usarlos o mostrarlos)
+    const subtotales = seleccionResult.map(p => {
+        const subtotal = Array.isArray(p.items) ? p.items.reduce((s, it) => s + (Number(it.monto) || 0), 0) : 0;
+        return { mesAnio: p.mesAnio, subtotal };
     });
-    detalleHTML += `</ul></div>`;
-});
 
-detalleHTML += `<div class="resumen">`;
+    seleccionResult.forEach(pdf => {
+        const subtotal = (Array.isArray(pdf.items) ? pdf.items.reduce((s, it) => s + (Number(it.monto) || 0), 0) : 0);
+        detalleHTML += `<div class="detalle-liquidacion">
+            <div class="liq-titulo">${pdf.mesAnio}: <span class="liq-subtotal">${formatearMonto(subtotal)}</span></div>
+            <ul class="items-list">`;
+        (pdf.items || []).forEach(it => {
+            detalleHTML += `<li><span class="concepto">${it.nombre}</span><span class="monto">${formatearMonto(it.monto)}</span></li>`;
+        });
+        detalleHTML += `</ul></div>`;
+    });
 
-// Cálculos (usar los ya hechos)
-const totalItems = seleccionResult.reduce((s, p) => s + (Array.isArray(p.items) ? p.items.reduce((ss, it) => ss + (Number(it.monto) || 0), 0) : 0), 0);
-const promedioMensual = totalItems / 3;
-const promedioDiario = promedioMensual / 30;
-const diasVac = pdfSeleccionado.comisionVacaciones.dias || 30;
-const promedioVacaciones = promedioDiario * diasVac;
-const montoPagado = pdfSeleccionado.comisionVacaciones.monto || 0;
-const diferencia = Math.round(promedioVacaciones) - Math.round(montoPagado); // mostrar diferencia redondeada
-
-detalleHTML += `
-    <p>Total items (suma 3 liquidaciones): <span class="valor">${formatearMonto(totalItems)}</span></p>
-    <p>Promedio mensual: <span class="valor">${formatearMonto(promedioMensual)}</span></p>
-    <p>Promedio diario: <span class="valor">${formatearMonto(promedioDiario)}</span></p>
-    <p>Días vacaciones: <span class="valor">${diasVac}</span></p>
-    <p>Comisión calculada: <span class="valor">${formatearMonto(Math.round(promedioVacaciones))}</span></p>
-    <p>Comisión pagada: <span class="valor">${formatearMonto(Math.round(montoPagado))}</span></p>
-    <p>Diferencia: <span class="valor ${diferencia === 0 ? '' : (diferencia > 0 ? 'diferencia-positivo' : 'diferencia-negativo')}">${formatearMonto(diferencia)}</span></p>
-</div>`;
-
-resultadoDiv.innerHTML = detalleHTML;
-
-    const totalItems = subtotales.reduce((s, x) => s + x.subtotal, 0);
+    // Cálculos (una sola vez, usando seleccionResult)
+    const totalItems = seleccionResult.reduce((s, p) => s + (Array.isArray(p.items) ? p.items.reduce((ss, it) => ss + (Number(it.monto) || 0), 0) : 0), 0);
     const promedioMensual = totalItems / 3;
     const promedioDiario = promedioMensual / 30;
-    const diasVac = pdfSeleccionado.comisionVacaciones.dias || 30;
+    const diasVac = (pdfSeleccionado.comisionVacaciones && pdfSeleccionado.comisionVacaciones.dias) ? pdfSeleccionado.comisionVacaciones.dias : 30;
     const promedioVacaciones = promedioDiario * diasVac;
-    const montoPagado = pdfSeleccionado.comisionVacaciones.monto || 0;
-    const diferencia = promedioVacaciones - montoPagado;
+    const montoPagado = (pdfSeleccionado.comisionVacaciones && pdfSeleccionado.comisionVacaciones.monto) ? pdfSeleccionado.comisionVacaciones.monto : 0;
+    const diferencia = Math.round(promedioVacaciones) - Math.round(montoPagado); // diferencia redondeada
 
-    detalleHTML += `<h4>Resumen cálculo:</h4>
-        <p>Total items (suma 3 liquidaciones): ${formatearMonto(totalItems)} <small>(${totalItems})</small></p>
-        <p>Promedio mensual: ${formatearMonto(promedioMensual)} <small>(${promedioMensual})</small></p>
-        <p>Promedio diario: ${formatearMonto(promedioDiario)} <small>(${promedioDiario})</small></p>
-        <p>Días vacaciones (en la liquidación): ${diasVac}</p>
-        <p>Comisión calculada: ${formatearMonto(promedioVacaciones)} <small>(${promedioVacaciones})</small></p>
-        <p>Comisión pagada: ${formatearMonto(montoPagado)} <small>(${montoPagado})</small></p>
-        <p><strong>Diferencia: ${formatearMonto(diferencia)} <small>(${diferencia})</small></strong></p>`;
+    detalleHTML += `
+        <div class="resumen">
+        <p>Total items (suma 3 liquidaciones): <span class="valor">${formatearMonto(totalItems)}</span></p>
+        <p>Promedio mensual: <span class="valor">${formatearMonto(promedioMensual)}</span></p>
+        <p>Promedio diario: <span class="valor">${formatearMonto(promedioDiario)}</span></p>
+        <p>Días vacaciones: <span class="valor">${diasVac}</span></p>
+        <p>Comisión calculada: <span class="valor">${formatearMonto(Math.round(promedioVacaciones))}</span></p>
+        <p>Comisión pagada: <span class="valor">${formatearMonto(Math.round(montoPagado))}</span></p>
+        <p>Diferencia: <span class="valor ${diferencia === 0 ? '' : (diferencia > 0 ? 'diferencia-positivo' : 'diferencia-negativo')}">${formatearMonto(diferencia)}</span></p>
+        </div>`;
 
     resultadoDiv.innerHTML = detalleHTML;
 

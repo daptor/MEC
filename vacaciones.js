@@ -60,49 +60,60 @@ function escapeRegex(s) {
 
 function extraerItemsDePDF(texto) {
     const items = [];
+    // Dividir en líneas para fallback por línea
+    const textoLines = texto.split(/\r?\n/);
+    // separadores válidos que deben seguir al nombre del concepto:
+    // espacio, dos puntos, paréntesis, dólar o fin de línea
+    const separadorDespues = '(?:\\s|:|\\(|\\$|$)';
 
-    // Para cada concepto, buscar monto con patrón robusto; si falla, fallback a último monto en la línea
-    for (const item of listaOrdenadaPorLongitud) {
-        const esc = escapeRegex(item);
+    for (const concepto of listaOrdenadaPorLongitud) {
+        const esc = escapeRegex(concepto);
 
-        // Patrón principal:
-        // - nombre (esc)
-        // - opcional: espacio + paréntesis con número/decimal (ej. (8.33))
-        // - luego hasta un monto razonablemente cercano: permitimos algunos caracteres intermedios pero no líneas enteras
-        // - capturamos el monto (puede contener miles con puntos y decimales con coma)
-        const regexPrincipal = new RegExp(`${esc}(?:\\s*\\([0-9]+(?:[\\.,][0-9]+)?\\))?(?:[\\s\\S]{0,40}?)\\$?\\s*([0-9]+(?:[\\.,][0-9]{1,3})*)`, 'i');
+        // Regex principal:
+        // - exige separador justo después del concepto para evitar colisiones
+        // - permite opcional paréntesis con número/decimal entre concepto y monto
+        // - limita la búsqueda del monto a un rango cercano (ajustable: 40 caracteres)
+        const regexPrincipal = new RegExp(`${esc}${separadorDespues}(?:[\\s\\S]{0,40}?)\\$?\\s*([0-9]+(?:[\\.,][0-9]{1,3})*)`, 'i');
 
         const matchPrim = texto.match(regexPrincipal);
         if (matchPrim && matchPrim[1]) {
             const monto = procesarMonto(matchPrim[1]);
-            items.push({ nombre: item, monto });
+            items.push({ nombre: concepto, monto });
             continue;
         }
 
-        // Fallback: buscar la línea que contiene el concepto y tomar el último monto de esa línea
-        const lineRegex = new RegExp(`(^|\\n)(.*${esc}.*)(?=\\n|$)`, 'i');
-        const lineMatch = texto.match(lineRegex);
-        if (lineMatch && lineMatch[2]) {
-            const linea = lineMatch[2];
-            const montosEnLinea = linea.match(/([0-9]+(?:[.,][0-9]{1,3})*)/g);
-            if (montosEnLinea && montosEnLinea.length > 0) {
-                const ultimo = montosEnLinea[montosEnLinea.length - 1];
-                const monto = procesarMonto(ultimo);
-                items.push({ nombre: item, monto });
-                continue;
+        // Fallback estricto por línea: solo si la línea contiene el concepto seguido del separador
+        let encontradoEnLinea = false;
+        for (const linea of textoLines) {
+            const lineRegex = new RegExp(`${esc}${separadorDespues}`, 'i');
+            if (lineRegex.test(linea)) {
+                // tomamos el último bloque numérico de esa línea
+                const montosEnLinea = linea.match(/([0-9]+(?:[.,][0-9]{1,3})*)/g);
+                if (montosEnLinea && montosEnLinea.length > 0) {
+                    const ultimo = montosEnLinea[montosEnLinea.length - 1];
+                    const monto = procesarMonto(ultimo);
+                    items.push({ nombre: concepto, monto });
+                    encontradoEnLinea = true;
+                    break;
+                }
             }
         }
+        if (encontradoEnLinea) continue;
 
-        // Si el nombre aparece pero no hubo monto detectable, no agregamos item con monto 0 automáticamente;
-        // se puede cambiar esta lógica si se prefiere ver items con monto 0 para auditoría.
-        const foundName = new RegExp(`${esc}`, 'i');
-        if (foundName.test(texto)) {
-            // No insertamos monto, solo lo ignoramos (mantener comportamiento previo).
-            // Si quieres que aparezca con 0 para auditar, podemos cambiar aquí.
+        // Si el nombre aparece pero no hay monto detectable, no lo agregamos (evita duplicados y 0 no deseados)
+    }
+
+    // Evitar duplicados de concepto (por seguridad): mantener la primera aparición
+    const dedup = [];
+    const seen = new Set();
+    for (const it of items) {
+        if (!seen.has(it.nombre)) {
+            dedup.push(it);
+            seen.add(it.nombre);
         }
     }
 
-    return items;
+    return dedup;
 }
 
 // Función para obtener días trabajados (se espera 30 para liquidaciones válidas)

@@ -40,24 +40,63 @@ async function extraerTextoDePDF(archivo) {
 // Lista de comisiones
 // IMPORTANTE: se ordena de mayor a menor longitud para priorizar conceptos largos
 const listaComisionVacaciones = [
-    "COM.EFECTIVAS", "COMISION CYD", "CONCURSO FPAY", "COMISION DIGITA Y GANA", "COMI. KIOSCO OTRAS EMPRESAS",
-    "APERTURA CTA CTE", "ESCANEA Y PAGA", "DIF. ESCANEA Y PAGA", "COMPENSACION PERMISO", "DIF CONCURSO FPAY",
-    "PROMOCIONES CMR", "COMISION CONNECT", "SEMANA CORRIDA", "BONO CLICK AND COLLECT", "HORAS RECARGO DOMINGO",
-    "BONO CYBER", "BONO DICIEMBRE", "BONO INVENTARIO", "DIF PREMIO CLICK AND COLLECT", "DIF PREMIO VENTA TIENDA",
-    "GARANTIZADO", "INCENTIVO CONFIABILIDAD", "INCENTIVO PRODUC CAJAS AUT", "INCENTIVO RECUPERO",
-    "INCENTIVO SELF CHECK OUT", "INCENTIVO TIENDA CD/SFS", "PREMIO CLICK AND COLLECT", "PREMIO CUMPL.GRUPAL NPS",
-    "PREMIO CUMPL.GRUPAL VTAS", "PREMIO CUMPLIMIENTO DE PLAN", "PREMIO VENTA TIENDA AUT.", "PREMIO VENTA TIENDA",
-    "PREMIO NPS", "PROMEDIOS VARIOS", "QUIEBRE DE STOCK", "HORAS RECARGO NAVIDAD", "DIFERENCIA SEMANA CORRIDA",
-    "BONO CERTIFICACION", "DIF. COMISIONES", "COMISION VACACIONES", "DIF COMISION DIGITA Y GANA",
-    "COMISION SEGURO DE VIDA", "NPS OMNICANAL"
+    "PREMIO VENTA TIENDA AUT.",
+    "DIF PREMIO VENTA TIENDA",
+    "PREMIO VENTA TIENDA",
+    "DIF PREMIO CLICK AND COLLECT",
+    "PREMIO CLICK AND COLLECT",
+    "DIF CONCURSO FPAY",
+    "CONCURSO FPAY",
+    "DIF. ESCANEA Y PAGA",
+    "ESCANEA Y PAGA",
+    "DIF. COMISIONES",
+    "COMISION DIGITA Y GANA",
+    "DIF COMISION DIGITA Y GANA",
+    "INCENTIVO SELF CHECK OUT",
+    "INCENTIVO TIENDA CD/SFS",
+    "INCENTIVO CONFIABILIDAD",
+    "INCENTIVO RECUPERO",
+    "INCENTIVO PRODUC CAJAS AUT",
+    "PREMIO CUMPL.GRUPAL VTAS",
+    "PREMIO CUMPL.GRUPAL NPS",
+    "PREMIO CUMPLIMIENTO DE PLAN",
+    "PROMEDIOS VARIOS",
+    "COMISION VACACIONES",
+    "COMISION CYD",
+    "COMISION SEGURO DE VIDA",
+    "COMI. KIOSCO OTRAS EMPRESAS",
+    "APERTURA CTA CTE",
+    "COMPENSACION PERMISO",
+    "BONO CLICK AND COLLECT",
+    "HORAS RECARGO DOMINGO",
+    "HORAS RECARGO NAVIDAD",
+    "DIFERENCIA SEMANA CORRIDA",
+    "SEMANA CORRIDA",
+    "BONO CERTIFICACION",
+    "BONO INVENTARIO",
+    "BONO DICIEMBRE",
+    "BONO CYBER",
+    "BONO NEFT",
+    "BONO NPS",
+    "BONO PUNTUALIDAD AUT.",
+    "BONO ASISTENCIA AUT.",
+    "ASIG. FAMILIAR",
+    "ASIGNACION SALA CUNA",
+    "BENEFICIO MATRIMONIO",
+    "COLACION",
+    "MOVILIZACION",
+    "COM.EFECTIVAS",
+    "PREMIO NPS",
+    "PROMOCIONES CMR",
+    "NPS OMNICANAL",
+    "GARANTIZADO",
+    "QUIEBRE DE STOCK"
 ]
     .map(s => normalizarTexto(s))
     .sort((a, b) => b.length - a.length);
 
 function construirRegexConcepto(concepto) {
     const esc = concepto.replace(/([.+*?^${}()|\[\]\/\\])/g, "\\$1");
-    // Coincidencia estricta por límites de palabra/espacio para evitar que un concepto corto
-    // capture dentro de uno largo.
     return new RegExp(`(^|\\s)${esc}(?=\\s|\\(|\\$|$)`, 'i');
 }
 
@@ -92,6 +131,7 @@ function extraerItemsDePDF(texto) {
     for (const linea of lineas) {
         const lineaNormalizada = normalizarTexto(linea);
         const conceptosEncontrados = [];
+        const rangosUsados = [];
 
         // Procesar primero los conceptos más largos para evitar confusiones
         for (const item of listaComisionVacaciones) {
@@ -99,15 +139,24 @@ function extraerItemsDePDF(texto) {
 
             if (!regexConcepto.test(lineaNormalizada)) continue;
 
+            const inicio = lineaNormalizada.search(regexConcepto);
+            if (inicio === -1) continue;
+            const fin = inicio + item.length;
+
+            // Evita solapamientos entre conceptos cortos y largos
+            const solapa = rangosUsados.some(r => !(fin <= r.inicio || inicio >= r.fin));
+            if (solapa) continue;
+
             const monto = extraerMontoDesdeLinea(lineaNormalizada, item);
 
             if (monto !== null && !Number.isNaN(monto)) {
                 conceptosEncontrados.push({ nombre: item, monto });
+                rangosUsados.push({ inicio, fin });
             }
         }
 
         if (conceptosEncontrados.length > 0) {
-            // Eliminar duplicados exactos por nombre+monto
+            // Eliminar duplicados exactos por nombre+monto dentro de la misma línea
             const vistos = new Set();
             for (const it of conceptosEncontrados) {
                 const key = `${it.nombre}|${it.monto}`;
@@ -322,11 +371,6 @@ function realizarCalculo(datos, pdfSeleccionado, seleccion) {
     let detalleHTML = `<h3>Cálculo de Vacaciones:</h3>
         <p class="meta">Mes evaluado: <strong>${pdfSeleccionado.mesAnio}</strong></p>
         <p class="promedio-liquidaciones">Promedio Liquidaciones: ${seleccionResult.map(pdf => pdf.mesAnio).join(', ')}</p>`;
-
-    const subtotales = seleccionResult.map(p => {
-        const subtotal = Array.isArray(p.items) ? p.items.reduce((s, it) => s + (Number(it.monto) || 0), 0) : 0;
-        return { mesAnio: p.mesAnio, subtotal };
-    });
 
     seleccionResult.forEach(pdf => {
         const subtotal = (Array.isArray(pdf.items) ? pdf.items.reduce((s, it) => s + (Number(it.monto) || 0), 0) : 0);

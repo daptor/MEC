@@ -16,6 +16,7 @@ function procesarMonto(textoMonto) {
     if (textoMonto === null || textoMonto === undefined) return 0;
     const s = textoMonto.toString().trim();
     if (s === '') return 0;
+    // quitar todo lo que no sea dígito, punto, coma o guión/menos
     const cleaned = s.replace(/[^\d.,-]/g, '').replace(/\./g, '').replace(',', '.');
     const n = parseFloat(cleaned);
     if (Number.isNaN(n)) {
@@ -37,144 +38,89 @@ async function extraerTextoDePDF(archivo) {
     return normalizarTexto(textoCompleto);
 }
 
-// Lista de comisiones
-// IMPORTANTE: se ordena de mayor a menor longitud para priorizar conceptos largos
+// Lista de comisiones (se incluye "COMISION VACACIONES")
 const listaComisionVacaciones = [
-    "PREMIO VENTA TIENDA AUT.",
-    "DIF PREMIO VENTA TIENDA",
-    "PREMIO VENTA TIENDA",
-    "DIF PREMIO CLICK AND COLLECT",
-    "PREMIO CLICK AND COLLECT",
-    "DIF CONCURSO FPAY",
-    "CONCURSO FPAY",
-    "DIF. ESCANEA Y PAGA",
-    "ESCANEA Y PAGA",
-    "DIF. COMISIONES",
-    "COMISION DIGITA Y GANA",
-    "DIF COMISION DIGITA Y GANA",
-    "INCENTIVO SELF CHECK OUT",
-    "INCENTIVO TIENDA CD/SFS",
-    "INCENTIVO CONFIABILIDAD",
-    "INCENTIVO RECUPERO",
-    "INCENTIVO PRODUC CAJAS AUT",
-    "PREMIO CUMPL.GRUPAL VTAS",
-    "PREMIO CUMPL.GRUPAL NPS",
-    "PREMIO CUMPLIMIENTO DE PLAN",
-    "PROMEDIOS VARIOS",
-    "COMISION VACACIONES",
-    "COMISION CYD",
-    "COMISION SEGURO DE VIDA",
-    "COMI. KIOSCO OTRAS EMPRESAS",
-    "APERTURA CTA CTE",
-    "COMPENSACION PERMISO",
-    "BONO CLICK AND COLLECT",
-    "HORAS RECARGO DOMINGO",
-    "HORAS RECARGO NAVIDAD",
-    "DIFERENCIA SEMANA CORRIDA",
-    "SEMANA CORRIDA",
-    "BONO CERTIFICACION",
-    "BONO INVENTARIO",
-    "BONO DICIEMBRE",
-    "BONO CYBER",
-    "BONO NEFT",
-    "BONO NPS",
-    "BONO PUNTUALIDAD AUT.",
-    "BONO ASISTENCIA AUT.",
-    "ASIG. FAMILIAR",
-    "ASIGNACION SALA CUNA",
-    "BENEFICIO MATRIMONIO",
-    "COLACION",
-    "MOVILIZACION",
-    "COM.EFECTIVAS",
-    "PREMIO NPS",
-    "PROMOCIONES CMR",
-    "NPS OMNICANAL",
-    "GARANTIZADO",
-    "QUIEBRE DE STOCK"
-]
-    .map(s => normalizarTexto(s))
-    .sort((a, b) => b.length - a.length);
+    "COM.EFECTIVAS", "COMISION CYD", "CONCURSO FPAY", "COMISION DIGITA Y GANA", "COMI. KIOSCO OTRAS EMPRESAS",
+    "APERTURA CTA CTE", "ESCANEA Y PAGA", "DIF. ESCANEA Y PAGA", "COMPENSACION PERMISO", "DIF CONCURSO FPAY",
+    "PROMOCIONES CMR", "COMISION CONNECT", "SEMANA CORRIDA", "BONO CLICK AND COLLECT", "HORAS RECARGO DOMINGO",
+    "BONO CYBER", "BONO DICIEMBRE", "BONO INVENTARIO", "DIF PREMIO CLICK AND COLLECT", "DIF PREMIO VENTA TIENDA",
+    "GARANTIZADO", "INCENTIVO CONFIABILIDAD", "INCENTIVO PRODUC CAJAS AUT", "INCENTIVO RECUPERO",
+    "INCENTIVO SELF CHECK OUT", "INCENTIVO TIENDA CD/SFS", "PREMIO CLICK AND COLLECT", "PREMIO CUMPL.GRUPAL NPS",
+    "PREMIO CUMPL.GRUPAL VTAS", "PREMIO CUMPLIMIENTO DE PLAN", "PREMIO NPS", "PREMIO VENTA TIENDA", "PREMIO VENTA TIENDA AUT.",
+    "PROMEDIOS VARIOS", "QUIEBRE DE STOCK", "HORAS RECARGO NAVIDAD", "DIFERENCIA SEMANA CORRIDA", "BONO CERTIFICACION", "DIF. COMISIONES",
+    "COMISION VACACIONES", "DIF COMISION DIGITA Y GANA", "COMISION SEGURO DE VIDA", "NPS OMNICANAL"
+].map(s => normalizarTexto(s));
 
-function construirRegexConcepto(concepto) {
-    const esc = concepto.replace(/([.+*?^${}()|\[\]\/\\])/g, "\\$1");
-    return new RegExp(`(^|\\s)${esc}(?=\\s|\\(|\\$|$)`, 'i');
-}
+// Ordenar por longitud para priorizar conceptos más específicos
+const listaOrdenadaPorLongitud = [...listaComisionVacaciones].sort((a, b) => b.length - a.length);
 
-function extraerMontoDesdeLinea(linea, conceptoNormalizado) {
-    const conceptoEsc = conceptoNormalizado.replace(/([.+*?^${}()|\[\]\/\\])/g, "\\$1");
-
-    // 1) Patrón principal: concepto + opcional (x.xx) + monto
-    const regex1 = new RegExp(
-        `${conceptoEsc}(?:\\s*\\([0-9]+(?:[\\.,][0-9]+)?\\))?\\s*\\$?\\s*([0-9]+(?:[\\.,][0-9]{1,3})*)`,
-        "i"
-    );
-    const res1 = linea.match(regex1);
-    if (res1 && res1[1]) return procesarMonto(res1[1]);
-
-    // 2) Buscar cualquier monto posterior en la misma línea
-    const pos = linea.search(construirRegexConcepto(conceptoNormalizado));
-    if (pos !== -1) {
-        const resto = linea.slice(pos + conceptoNormalizado.length);
-        const montos = resto.match(/-?\d[\d.,]*/g);
-        if (montos && montos.length > 0) {
-            return procesarMonto(montos[0]);
-        }
-    }
-
-    return null;
+function escaparRegex(s) {
+    return s.replace(/([.+*?^${}()|\[\]\/\\])/g, "\\$1");
 }
 
 function extraerItemsDePDF(texto) {
     const items = [];
-    const lineas = texto.split(/\n+/).map(l => l.trim()).filter(Boolean);
+    const lineas = texto.split(/\r?\n/);
+    const conceptosUsadosPorLinea = new Map();
 
-    for (const linea of lineas) {
-        const lineaNormalizada = normalizarTexto(linea);
-        const conceptosEncontrados = [];
-        const rangosUsados = [];
+    for (const item of listaOrdenadaPorLongitud) {
+        const itemRegex = escaparRegex(item);
 
-        // Procesar primero los conceptos más largos para evitar confusiones
-        for (const item of listaComisionVacaciones) {
-            const regexConcepto = construirRegexConcepto(item);
+        // 1) Búsqueda principal: exige separador válido tras el concepto
+        //    y toma el monto más cercano después del nombre.
+        const regexPrincipal = new RegExp(
+            `${itemRegex}(?:\\s*\\([0-9]+(?:[\\.,][0-9]+)?\\))?(?:\\s|:|\\(|\\$|$){1}(?:[\\s\\S]{0,40}?)\\$?\\s*([0-9]+(?:\\.[0-9]{3})*(?:,[0-9]+)?)`,
+            "i"
+        );
 
-            if (!regexConcepto.test(lineaNormalizada)) continue;
-
-            const inicio = lineaNormalizada.search(regexConcepto);
-            if (inicio === -1) continue;
-            const fin = inicio + item.length;
-
-            // Evita solapamientos entre conceptos cortos y largos
-            const solapa = rangosUsados.some(r => !(fin <= r.inicio || inicio >= r.fin));
-            if (solapa) continue;
-
-            const monto = extraerMontoDesdeLinea(lineaNormalizada, item);
-
-            if (monto !== null && !Number.isNaN(monto)) {
-                conceptosEncontrados.push({ nombre: item, monto });
-                rangosUsados.push({ inicio, fin });
-            }
+        const resultado = texto.match(regexPrincipal);
+        if (resultado && resultado[1]) {
+            const monto = procesarMonto(resultado[1]);
+            items.push({ nombre: item, monto });
+            continue;
         }
 
-        if (conceptosEncontrados.length > 0) {
-            // Eliminar duplicados exactos por nombre+monto dentro de la misma línea
-            const vistos = new Set();
-            for (const it of conceptosEncontrados) {
-                const key = `${it.nombre}|${it.monto}`;
-                if (vistos.has(key)) continue;
-                vistos.add(key);
-                items.push(it);
+        // 2) Fallback por línea:
+        //    buscar el concepto con separador válido y tomar el último monto de esa línea,
+        //    evitando reasignar el mismo monto en una línea ya consumida por un concepto más largo.
+        for (let i = 0; i < lineas.length; i++) {
+            const linea = lineas[i];
+            const regexLinea = new RegExp(
+                `${itemRegex}(?:\\s*\\([0-9]+(?:[\\.,][0-9]+)?\\))?(?:\\s|:|\\(|\\$|$)`,
+                "i"
+            );
+
+            if (!regexLinea.test(linea)) continue;
+
+            const montosEnLinea = linea.match(/([0-9]+(?:\.[0-9]{3})*(?:,[0-9]+)?)/g);
+            if (!montosEnLinea || montosEnLinea.length === 0) continue;
+
+            const ultimoMonto = montosEnLinea[montosEnLinea.length - 1];
+            const monto = procesarMonto(ultimoMonto);
+
+            const usados = conceptosUsadosPorLinea.get(i) || new Set();
+            if (usados.has(monto)) {
+                continue;
             }
+
+            usados.add(monto);
+            conceptosUsadosPorLinea.set(i, usados);
+            items.push({ nombre: item, monto });
+            break;
         }
     }
 
-    // Última limpieza: evitar duplicados globales exactos
-    const dedupe = new Map();
+    // Deduplicar por nombre exacto
+    const dedup = [];
+    const vistos = new Set();
     for (const it of items) {
-        const key = `${it.nombre}|${it.monto}`;
-        if (!dedupe.has(key)) dedupe.set(key, it);
+        if (!vistos.has(it.nombre)) {
+            dedup.push(it);
+            vistos.add(it.nombre);
+        }
     }
 
-    return Array.from(dedupe.values());
+    return dedup;
 }
 
 // Función para obtener días trabajados (se espera 30 para liquidaciones válidas)
@@ -197,7 +143,7 @@ function obtenerComisionVacaciones(texto) {
     return null;
 }
 
-// Obtener el mes y año del texto (ej: "JULIO de 2023")
+// Obtener el mes y año del texto
 function obtenerMesYAnio(texto) {
     const regex = /\b([A-ZÇÑ]+)\s+DE\s+(\d{4})\b/i;
     const resultado = texto.match(regex);
@@ -240,7 +186,7 @@ function seleccionarLiquidacionesParaPromedio(datos, pdfSeleccionado) {
     if (candidatos.length < 3) return { error: true, mensaje: "No hay suficientes liquidaciones válidas para el cálculo." };
 
     for (let i = candidatos.length - 1; i >= 2; i--) {
-        const c3 = candidatos[i], c2 = candidatos[i - 1], c1 = candidatos[i - 2];
+        const c3 = candidatos[i], c2 = candidatos[i-1], c1 = candidatos[i-2];
         if (!(esMesConsecutivo(c1.mesAnio, c2.mesAnio) && esMesConsecutivo(c2.mesAnio, c3.mesAnio))) {
             return { error: false, seleccion: [c1, c2, c3] };
         }
@@ -371,6 +317,11 @@ function realizarCalculo(datos, pdfSeleccionado, seleccion) {
     let detalleHTML = `<h3>Cálculo de Vacaciones:</h3>
         <p class="meta">Mes evaluado: <strong>${pdfSeleccionado.mesAnio}</strong></p>
         <p class="promedio-liquidaciones">Promedio Liquidaciones: ${seleccionResult.map(pdf => pdf.mesAnio).join(', ')}</p>`;
+
+    const subtotales = seleccionResult.map(p => {
+        const subtotal = Array.isArray(p.items) ? p.items.reduce((s, it) => s + (Number(it.monto) || 0), 0) : 0;
+        return { mesAnio: p.mesAnio, subtotal };
+    });
 
     seleccionResult.forEach(pdf => {
         const subtotal = (Array.isArray(pdf.items) ? pdf.items.reduce((s, it) => s + (Number(it.monto) || 0), 0) : 0);

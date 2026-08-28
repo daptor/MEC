@@ -61,56 +61,45 @@ function escaparRegex(s) {
 function extraerItemsDePDF(texto) {
     const items = [];
     const lineas = texto.split(/\r?\n/);
-    const conceptosUsadosPorLinea = new Map();
+    
+    // Set para recordar qué líneas ya han aportado un concepto,
+    // evitando que un concepto más corto vuelva a leer la misma línea.
+    const lineasUsadas = new Set();
 
     for (const item of listaOrdenadaPorLongitud) {
         const itemRegex = escaparRegex(item);
 
-        // 1) Búsqueda principal: exige separador válido tras el concepto
-        //    y toma el monto más cercano después del nombre.
-        const regexPrincipal = new RegExp(
-            `${itemRegex}(?:\\s*\\([0-9]+(?:[\\.,][0-9]+)?\\))?(?:\\s|:|\\(|\\$|$){1}(?:[\\s\\S]{0,40}?)\\$?\\s*([0-9]+(?:\\.[0-9]{3})*(?:,[0-9]+)?)`,
-            "i"
-        );
-
-        const resultado = texto.match(regexPrincipal);
-        if (resultado && resultado[1]) {
-            const monto = procesarMonto(resultado[1]);
-            items.push({ nombre: item, monto });
-            continue;
-        }
-
-        // 2) Fallback por línea:
-        //    buscar el concepto con separador válido y tomar el último monto de esa línea,
-        //    evitando reasignar el mismo monto en una línea ya consumida por un concepto más largo.
         for (let i = 0; i < lineas.length; i++) {
+            if (lineasUsadas.has(i)) continue; // Si la línea ya se usó, saltar
+
             const linea = lineas[i];
-            const regexLinea = new RegExp(
+            
+            // Buscar el concepto asegurando que tenga un separador válido después
+            const regexConcepto = new RegExp(
                 `${itemRegex}(?:\\s*\\([0-9]+(?:[\\.,][0-9]+)?\\))?(?:\\s|:|\\(|\\$|$)`,
                 "i"
             );
 
-            if (!regexLinea.test(linea)) continue;
+            if (!regexConcepto.test(linea)) continue;
 
+            // Extraer todos los posibles montos de la línea
             const montosEnLinea = linea.match(/([0-9]+(?:\.[0-9]{3})*(?:,[0-9]+)?)/g);
-            if (!montosEnLinea || montosEnLinea.length === 0) continue;
+            
+            if (montosEnLinea && montosEnLinea.length > 0) {
+                // Tomar el último número de la línea (generalmente el monto final en las liquidaciones)
+                const ultimoMonto = montosEnLinea[montosEnLinea.length - 1];
+                const monto = procesarMonto(ultimoMonto);
 
-            const ultimoMonto = montosEnLinea[montosEnLinea.length - 1];
-            const monto = procesarMonto(ultimoMonto);
-
-            const usados = conceptosUsadosPorLinea.get(i) || new Set();
-            if (usados.has(monto)) {
-                continue;
+                if (monto > 0) { // Solo agregar si hay un monto real
+                    items.push({ nombre: item, monto });
+                    lineasUsadas.add(i); // Marcar la línea como usada
+                    break; // Pasar al siguiente concepto en la lista ordenada
+                }
             }
-
-            usados.add(monto);
-            conceptosUsadosPorLinea.set(i, usados);
-            items.push({ nombre: item, monto });
-            break;
         }
     }
 
-    // Deduplicar por nombre exacto
+    // Deduplicar por nombre exacto por si hubiera algún error de lectura en el PDF
     const dedup = [];
     const vistos = new Set();
     for (const it of items) {

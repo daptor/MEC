@@ -728,9 +728,21 @@ function extraerSC(textoCompleto) {
     );
   }
 
+  // Guardamos el último estado para permitir recalcular bonos manuales
+  let __demandaCtx = null;
+
+  // Guardamos el último reporte generado para poder descargar informe individual HTML
+  let __ultimoReporteDemandaHRA = null;
+  let __ultimoReporteDemandaHRAHtml = "";
+
+
   // -------------------- Render / Recalc --------------------
   function renderReporte(contenedor, data) {
+    __ultimoReporteDemandaHRA = data;
+    __ultimoReporteDemandaHRAHtml = generarHtmlInformeIndividualDemandaHRA(data);
+
 const {
+
   jornada,
 
   tipoSueldoBase,
@@ -1083,6 +1095,12 @@ formatearCLP(sueldoBaseDetectado) +
       '</div>' +
       '</div>' +
 
+            '<div style="margin-top:14px; display:flex; gap:8px; flex-wrap:wrap;">' +
+      '<button id="demanda_btn_descargar_informe_individual" type="button" style="padding:10px 12px; border-radius:10px; border:1px solid #1d4ed8; background:#2563eb; color:#fff; cursor:pointer; font-weight:700;">' +
+      "Descargar informe individual" +
+      "</button>" +
+      "</div>" +
+
       '<div style="margin-top:10px; font-size:12px; color:#6b7280;">' +
       "* Diferencia adeudada = Esperado con SC - Pagado empresa. Si |diferencia| &lt; 1 peso, se considera correcto." +
 
@@ -1094,7 +1112,475 @@ formatearCLP(sueldoBaseDetectado) +
       "* Las horas estimadas deben revisarse, porque no son un dato directo del PDF sino un cálculo inverso." +
       "</div>" +
       "</div>";
+
+    const btnDescargarInforme = contenedor.querySelector(
+      "#demanda_btn_descargar_informe_individual"
+    );
+
+    if (btnDescargarInforme) {
+      btnDescargarInforme.addEventListener(
+        "click",
+        descargarInformeIndividualDemandaHRA
+      );
+    }
+
+        wireBotonesManual(contenedor);
+
   }
+
+  function generarFilasInformeIndividualDemandaHRA(data) {
+    const { st, esperado, difs } = data;
+
+    if (!st || !esperado || !difs) {
+      return (
+        "<tr>" +
+        '<td colspan="4" style="padding:10px; border:1px solid #e5e7eb;">' +
+        "No existen datos de sobretiempo para mostrar." +
+        "</td>" +
+        "</tr>"
+      );
+    }
+
+    let html = "";
+
+    function fila(nombre, encontrado, horasDetectadas, horasUsadas, esEstimado, pagado, esperadoItem, diferencia) {
+      if (!encontrado) return "";
+
+      const nota = notaHorasItem(
+        encontrado,
+        horasDetectadas,
+        horasUsadas,
+        esEstimado
+      );
+
+      return (
+        "<tr>" +
+        '<td style="padding:10px; border:1px solid #e5e7eb;">' +
+        "<strong>" +
+        escapeHtml(nombre) +
+        "</strong>" +
+        '<div style="font-size:12px; color:#6b7280; margin-top:4px;">' +
+        escapeHtml(nota) +
+        "</div>" +
+        "</td>" +
+        '<td style="padding:10px; border:1px solid #e5e7eb; text-align:right;">' +
+        formatearCLP(pagado || 0) +
+        "</td>" +
+        '<td style="padding:10px; border:1px solid #e5e7eb; text-align:right;">' +
+        (esperadoItem == null ? "—" : formatearCLP(esperadoItem)) +
+        "</td>" +
+        '<td style="padding:10px; border:1px solid #e5e7eb; text-align:right; font-weight:700;">' +
+        (diferencia == null ? "—" : formatearCLP(diferencia)) +
+        "</td>" +
+        "</tr>"
+      );
+    }
+
+    html += fila(
+      "HORAS EXTRAS 50%",
+      st.horasExtras50Encontrado,
+      st.horasExtras50,
+      esperado.horasUsadas ? esperado.horasUsadas.horasExtras50 : null,
+      esperado.horasSonEstimadas ? esperado.horasSonEstimadas.horasExtras50 : false,
+      st.pagadoHorasExtras50,
+      esperado.horasExtras50,
+      difs.horasExtras50
+    );
+
+    html += fila(
+      "HORAS EXTRAS DOMINGO",
+      st.horasExtrasDomingoEncontrado,
+      st.horasExtrasDomingo,
+      esperado.horasUsadas ? esperado.horasUsadas.horasExtrasDomingo : null,
+      esperado.horasSonEstimadas ? esperado.horasSonEstimadas.horasExtrasDomingo : false,
+      st.pagadoHorasExtrasDomingo,
+      esperado.horasExtrasDomingo,
+      difs.horasExtrasDomingo
+    );
+
+    html += fila(
+      "HORAS RECARGO DOMINGO",
+      st.recargoDomingoEncontrado,
+      st.horasRecargoDomingo,
+      esperado.horasUsadas ? esperado.horasUsadas.horasRecargoDomingo : null,
+      esperado.horasSonEstimadas ? esperado.horasSonEstimadas.horasRecargoDomingo : false,
+      st.pagadoRecargoDomingo,
+      esperado.recargoDomingo,
+      difs.recargoDomingo
+    );
+
+    html += fila(
+      "RECARGO 50% FESTIVO",
+      st.recargoFestivoEncontrado,
+      st.horasRecargoFestivo,
+      esperado.horasUsadas ? esperado.horasUsadas.horasRecargoFestivo : null,
+      esperado.horasSonEstimadas ? esperado.horasSonEstimadas.horasRecargoFestivo : false,
+      st.pagadoRecargoFestivo,
+      esperado.recargoFestivo,
+      difs.recargoFestivo
+    );
+
+    if (!html) {
+      html =
+        "<tr>" +
+        '<td colspan="4" style="padding:10px; border:1px solid #e5e7eb;">' +
+        "No se encontraron ítems de sobretiempo en esta liquidación." +
+        "</td>" +
+        "</tr>";
+    }
+
+    return html;
+  }
+
+  function generarHtmlInformeIndividualDemandaHRA(data) {
+    if (!data) return "";
+
+    const fechaGeneracion = new Date().toLocaleString("es-CL");
+
+    const jornada = data.jornada;
+    const tipoSueldoBase = data.tipoSueldoBase || "no-detectado";
+    const glosaSueldoBase = data.glosaSueldoBase || "Sueldo base";
+
+    const sueldoBaseDetectado = data.sueldoBaseDetectado || 0;
+    const sueldoBaseNormalizado =
+      data.sueldoBaseNormalizado || data.sueldoBaseDetectado || 0;
+    const sueldoBaseFueNormalizado = !!data.sueldoBaseFueNormalizado;
+    const advertenciaSueldoBase = data.advertenciaSueldoBase || "";
+
+    const horasBaseDetectadas = data.horasBaseDetectadas;
+    const diasBaseDetectados = data.diasBaseDetectados;
+
+    const baut = data.baut || 0;
+    const bpaut = data.bpaut || 0;
+    const bautNorm = data.bautNorm || 0;
+    const bpautNorm = data.bpautNorm || 0;
+    const advertenciaBonos = data.advertenciaBonos || "";
+
+    const sc = data.sc || 0;
+    const valorHoraBase = data.valorHoraBase;
+    const valorHoraEmpresa = data.valorHoraEmpresa;
+    const metodoCalculo = data.metodoCalculo || "no-detectado";
+    const descripcionMetodo = data.descripcionMetodo || "";
+    const warningCalculo = data.warningCalculo || "";
+
+    const totales = data.totales || {};
+    const totalPagadoEmpresa = totales.totalPagadoEmpresa || 0;
+    const totalEsperadoSC = totales.totalEsperadoSC || 0;
+    const totalDiferenciaAdeudada = totales.totalDiferenciaAdeudada || 0;
+
+    const colorDiferencia =
+      totalDiferenciaAdeudada > 0 ? "#b91c1c" : "#166534";
+
+    const bloqueAdvertencias =
+      advertenciaSueldoBase || advertenciaBonos || warningCalculo
+        ? (
+          '<div style="margin-top:18px; padding:14px; border:1px solid #fbbf24; background:#fffbeb; border-radius:10px;">' +
+          '<h2 style="margin:0 0 10px 0; font-size:18px; color:#92400e;">Advertencias</h2>' +
+          (
+            advertenciaSueldoBase
+              ? '<div style="margin-bottom:8px; color:#92400e;">' +
+                escapeHtml(advertenciaSueldoBase) +
+                "</div>"
+              : ""
+          ) +
+          (
+            advertenciaBonos
+              ? '<div style="margin-bottom:8px; color:#92400e;">' +
+                escapeHtml(advertenciaBonos) +
+                "</div>"
+              : ""
+          ) +
+          (
+            warningCalculo
+              ? '<div style="margin-bottom:8px; color:#92400e;">' +
+                escapeHtml(warningCalculo) +
+                "</div>"
+              : ""
+          ) +
+          "</div>"
+        )
+        : "";
+
+    return (
+      "<!DOCTYPE html>" +
+      '<html lang="es">' +
+      "<head>" +
+      '<meta charset="UTF-8">' +
+      '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+      "<title>Informe individual - Demanda HRA</title>" +
+      "<style>" +
+      "body{font-family:Arial,Helvetica,sans-serif;background:#f3f4f6;color:#111827;margin:0;padding:24px;}" +
+      ".doc{max-width:940px;margin:0 auto;background:#fff;border-radius:14px;padding:28px;box-shadow:0 4px 18px rgba(0,0,0,.08);}" +
+      "h1{margin:0 0 6px 0;font-size:26px;}" +
+      "h2{margin:24px 0 10px 0;font-size:20px;border-bottom:2px solid #e5e7eb;padding-bottom:6px;}" +
+      ".muted{color:#6b7280;font-size:13px;}" +
+      ".grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}" +
+      ".card{border:1px solid #e5e7eb;background:#fafafa;border-radius:10px;padding:12px;}" +
+      ".label{font-size:12px;color:#6b7280;margin-bottom:4px;}" +
+      ".valor{font-weight:700;font-size:16px;}" +
+      "table{width:100%;border-collapse:collapse;margin-top:10px;}" +
+      "th{background:#111827;color:#fff;text-align:left;padding:10px;border:1px solid #111827;}" +
+      "td{vertical-align:top;}" +
+      ".resumen{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:12px;}" +
+      ".resumen .valor{font-size:20px;}" +
+      ".footer{margin-top:24px;padding-top:12px;border-top:1px solid #e5e7eb;color:#6b7280;font-size:12px;}" +
+      "@media print{body{background:#fff;padding:0}.doc{box-shadow:none;border-radius:0}}" +
+      "</style>" +
+      "</head>" +
+      "<body>" +
+      '<div class="doc">' +
+
+      "<h1>Informe individual - Demanda HRA</h1>" +
+      '<div class="muted">Generado el ' +
+      escapeHtml(fechaGeneracion) +
+      "</div>" +
+
+      bloqueAdvertencias +
+
+      "<h2>Sueldo Convenido</h2>" +
+      '<div class="grid">' +
+
+      '<div class="card">' +
+      '<div class="label">Glosa sueldo base</div>' +
+      '<div class="valor">' +
+      escapeHtml(glosaSueldoBase) +
+      "</div>" +
+      "</div>" +
+
+      '<div class="card">' +
+      '<div class="label">Tipo sueldo base</div>' +
+      '<div class="valor">' +
+      escapeHtml(tipoSueldoBase) +
+      "</div>" +
+      "</div>" +
+
+      '<div class="card">' +
+      '<div class="label">Sueldo base pagado PDF</div>' +
+      '<div class="valor">' +
+      formatearCLP(sueldoBaseDetectado) +
+      "</div>" +
+      "</div>" +
+
+      '<div class="card">' +
+      '<div class="label">Sueldo base usado para SC</div>' +
+      '<div class="valor">' +
+      formatearCLP(sueldoBaseNormalizado) +
+      "</div>" +
+      "</div>" +
+
+      '<div class="card">' +
+      '<div class="label">Sueldo base normalizado</div>' +
+      '<div class="valor">' +
+      (sueldoBaseFueNormalizado ? "Sí" : "No") +
+      "</div>" +
+      "</div>" +
+
+      '<div class="card">' +
+      '<div class="label">Días detectados</div>' +
+      '<div class="valor">' +
+      escapeHtml(diasBaseDetectados == null ? "No detectados" : String(diasBaseDetectados)) +
+      "</div>" +
+      "</div>" +
+
+      '<div class="card">' +
+      '<div class="label">Horas HRA detectadas</div>' +
+      '<div class="valor">' +
+      escapeHtml(horasBaseDetectadas == null ? "No aplica / no detectadas" : String(horasBaseDetectadas)) +
+      "</div>" +
+      "</div>" +
+
+      '<div class="card">' +
+      '<div class="label">Jornada seleccionada</div>' +
+      '<div class="valor">' +
+      escapeHtml(jornada == null ? "No detectada" : String(jornada)) +
+      "</div>" +
+      "</div>" +
+
+      "</div>" +
+
+      "<h2>Bonos</h2>" +
+      '<div class="grid">' +
+
+      '<div class="card">' +
+      '<div class="label">Bono asistencia pagado PDF</div>' +
+      '<div class="valor">' +
+      formatearCLP(baut) +
+      "</div>" +
+      "</div>" +
+
+      '<div class="card">' +
+      '<div class="label">Bono puntualidad pagado PDF</div>' +
+      '<div class="valor">' +
+      formatearCLP(bpaut) +
+      "</div>" +
+      "</div>" +
+
+      '<div class="card">' +
+      '<div class="label">Bono asistencia pactado usado</div>' +
+      '<div class="valor">' +
+      formatearCLP(bautNorm) +
+      "</div>" +
+      "</div>" +
+
+      '<div class="card">' +
+      '<div class="label">Bono puntualidad pactado usado</div>' +
+      '<div class="valor">' +
+      formatearCLP(bpautNorm) +
+      "</div>" +
+      "</div>" +
+
+      "</div>" +
+
+      '<div class="card" style="margin-top:12px; border-color:#10b981; background:#ecfdf5;">' +
+      '<div class="label">Fórmula SC</div>' +
+      '<div class="valor">SC = Sueldo base corregido + bonos pactados</div>' +
+      '<div class="label" style="margin-top:10px;">Sueldo Convenido</div>' +
+      '<div class="valor" style="font-size:26px;">' +
+      formatearCLP(sc) +
+      "</div>" +
+      "</div>" +
+
+      "<h2>Cálculo valor hora aplicado</h2>" +
+      '<div class="grid">' +
+
+      '<div class="card">' +
+      '<div class="label">Método de cálculo</div>' +
+      '<div class="valor">' +
+      escapeHtml(metodoCalculo) +
+      "</div>" +
+      '<div class="muted" style="margin-top:6px;">' +
+      escapeHtml(descripcionMetodo) +
+      "</div>" +
+      "</div>" +
+
+      '<div class="card">' +
+      '<div class="label">Valor hora corregido con SC</div>' +
+      '<div class="valor">' +
+      (valorHoraBase == null ? "—" : formatearCLP(valorHoraBase)) +
+      "</div>" +
+      '<div class="muted" style="margin-top:6px;">Exacto: ' +
+      (valorHoraBase == null ? "—" : escapeHtml(formatearNumero(valorHoraBase, 6))) +
+      "</div>" +
+      "</div>" +
+
+      '<div class="card">' +
+      '<div class="label">Valor hora empresa estimado</div>' +
+      '<div class="valor">' +
+      (valorHoraEmpresa == null ? "—" : formatearCLP(valorHoraEmpresa)) +
+      "</div>" +
+      '<div class="muted" style="margin-top:6px;">Exacto: ' +
+      (valorHoraEmpresa == null ? "—" : escapeHtml(formatearNumero(valorHoraEmpresa, 6))) +
+      "</div>" +
+      "</div>" +
+
+      '<div class="card">' +
+      '<div class="label">Jornada / base usada</div>' +
+      '<div class="valor">' +
+      (
+        tipoSueldoBase === "part-time-hra"
+          ? "Horas HRA: " + escapeHtml(horasBaseDetectadas == null ? "No detectadas" : String(horasBaseDetectadas))
+          : "Jornada semanal: " + escapeHtml(jornada == null ? "No detectada" : String(jornada))
+      ) +
+      "</div>" +
+      "</div>" +
+
+      "</div>" +
+
+      "<h2>Comparación sobretiempo</h2>" +
+      "<table>" +
+      "<thead>" +
+      "<tr>" +
+      "<th>Ítem</th>" +
+      '<th style="text-align:right;">Pagado empresa</th>' +
+      '<th style="text-align:right;">Esperado con SC</th>' +
+      '<th style="text-align:right;">Diferencia adeudada</th>' +
+      "</tr>" +
+      "</thead>" +
+      "<tbody>" +
+      generarFilasInformeIndividualDemandaHRA(data) +
+      "</tbody>" +
+      "</table>" +
+
+      "<h2>Resumen total de esta liquidación</h2>" +
+      '<div class="resumen">' +
+
+      '<div class="card">' +
+      '<div class="label">Total pagado empresa</div>' +
+      '<div class="valor">' +
+      formatearCLP(totalPagadoEmpresa) +
+      "</div>" +
+      "</div>" +
+
+      '<div class="card">' +
+      '<div class="label">Total esperado con SC</div>' +
+      '<div class="valor">' +
+      formatearCLP(totalEsperadoSC) +
+      "</div>" +
+      "</div>" +
+
+      '<div class="card" style="border-color:#bfdbfe; background:#eff6ff;">' +
+      '<div class="label">Total diferencia adeudada</div>' +
+      '<div class="valor" style="color:' +
+      colorDiferencia +
+      ';">' +
+      formatearCLP(totalDiferenciaAdeudada) +
+      "</div>" +
+      "</div>" +
+
+      "</div>" +
+
+      '<div class="footer">' +
+      "<p>* Diferencia adeudada = Esperado con SC - Pagado empresa.</p>" +
+      "<p>* Si el PDF no informa horas, pero sí informa monto pagado, las horas se estiman dividiendo el monto pagado por el valor hora empresa y el factor del ítem.</p>" +
+      "<p>* Las horas estimadas deben revisarse, porque no son un dato directo del PDF sino un cálculo inverso.</p>" +
+      "<p>* Este informe fue generado automáticamente desde el módulo MEC — Demanda HRA.</p>" +
+      "</div>" +
+
+      "</div>" +
+      "</body>" +
+      "</html>"
+    );
+  }
+
+  function descargarInformeIndividualDemandaHRA() {
+    if (!__ultimoReporteDemandaHRAHtml) {
+      alert("Primero debes generar un análisis antes de descargar el informe.");
+      return;
+    }
+
+    const fecha = new Date();
+    const yyyy = fecha.getFullYear();
+    const mm = String(fecha.getMonth() + 1).padStart(2, "0");
+    const dd = String(fecha.getDate()).padStart(2, "0");
+    const hh = String(fecha.getHours()).padStart(2, "0");
+    const min = String(fecha.getMinutes()).padStart(2, "0");
+
+    const nombreArchivo =
+      "informe-individual-demanda-hra-" +
+      yyyy +
+      mm +
+      dd +
+      "-" +
+      hh +
+      min +
+      ".html";
+
+    const blob = new Blob([__ultimoReporteDemandaHRAHtml], {
+      type: "text/html;charset=utf-8",
+    });
+
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = nombreArchivo;
+    document.body.appendChild(a);
+    a.click();
+
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
 
   function construirDataReporte(params) {
 const {
@@ -1182,20 +1668,17 @@ return {
 
   }
 
-  // Guardamos el último estado para permitir recalcular bonos manuales
-  let __demandaCtx = null;
-
   function wireBotonesManual(contenedor) {
-    const btn = document.getElementById("demanda_btn_recalcular");
-    const btnIgual = document.getElementById("demanda_btn_usar_igual");
+    const btn = contenedor.querySelector("#demanda_btn_recalcular");
+    const btnIgual = contenedor.querySelector("#demanda_btn_usar_igual");
 
     if (!btn || !btnIgual) return;
 
     btn.addEventListener("click", function () {
       if (!__demandaCtx) return;
 
-      const inBaut = document.getElementById("demanda_baut_manual");
-      const inBpaut = document.getElementById("demanda_bpaut_manual");
+      const inBaut = contenedor.querySelector("#demanda_baut_manual");
+      const inBpaut = contenedor.querySelector("#demanda_bpaut_manual");
 
       let bautManual = procesarMontoCLP(inBaut ? inBaut.value : 0);
       let bpautManual = procesarMontoCLP(inBpaut ? inBpaut.value : 0);
@@ -1247,12 +1730,12 @@ const data = construirDataReporte({
 
 
       renderReporte(contenedor, data);
-      wireBotonesManual(contenedor);
+
     });
 
     btnIgual.addEventListener("click", function () {
-      const inBaut = document.getElementById("demanda_baut_manual");
-      const inBpaut = document.getElementById("demanda_bpaut_manual");
+      const inBaut = contenedor.querySelector("#demanda_baut_manual");
+      const inBpaut = contenedor.querySelector("#demanda_bpaut_manual");
 
       if (inBaut && inBpaut) {
         inBpaut.value = inBaut.value;
@@ -1342,32 +1825,32 @@ const data = construirDataReporte({
 });
 
 
+      // 4) Guardar contexto para recalcular manual
+      __demandaCtx = {
+        jornada,
+
+        tipoSueldoBase,
+        glosaSueldoBase,
+
+        sueldoBaseDetectado,
+        sueldoBaseNormalizado,
+        sueldoBaseFueNormalizado,
+        advertenciaSueldoBase,
+
+        horasBaseDetectadas,
+        diasBaseDetectados,
+
+        baut,
+        bpaut,
+
+        st,
+      };
+
+      // 5) Renderizar reporte.
+      // Los botones quedan conectados dentro de renderReporte().
       renderReporte(contenedor, data);
 
-      // 4) Guardar contexto para recalcular manual
-    __demandaCtx = {
-      jornada,
 
-      tipoSueldoBase,
-      glosaSueldoBase,
-
-      sueldoBaseDetectado,
-      sueldoBaseNormalizado,
-      sueldoBaseFueNormalizado,
-      advertenciaSueldoBase,
-
-      horasBaseDetectadas,
-      diasBaseDetectados,
-
-      baut,
-      bpaut,
-
-      st,
-    };
-
-
-      // 5) Conectar botones manuales si aparecen
-      wireBotonesManual(contenedor);
     } catch (e) {
       console.error("❌ Error en analizarArchivoDemandaHora():", e);
       alert("❌ Error analizando Demanda. Revisa consola.");

@@ -582,6 +582,33 @@
     };
   }
 
+    function calcularTotalesDemandaHRA(st, esperado, difs) {
+    const totalPagadoEmpresa =
+      (st.horasExtras50Encontrado ? st.pagadoHorasExtras50 || 0 : 0) +
+      (st.horasExtrasDomingoEncontrado ? st.pagadoHorasExtrasDomingo || 0 : 0) +
+      (st.recargoDomingoEncontrado ? st.pagadoRecargoDomingo || 0 : 0) +
+      (st.recargoFestivoEncontrado ? st.pagadoRecargoFestivo || 0 : 0);
+
+    const totalEsperadoSC =
+      (esperado.horasExtras50 != null ? esperado.horasExtras50 : 0) +
+      (esperado.horasExtrasDomingo != null ? esperado.horasExtrasDomingo : 0) +
+      (esperado.recargoDomingo != null ? esperado.recargoDomingo : 0) +
+      (esperado.recargoFestivo != null ? esperado.recargoFestivo : 0);
+
+    const totalDiferenciaAdeudada =
+      (difs.horasExtras50 != null ? difs.horasExtras50 : 0) +
+      (difs.horasExtrasDomingo != null ? difs.horasExtrasDomingo : 0) +
+      (difs.recargoDomingo != null ? difs.recargoDomingo : 0) +
+      (difs.recargoFestivo != null ? difs.recargoFestivo : 0);
+
+    return {
+      totalPagadoEmpresa,
+      totalEsperadoSC,
+      totalDiferenciaAdeudada,
+    };
+  }
+
+
   function notaHorasItem(encontrado, horasDetectadas, horasUsadas, esEstimado) {
     if (esEstimado && horasUsadas != null) {
       return (
@@ -658,7 +685,9 @@
       st,
       esperado,
       difs,
+      totales,
     } = data;
+
 
     const bloqueInputManual = ambosCero
       ? `
@@ -901,10 +930,42 @@
       )
     : ""
 ) +
-"</tbody>" +
+      "</tbody>" +
       "</table>" +
+
+      '<div style="margin-top:14px; padding:12px; border:1px solid #bfdbfe; background:#eff6ff; border-radius:12px;">' +
+      '<h3 style="margin:0 0 8px 0; font-size:16px; color:#1e3a8a;">Resumen total de esta liquidación</h3>' +
+      '<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">' +
+
+      '<div style="background:#fff; border:1px solid #dbeafe; border-radius:10px; padding:10px;">' +
+      '<div style="font-size:12px; color:#6b7280;">Total pagado empresa</div>' +
+      '<div style="font-size:18px; font-weight:700;">' +
+      formatearCLP(totales ? totales.totalPagadoEmpresa : 0) +
+      '</div>' +
+      '</div>' +
+
+      '<div style="background:#fff; border:1px solid #dbeafe; border-radius:10px; padding:10px;">' +
+      '<div style="font-size:12px; color:#6b7280;">Total esperado con SC</div>' +
+      '<div style="font-size:18px; font-weight:700;">' +
+      formatearCLP(totales ? totales.totalEsperadoSC : 0) +
+      '</div>' +
+      '</div>' +
+
+      '<div style="background:#fff; border:1px solid #dbeafe; border-radius:10px; padding:10px;">' +
+      '<div style="font-size:12px; color:#6b7280;">Total diferencia adeudada</div>' +
+      '<div style="font-size:18px; font-weight:700; color:' +
+      ((totales && totales.totalDiferenciaAdeudada > 0) ? '#b91c1c' : '#166534') +
+      ';">' +
+      formatearCLP(totales ? totales.totalDiferenciaAdeudada : 0) +
+      '</div>' +
+      '</div>' +
+
+      '</div>' +
+      '</div>' +
+
       '<div style="margin-top:10px; font-size:12px; color:#6b7280;">' +
       "* Diferencia adeudada = Esperado con SC - Pagado empresa. Si |diferencia| &lt; 1 peso, se considera correcto." +
+
       "</div>" +
       '<div style="margin-top:6px; font-size:12px; color:#6b7280;">' +
       "* Si el PDF no informa horas, pero sí informa monto pagado, las horas se estiman dividiendo el monto pagado por el valor hora empresa y el factor del ítem." +
@@ -952,8 +1013,10 @@
 
     const esperado = calcularEsperados(st, valorHoraBase, horasEstimadas);
     const difs = calcularDiferencias(st, esperado);
+    const totales = calcularTotalesDemandaHRA(st, esperado, difs);
 
     return {
+
       jornada,
 
       tipoSueldoBase,
@@ -979,7 +1042,9 @@
       st,
       esperado,
       difs,
+      totales,
     };
+
   }
 
   // Guardamos el último estado para permitir recalcular bonos manuales

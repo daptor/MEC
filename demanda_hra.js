@@ -231,45 +231,93 @@ function obtenerJornadaSeleccionada() {
     };
   }
 
-  function extraerSC(textoCompleto) {
-    const sueldoBaseObj = extraerSueldoBaseDemanda(textoCompleto);
+  function normalizarSueldoBaseMensualPorDias(sueldoBaseObj) {
+  const tipo = sueldoBaseObj.tipo;
+  const sueldoBaseDetectado = sueldoBaseObj.monto || 0;
+  const diasBaseDetectados = sueldoBaseObj.dias ?? null;
 
-    const sueldoBaseDetectado = sueldoBaseObj.monto || 0;
-    const horasBaseDetectadas = sueldoBaseObj.horas ?? null;
-    const diasBaseDetectados = sueldoBaseObj.dias ?? null;
-    const tipoSueldoBase = sueldoBaseObj.tipo;
-    const glosaSueldoBase = sueldoBaseObj.glosa;
+  let sueldoBaseNormalizado = sueldoBaseDetectado;
+  let sueldoBaseFueNormalizado = false;
+  let advertenciaSueldoBase = "";
 
-    const baut = extraerBonoAsistenciaAut(textoCompleto);
-    const bpaut = extraerBonoPuntualidadAut(textoCompleto);
+  if (
+    tipo === "mensual" &&
+    sueldoBaseDetectado > 0 &&
+    diasBaseDetectados != null &&
+    diasBaseDetectados > 0 &&
+    diasBaseDetectados < 30
+  ) {
+    sueldoBaseNormalizado = Math.round((sueldoBaseDetectado / diasBaseDetectados) * 30);
+    sueldoBaseFueNormalizado = true;
 
-    const { bautNorm, bpautNorm, ambosCero } = normalizarBonosPactados(
-      baut,
-      bpaut
-    );
-
-    const sc = sueldoBaseDetectado + bautNorm + bpautNorm;
-
-    return {
-      tipoSueldoBase,
-      glosaSueldoBase,
-      sueldoBaseDetectado,
-      horasBaseDetectadas,
-      diasBaseDetectados,
-
-      sb11: sueldoBaseDetectado,
-      sbHRA_horas: horasBaseDetectadas,
-
-      baut,
-      bpaut,
-
-      bautNorm,
-      bpautNorm,
-      ambosCero,
-
-      sc,
-    };
+    advertenciaSueldoBase =
+      "La liquidación informa menos de 30 días pagados. El sueldo base fue proyectado a 30 días para calcular correctamente el Sueldo Convenido.";
   }
+
+  return {
+    sueldoBaseNormalizado,
+    sueldoBaseFueNormalizado,
+    advertenciaSueldoBase,
+  };
+}
+
+
+function extraerSC(textoCompleto) {
+  const sueldoBaseObj = extraerSueldoBaseDemanda(textoCompleto);
+
+  const sueldoBaseDetectado = sueldoBaseObj.monto || 0;
+  const horasBaseDetectadas = sueldoBaseObj.horas ?? null;
+  const diasBaseDetectados = sueldoBaseObj.dias ?? null;
+  const tipoSueldoBase = sueldoBaseObj.tipo;
+  const glosaSueldoBase = sueldoBaseObj.glosa;
+
+  const normalizacionSB = normalizarSueldoBaseMensualPorDias(sueldoBaseObj);
+
+  const sueldoBaseNormalizado = normalizacionSB.sueldoBaseNormalizado;
+  const sueldoBaseFueNormalizado = normalizacionSB.sueldoBaseFueNormalizado;
+  const advertenciaSueldoBase = normalizacionSB.advertenciaSueldoBase;
+
+  const baut = extraerBonoAsistenciaAut(textoCompleto);
+  const bpaut = extraerBonoPuntualidadAut(textoCompleto);
+
+  const { bautNorm, bpautNorm, ambosCero } = normalizarBonosPactados(
+    baut,
+    bpaut
+  );
+
+  const advertenciaBonos = ambosCero
+    ? "Ambos bonos aparecen en $0 en esta liquidación. No se debe asumir que no existen; pueden no haberse pagado por licencia, ausencia, atraso u otra causa. Ingresa los bonos pactados para recalcular el Sueldo Convenido."
+    : "";
+
+  const sc = sueldoBaseNormalizado + bautNorm + bpautNorm;
+
+  return {
+    tipoSueldoBase,
+    glosaSueldoBase,
+
+    sueldoBaseDetectado,
+    sueldoBaseNormalizado,
+    sueldoBaseFueNormalizado,
+    advertenciaSueldoBase,
+
+    horasBaseDetectadas,
+    diasBaseDetectados,
+
+    sb11: sueldoBaseDetectado,
+    sbHRA_horas: horasBaseDetectadas,
+
+    baut,
+    bpaut,
+
+    bautNorm,
+    bpautNorm,
+    ambosCero,
+    advertenciaBonos,
+
+    sc,
+  };
+}
+
 
   // -------------------- Extractores Sobretiempo --------------------
   function extraerItemConHoras(texto, regex) {
@@ -682,33 +730,39 @@ function obtenerJornadaSeleccionada() {
 
   // -------------------- Render / Recalc --------------------
   function renderReporte(contenedor, data) {
-    const {
-      jornada,
+const {
+  jornada,
 
-      tipoSueldoBase,
-      glosaSueldoBase,
-      sueldoBaseDetectado,
-      horasBaseDetectadas,
-      diasBaseDetectados,
+  tipoSueldoBase,
+  glosaSueldoBase,
 
-      baut,
-      bpaut,
-      bautNorm,
-      bpautNorm,
-      ambosCero,
+  sueldoBaseDetectado,
+  sueldoBaseNormalizado,
+  sueldoBaseFueNormalizado,
+  advertenciaSueldoBase,
 
-      sc,
-      valorHoraBase,
-      valorHoraEmpresa,
-      metodoCalculo,
-      descripcionMetodo,
-      warningCalculo,
+  horasBaseDetectadas,
+  diasBaseDetectados,
 
-      st,
-      esperado,
-      difs,
-      totales,
-    } = data;
+  baut,
+  bpaut,
+  bautNorm,
+  bpautNorm,
+  ambosCero,
+  advertenciaBonos,
+
+  sc,
+  valorHoraBase,
+  valorHoraEmpresa,
+  metodoCalculo,
+  descripcionMetodo,
+  warningCalculo,
+
+  st,
+  esperado,
+  difs,
+  totales,
+} = data;
 
 
     const bloqueInputManual = ambosCero
@@ -751,6 +805,43 @@ function obtenerJornadaSeleccionada() {
       `
       : "";
 
+    const bloqueAdvertenciasSC =
+  sueldoBaseFueNormalizado || advertenciaBonos
+    ? `
+      <div style="margin-bottom:12px; padding:12px; border:1px solid #fbbf24; background:#fffbeb; border-radius:10px;">
+        <div style="font-weight:700; color:#92400e; margin-bottom:6px;">
+          Advertencias del Sueldo Convenido
+        </div>
+
+        ${
+          sueldoBaseFueNormalizado
+            ? `
+              <div style="font-size:12px; color:#92400e; margin-bottom:8px;">
+                ${escapeHtml(advertenciaSueldoBase)}
+              </div>
+              <div style="font-size:12px; color:#374151;">
+                Sueldo base pagado en PDF: <strong>${formatearCLP(sueldoBaseDetectado)}</strong><br>
+                Días pagados detectados: <strong>${escapeHtml(String(diasBaseDetectados ?? ""))}</strong><br>
+                Sueldo base normalizado a 30 días: <strong>${formatearCLP(sueldoBaseNormalizado)}</strong>
+              </div>
+            `
+            : ""
+        }
+
+        ${
+          advertenciaBonos
+            ? `
+              <div style="font-size:12px; color:#92400e; margin-top:8px;">
+                ${escapeHtml(advertenciaBonos)}
+              </div>
+            `
+            : ""
+        }
+      </div>
+    `
+    : "";
+ 
+
     const bloqueMetodoHRA =
       tipoSueldoBase === "part-time-hra"
         ? `
@@ -786,17 +877,24 @@ function obtenerJornadaSeleccionada() {
     contenedor.innerHTML =
       '<div style="border:2px solid #ddd; border-radius:12px; padding:14px; background:#fafafa; margin-bottom:16px;">' +
       '<h2 style="margin:0 0 10px 0;">MEC — Demanda</h2>' +
+      bloqueAdvertenciasSC +
       '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">' +
 
       // Bloque SC
       '<div style="background:#fff; border:1px solid #eee; border-radius:10px; padding:10px;">' +
       '<h3 style="margin:0 0 8px 0; font-size:16px;">Sueldo Convenido</h3>' +
 
-      "<div>" +
-      escapeHtml(glosaSueldoBase || "Sueldo base") +
-      ": <strong>" +
-      formatearCLP(sueldoBaseDetectado) +
-      "</strong>" +
+"<div>" +
+escapeHtml(glosaSueldoBase || "Sueldo base") +
+" pagado PDF: <strong>" +
+formatearCLP(sueldoBaseDetectado) +
+"</strong>" +
+(sueldoBaseFueNormalizado
+  ? '<div style="font-size:12px;color:#92400e;">Sueldo base normalizado a 30 días para SC: <strong>' +
+    formatearCLP(sueldoBaseNormalizado) +
+    "</strong></div>"
+  : "") +
+
       (horasBaseDetectadas != null
         ? '<div style="font-size:12px;color:#6b7280;">Horas HRA: <strong>' +
           escapeHtml(String(horasBaseDetectadas)) +
@@ -828,7 +926,7 @@ function obtenerJornadaSeleccionada() {
       formatearCLP(bpautNorm) +
       "</strong></div>" +
 
-      '<div style="margin-top:8px;">SC = Sueldo base + bonos pactados</div>' +
+      '<div style="margin-top:8px;">SC = Sueldo base corregido + bonos pactados</div>' +
       '<div style="font-size:18px; margin-top:4px;">Sueldo Convenido: <strong>' +
       formatearCLP(sc) +
       "</strong></div>" +
@@ -1037,35 +1135,40 @@ function obtenerJornadaSeleccionada() {
     const difs = calcularDiferencias(st, esperado);
     const totales = calcularTotalesDemandaHRA(st, esperado, difs);
 
-    return {
+return {
+  jornada,
 
-      jornada,
+  tipoSueldoBase,
+  glosaSueldoBase,
 
-      tipoSueldoBase,
-      glosaSueldoBase,
-      sueldoBaseDetectado,
-      horasBaseDetectadas,
-      diasBaseDetectados,
+  sueldoBaseDetectado,
+  sueldoBaseNormalizado,
+  sueldoBaseFueNormalizado,
+  advertenciaSueldoBase,
 
-      baut,
-      bpaut,
-      bautNorm,
-      bpautNorm,
-      ambosCero,
+  horasBaseDetectadas,
+  diasBaseDetectados,
 
-      sc,
-      valorHoraBase,
-      valorHoraEmpresa,
-      metodoCalculo: calc.metodoCalculo,
-      descripcionMetodo: calc.descripcionMetodo,
-      warningCalculo: calc.warning,
+  baut,
+  bpaut,
+  bautNorm,
+  bpautNorm,
+  ambosCero,
+  advertenciaBonos,
 
-      horasEstimadas,
-      st,
-      esperado,
-      difs,
-      totales,
-    };
+  sc,
+  valorHoraBase,
+  valorHoraEmpresa,
+  metodoCalculo: calc.metodoCalculo,
+  descripcionMetodo: calc.descripcionMetodo,
+  warningCalculo: calc.warning,
+
+  horasEstimadas,
+  st,
+  esperado,
+  difs,
+  totales,
+};
 
   }
 
@@ -1098,28 +1201,39 @@ function obtenerJornadaSeleccionada() {
       const bautNorm = bautManual || 0;
       const bpautNorm = bpautManual || 0;
 
-      const sc =
-        (__demandaCtx.sueldoBaseDetectado || 0) + bautNorm + bpautNorm;
+const sueldoBaseParaSC =
+  __demandaCtx.sueldoBaseNormalizado ||
+  __demandaCtx.sueldoBaseDetectado ||
+  0;
 
-      const data = construirDataReporte({
-        jornada: __demandaCtx.jornada,
+const sc = sueldoBaseParaSC + bautNorm + bpautNorm;
 
-        tipoSueldoBase: __demandaCtx.tipoSueldoBase,
-        glosaSueldoBase: __demandaCtx.glosaSueldoBase,
-        sueldoBaseDetectado: __demandaCtx.sueldoBaseDetectado,
-        horasBaseDetectadas: __demandaCtx.horasBaseDetectadas,
-        diasBaseDetectados: __demandaCtx.diasBaseDetectados,
 
-        baut: __demandaCtx.baut,
-        bpaut: __demandaCtx.bpaut,
+const data = construirDataReporte({
+  jornada,
 
-        bautNorm,
-        bpautNorm,
-        ambosCero: false,
+  tipoSueldoBase,
+  glosaSueldoBase,
 
-        sc,
-        st: __demandaCtx.st,
-      });
+  sueldoBaseDetectado,
+  sueldoBaseNormalizado,
+  sueldoBaseFueNormalizado,
+  advertenciaSueldoBase,
+
+  horasBaseDetectadas,
+  diasBaseDetectados,
+
+  baut,
+  bpaut,
+  bautNorm,
+  bpautNorm,
+  ambosCero,
+  advertenciaBonos,
+
+  sc,
+  st,
+});
+
 
       renderReporte(contenedor, data);
       wireBotonesManual(contenedor);
@@ -1167,16 +1281,25 @@ function obtenerJornadaSeleccionada() {
       const {
         tipoSueldoBase,
         glosaSueldoBase,
+
         sueldoBaseDetectado,
+        sueldoBaseNormalizado,
+        sueldoBaseFueNormalizado,
+        advertenciaSueldoBase,
+
         horasBaseDetectadas,
         diasBaseDetectados,
+
         baut,
         bpaut,
         bautNorm,
         bpautNorm,
         ambosCero,
+        advertenciaBonos,
+
         sc,
       } = scObj;
+
 
       // 2) Extraer sobretiempo pagado
       const st = extraerSobretiempoPagado(textoCompleto);
@@ -1204,20 +1327,26 @@ function obtenerJornadaSeleccionada() {
       renderReporte(contenedor, data);
 
       // 4) Guardar contexto para recalcular manual
-      __demandaCtx = {
-        jornada,
+    __demandaCtx = {
+      jornada,
 
-        tipoSueldoBase,
-        glosaSueldoBase,
-        sueldoBaseDetectado,
-        horasBaseDetectadas,
-        diasBaseDetectados,
+      tipoSueldoBase,
+      glosaSueldoBase,
 
-        baut,
-        bpaut,
+      sueldoBaseDetectado,
+      sueldoBaseNormalizado,
+      sueldoBaseFueNormalizado,
+      advertenciaSueldoBase,
 
-        st,
-      };
+      horasBaseDetectadas,
+      diasBaseDetectados,
+
+      baut,
+      bpaut,
+
+      st,
+    };
+
 
       // 5) Conectar botones manuales si aparecen
       wireBotonesManual(contenedor);

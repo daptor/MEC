@@ -1097,21 +1097,31 @@ formatearCLP(sueldoBaseDetectado) +
   }
 
   function construirDataReporte(params) {
-    const {
-      jornada,
-      tipoSueldoBase,
-      glosaSueldoBase,
-      sueldoBaseDetectado,
-      horasBaseDetectadas,
-      diasBaseDetectados,
-      baut,
-      bpaut,
-      bautNorm,
-      bpautNorm,
-      ambosCero,
-      sc,
-      st,
-    } = params;
+const {
+  jornada,
+
+  tipoSueldoBase,
+  glosaSueldoBase,
+
+  sueldoBaseDetectado,
+  sueldoBaseNormalizado,
+  sueldoBaseFueNormalizado,
+  advertenciaSueldoBase,
+
+  horasBaseDetectadas,
+  diasBaseDetectados,
+
+  baut,
+  bpaut,
+  bautNorm,
+  bpautNorm,
+  ambosCero,
+  advertenciaBonos,
+
+  sc,
+  st,
+} = params;
+
 
     const calc = calcularValorHoraBaseDemanda({
       tipoSueldoBase,

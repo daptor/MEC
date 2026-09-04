@@ -66,21 +66,43 @@
     return normalizarTextoPlano(textoCompleto);
   }
 
-  function obtenerJornadaSeleccionada() {
-    const selHoras = document.getElementById("horas-jornada");
-    if (selHoras && selHoras.value) {
-      const n = parseFloat(String(selHoras.value).replace(",", "."));
-      return Number.isFinite(n) ? n : null;
-    }
+function obtenerJornadaSeleccionada() {
+  const selectJornada = document.getElementById("jornada");
 
-    const sel = document.getElementById("jornada");
-    if (sel && sel.value) {
-      const n = parseFloat(String(sel.value).replace(",", "."));
-      return Number.isFinite(n) ? n : null;
-    }
+  if (selectJornada) {
+    const valor = String(selectJornada.value || "").trim();
+    const texto = String(
+      selectJornada.options?.[selectJornada.selectedIndex]?.text || ""
+    ).trim();
 
-    return null;
+    const combinado = `${valor} ${texto}`.toLowerCase();
+
+    if (combinado.includes("44")) return 44;
+    if (combinado.includes("42")) return 42;
+    if (combinado.includes("40")) return 40;
+    if (combinado.includes("30")) return 30;
+    if (combinado.includes("25")) return 25;
+    if (combinado.includes("20")) return 20;
+
+    const numero = Number(valor.replace(",", "."));
+    if (Number.isFinite(numero) && numero > 0) {
+      return numero;
+    }
   }
+
+  const inputHorasJornada = document.getElementById("horas-jornada");
+
+  if (inputHorasJornada) {
+    const valor = String(inputHorasJornada.value || "").trim();
+    const numero = Number(valor.replace(",", "."));
+
+    if (Number.isFinite(numero) && numero > 0) {
+      return numero;
+    }
+  }
+
+  return 44;
+}
 
   function escapeHtml(s) {
     return String(s ?? "")

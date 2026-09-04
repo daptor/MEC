@@ -303,7 +303,7 @@ function extraerSC(textoCompleto) {
     horasBaseDetectadas,
     diasBaseDetectados,
 
-    sb11: sueldoBaseDetectado,
+    sb11: sueldoBaseNormalizado,
     sbHRA_horas: horasBaseDetectadas,
 
     baut,
@@ -1220,28 +1220,29 @@ const sc = sueldoBaseParaSC + bautNorm + bpautNorm;
 
 
 const data = construirDataReporte({
-  jornada,
+  jornada: __demandaCtx.jornada,
 
-  tipoSueldoBase,
-  glosaSueldoBase,
+  tipoSueldoBase: __demandaCtx.tipoSueldoBase,
+  glosaSueldoBase: __demandaCtx.glosaSueldoBase,
 
-  sueldoBaseDetectado,
-  sueldoBaseNormalizado,
-  sueldoBaseFueNormalizado,
-  advertenciaSueldoBase,
+  sueldoBaseDetectado: __demandaCtx.sueldoBaseDetectado,
+  sueldoBaseNormalizado: __demandaCtx.sueldoBaseNormalizado,
+  sueldoBaseFueNormalizado: __demandaCtx.sueldoBaseFueNormalizado,
+  advertenciaSueldoBase: __demandaCtx.advertenciaSueldoBase,
 
-  horasBaseDetectadas,
-  diasBaseDetectados,
+  horasBaseDetectadas: __demandaCtx.horasBaseDetectadas,
+  diasBaseDetectados: __demandaCtx.diasBaseDetectados,
 
-  baut,
-  bpaut,
+  baut: __demandaCtx.baut,
+  bpaut: __demandaCtx.bpaut,
+
   bautNorm,
   bpautNorm,
-  ambosCero,
-  advertenciaBonos,
+  ambosCero: false,
+  advertenciaBonos: "",
 
   sc,
-  st,
+  st: __demandaCtx.st,
 });
 
 
@@ -1315,24 +1316,31 @@ const data = construirDataReporte({
       const st = extraerSobretiempoPagado(textoCompleto);
 
       // 3) Armar reporte
-      const data = construirDataReporte({
-        jornada,
+const data = construirDataReporte({
+  jornada,
 
-        tipoSueldoBase,
-        glosaSueldoBase,
-        sueldoBaseDetectado,
-        horasBaseDetectadas,
-        diasBaseDetectados,
+  tipoSueldoBase,
+  glosaSueldoBase,
 
-        baut,
-        bpaut,
-        bautNorm,
-        bpautNorm,
-        ambosCero,
+  sueldoBaseDetectado,
+  sueldoBaseNormalizado,
+  sueldoBaseFueNormalizado,
+  advertenciaSueldoBase,
 
-        sc,
-        st,
-      });
+  horasBaseDetectadas,
+  diasBaseDetectados,
+
+  baut,
+  bpaut,
+  bautNorm,
+  bpautNorm,
+  ambosCero,
+  advertenciaBonos,
+
+  sc,
+  st,
+});
+
 
       renderReporte(contenedor, data);
 

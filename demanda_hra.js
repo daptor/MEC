@@ -230,29 +230,84 @@ function obtenerJornadaSeleccionada() {
     return "No detectado";
   }
 
-  function extraerCargoDemandaHRA(textoCompleto) {
-    const t = String(textoCompleto || "").replace(/\s+/g, " ").trim();
+function extraerCargoDemandaHRA(textoCompleto) {
+  const t = normalizarTextoPlano(textoCompleto || "")
+    .replace(/\s+/g, " ")
+    .trim();
 
-    const patrones = [
-      /\bCARGO\s*:?\s*([A-ZÁÉÍÓÚÜÑ0-9\s\-\/\.]+?)(?=\s+(?:FECHA|RUT|NOMBRE|CENTRO|AREA|ÁREA|SUCURSAL|SUELDO|AFP|ISAPRE|FONASA)\b|$)/i,
-      /\bFECHA\s+INGRESO\s+[0-9\/\-.]+\s+([A-ZÁÉÍÓÚÜÑ0-9\s\-\/\.]+?)(?=\s+(?:AFP|ISAPRE|FONASA|SUELDO|HABERES|DESCUENTOS)\b|$)/i,
-    ];
+  const palabrasCorte =
+    "FECHA|INGRESO|RUT|RUN|NOMBRE|TRABAJADOR|CENTRO|AREA|ÁREA|SUCURSAL|SECCION|SECCIÓN|AFP|ISAPRE|FONASA|SALUD|SUELDO|HABERES|DESCUENTOS|CONTRATO|JORNADA|BANCO|CUENTA|DIAS|DÍAS|LIQUIDACION|LIQUIDACIÓN";
 
-    for (const re of patrones) {
-      const m = t.match(re);
-      if (m && m[1]) {
-        const cargo = limpiarCampoIdentificacionDemandaHRA(m[1])
-          .replace(/\b(AFP|ISAPRE|FONASA|SUELDO|HABERES|DESCUENTOS)\b.*$/i, "")
-          .trim();
+  const patrones = [
+    // Caso directo: CARGO: OPERARIO, CARGO OPERARIO, Cargo - Operario
+    new RegExp(
+      "\\bCARGO\\s*[:\\-]?\\s*([A-ZÁÉÍÓÚÜÑ0-9][A-ZÁÉÍÓÚÜÑ0-9\\s.,\\-\\/]{2,80}?)(?=\\s+(?:" +
+        palabrasCorte +
+        ")\\b|\\s{2,}|$)",
+      "i"
+    ),
 
-        if (cargo.length >= 3 && cargo.length <= 80) {
-          return cargo;
-        }
+    // Caso alternativo: PUESTO: OPERARIO
+    new RegExp(
+      "\\bPUESTO\\s*[:\\-]?\\s*([A-ZÁÉÍÓÚÜÑ0-9][A-ZÁÉÍÓÚÜÑ0-9\\s.,\\-\\/]{2,80}?)(?=\\s+(?:" +
+        palabrasCorte +
+        ")\\b|\\s{2,}|$)",
+      "i"
+    ),
+
+    // Caso alternativo: FUNCIÓN: OPERARIO / FUNCION OPERARIO
+    new RegExp(
+      "\\bFUNCI[OÓ]N\\s*[:\\-]?\\s*([A-ZÁÉÍÓÚÜÑ0-9][A-ZÁÉÍÓÚÜÑ0-9\\s.,\\-\\/]{2,80}?)(?=\\s+(?:" +
+        palabrasCorte +
+        ")\\b|\\s{2,}|$)",
+      "i"
+    ),
+
+    // Caso común en liquidaciones: FECHA INGRESO 01/01/2024 CARGO OPERARIO AFP...
+    new RegExp(
+      "\\bFECHA\\s+INGRESO\\s+[0-9]{1,2}[\\/\\-.][0-9]{1,2}[\\/\\-.][0-9]{2,4}\\s+(?:CARGO\\s*[:\\-]?\\s*)?([A-ZÁÉÍÓÚÜÑ0-9][A-ZÁÉÍÓÚÜÑ0-9\\s.,\\-\\/]{2,80}?)(?=\\s+(?:AFP|ISAPRE|FONASA|SALUD|SUELDO|HABERES|DESCUENTOS|CONTRATO|JORNADA)\\b|$)",
+      "i"
+    ),
+
+    // Caso tabla: NOMBRE RUT SUELDO BASE CARGO / después del RUT aparece sueldo y luego cargo
+    new RegExp(
+      "\\b\\d{1,2}\\.\\d{3}\\.\\d{3}-[\\dkK]\\b\\s+\\$?\\s*[0-9]{1,3}(?:\\.[0-9]{3})*\\s+([A-ZÁÉÍÓÚÜÑ][A-ZÁÉÍÓÚÜÑ0-9\\s.,\\-\\/]{2,80}?)(?=\\s+(?:FECHA|INGRESO|AFP|ISAPRE|FONASA|SALUD|SUELDO|HABERES|DESCUENTOS|CONTRATO|JORNADA)\\b|$)",
+      "i"
+    ),
+  ];
+
+  for (const re of patrones) {
+    const m = t.match(re);
+
+    if (m && m[1]) {
+      let cargo = limpiarCampoIdentificacionDemandaHRA(m[1])
+        .replace(
+          new RegExp("\\b(?:" + palabrasCorte + ")\\b.*$", "i"),
+          ""
+        )
+        .replace(/\s+/g, " ")
+        .trim();
+
+      // Limpieza defensiva por si el extractor toma encabezados o basura
+      cargo = cargo
+        .replace(/^\s*[:\-]\s*/, "")
+        .replace(/\b(CARGO|PUESTO|FUNCI[OÓ]N)\b\s*[:\-]?\s*/i, "")
+        .trim();
+
+      if (
+        cargo.length >= 3 &&
+        cargo.length <= 80 &&
+        !/^\d+$/.test(cargo) &&
+        !/\b(SUELDO|BASE|RUT|RUN|NOMBRE|FECHA|INGRESO|AFP|ISAPRE|FONASA|HABERES|DESCUENTOS)\b/i.test(cargo)
+      ) {
+        return cargo.toUpperCase();
       }
     }
-
-    return "No detectado";
   }
+
+  return "No detectado";
+}
+
 
   function extraerIdentificacionLiquidacionDemandaHRA(textoCompleto) {
     const periodo = extraerPeriodoLiquidacionDemandaHRA(textoCompleto);
@@ -263,10 +318,11 @@ function obtenerJornadaSeleccionada() {
     );
     const cargo = extraerCargoDemandaHRA(textoCompleto);
 
-    const identificacionIncompleta =
-      nombreTrabajador === "No detectado" ||
-      !rutTrabajador ||
-      periodo.periodoTexto === "No detectado";
+const identificacionIncompleta =
+  nombreTrabajador === "No detectado" ||
+  !rutTrabajador ||
+  periodo.periodoTexto === "No detectado" ||
+  cargo === "No detectado";
 
     return {
       nombreTrabajador: nombreTrabajador || "No detectado",
@@ -277,7 +333,7 @@ function obtenerJornadaSeleccionada() {
       cargo: cargo || "No detectado",
       identificacionIncompleta,
       advertenciaIdentificacion: identificacionIncompleta
-        ? "No fue posible detectar todos los datos identificatorios de la liquidación. Revisa trabajador, RUT y periodo antes de usar este informe en un acumulado."
+        ? "No fue posible detectar todos los datos identificatorios de la liquidación. Revisa trabajador, RUT, periodo y cargo antes de usar este informe en un acumulado."
         : "",
     };
   }

@@ -870,6 +870,12 @@ function extraerSC(textoCompleto) {
       desde el monto pagado por la empresa.
 
       Cada valor ya incluye el factor propio del ítem.
+
+      Factores aplicados:
+      - HORAS EXTRAS 50%: valor hora × 1.5
+      - HORAS EXTRAS DOMINGO: valor hora × 1.3 × 1.5
+      - HORAS RECARGO DOMINGO: valor hora × 0.3
+      - RECARGO 50% FESTIVO: valor hora × 1.5
     */
 
     if (!valorHoraEmpresa || valorHoraEmpresa <= 0) {
@@ -884,7 +890,7 @@ function extraerSC(textoCompleto) {
     return {
       horasExtras50: valorHoraEmpresa * 1.5,
       horasExtrasDomingo: valorHoraEmpresa * 1.3 * 1.5,
-      recargoDomingo: valorHoraEmpresa,
+      recargoDomingo: valorHoraEmpresa * 0.3,
       recargoFestivo: valorHoraEmpresa * 1.5,
     };
   }
@@ -898,6 +904,12 @@ function extraerSC(textoCompleto) {
 
       Fórmula:
       montoCorrecto = horasUsadas × valorHoraCorrectoConBonosDelItem
+
+      Factores aplicados:
+      - HORAS EXTRAS 50%: valor hora × 1.5
+      - HORAS EXTRAS DOMINGO: valor hora × 1.3 × 1.5
+      - HORAS RECARGO DOMINGO: valor hora × 0.3
+      - RECARGO 50% FESTIVO: valor hora × 1.5
     */
 
     if (!valorHoraBase || valorHoraBase <= 0) {
@@ -912,7 +924,7 @@ function extraerSC(textoCompleto) {
     return {
       horasExtras50: valorHoraBase * 1.5,
       horasExtrasDomingo: valorHoraBase * 1.3 * 1.5,
-      recargoDomingo: valorHoraBase,
+      recargoDomingo: valorHoraBase * 0.3,
       recargoFestivo: valorHoraBase * 1.5,
     };
   }
@@ -2753,95 +2765,135 @@ function descargarInformeIndividualDemandaHRA() {
 
 
 function construirDataReporte(params) {
-const {
-  jornada,
+  const {
+    identificacion,
 
-  tipoSueldoBase,
-  glosaSueldoBase,
+    jornada,
 
-  sueldoBaseDetectado,
-  sueldoBaseNormalizado,
-  sueldoBaseFueNormalizado,
-  advertenciaSueldoBase,
+    tipoSueldoBase,
+    glosaSueldoBase,
 
-  horasBaseDetectadas,
-  diasBaseDetectados,
+    sueldoBaseDetectado,
+    sueldoBaseNormalizado,
+    sueldoBaseFueNormalizado,
+    advertenciaSueldoBase,
 
-  baut,
-  bpaut,
-  bautNorm,
-  bpautNorm,
-  ambosCero,
-  advertenciaBonos,
+    horasBaseDetectadas,
+    diasBaseDetectados,
 
-  sc,
-  st,
-} = params;
+    baut,
+    bpaut,
+    bautNorm,
+    bpautNorm,
+    ambosCero,
+    requiereBonosManual,
+    bonosProporcionalesPorLiquidacionParcial,
+    advertenciaBonos,
 
+    sc,
+    st,
+  } = params;
 
-    const calc = calcularValorHoraBaseDemanda({
-      tipoSueldoBase,
-      sc,
-      horasBaseDetectadas,
-      jornada,
-    });
+  const calc = calcularValorHoraBaseDemanda({
+    tipoSueldoBase,
+    sc,
+    horasBaseDetectadas,
+    jornada,
+  });
 
-    const valorHoraBase = calc.valorHoraBase;
+  const valorHoraBase = calc.valorHoraBase;
 
-    const baseEmpresaParaValorHora =
-      tipoSueldoBase === "mensual" && sueldoBaseFueNormalizado
-        ? sueldoBaseNormalizado || sueldoBaseDetectado || 0
-        : sueldoBaseDetectado || sueldoBaseNormalizado || 0;
+  /*
+    CORRECCIÓN:
+    Para liquidaciones mensuales con menos de 30 días pagados,
+    el valor hora empresa debe reconstruirse usando sueldo base normalizado a 30 días.
 
-    const valorHoraEmpresa = calcularValorHoraEmpresaMEC(
-      baseEmpresaParaValorHora,
-      tipoSueldoBase,
-      horasBaseDetectadas,
-      jornada
-    );
+    Si se usa el sueldo proporcional del PDF, las horas implícitas quedan artificialmente infladas.
+  */
+  const baseEmpresaSinBonosParaValorHora =
+    tipoSueldoBase === "mensual" && sueldoBaseFueNormalizado
+      ? sueldoBaseNormalizado || sueldoBaseDetectado || 0
+      : sueldoBaseDetectado || sueldoBaseNormalizado || 0;
 
-    const horasEstimadas = construirHorasEstimadas(st, valorHoraEmpresa);
+  const valorHoraEmpresa = calcularValorHoraEmpresaMEC(
+    baseEmpresaSinBonosParaValorHora,
+    tipoSueldoBase,
+    horasBaseDetectadas,
+    jornada
+  );
 
-    const esperado = calcularEsperados(st, valorHoraBase, horasEstimadas);
-    const difs = calcularDiferencias(st, esperado);
-    const totales = calcularTotalesDemandaHRA(st, esperado, difs);
+  /*
+    Estos objetos son obligatorios en la versión nueva del cálculo.
+    Antes el código pasaba valorHoraEmpresa y valorHoraBase como números simples,
+    pero las funciones actuales esperan valores hora por ítem.
+  */
+  const valoresHoraEmpresaItems =
+    construirValoresHoraEmpresaItems(valorHoraEmpresa);
 
-return {
-  jornada,
+  const valoresHoraCorrectosItems =
+    construirValoresHoraCorrectosItems(valorHoraBase);
 
-  tipoSueldoBase,
-  glosaSueldoBase,
+  const horasEstimadas = construirHorasEstimadas(
+    st,
+    valoresHoraEmpresaItems
+  );
 
-  sueldoBaseDetectado,
-  sueldoBaseNormalizado,
-  sueldoBaseFueNormalizado,
-  advertenciaSueldoBase,
+  const esperado = calcularEsperados(
+    st,
+    valoresHoraCorrectosItems,
+    horasEstimadas
+  );
 
-  horasBaseDetectadas,
-  diasBaseDetectados,
+  const difs = calcularDiferencias(st, esperado);
+  const totales = calcularTotalesDemandaHRA(st, esperado, difs);
 
-  baut,
-  bpaut,
-  bautNorm,
-  bpautNorm,
-  ambosCero,
-  advertenciaBonos,
+  return {
+    identificacion,
 
-  sc,
-  valorHoraBase,
-  valorHoraEmpresa,
-  metodoCalculo: calc.metodoCalculo,
-  descripcionMetodo: calc.descripcionMetodo,
-  warningCalculo: calc.warning,
+    jornada,
 
-  horasEstimadas,
-  st,
-  esperado,
-  difs,
-  totales,
-};
+    tipoSueldoBase,
+    glosaSueldoBase,
 
-  }
+    sueldoBaseDetectado,
+    sueldoBaseNormalizado,
+    sueldoBaseFueNormalizado,
+    advertenciaSueldoBase,
+
+    horasBaseDetectadas,
+    diasBaseDetectados,
+
+    baut,
+    bpaut,
+    bautNorm,
+    bpautNorm,
+    ambosCero,
+    requiereBonosManual,
+    bonosProporcionalesPorLiquidacionParcial,
+    advertenciaBonos,
+
+    sc,
+
+    baseEmpresaSinBonosParaValorHora,
+
+    valorHoraBase,
+    valorHoraEmpresa,
+
+    valoresHoraEmpresaItems,
+    valoresHoraCorrectosItems,
+
+    metodoCalculo: calc.metodoCalculo,
+    descripcionMetodo: calc.descripcionMetodo,
+    warningCalculo: calc.warning,
+
+    horasEstimadas,
+    st,
+    esperado,
+    difs,
+    totales,
+  };
+}
+
 
   function wireBotonesManual(contenedor) {
     const btn = contenedor.querySelector("#demanda_btn_recalcular");

@@ -280,14 +280,52 @@ function extraerSC(textoCompleto) {
   const baut = extraerBonoAsistenciaAut(textoCompleto);
   const bpaut = extraerBonoPuntualidadAut(textoCompleto);
 
-  const { bautNorm, bpautNorm, ambosCero } = normalizarBonosPactados(
-    baut,
-    bpaut
-  );
+  const bonosDetectadosEnPdf = baut > 0 || bpaut > 0;
 
-  const advertenciaBonos = ambosCero
-    ? "Ambos bonos aparecen en $0 en esta liquidación. No se debe asumir que no existen; pueden no haberse pagado por licencia, ausencia, atraso u otra causa. Ingresa los bonos pactados para recalcular el Sueldo Convenido."
-    : "";
+  /*
+    Criterio corregido:
+    Si la liquidación mensual tiene menos de 30 días pagados y el sueldo base fue
+    normalizado a 30 días, los bonos de asistencia/puntualidad detectados en PDF
+    pueden estar proporcionalizados.
+
+    Por eso NO se usan automáticamente como bonos pactados mensuales.
+    Se muestran como detectados en PDF, pero para el SC inicial se usan $0
+    hasta que el usuario ingrese manualmente el monto pactado mensual.
+  */
+  const bonosProporcionalesPorLiquidacionParcial =
+    tipoSueldoBase === "mensual" &&
+    sueldoBaseFueNormalizado &&
+    diasBaseDetectados != null &&
+    diasBaseDetectados > 0 &&
+    diasBaseDetectados < 30 &&
+    bonosDetectadosEnPdf;
+
+  let bautNorm = 0;
+  let bpautNorm = 0;
+  let ambosCero = false;
+  let requiereBonosManual = false;
+  let advertenciaBonos = "";
+
+  if (bonosProporcionalesPorLiquidacionParcial) {
+    bautNorm = 0;
+    bpautNorm = 0;
+    ambosCero = false;
+    requiereBonosManual = true;
+
+    advertenciaBonos =
+      "La liquidación informa menos de 30 días pagados y contiene bonos de asistencia y/o puntualidad. Esos montos pueden estar proporcionalizados, por lo que no se consideran automáticamente como bonos pactados mensuales para el Sueldo Convenido. Ingresa manualmente los bonos pactados mensuales si corresponde.";
+  } else {
+    const bonosNorm = normalizarBonosPactados(baut, bpaut);
+
+    bautNorm = bonosNorm.bautNorm;
+    bpautNorm = bonosNorm.bpautNorm;
+    ambosCero = bonosNorm.ambosCero;
+    requiereBonosManual = ambosCero;
+
+    advertenciaBonos = ambosCero
+      ? "Ambos bonos aparecen en $0 en esta liquidación. No se debe asumir que no existen; pueden no haberse pagado por licencia, ausencia, atraso u otra causa. Ingresa los bonos pactados para recalcular el Sueldo Convenido."
+      : "";
+  }
 
   const sc = sueldoBaseNormalizado + bautNorm + bpautNorm;
 
@@ -312,12 +350,13 @@ function extraerSC(textoCompleto) {
     bautNorm,
     bpautNorm,
     ambosCero,
+    requiereBonosManual,
+    bonosProporcionalesPorLiquidacionParcial,
     advertenciaBonos,
 
     sc,
   };
 }
-
 
   // -------------------- Extractores Sobretiempo --------------------
   function extraerItemConHoras(texto, regex) {
@@ -761,6 +800,8 @@ const {
   bautNorm,
   bpautNorm,
   ambosCero,
+  requiereBonosManual,
+  bonosProporcionalesPorLiquidacionParcial,
   advertenciaBonos,
 
   sc,
@@ -777,26 +818,32 @@ const {
 } = data;
 
 
-    const bloqueInputManual = ambosCero
+    const requiereIngresoManualBonos = !!data.requiereBonosManual;
+
+    const bloqueInputManual = requiereIngresoManualBonos
       ? `
         <div style="margin-top:10px; padding:10px; border:1px solid #fde68a; background:#fffbeb; border-radius:10px;">
           <div style="color:#92400e; font-weight:700; margin-bottom:6px;">
-            ⚠ Ambos bonos aparecen en $0 en esta liquidación
+            ⚠ Bonos pactados requieren ingreso manual
           </div>
           <div style="font-size:12px; color:#92400e; margin-bottom:8px;">
-            No se puede inferir el valor pactado solo con este PDF. Puedes ingresar el bono pactado para recalcular.
+            ${
+              sueldoBaseFueNormalizado
+                ? "Esta liquidación tiene menos de 30 días pagados. Los bonos detectados en PDF pueden estar proporcionalizados, por lo que no se usan automáticamente para calcular el Sueldo Convenido mensual."
+                : "No se puede inferir el valor pactado solo con este PDF. Puedes ingresar el bono pactado para recalcular."
+            }
             Si ambos bonos son iguales, basta con ingresar uno.
           </div>
 
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; align-items:end;">
             <label style="font-size:12px; color:#374151;">
-              Bono asistencia pactado (CLP)
+              Bono asistencia pactado mensual (CLP)
               <input id="demanda_baut_manual" type="text" placeholder="Ej: 9115"
                 style="width:100%; padding:8px; border:1px solid #e5e7eb; border-radius:8px;" />
             </label>
 
             <label style="font-size:12px; color:#374151;">
-              Bono puntualidad pactado (CLP)
+              Bono puntualidad pactado mensual (CLP)
               <input id="demanda_bpaut_manual" type="text" placeholder="Ej: 9115"
                 style="width:100%; padding:8px; border:1px solid #e5e7eb; border-radius:8px;" />
             </label>
@@ -816,6 +863,7 @@ const {
         </div>
       `
       : "";
+
 
     const bloqueAdvertenciasSC =
   sueldoBaseFueNormalizado || advertenciaBonos
@@ -1255,6 +1303,8 @@ formatearCLP(sueldoBaseDetectado) +
     const bautNorm = data.bautNorm || 0;
     const bpautNorm = data.bpautNorm || 0;
     const advertenciaBonos = data.advertenciaBonos || "";
+    const bonosProporcionalesPorLiquidacionParcial =
+      !!data.bonosProporcionalesPorLiquidacionParcial;
 
     const sc = data.sc || 0;
     const valorHoraBase = data.valorHoraBase;
@@ -1416,17 +1466,39 @@ formatearCLP(sueldoBaseDetectado) +
       "</div>" +
 
       '<div class="card">' +
-      '<div class="label">Bono asistencia pactado usado</div>' +
+      '<div class="label">' +
+      (
+        bonosProporcionalesPorLiquidacionParcial
+          ? "Bono asistencia pactado usado para SC"
+          : "Bono asistencia pactado usado"
+      ) +
+      "</div>" +
       '<div class="valor">' +
       formatearCLP(bautNorm) +
       "</div>" +
+      (
+        bonosProporcionalesPorLiquidacionParcial
+          ? '<div class="muted" style="margin-top:6px;">El monto del PDF no se usó automáticamente por posible proporcionalidad.</div>'
+          : ""
+      ) +
       "</div>" +
 
       '<div class="card">' +
-      '<div class="label">Bono puntualidad pactado usado</div>' +
+      '<div class="label">' +
+      (
+        bonosProporcionalesPorLiquidacionParcial
+          ? "Bono puntualidad pactado usado para SC"
+          : "Bono puntualidad pactado usado"
+      ) +
+      "</div>" +
       '<div class="valor">' +
       formatearCLP(bpautNorm) +
       "</div>" +
+      (
+        bonosProporcionalesPorLiquidacionParcial
+          ? '<div class="muted" style="margin-top:6px;">El monto del PDF no se usó automáticamente por posible proporcionalidad.</div>'
+          : ""
+      ) +
       "</div>" +
 
       "</div>" +
@@ -1602,7 +1674,10 @@ const {
   bautNorm,
   bpautNorm,
   ambosCero,
+  requiereBonosManual,
+  bonosProporcionalesPorLiquidacionParcial,
   advertenciaBonos,
+
 
   sc,
   st,
@@ -1650,6 +1725,8 @@ return {
   bautNorm,
   bpautNorm,
   ambosCero,
+  requiereBonosManual,
+  bonosProporcionalesPorLiquidacionParcial,
   advertenciaBonos,
 
   sc,
@@ -1722,7 +1799,12 @@ const data = construirDataReporte({
   bautNorm,
   bpautNorm,
   ambosCero: false,
-  advertenciaBonos: "",
+  requiereBonosManual: false,
+  bonosProporcionalesPorLiquidacionParcial:
+    __demandaCtx.bonosProporcionalesPorLiquidacionParcial || false,
+  advertenciaBonos: __demandaCtx.bonosProporcionalesPorLiquidacionParcial
+    ? "Los bonos pactados fueron ingresados manualmente porque la liquidación tiene menos de 30 días y los bonos detectados en PDF podían estar proporcionalizados."
+    : "",
 
   sc,
   st: __demandaCtx.st,
@@ -1789,6 +1871,8 @@ const data = construirDataReporte({
         bautNorm,
         bpautNorm,
         ambosCero,
+        requiereBonosManual,
+        bonosProporcionalesPorLiquidacionParcial,
         advertenciaBonos,
 
         sc,
@@ -1818,6 +1902,8 @@ const data = construirDataReporte({
   bautNorm,
   bpautNorm,
   ambosCero,
+  requiereBonosManual,
+  bonosProporcionalesPorLiquidacionParcial,
   advertenciaBonos,
 
   sc,
@@ -1843,7 +1929,11 @@ const data = construirDataReporte({
         baut,
         bpaut,
 
+        requiereBonosManual,
+        bonosProporcionalesPorLiquidacionParcial,
+
         st,
+
       };
 
       // 5) Renderizar reporte.

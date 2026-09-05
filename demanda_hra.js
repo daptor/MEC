@@ -838,46 +838,145 @@ function extraerSC(textoCompleto) {
     return null;
   }
 
-  function estimarHorasDesdeMonto(pagado, valorHoraEmpresa, factor) {
-    if (!pagado || pagado <= 0) return null;
-    if (!valorHoraEmpresa || valorHoraEmpresa <= 0) return null;
-    if (!factor || factor <= 0) return null;
+  function estimarHorasDesdeMonto(pagado, valorHoraEmpresaItem) {
+    /*
+      Reconstrucción correcta de horas implícitas:
 
-    const horas = pagado / (valorHoraEmpresa * factor);
+      Si el PDF no informa horas, pero sí informa monto pagado, las horas se
+      reconstruyen dividiendo el monto pagado por el valor hora empresa sin bonos
+      correspondiente al mismo ítem.
+
+      Fórmula:
+      horasImplícitas = montoPagadoEmpresa / valorHoraEmpresaSinBonosDelItem
+
+      Importante:
+      valorHoraEmpresaItem ya debe venir con el factor del ítem incorporado.
+      Por eso esta función NO recibe ni aplica factor adicional.
+    */
+
+    if (!pagado || pagado <= 0) return null;
+    if (!valorHoraEmpresaItem || valorHoraEmpresaItem <= 0) return null;
+
+    const horas = pagado / valorHoraEmpresaItem;
 
     return Number.isFinite(horas) && horas > 0 ? horas : null;
   }
 
-  function construirHorasEstimadas(st, valorHoraEmpresa) {
+  function construirValoresHoraEmpresaItems(valorHoraEmpresa) {
+    /*
+      Valores hora empresa sin bonos por ítem.
+
+      Estos valores se usan como divisor para reconstruir horas implícitas
+      desde el monto pagado por la empresa.
+
+      Cada valor ya incluye el factor propio del ítem.
+    */
+
+    if (!valorHoraEmpresa || valorHoraEmpresa <= 0) {
+      return {
+        horasExtras50: null,
+        horasExtrasDomingo: null,
+        recargoDomingo: null,
+        recargoFestivo: null,
+      };
+    }
+
+    return {
+      horasExtras50: valorHoraEmpresa * 1.5,
+      horasExtrasDomingo: valorHoraEmpresa * 1.3 * 1.5,
+      recargoDomingo: valorHoraEmpresa,
+      recargoFestivo: valorHoraEmpresa * 1.5,
+    };
+  }
+
+  function construirValoresHoraCorrectosItems(valorHoraBase) {
+    /*
+      Valores hora corregidos con Sueldo Convenido por ítem.
+
+      Estos valores se usan para calcular el monto correcto luego de tener
+      horas detectadas o reconstruidas.
+
+      Fórmula:
+      montoCorrecto = horasUsadas × valorHoraCorrectoConBonosDelItem
+    */
+
+    if (!valorHoraBase || valorHoraBase <= 0) {
+      return {
+        horasExtras50: null,
+        horasExtrasDomingo: null,
+        recargoDomingo: null,
+        recargoFestivo: null,
+      };
+    }
+
+    return {
+      horasExtras50: valorHoraBase * 1.5,
+      horasExtrasDomingo: valorHoraBase * 1.3 * 1.5,
+      recargoDomingo: valorHoraBase,
+      recargoFestivo: valorHoraBase * 1.5,
+    };
+  }
+
+  function construirHorasEstimadas(st, valoresHoraEmpresaItems) {
+    /*
+      Si el PDF trae horas, no se reconstruyen.
+      Si el PDF no trae horas, pero sí trae monto pagado, se reconstruyen así:
+
+      horasImplícitas =
+      montoPagadoEmpresa / valorHoraEmpresaSinBonosDelItem
+    */
+
+    valoresHoraEmpresaItems = valoresHoraEmpresaItems || {};
+
     return {
       horasExtras50:
         st.horasExtras50 == null && st.pagadoHorasExtras50 > 0
-          ? estimarHorasDesdeMonto(st.pagadoHorasExtras50, valorHoraEmpresa, 1.5)
+          ? estimarHorasDesdeMonto(
+              st.pagadoHorasExtras50,
+              valoresHoraEmpresaItems.horasExtras50
+            )
           : null,
 
       horasExtrasDomingo:
         st.horasExtrasDomingo == null && st.pagadoHorasExtrasDomingo > 0
           ? estimarHorasDesdeMonto(
               st.pagadoHorasExtrasDomingo,
-              valorHoraEmpresa,
-              1.3 * 1.5
+              valoresHoraEmpresaItems.horasExtrasDomingo
             )
           : null,
 
       horasRecargoDomingo:
         st.horasRecargoDomingo == null && st.pagadoRecargoDomingo > 0
-          ? estimarHorasDesdeMonto(st.pagadoRecargoDomingo, valorHoraEmpresa, 0.3)
+          ? estimarHorasDesdeMonto(
+              st.pagadoRecargoDomingo,
+              valoresHoraEmpresaItems.recargoDomingo
+            )
           : null,
 
       horasRecargoFestivo:
         st.horasRecargoFestivo == null && st.pagadoRecargoFestivo > 0
-          ? estimarHorasDesdeMonto(st.pagadoRecargoFestivo, valorHoraEmpresa, 1.5)
+          ? estimarHorasDesdeMonto(
+              st.pagadoRecargoFestivo,
+              valoresHoraEmpresaItems.recargoFestivo
+            )
           : null,
     };
   }
 
-  function calcularEsperados(st, valorHoraBase, horasEstimadas) {
+  function calcularEsperados(st, valoresHoraCorrectosItems, horasEstimadas) {
+    /*
+      Cálculo correcto del esperado:
+
+      1. Si el PDF informa horas, se usan esas horas.
+      2. Si el PDF no informa horas, se usan las horas implícitas reconstruidas.
+      3. El monto correcto se calcula con el valor hora corregido con SC del ítem.
+
+      Fórmula:
+      esperadoConSC = horasUsadas × valorHoraCorrectoConBonosDelItem
+    */
+
     horasEstimadas = horasEstimadas || {};
+    valoresHoraCorrectosItems = valoresHoraCorrectosItems || {};
 
     const horasExtras50Usadas =
       st.horasExtras50 != null ? st.horasExtras50 : horasEstimadas.horasExtras50;
@@ -899,23 +998,30 @@ function extraerSC(textoCompleto) {
 
     return {
       horasExtras50:
-        valorHoraBase != null && horasExtras50Usadas != null
-          ? valorHoraBase * 1.5 * horasExtras50Usadas
+        valoresHoraCorrectosItems.horasExtras50 != null &&
+        horasExtras50Usadas != null
+          ? valoresHoraCorrectosItems.horasExtras50 * horasExtras50Usadas
           : null,
 
       horasExtrasDomingo:
-        valorHoraBase != null && horasExtrasDomingoUsadas != null
-          ? valorHoraBase * 1.3 * 1.5 * horasExtrasDomingoUsadas
+        valoresHoraCorrectosItems.horasExtrasDomingo != null &&
+        horasExtrasDomingoUsadas != null
+          ? valoresHoraCorrectosItems.horasExtrasDomingo *
+            horasExtrasDomingoUsadas
           : null,
 
       recargoDomingo:
-        valorHoraBase != null && horasRecargoDomingoUsadas != null
-          ? valorHoraBase * 0.3 * horasRecargoDomingoUsadas
+        valoresHoraCorrectosItems.recargoDomingo != null &&
+        horasRecargoDomingoUsadas != null
+          ? valoresHoraCorrectosItems.recargoDomingo *
+            horasRecargoDomingoUsadas
           : null,
 
       recargoFestivo:
-        valorHoraBase != null && horasRecargoFestivoUsadas != null
-          ? valorHoraBase * 1.5 * horasRecargoFestivoUsadas
+        valoresHoraCorrectosItems.recargoFestivo != null &&
+        horasRecargoFestivoUsadas != null
+          ? valoresHoraCorrectosItems.recargoFestivo *
+            horasRecargoFestivoUsadas
           : null,
 
       horasUsadas: {
@@ -938,6 +1044,8 @@ function extraerSC(textoCompleto) {
           st.horasRecargoFestivo == null &&
           horasEstimadas.horasRecargoFestivo != null,
       },
+
+      valoresHoraCorrectosItems,
     };
   }
 
@@ -995,8 +1103,8 @@ function extraerSC(textoCompleto) {
   function notaHorasItem(encontrado, horasDetectadas, horasUsadas, esEstimado) {
     if (esEstimado && horasUsadas != null) {
       return (
-        "Horas estimadas desde monto pagado empresa: " +
-        formatearNumero(horasUsadas, 2)
+        "Horas implícitas reconstruidas: monto pagado empresa dividido por valor hora empresa sin bonos del ítem = " +
+        formatearNumero(horasUsadas, 3)
       );
     }
 
@@ -1005,11 +1113,12 @@ function extraerSC(textoCompleto) {
     }
 
     if (encontrado) {
-      return "Ítem encontrado, pero no fue posible estimar horas.";
+      return "Ítem encontrado, pero no fue posible reconstruir horas implícitas.";
     }
 
     return "No encontrado";
   }
+
 
   function filaComparacion(nombre, pagado, esp, dif, notaExtra) {
     const estado = esp == null ? "⚪" : Math.abs(dif) < 1 ? "🟢" : "🔴";
@@ -1083,8 +1192,15 @@ const {
   advertenciaBonos,
 
   sc,
+
+  baseEmpresaSinBonosParaValorHora,
+
   valorHoraBase,
   valorHoraEmpresa,
+
+  valoresHoraEmpresaItems,
+  valoresHoraCorrectosItems,
+
   metodoCalculo,
   descripcionMetodo,
   warningCalculo,
@@ -1094,7 +1210,6 @@ const {
   difs,
   totales,
 } = data;
-
 
     const requiereIngresoManualBonos = !!data.requiereBonosManual;
       const idLiq = data.identificacion || {};
@@ -1480,15 +1595,18 @@ formatearCLP(sueldoBaseDetectado) +
 
       '<div style="margin-top:10px; font-size:12px; color:#6b7280;">' +
       "* Diferencia adeudada = Esperado con SC - Pagado empresa. Si |diferencia| &lt; 1 peso, se considera correcto." +
-
       "</div>" +
       '<div style="margin-top:6px; font-size:12px; color:#6b7280;">' +
-      "* Si el PDF no informa horas, pero sí informa monto pagado, las horas se estiman dividiendo el monto pagado por el valor hora empresa y el factor del ítem." +
+      "* Si el PDF no informa horas, pero sí informa monto pagado, las horas implícitas se reconstruyen dividiendo el monto pagado por el valor hora empresa sin bonos correspondiente al ítem." +
       "</div>" +
       '<div style="margin-top:6px; font-size:12px; color:#6b7280;">' +
-      "* Las horas estimadas deben revisarse, porque no son un dato directo del PDF sino un cálculo inverso." +
+      "* Luego esas mismas horas implícitas se multiplican por el valor hora correcto con bonos del ítem para obtener el monto correcto." +
+      "</div>" +
+      '<div style="margin-top:6px; font-size:12px; color:#6b7280;">' +
+      "* Las horas implícitas reconstruidas deben revisarse, porque no son un dato directo del PDF sino un cálculo inverso desde el monto pagado." +
       "</div>" +
       "</div>";
+
 
     const btnDescargarInforme = contenedor.querySelector(
       "#demanda_btn_descargar_informe_individual"
@@ -2008,8 +2126,9 @@ escapeHtml(cargo) +
 
       '<div class="footer">' +
       "<p>* Diferencia adeudada = Esperado con SC - Pagado empresa.</p>" +
-      "<p>* Si el PDF no informa horas, pero sí informa monto pagado, las horas se estiman dividiendo el monto pagado por el valor hora empresa y el factor del ítem.</p>" +
-      "<p>* Las horas estimadas deben revisarse, porque no son un dato directo del PDF sino un cálculo inverso.</p>" +
+      "<p>* Si el PDF no informa horas, pero sí informa monto pagado, las horas implícitas se reconstruyen dividiendo el monto pagado por el valor hora empresa sin bonos correspondiente al ítem.</p>" +
+      "<p>* Luego esas mismas horas implícitas se multiplican por el valor hora correcto con bonos del ítem para obtener el monto correcto.</p>" +
+      "<p>* Las horas implícitas reconstruidas deben revisarse, porque no son un dato directo del PDF sino un cálculo inverso desde el monto pagado.</p>" +
       "<p>* Este informe fue generado automáticamente desde el módulo MEC — Demanda HRA.</p>" +
       "</div>" +
 
@@ -2633,9 +2752,8 @@ function descargarInformeIndividualDemandaHRA() {
   }
 
 
-  function construirDataReporte(params) {
+function construirDataReporte(params) {
 const {
-  
   jornada,
 
   tipoSueldoBase,
@@ -2654,57 +2772,12 @@ const {
   bautNorm,
   bpautNorm,
   ambosCero,
-  requiereBonosManual,
-  bonosProporcionalesPorLiquidacionParcial,
   advertenciaBonos,
-
-  identificacion,
 
   sc,
   st,
 } = params;
 
-const identificacionSegura = {
-  nombreTrabajador:
-    identificacion && identificacion.nombreTrabajador
-      ? identificacion.nombreTrabajador
-      : "No detectado",
-
-  rutTrabajador:
-    identificacion && identificacion.rutTrabajador
-      ? identificacion.rutTrabajador
-      : "No detectado",
-
-  periodoTexto:
-    identificacion && identificacion.periodoTexto
-      ? identificacion.periodoTexto
-      : "No detectado",
-
-  mes:
-    identificacion && identificacion.mes
-      ? identificacion.mes
-      : "No detectado",
-
-  anio:
-    identificacion && identificacion.anio
-      ? identificacion.anio
-      : "No detectado",
-
-  cargo:
-    identificacion && identificacion.cargo
-      ? identificacion.cargo
-      : "No detectado",
-
-  identificacionIncompleta:
-    identificacion && typeof identificacion.identificacionIncompleta === "boolean"
-      ? identificacion.identificacionIncompleta
-      : true,
-
-  advertenciaIdentificacion:
-    identificacion && typeof identificacion.advertenciaIdentificacion === "string"
-      ? identificacion.advertenciaIdentificacion
-      : "No fue posible detectar todos los datos identificatorios de la liquidación. Revisa trabajador, RUT, periodo y cargo antes de usar este informe en un acumulado.",
-};
 
     const calc = calcularValorHoraBaseDemanda({
       tipoSueldoBase,
@@ -2715,8 +2788,13 @@ const identificacionSegura = {
 
     const valorHoraBase = calc.valorHoraBase;
 
+    const baseEmpresaParaValorHora =
+      tipoSueldoBase === "mensual" && sueldoBaseFueNormalizado
+        ? sueldoBaseNormalizado || sueldoBaseDetectado || 0
+        : sueldoBaseDetectado || sueldoBaseNormalizado || 0;
+
     const valorHoraEmpresa = calcularValorHoraEmpresaMEC(
-      sueldoBaseDetectado || 0,
+      baseEmpresaParaValorHora,
       tipoSueldoBase,
       horasBaseDetectadas,
       jornada
@@ -2729,8 +2807,6 @@ const identificacionSegura = {
     const totales = calcularTotalesDemandaHRA(st, esperado, difs);
 
 return {
-  identificacion: identificacionSegura,
-
   jornada,
 
   tipoSueldoBase,
@@ -2749,8 +2825,6 @@ return {
   bautNorm,
   bpautNorm,
   ambosCero,
-  requiereBonosManual,
-  bonosProporcionalesPorLiquidacionParcial,
   advertenciaBonos,
 
   sc,

@@ -231,77 +231,125 @@ function obtenerJornadaSeleccionada() {
   }
 
 function extraerCargoDemandaHRA(textoCompleto) {
-  const t = normalizarTextoPlano(textoCompleto || "")
+  const textoOriginal = String(textoCompleto || "");
+
+  const lineas = textoOriginal
+    .split(/\r?\n/)
+    .map(function (linea) {
+      return normalizarTextoPlano(linea || "")
+        .replace(/\s+/g, " ")
+        .trim();
+    })
+    .filter(Boolean);
+
+  function limpiarCargoDetectado(valor) {
+    let cargo = String(valor || "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    cargo = cargo
+      .replace(/^\s*[:\-]\s*/, "")
+      .replace(/\bCARGO\b\s*[:\-]?\s*/i, "")
+      .replace(/\bAFP\b.*$/i, "")
+      .replace(/\bFECHA\s+INGRESO\b.*$/i, "")
+      .replace(/\b(PROVIDA|HABITAT|CAPITAL|CUPRUM|MODELO|PLANVITAL|UNO)\b.*$/i, "")
+      .replace(/\b(FONASA|ISAPRE|CONSALUD|BANMEDICA|BANMÉDICA|CRUZ\s+BLANCA|COLMENA|VIDA\s+TRES|NUEVA\s+MASVIDA)\b.*$/i, "")
+      .replace(/\b\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}\b.*$/i, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (!cargo) return "";
+
+    if (cargo.length < 3 || cargo.length > 80) return "";
+
+    if (/^\d+$/.test(cargo)) return "";
+
+    if (
+      /\b(NOMBRE|RUT|RUN|SUELDO|BASE|CENTRO|COSTO|ISAPRE|DIAS|DÍAS|CARGAS|HABERES|DESCUENTOS|TOTAL|LIQUIDACION|LIQUIDACIÓN)\b/i.test(
+        cargo
+      )
+    ) {
+      return "";
+    }
+
+    return cargo.toUpperCase();
+  }
+
+  /*
+    Caso Falabella observado:
+
+    CARGO AFP FECHA INGRESO
+    CAJERA(O) - EMPAQUE PROVIDA 20/09/2022
+
+    El cargo está en la línea siguiente, antes de la AFP y la fecha.
+  */
+  for (let i = 0; i < lineas.length; i++) {
+    const linea = lineas[i];
+
+    if (
+      /\bCARGO\b/i.test(linea) &&
+      /\bAFP\b/i.test(linea) &&
+      /\bFECHA\s+INGRESO\b/i.test(linea)
+    ) {
+      const lineaValores = lineas[i + 1] || "";
+
+      if (lineaValores) {
+        const cargo = limpiarCargoDetectado(lineaValores);
+
+        if (cargo) {
+          return cargo;
+        }
+      }
+    }
+  }
+
+  /*
+    Caso directo:
+    CARGO: CAJERA(O) - EMPAQUE
+    o
+    CARGO CAJERA(O) - EMPAQUE AFP PROVIDA
+  */
+  const textoPlano = normalizarTextoPlano(textoOriginal)
     .replace(/\s+/g, " ")
     .trim();
 
-  const palabrasCorte =
-    "FECHA|INGRESO|RUT|RUN|NOMBRE|TRABAJADOR|CENTRO|AREA|ÁREA|SUCURSAL|SECCION|SECCIÓN|AFP|ISAPRE|FONASA|SALUD|SUELDO|HABERES|DESCUENTOS|CONTRATO|JORNADA|BANCO|CUENTA|DIAS|DÍAS|LIQUIDACION|LIQUIDACIÓN";
+  const patronesDirectos = [
+    /\bCARGO\s*[:\-]?\s*([A-ZÁÉÍÓÚÜÑ0-9()\/.,\-\s]{3,80}?)(?=\s+(?:AFP|FECHA|RUT|RUN|NOMBRE|CENTRO|ISAPRE|FONASA|SUELDO|HABERES|DESCUENTOS|TOTAL)\b|$)/i,
 
-  const patrones = [
-    // Caso directo: CARGO: OPERARIO, CARGO OPERARIO, Cargo - Operario
-    new RegExp(
-      "\\bCARGO\\s*[:\\-]?\\s*([A-ZÁÉÍÓÚÜÑ0-9][A-ZÁÉÍÓÚÜÑ0-9\\s.,\\-\\/]{2,80}?)(?=\\s+(?:" +
-        palabrasCorte +
-        ")\\b|\\s{2,}|$)",
-      "i"
-    ),
+    /\bPUESTO\s*[:\-]?\s*([A-ZÁÉÍÓÚÜÑ0-9()\/.,\-\s]{3,80}?)(?=\s+(?:AFP|FECHA|RUT|RUN|NOMBRE|CENTRO|ISAPRE|FONASA|SUELDO|HABERES|DESCUENTOS|TOTAL)\b|$)/i,
 
-    // Caso alternativo: PUESTO: OPERARIO
-    new RegExp(
-      "\\bPUESTO\\s*[:\\-]?\\s*([A-ZÁÉÍÓÚÜÑ0-9][A-ZÁÉÍÓÚÜÑ0-9\\s.,\\-\\/]{2,80}?)(?=\\s+(?:" +
-        palabrasCorte +
-        ")\\b|\\s{2,}|$)",
-      "i"
-    ),
-
-    // Caso alternativo: FUNCIÓN: OPERARIO / FUNCION OPERARIO
-    new RegExp(
-      "\\bFUNCI[OÓ]N\\s*[:\\-]?\\s*([A-ZÁÉÍÓÚÜÑ0-9][A-ZÁÉÍÓÚÜÑ0-9\\s.,\\-\\/]{2,80}?)(?=\\s+(?:" +
-        palabrasCorte +
-        ")\\b|\\s{2,}|$)",
-      "i"
-    ),
-
-    // Caso común en liquidaciones: FECHA INGRESO 01/01/2024 CARGO OPERARIO AFP...
-    new RegExp(
-      "\\bFECHA\\s+INGRESO\\s+[0-9]{1,2}[\\/\\-.][0-9]{1,2}[\\/\\-.][0-9]{2,4}\\s+(?:CARGO\\s*[:\\-]?\\s*)?([A-ZÁÉÍÓÚÜÑ0-9][A-ZÁÉÍÓÚÜÑ0-9\\s.,\\-\\/]{2,80}?)(?=\\s+(?:AFP|ISAPRE|FONASA|SALUD|SUELDO|HABERES|DESCUENTOS|CONTRATO|JORNADA)\\b|$)",
-      "i"
-    ),
-
-    // Caso tabla: NOMBRE RUT SUELDO BASE CARGO / después del RUT aparece sueldo y luego cargo
-    new RegExp(
-      "\\b\\d{1,2}\\.\\d{3}\\.\\d{3}-[\\dkK]\\b\\s+\\$?\\s*[0-9]{1,3}(?:\\.[0-9]{3})*\\s+([A-ZÁÉÍÓÚÜÑ][A-ZÁÉÍÓÚÜÑ0-9\\s.,\\-\\/]{2,80}?)(?=\\s+(?:FECHA|INGRESO|AFP|ISAPRE|FONASA|SALUD|SUELDO|HABERES|DESCUENTOS|CONTRATO|JORNADA)\\b|$)",
-      "i"
-    ),
+    /\bFUNCI[OÓ]N\s*[:\-]?\s*([A-ZÁÉÍÓÚÜÑ0-9()\/.,\-\s]{3,80}?)(?=\s+(?:AFP|FECHA|RUT|RUN|NOMBRE|CENTRO|ISAPRE|FONASA|SUELDO|HABERES|DESCUENTOS|TOTAL)\b|$)/i,
   ];
 
-  for (const re of patrones) {
-    const m = t.match(re);
+  for (const re of patronesDirectos) {
+    const m = textoPlano.match(re);
 
     if (m && m[1]) {
-      let cargo = limpiarCampoIdentificacionDemandaHRA(m[1])
-        .replace(
-          new RegExp("\\b(?:" + palabrasCorte + ")\\b.*$", "i"),
-          ""
-        )
-        .replace(/\s+/g, " ")
-        .trim();
+      const cargo = limpiarCargoDetectado(m[1]);
 
-      // Limpieza defensiva por si el extractor toma encabezados o basura
-      cargo = cargo
-        .replace(/^\s*[:\-]\s*/, "")
-        .replace(/\b(CARGO|PUESTO|FUNCI[OÓ]N)\b\s*[:\-]?\s*/i, "")
-        .trim();
-
-      if (
-        cargo.length >= 3 &&
-        cargo.length <= 80 &&
-        !/^\d+$/.test(cargo) &&
-        !/\b(SUELDO|BASE|RUT|RUN|NOMBRE|FECHA|INGRESO|AFP|ISAPRE|FONASA|HABERES|DESCUENTOS)\b/i.test(cargo)
-      ) {
-        return cargo.toUpperCase();
+      if (cargo) {
+        return cargo;
       }
+    }
+  }
+
+  /*
+    Fallback específico por estructura completa:
+    NOMBRE RUT SUELDO BASE
+    trabajador rut sueldo
+    CARGO AFP FECHA INGRESO
+    cargo afp fecha
+  */
+  const patronEstructuraFalabella =
+    /\bCARGO\s+AFP\s+FECHA\s+INGRESO\s+([A-ZÁÉÍÓÚÜÑ0-9()\/.,\-\s]{3,80}?)\s+(?:PROVIDA|HABITAT|CAPITAL|CUPRUM|MODELO|PLANVITAL|UNO)\s+\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4}\b/i;
+
+  const mFalabella = textoPlano.match(patronEstructuraFalabella);
+
+  if (mFalabella && mFalabella[1]) {
+    const cargo = limpiarCargoDetectado(mFalabella[1]);
+
+    if (cargo) {
+      return cargo;
     }
   }
 

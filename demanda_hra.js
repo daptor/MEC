@@ -2146,6 +2146,72 @@ function descargarInformeIndividualDemandaHRA() {
         "</div>";
     }
 
+    const bloqueBotonConsolidado =
+      __acumuladoDemandaHRA.length > 0
+        ? (
+          '<div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">' +
+          '<button id="demanda_btn_descargar_consolidado" type="button" style="padding:10px 12px; border-radius:10px; border:1px solid #7c3aed; background:#8b5cf6; color:#fff; cursor:pointer; font-weight:700;">' +
+          "Descargar consolidado" +
+          "</button>" +
+          "</div>"
+        )
+        : "";
+
+    contenedor.innerHTML =
+      '<div style="margin-top:14px; padding:12px; border:1px solid #bfdbfe; background:#eff6ff; border-radius:12px;">' +
+      '<h3 style="margin:0 0 8px 0; font-size:16px; color:#1e3a8a;">Acumulado Demanda HRA</h3>' +
+      '<div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:10px;">' +
+
+      '<div style="background:#fff; border:1px solid #dbeafe; border-radius:10px; padding:10px;">' +
+      '<div style="font-size:12px; color:#6b7280;">Liquidaciones acumuladas</div>' +
+      '<div style="font-size:18px; font-weight:700;">' +
+      escapeHtml(String(resumen.totalLiquidaciones)) +
+      "</div>" +
+      "</div>" +
+
+      '<div style="background:#fff; border:1px solid #dbeafe; border-radius:10px; padding:10px;">' +
+      '<div style="font-size:12px; color:#6b7280;">Total pagado empresa</div>' +
+      '<div style="font-size:18px; font-weight:700;">' +
+      formatearCLP(resumen.totalPagadoEmpresa) +
+      "</div>" +
+      "</div>" +
+
+      '<div style="background:#fff; border:1px solid #dbeafe; border-radius:10px; padding:10px;">' +
+      '<div style="font-size:12px; color:#6b7280;">Total esperado con SC</div>' +
+      '<div style="font-size:18px; font-weight:700;">' +
+      formatearCLP(resumen.totalEsperadoSC) +
+      "</div>" +
+      "</div>" +
+
+      '<div style="background:#fff; border:1px solid #dbeafe; border-radius:10px; padding:10px;">' +
+      '<div style="font-size:12px; color:#6b7280;">Total diferencia acumulada</div>' +
+      '<div style="font-size:18px; font-weight:700; color:' +
+      (resumen.totalDiferenciaAdeudada > 0 ? "#b91c1c" : "#166534") +
+      ';">' +
+      formatearCLP(resumen.totalDiferenciaAdeudada) +
+      "</div>" +
+      "</div>" +
+
+      "</div>" +
+
+      detalle +
+
+      bloqueBotonConsolidado +
+
+      "</div>";
+
+    const btnConsolidado = contenedor.querySelector(
+      "#demanda_btn_descargar_consolidado"
+    );
+
+    if (btnConsolidado) {
+      btnConsolidado.addEventListener(
+        "click",
+        descargarConsolidadoDemandaHRA
+      );
+    }
+  
+    
     contenedor.innerHTML =
       '<div style="margin-top:14px; padding:12px; border:1px solid #bfdbfe; background:#eff6ff; border-radius:12px;">' +
       '<h3 style="margin:0 0 8px 0; font-size:16px; color:#1e3a8a;">Acumulado Demanda HRA</h3>' +
@@ -2188,6 +2254,376 @@ function descargarInformeIndividualDemandaHRA() {
       "</div>";
   }
 
+  // -------------------- Etapa 4 — Consolidado Demanda HRA --------------------
+  function obtenerClaveTrabajadorConsolidadoDemandaHRA(reporte) {
+    const identificacion = reporte && reporte.identificacion ? reporte.identificacion : {};
+
+    const rut = slugArchivoDemandaHRA(
+      identificacion.rutTrabajador || "rut-no-detectado"
+    );
+
+    const trabajador = slugArchivoDemandaHRA(
+      identificacion.nombreTrabajador || "trabajador-no-detectado"
+    );
+
+    return rut + "__" + trabajador;
+  }
+
+  function construirConsolidadoDemandaHRA() {
+    const grupos = {};
+
+    for (const reporte of __acumuladoDemandaHRA) {
+      const identificacion = reporte && reporte.identificacion ? reporte.identificacion : {};
+      const totales = reporte && reporte.totales ? reporte.totales : {};
+
+      const clave = obtenerClaveTrabajadorConsolidadoDemandaHRA(reporte);
+
+      if (!grupos[clave]) {
+        grupos[clave] = {
+          clave,
+          nombreTrabajador:
+            identificacion.nombreTrabajador || "Trabajador no detectado",
+          rutTrabajador:
+            identificacion.rutTrabajador || "RUT no detectado",
+          cargo:
+            identificacion.cargo || "No detectado",
+
+          liquidaciones: [],
+
+          totalLiquidaciones: 0,
+          totalPagadoEmpresa: 0,
+          totalEsperadoSC: 0,
+          totalDiferenciaAdeudada: 0,
+        };
+      }
+
+      grupos[clave].liquidaciones.push(reporte);
+      grupos[clave].totalLiquidaciones += 1;
+      grupos[clave].totalPagadoEmpresa += Number(totales.totalPagadoEmpresa || 0);
+      grupos[clave].totalEsperadoSC += Number(totales.totalEsperadoSC || 0);
+      grupos[clave].totalDiferenciaAdeudada += Number(
+        totales.totalDiferenciaAdeudada || 0
+      );
+    }
+
+    const trabajadores = Object.values(grupos);
+
+    trabajadores.sort(function (a, b) {
+      return String(a.nombreTrabajador || "").localeCompare(
+        String(b.nombreTrabajador || ""),
+        "es"
+      );
+    });
+
+    const resumenGeneral = {
+      totalTrabajadores: trabajadores.length,
+      totalLiquidaciones: 0,
+      totalPagadoEmpresa: 0,
+      totalEsperadoSC: 0,
+      totalDiferenciaAdeudada: 0,
+    };
+
+    for (const trabajador of trabajadores) {
+      resumenGeneral.totalLiquidaciones += trabajador.totalLiquidaciones;
+      resumenGeneral.totalPagadoEmpresa += trabajador.totalPagadoEmpresa;
+      resumenGeneral.totalEsperadoSC += trabajador.totalEsperadoSC;
+      resumenGeneral.totalDiferenciaAdeudada += trabajador.totalDiferenciaAdeudada;
+
+      trabajador.liquidaciones.sort(function (a, b) {
+        const ida = a.identificacion || {};
+        const idb = b.identificacion || {};
+
+        const anioA = Number(ida.anio || 0);
+        const anioB = Number(idb.anio || 0);
+
+        const ordenMes = {
+          ENERO: 1,
+          FEBRERO: 2,
+          MARZO: 3,
+          ABRIL: 4,
+          MAYO: 5,
+          JUNIO: 6,
+          JULIO: 7,
+          AGOSTO: 8,
+          SEPTIEMBRE: 9,
+          SETIEMBRE: 9,
+          OCTUBRE: 10,
+          NOVIEMBRE: 11,
+          DICIEMBRE: 12,
+        };
+
+        const mesA = ordenMes[String(ida.mes || "").toUpperCase()] || 0;
+        const mesB = ordenMes[String(idb.mes || "").toUpperCase()] || 0;
+
+        if (anioA !== anioB) return anioA - anioB;
+        return mesA - mesB;
+      });
+    }
+
+    return {
+      trabajadores,
+      resumenGeneral,
+    };
+  }
+
+  function generarHtmlConsolidadoDemandaHRA() {
+    const consolidado = construirConsolidadoDemandaHRA();
+    const trabajadores = consolidado.trabajadores;
+    const resumen = consolidado.resumenGeneral;
+
+    const fechaGeneracion = new Date().toLocaleString("es-CL");
+
+    let filasResumenTrabajadores = "";
+
+    for (const trabajador of trabajadores) {
+      filasResumenTrabajadores +=
+        "<tr>" +
+        '<td style="padding:10px; border:1px solid #e5e7eb;">' +
+        "<strong>" +
+        escapeHtml(trabajador.nombreTrabajador) +
+        "</strong>" +
+        '<div style="font-size:12px; color:#6b7280; margin-top:4px;">RUT: ' +
+        escapeHtml(trabajador.rutTrabajador) +
+        "</div>" +
+        '<div style="font-size:12px; color:#6b7280; margin-top:4px;">Cargo: ' +
+        escapeHtml(trabajador.cargo) +
+        "</div>" +
+        "</td>" +
+        '<td style="padding:10px; border:1px solid #e5e7eb; text-align:right;">' +
+        escapeHtml(String(trabajador.totalLiquidaciones)) +
+        "</td>" +
+        '<td style="padding:10px; border:1px solid #e5e7eb; text-align:right;">' +
+        formatearCLP(trabajador.totalPagadoEmpresa) +
+        "</td>" +
+        '<td style="padding:10px; border:1px solid #e5e7eb; text-align:right;">' +
+        formatearCLP(trabajador.totalEsperadoSC) +
+        "</td>" +
+        '<td style="padding:10px; border:1px solid #e5e7eb; text-align:right; font-weight:700; color:' +
+        (trabajador.totalDiferenciaAdeudada > 0 ? "#b91c1c" : "#166534") +
+        ';">' +
+        formatearCLP(trabajador.totalDiferenciaAdeudada) +
+        "</td>" +
+        "</tr>";
+    }
+
+    let bloquesDetalle = "";
+
+    for (const trabajador of trabajadores) {
+      let filasLiquidaciones = "";
+
+      for (const reporte of trabajador.liquidaciones) {
+        const id = reporte.identificacion || {};
+        const totales = reporte.totales || {};
+
+        filasLiquidaciones +=
+          "<tr>" +
+          '<td style="padding:9px; border:1px solid #e5e7eb;">' +
+          escapeHtml(id.periodoTexto || "Periodo no detectado") +
+          "</td>" +
+          '<td style="padding:9px; border:1px solid #e5e7eb; text-align:right;">' +
+          formatearCLP(totales.totalPagadoEmpresa || 0) +
+          "</td>" +
+          '<td style="padding:9px; border:1px solid #e5e7eb; text-align:right;">' +
+          formatearCLP(totales.totalEsperadoSC || 0) +
+          "</td>" +
+          '<td style="padding:9px; border:1px solid #e5e7eb; text-align:right; font-weight:700; color:' +
+          ((totales.totalDiferenciaAdeudada || 0) > 0 ? "#b91c1c" : "#166534") +
+          ';">' +
+          formatearCLP(totales.totalDiferenciaAdeudada || 0) +
+          "</td>" +
+          "</tr>";
+      }
+
+      bloquesDetalle +=
+        '<div style="margin-top:24px;">' +
+        '<h2 style="margin:0 0 8px 0; font-size:20px; border-bottom:2px solid #e5e7eb; padding-bottom:6px;">' +
+        escapeHtml(trabajador.nombreTrabajador) +
+        "</h2>" +
+        '<div style="font-size:13px; color:#6b7280; margin-bottom:10px;">' +
+        "RUT: " +
+        escapeHtml(trabajador.rutTrabajador) +
+        " — Cargo: " +
+        escapeHtml(trabajador.cargo) +
+        "</div>" +
+        '<table style="width:100%; border-collapse:collapse;">' +
+        "<thead>" +
+        "<tr>" +
+        '<th style="background:#111827; color:#fff; text-align:left; padding:10px; border:1px solid #111827;">Periodo</th>' +
+        '<th style="background:#111827; color:#fff; text-align:right; padding:10px; border:1px solid #111827;">Pagado empresa</th>' +
+        '<th style="background:#111827; color:#fff; text-align:right; padding:10px; border:1px solid #111827;">Esperado con SC</th>' +
+        '<th style="background:#111827; color:#fff; text-align:right; padding:10px; border:1px solid #111827;">Diferencia adeudada</th>' +
+        "</tr>" +
+        "</thead>" +
+        "<tbody>" +
+        filasLiquidaciones +
+        "</tbody>" +
+        "<tfoot>" +
+        "<tr>" +
+        '<td style="padding:10px; border:1px solid #e5e7eb; font-weight:700;">Total trabajador</td>' +
+        '<td style="padding:10px; border:1px solid #e5e7eb; text-align:right; font-weight:700;">' +
+        formatearCLP(trabajador.totalPagadoEmpresa) +
+        "</td>" +
+        '<td style="padding:10px; border:1px solid #e5e7eb; text-align:right; font-weight:700;">' +
+        formatearCLP(trabajador.totalEsperadoSC) +
+        "</td>" +
+        '<td style="padding:10px; border:1px solid #e5e7eb; text-align:right; font-weight:700; color:' +
+        (trabajador.totalDiferenciaAdeudada > 0 ? "#b91c1c" : "#166534") +
+        ';">' +
+        formatearCLP(trabajador.totalDiferenciaAdeudada) +
+        "</td>" +
+        "</tr>" +
+        "</tfoot>" +
+        "</table>" +
+        "</div>";
+    }
+
+    if (!filasResumenTrabajadores) {
+      filasResumenTrabajadores =
+        "<tr>" +
+        '<td colspan="5" style="padding:12px; border:1px solid #e5e7eb;">' +
+        "No existen liquidaciones acumuladas para consolidar." +
+        "</td>" +
+        "</tr>";
+    }
+
+    return (
+      "<!DOCTYPE html>" +
+      '<html lang="es">' +
+      "<head>" +
+      '<meta charset="UTF-8">' +
+      '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+      "<title>Consolidado - Demanda HRA</title>" +
+      "<style>" +
+      "body{font-family:Arial,Helvetica,sans-serif;background:#f3f4f6;color:#111827;margin:0;padding:24px;}" +
+      ".doc{max-width:1040px;margin:0 auto;background:#fff;border-radius:14px;padding:28px;box-shadow:0 4px 18px rgba(0,0,0,.08);}" +
+      "h1{margin:0 0 6px 0;font-size:28px;}" +
+      ".muted{color:#6b7280;font-size:13px;}" +
+      ".resumen{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-top:18px;}" +
+      ".card{border:1px solid #e5e7eb;background:#fafafa;border-radius:10px;padding:12px;}" +
+      ".label{font-size:12px;color:#6b7280;margin-bottom:4px;}" +
+      ".valor{font-weight:700;font-size:20px;}" +
+      "table{width:100%;border-collapse:collapse;margin-top:10px;}" +
+      ".footer{margin-top:24px;padding-top:12px;border-top:1px solid #e5e7eb;color:#6b7280;font-size:12px;}" +
+      "@media print{body{background:#fff;padding:0}.doc{box-shadow:none;border-radius:0}}" +
+      "</style>" +
+      "</head>" +
+      "<body>" +
+      '<div class="doc">' +
+
+      "<h1>Informe consolidado - Demanda HRA</h1>" +
+      '<div class="muted">Generado el ' +
+      escapeHtml(fechaGeneracion) +
+      "</div>" +
+
+      '<div class="resumen">' +
+
+      '<div class="card">' +
+      '<div class="label">Trabajadores</div>' +
+      '<div class="valor">' +
+      escapeHtml(String(resumen.totalTrabajadores)) +
+      "</div>" +
+      "</div>" +
+
+      '<div class="card">' +
+      '<div class="label">Liquidaciones acumuladas</div>' +
+      '<div class="valor">' +
+      escapeHtml(String(resumen.totalLiquidaciones)) +
+      "</div>" +
+      "</div>" +
+
+      '<div class="card">' +
+      '<div class="label">Total pagado empresa</div>' +
+      '<div class="valor">' +
+      formatearCLP(resumen.totalPagadoEmpresa) +
+      "</div>" +
+      "</div>" +
+
+      '<div class="card" style="border-color:#bfdbfe; background:#eff6ff;">' +
+      '<div class="label">Total diferencia adeudada</div>' +
+      '<div class="valor" style="color:' +
+      (resumen.totalDiferenciaAdeudada > 0 ? "#b91c1c" : "#166534") +
+      ';">' +
+      formatearCLP(resumen.totalDiferenciaAdeudada) +
+      "</div>" +
+      "</div>" +
+
+      "</div>" +
+
+      "<h2>Resumen por trabajador</h2>" +
+      '<table style="width:100%; border-collapse:collapse;">' +
+      "<thead>" +
+      "<tr>" +
+      '<th style="background:#111827; color:#fff; text-align:left; padding:10px; border:1px solid #111827;">Trabajador</th>' +
+      '<th style="background:#111827; color:#fff; text-align:right; padding:10px; border:1px solid #111827;">Liquidaciones</th>' +
+      '<th style="background:#111827; color:#fff; text-align:right; padding:10px; border:1px solid #111827;">Pagado empresa</th>' +
+      '<th style="background:#111827; color:#fff; text-align:right; padding:10px; border:1px solid #111827;">Esperado con SC</th>' +
+      '<th style="background:#111827; color:#fff; text-align:right; padding:10px; border:1px solid #111827;">Diferencia adeudada</th>' +
+      "</tr>" +
+      "</thead>" +
+      "<tbody>" +
+      filasResumenTrabajadores +
+      "</tbody>" +
+      "</table>" +
+
+      bloquesDetalle +
+
+      '<div class="footer">' +
+      "<p>* Este consolidado se genera desde las liquidaciones agregadas al acumulador durante la sesión actual.</p>" +
+      "<p>* Diferencia adeudada = Esperado con SC - Pagado empresa.</p>" +
+      "<p>* Las horas estimadas deben revisarse cuando el PDF no informa horas directamente.</p>" +
+      "<p>* Este informe fue generado automáticamente desde el módulo MEC — Demanda HRA.</p>" +
+      "</div>" +
+
+      "</div>" +
+      "</body>" +
+      "</html>"
+    );
+  }
+
+  function descargarConsolidadoDemandaHRA() {
+    if (!__acumuladoDemandaHRA || __acumuladoDemandaHRA.length === 0) {
+      alert("No existen liquidaciones acumuladas para generar el consolidado.");
+      return;
+    }
+
+    const html = generarHtmlConsolidadoDemandaHRA();
+    const consolidado = construirConsolidadoDemandaHRA();
+
+    let nombreBase = "demanda-hra-consolidado";
+
+    if (consolidado.trabajadores.length === 1) {
+      const trabajador = consolidado.trabajadores[0];
+
+      nombreBase +=
+        "-" +
+        slugArchivoDemandaHRA(trabajador.rutTrabajador || "rut-no-detectado") +
+        "-" +
+        slugArchivoDemandaHRA(
+          trabajador.nombreTrabajador || "trabajador-no-detectado"
+        );
+    } else {
+      nombreBase += "-multiple";
+    }
+
+    const nombreArchivo = nombreBase + ".html";
+
+    const blob = new Blob([html], {
+      type: "text/html;charset=utf-8",
+    });
+
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = nombreArchivo;
+    document.body.appendChild(a);
+    a.click();
+
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  
   function agregarReporteAlAcumuladoDemandaHRA() {
     if (!__ultimoReporteDemandaHRA) {
       alert("Primero debes generar un análisis antes de agregar al acumulado.");

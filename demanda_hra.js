@@ -2042,11 +2042,10 @@ const identificacionSegura = {
       : true,
 
   advertenciaIdentificacion:
-    identificacion && identificacion.advertenciaIdentificacion
+    identificacion && typeof identificacion.advertenciaIdentificacion === "string"
       ? identificacion.advertenciaIdentificacion
-      : "No fue posible detectar todos los datos identificatorios de la liquidación. Revisa trabajador, RUT y periodo antes de usar este informe en un acumulado.",
+      : "No fue posible detectar todos los datos identificatorios de la liquidación. Revisa trabajador, RUT, periodo y cargo antes de usar este informe en un acumulado.",
 };
-
 
     const calc = calcularValorHoraBaseDemanda({
       tipoSueldoBase,

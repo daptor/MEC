@@ -123,6 +123,176 @@ function obtenerJornadaSeleccionada() {
     return Number.isFinite(n) ? n : null;
   }
 
+  // -------------------- Identificación Liquidación --------------------
+  function limpiarCampoIdentificacionDemandaHRA(valor) {
+    return String(valor || "")
+      .replace(/\s+/g, " ")
+      .replace(/\s*:\s*/g, ": ")
+      .trim();
+  }
+
+  function normalizarRutDemandaHRA(rut) {
+    return String(rut || "")
+      .replace(/\s+/g, "")
+      .replace(/[^\dkK.\-]/g, "")
+      .toUpperCase()
+      .trim();
+  }
+
+  function extraerPeriodoLiquidacionDemandaHRA(textoCompleto) {
+    const t = String(textoCompleto || "").replace(/\s+/g, " ").trim();
+
+    const meses =
+      "ENERO|FEBRERO|MARZO|ABRIL|MAYO|JUNIO|JULIO|AGOSTO|SEPTIEMBRE|SETIEMBRE|OCTUBRE|NOVIEMBRE|DICIEMBRE";
+
+    let m = t.match(
+      new RegExp("\\b(" + meses + ")\\s+DE\\s+(20\\d{2}|19\\d{2})\\b", "i")
+    );
+
+    if (!m) {
+      m = t.match(
+        new RegExp("\\b(" + meses + ")\\s+(20\\d{2}|19\\d{2})\\b", "i")
+      );
+    }
+
+    if (!m) {
+      return {
+        periodoTexto: "No detectado",
+        mes: "No detectado",
+        anio: "No detectado",
+      };
+    }
+
+    let mes = String(m[1] || "").toUpperCase();
+    if (mes === "SETIEMBRE") mes = "SEPTIEMBRE";
+
+    const anio = String(m[2] || "");
+
+    return {
+      periodoTexto: mes + " DE " + anio,
+      mes,
+      anio,
+    };
+  }
+
+  function extraerRutDemandaHRA(textoCompleto) {
+    const t = String(textoCompleto || "").replace(/\s+/g, " ").trim();
+
+    const m = t.match(/\b(\d{1,2}\.\d{3}\.\d{3}-[\dkK])\b/);
+
+    if (!m) {
+      const mSinPuntos = t.match(/\b(\d{7,8}-[\dkK])\b/);
+      return mSinPuntos ? normalizarRutDemandaHRA(mSinPuntos[1]) : "";
+    }
+
+    return normalizarRutDemandaHRA(m[1]);
+  }
+
+  function extraerNombreTrabajadorDemandaHRA(textoCompleto, rutDetectado) {
+    const t = String(textoCompleto || "").replace(/\s+/g, " ").trim();
+    const rut = rutDetectado ? rutDetectado.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") : "";
+
+    const patrones = [
+      /\bNOMBRE\s+RUT\s+SUELDO\s+BASE\s+([A-ZÁÉÍÓÚÜÑ\s]+?)\s+\d{1,2}\.\d{3}\.\d{3}-[\dkK]\b/i,
+      /\bNOMBRE\s+RUT\s+([A-ZÁÉÍÓÚÜÑ\s]+?)\s+\d{1,2}\.\d{3}\.\d{3}-[\dkK]\b/i,
+      /\bTRABAJADOR\s*:?\s*([A-ZÁÉÍÓÚÜÑ\s]+?)\s+\d{1,2}\.\d{3}\.\d{3}-[\dkK]\b/i,
+      /\bNOMBRE\s*:?\s*([A-ZÁÉÍÓÚÜÑ\s]+?)\s+(?:RUT|RUN)\s*:?\s*\d{1,2}\.\d{3}\.\d{3}-[\dkK]\b/i,
+    ];
+
+    for (const re of patrones) {
+      const m = t.match(re);
+      if (m && m[1]) {
+        const nombre = limpiarCampoIdentificacionDemandaHRA(m[1])
+          .replace(/\b(SUELDO|BASE|RUT|RUN|FECHA|INGRESO|CARGO)\b.*$/i, "")
+          .trim();
+
+        if (nombre.length >= 5) return nombre;
+      }
+    }
+
+    if (rut) {
+      const idx = t.search(new RegExp(rut, "i"));
+      if (idx > 0) {
+        const antesRut = t.slice(Math.max(0, idx - 120), idx).trim();
+        const palabras = antesRut.split(" ").filter(Boolean);
+
+        const posibles = palabras
+          .slice(-6)
+          .join(" ")
+          .replace(/\b(NOMBRE|RUT|RUN|SUELDO|BASE|LIQUIDACION|REMUNERACION|REMUNERACIONES)\b/gi, "")
+          .replace(/\s+/g, " ")
+          .trim();
+
+        if (posibles.length >= 5) return posibles;
+      }
+    }
+
+    return "No detectado";
+  }
+
+  function extraerCargoDemandaHRA(textoCompleto) {
+    const t = String(textoCompleto || "").replace(/\s+/g, " ").trim();
+
+    const patrones = [
+      /\bCARGO\s*:?\s*([A-ZÁÉÍÓÚÜÑ0-9\s\-\/\.]+?)(?=\s+(?:FECHA|RUT|NOMBRE|CENTRO|AREA|ÁREA|SUCURSAL|SUELDO|AFP|ISAPRE|FONASA)\b|$)/i,
+      /\bFECHA\s+INGRESO\s+[0-9\/\-.]+\s+([A-ZÁÉÍÓÚÜÑ0-9\s\-\/\.]+?)(?=\s+(?:AFP|ISAPRE|FONASA|SUELDO|HABERES|DESCUENTOS)\b|$)/i,
+    ];
+
+    for (const re of patrones) {
+      const m = t.match(re);
+      if (m && m[1]) {
+        const cargo = limpiarCampoIdentificacionDemandaHRA(m[1])
+          .replace(/\b(AFP|ISAPRE|FONASA|SUELDO|HABERES|DESCUENTOS)\b.*$/i, "")
+          .trim();
+
+        if (cargo.length >= 3 && cargo.length <= 80) {
+          return cargo;
+        }
+      }
+    }
+
+    return "No detectado";
+  }
+
+  function extraerIdentificacionLiquidacionDemandaHRA(textoCompleto) {
+    const periodo = extraerPeriodoLiquidacionDemandaHRA(textoCompleto);
+    const rutTrabajador = extraerRutDemandaHRA(textoCompleto);
+    const nombreTrabajador = extraerNombreTrabajadorDemandaHRA(
+      textoCompleto,
+      rutTrabajador
+    );
+    const cargo = extraerCargoDemandaHRA(textoCompleto);
+
+    const identificacionIncompleta =
+      nombreTrabajador === "No detectado" ||
+      !rutTrabajador ||
+      periodo.periodoTexto === "No detectado";
+
+    return {
+      nombreTrabajador: nombreTrabajador || "No detectado",
+      rutTrabajador: rutTrabajador || "No detectado",
+      periodoTexto: periodo.periodoTexto || "No detectado",
+      mes: periodo.mes || "No detectado",
+      anio: periodo.anio || "No detectado",
+      cargo: cargo || "No detectado",
+      identificacionIncompleta,
+      advertenciaIdentificacion: identificacionIncompleta
+        ? "No fue posible detectar todos los datos identificatorios de la liquidación. Revisa trabajador, RUT y periodo antes de usar este informe en un acumulado."
+        : "",
+    };
+  }
+
+  function slugArchivoDemandaHRA(valor) {
+    return String(valor || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 80);
+  }
+
+
   // -------------------- Extractores Base Demanda --------------------
   function extraerMontoPorGlosa(textoCompleto, glosaRegex) {
     const m = String(textoCompleto || "").match(glosaRegex);
@@ -782,9 +952,12 @@ function extraerSC(textoCompleto) {
 
 const {
 
+  identificacion,
+
   jornada,
 
   tipoSueldoBase,
+
   glosaSueldoBase,
 
   sueldoBaseDetectado,
@@ -819,6 +992,47 @@ const {
 
 
     const requiereIngresoManualBonos = !!data.requiereBonosManual;
+      const idLiq = data.identificacion || {};
+
+    const bloqueIdentificacionLiquidacion = `
+      <div style="margin-bottom:12px; padding:12px; border:1px solid #bfdbfe; background:#eff6ff; border-radius:10px;">
+        <div style="font-weight:700; color:#1e3a8a; margin-bottom:8px;">
+          Identificación de la liquidación
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:13px;">
+          <div>
+            <span style="color:#6b7280;">Trabajador:</span>
+            <strong>${escapeHtml(idLiq.nombreTrabajador || "No detectado")}</strong>
+          </div>
+
+          <div>
+            <span style="color:#6b7280;">RUT:</span>
+            <strong>${escapeHtml(idLiq.rutTrabajador || "No detectado")}</strong>
+          </div>
+
+          <div>
+            <span style="color:#6b7280;">Periodo:</span>
+            <strong>${escapeHtml(idLiq.periodoTexto || "No detectado")}</strong>
+          </div>
+
+          <div>
+            <span style="color:#6b7280;">Cargo:</span>
+            <strong>${escapeHtml(idLiq.cargo || "No detectado")}</strong>
+          </div>
+        </div>
+
+        ${
+          idLiq.advertenciaIdentificacion
+            ? `
+              <div style="margin-top:8px; font-size:12px; color:#92400e;">
+                ${escapeHtml(idLiq.advertenciaIdentificacion)}
+              </div>
+            `
+            : ""
+        }
+      </div>
+    `;
 
     const bloqueInputManual = requiereIngresoManualBonos
       ? `
@@ -937,7 +1151,9 @@ const {
     contenedor.innerHTML =
       '<div style="border:2px solid #ddd; border-radius:12px; padding:14px; background:#fafafa; margin-bottom:16px;">' +
       '<h2 style="margin:0 0 10px 0;">MEC — Demanda</h2>' +
+      bloqueIdentificacionLiquidacion +
       bloqueAdvertenciasSC +
+
       '<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">' +
 
       // Bloque SC

@@ -2151,7 +2151,7 @@ function descargarInformeIndividualDemandaHRA() {
         ? (
           '<div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">' +
           '<button id="demanda_btn_descargar_consolidado" type="button" style="padding:10px 12px; border-radius:10px; border:1px solid #7c3aed; background:#8b5cf6; color:#fff; cursor:pointer; font-weight:700;">' +
-          "Descargar consolidado" +
+          "Descargar informe acumulado" +
           "</button>" +
           "</div>"
         )
@@ -2160,6 +2160,7 @@ function descargarInformeIndividualDemandaHRA() {
     contenedor.innerHTML =
       '<div style="margin-top:14px; padding:12px; border:1px solid #bfdbfe; background:#eff6ff; border-radius:12px;">' +
       '<h3 style="margin:0 0 8px 0; font-size:16px; color:#1e3a8a;">Acumulado Demanda HRA</h3>' +
+
       '<div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:10px;">' +
 
       '<div style="background:#fff; border:1px solid #dbeafe; border-radius:10px; padding:10px;">' +
@@ -2210,49 +2211,8 @@ function descargarInformeIndividualDemandaHRA() {
         descargarConsolidadoDemandaHRA
       );
     }
-  
-    
-    contenedor.innerHTML =
-      '<div style="margin-top:14px; padding:12px; border:1px solid #bfdbfe; background:#eff6ff; border-radius:12px;">' +
-      '<h3 style="margin:0 0 8px 0; font-size:16px; color:#1e3a8a;">Acumulado Demanda HRA</h3>' +
-      '<div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:10px;">' +
-
-      '<div style="background:#fff; border:1px solid #dbeafe; border-radius:10px; padding:10px;">' +
-      '<div style="font-size:12px; color:#6b7280;">Liquidaciones acumuladas</div>' +
-      '<div style="font-size:18px; font-weight:700;">' +
-      escapeHtml(String(resumen.totalLiquidaciones)) +
-      "</div>" +
-      "</div>" +
-
-      '<div style="background:#fff; border:1px solid #dbeafe; border-radius:10px; padding:10px;">' +
-      '<div style="font-size:12px; color:#6b7280;">Total pagado empresa</div>' +
-      '<div style="font-size:18px; font-weight:700;">' +
-      formatearCLP(resumen.totalPagadoEmpresa) +
-      "</div>" +
-      "</div>" +
-
-      '<div style="background:#fff; border:1px solid #dbeafe; border-radius:10px; padding:10px;">' +
-      '<div style="font-size:12px; color:#6b7280;">Total esperado con SC</div>' +
-      '<div style="font-size:18px; font-weight:700;">' +
-      formatearCLP(resumen.totalEsperadoSC) +
-      "</div>" +
-      "</div>" +
-
-      '<div style="background:#fff; border:1px solid #dbeafe; border-radius:10px; padding:10px;">' +
-      '<div style="font-size:12px; color:#6b7280;">Total diferencia acumulada</div>' +
-      '<div style="font-size:18px; font-weight:700; color:' +
-      (resumen.totalDiferenciaAdeudada > 0 ? "#b91c1c" : "#166534") +
-      ';">' +
-      formatearCLP(resumen.totalDiferenciaAdeudada) +
-      "</div>" +
-      "</div>" +
-
-      "</div>" +
-
-      detalle +
-
-      "</div>";
   }
+
 
   // -------------------- Etapa 4 — Consolidado Demanda HRA --------------------
   function obtenerClaveTrabajadorConsolidadoDemandaHRA(reporte) {

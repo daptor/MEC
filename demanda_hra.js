@@ -1872,6 +1872,7 @@ formatearCLP(sueldoBaseDetectado) +
 
   function construirDataReporte(params) {
 const {
+  
   jornada,
 
   tipoSueldoBase,
@@ -1894,10 +1895,53 @@ const {
   bonosProporcionalesPorLiquidacionParcial,
   advertenciaBonos,
 
+  identificacion,
 
   sc,
   st,
 } = params;
+
+const identificacionSegura = {
+  nombreTrabajador:
+    identificacion && identificacion.nombreTrabajador
+      ? identificacion.nombreTrabajador
+      : "No detectado",
+
+  rutTrabajador:
+    identificacion && identificacion.rutTrabajador
+      ? identificacion.rutTrabajador
+      : "No detectado",
+
+  periodoTexto:
+    identificacion && identificacion.periodoTexto
+      ? identificacion.periodoTexto
+      : "No detectado",
+
+  mes:
+    identificacion && identificacion.mes
+      ? identificacion.mes
+      : "No detectado",
+
+  anio:
+    identificacion && identificacion.anio
+      ? identificacion.anio
+      : "No detectado",
+
+  cargo:
+    identificacion && identificacion.cargo
+      ? identificacion.cargo
+      : "No detectado",
+
+  identificacionIncompleta:
+    identificacion && typeof identificacion.identificacionIncompleta === "boolean"
+      ? identificacion.identificacionIncompleta
+      : true,
+
+  advertenciaIdentificacion:
+    identificacion && identificacion.advertenciaIdentificacion
+      ? identificacion.advertenciaIdentificacion
+      : "No fue posible detectar todos los datos identificatorios de la liquidación. Revisa trabajador, RUT y periodo antes de usar este informe en un acumulado.",
+};
 
 
     const calc = calcularValorHoraBaseDemanda({
@@ -1923,6 +1967,8 @@ const {
     const totales = calcularTotalesDemandaHRA(st, esperado, difs);
 
 return {
+  identificacion: identificacionSegura,
+
   jornada,
 
   tipoSueldoBase,
@@ -1996,6 +2042,8 @@ const sc = sueldoBaseParaSC + bautNorm + bpautNorm;
 
 
 const data = construirDataReporte({
+  identificacion: __demandaCtx.identificacion,
+
   jornada: __demandaCtx.jornada,
 
   tipoSueldoBase: __demandaCtx.tipoSueldoBase,
@@ -2064,11 +2112,15 @@ const data = construirDataReporte({
         return;
       }
 
-      const jornada = obtenerJornadaSeleccionada();
-      const textoCompleto = await leerPdfComoTextoCompleto(file);
+const jornada = obtenerJornadaSeleccionada();
+const textoCompleto = await leerPdfComoTextoCompleto(file);
 
-      // 1) Extraer sueldo convenido
-      const scObj = extraerSC(textoCompleto);
+// 0) Extraer identificación de la liquidación
+const identificacion = extraerIdentificacionLiquidacionDemandaHRA(textoCompleto);
+
+// 1) Extraer sueldo convenido
+const scObj = extraerSC(textoCompleto);
+
 
       const {
         tipoSueldoBase,
@@ -2100,6 +2152,8 @@ const data = construirDataReporte({
 
       // 3) Armar reporte
 const data = construirDataReporte({
+  identificacion,
+
   jornada,
 
   tipoSueldoBase,
@@ -2128,11 +2182,14 @@ const data = construirDataReporte({
 
 
       // 4) Guardar contexto para recalcular manual
-      __demandaCtx = {
-        jornada,
+        __demandaCtx = {
+          identificacion,
 
-        tipoSueldoBase,
-        glosaSueldoBase,
+          jornada,
+
+          tipoSueldoBase,
+          glosaSueldoBase,
+
 
         sueldoBaseDetectado,
         sueldoBaseNormalizado,

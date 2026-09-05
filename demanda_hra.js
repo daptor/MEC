@@ -1048,6 +1048,9 @@ function extraerSC(textoCompleto) {
   let __ultimoReporteDemandaHRA = null;
   let __ultimoReporteDemandaHRAHtml = "";
 
+  // Etapa 3 — Acumulador interno de reportes Demanda HRA
+  let __acumuladoDemandaHRA = [];
+
 
   // -------------------- Render / Recalc --------------------
   function renderReporte(contenedor, data) {
@@ -1461,11 +1464,19 @@ formatearCLP(sueldoBaseDetectado) +
       '</div>' +
       '</div>' +
 
-            '<div style="margin-top:14px; display:flex; gap:8px; flex-wrap:wrap;">' +
+      '<div style="margin-top:14px; display:flex; gap:8px; flex-wrap:wrap;">' +
+
       '<button id="demanda_btn_descargar_informe_individual" type="button" style="padding:10px 12px; border-radius:10px; border:1px solid #1d4ed8; background:#2563eb; color:#fff; cursor:pointer; font-weight:700;">' +
       "Descargar informe individual" +
       "</button>" +
+
+      '<button id="demanda_btn_agregar_acumulado" type="button" style="padding:10px 12px; border-radius:10px; border:1px solid #047857; background:#059669; color:#fff; cursor:pointer; font-weight:700;">' +
+      "Agregar al acumulado" +
+      "</button>" +
+
       "</div>" +
+
+      '<div id="demanda_resumen_acumulado"></div>' +
 
       '<div style="margin-top:10px; font-size:12px; color:#6b7280;">' +
       "* Diferencia adeudada = Esperado con SC - Pagado empresa. Si |diferencia| &lt; 1 peso, se considera correcto." +
@@ -1489,6 +1500,22 @@ formatearCLP(sueldoBaseDetectado) +
         descargarInformeIndividualDemandaHRA
       );
     }
+    const btnAgregarAcumulado = contenedor.querySelector(
+      "#demanda_btn_agregar_acumulado"
+    );
+
+    if (btnAgregarAcumulado) {
+      btnAgregarAcumulado.addEventListener(
+        "click",
+        agregarReporteAlAcumuladoDemandaHRA
+      );
+    }
+
+    const contenedorAcumulado = contenedor.querySelector(
+      "#demanda_resumen_acumulado"
+    );
+
+    renderResumenAcumuladoDemandaHRA(contenedorAcumulado);
 
         wireBotonesManual(contenedor);
 
@@ -2039,6 +2066,175 @@ function descargarInformeIndividualDemandaHRA() {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
+  function clonarReporteDemandaHRA(reporte) {
+    return JSON.parse(JSON.stringify(reporte || {}));
+  }
+
+  function obtenerClaveReporteDemandaHRA(reporte) {
+    const identificacion = reporte && reporte.identificacion ? reporte.identificacion : {};
+
+    const rut = slugArchivoDemandaHRA(
+      identificacion.rutTrabajador || "rut-no-detectado"
+    );
+
+    const periodo = slugArchivoDemandaHRA(
+      identificacion.periodoTexto || "periodo-no-detectado"
+    );
+
+    const trabajador = slugArchivoDemandaHRA(
+      identificacion.nombreTrabajador || "trabajador-no-detectado"
+    );
+
+    return rut + "__" + periodo + "__" + trabajador;
+  }
+
+  function calcularResumenAcumuladoDemandaHRA() {
+    let totalLiquidaciones = __acumuladoDemandaHRA.length;
+    let totalPagadoEmpresa = 0;
+    let totalEsperadoSC = 0;
+    let totalDiferenciaAdeudada = 0;
+
+    for (const reporte of __acumuladoDemandaHRA) {
+      const totales = reporte && reporte.totales ? reporte.totales : {};
+
+      totalPagadoEmpresa += Number(totales.totalPagadoEmpresa || 0);
+      totalEsperadoSC += Number(totales.totalEsperadoSC || 0);
+      totalDiferenciaAdeudada += Number(totales.totalDiferenciaAdeudada || 0);
+    }
+
+    return {
+      totalLiquidaciones,
+      totalPagadoEmpresa,
+      totalEsperadoSC,
+      totalDiferenciaAdeudada,
+    };
+  }
+
+  function renderResumenAcumuladoDemandaHRA(contenedor) {
+    if (!contenedor) return;
+
+    const resumen = calcularResumenAcumuladoDemandaHRA();
+
+    let detalle = "";
+
+    if (__acumuladoDemandaHRA.length > 0) {
+      detalle =
+        '<div style="margin-top:10px; font-size:12px; color:#374151;">' +
+        __acumuladoDemandaHRA
+          .map(function (reporte, index) {
+            const id = reporte.identificacion || {};
+            const totales = reporte.totales || {};
+
+            return (
+              '<div style="padding:6px 0; border-top:1px solid #dbeafe;">' +
+              "<strong>" +
+              escapeHtml(String(index + 1)) +
+              ". " +
+              escapeHtml(id.periodoTexto || "Periodo no detectado") +
+              "</strong> — " +
+              escapeHtml(id.nombreTrabajador || "Trabajador no detectado") +
+              " — " +
+              escapeHtml(id.rutTrabajador || "RUT no detectado") +
+              " — Diferencia: <strong>" +
+              formatearCLP(totales.totalDiferenciaAdeudada || 0) +
+              "</strong>" +
+              "</div>"
+            );
+          })
+          .join("") +
+        "</div>";
+    }
+
+    contenedor.innerHTML =
+      '<div style="margin-top:14px; padding:12px; border:1px solid #bfdbfe; background:#eff6ff; border-radius:12px;">' +
+      '<h3 style="margin:0 0 8px 0; font-size:16px; color:#1e3a8a;">Acumulado Demanda HRA</h3>' +
+      '<div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:10px;">' +
+
+      '<div style="background:#fff; border:1px solid #dbeafe; border-radius:10px; padding:10px;">' +
+      '<div style="font-size:12px; color:#6b7280;">Liquidaciones acumuladas</div>' +
+      '<div style="font-size:18px; font-weight:700;">' +
+      escapeHtml(String(resumen.totalLiquidaciones)) +
+      "</div>" +
+      "</div>" +
+
+      '<div style="background:#fff; border:1px solid #dbeafe; border-radius:10px; padding:10px;">' +
+      '<div style="font-size:12px; color:#6b7280;">Total pagado empresa</div>' +
+      '<div style="font-size:18px; font-weight:700;">' +
+      formatearCLP(resumen.totalPagadoEmpresa) +
+      "</div>" +
+      "</div>" +
+
+      '<div style="background:#fff; border:1px solid #dbeafe; border-radius:10px; padding:10px;">' +
+      '<div style="font-size:12px; color:#6b7280;">Total esperado con SC</div>' +
+      '<div style="font-size:18px; font-weight:700;">' +
+      formatearCLP(resumen.totalEsperadoSC) +
+      "</div>" +
+      "</div>" +
+
+      '<div style="background:#fff; border:1px solid #dbeafe; border-radius:10px; padding:10px;">' +
+      '<div style="font-size:12px; color:#6b7280;">Total diferencia acumulada</div>' +
+      '<div style="font-size:18px; font-weight:700; color:' +
+      (resumen.totalDiferenciaAdeudada > 0 ? "#b91c1c" : "#166534") +
+      ';">' +
+      formatearCLP(resumen.totalDiferenciaAdeudada) +
+      "</div>" +
+      "</div>" +
+
+      "</div>" +
+
+      detalle +
+
+      "</div>";
+  }
+
+  function agregarReporteAlAcumuladoDemandaHRA() {
+    if (!__ultimoReporteDemandaHRA) {
+      alert("Primero debes generar un análisis antes de agregar al acumulado.");
+      return;
+    }
+
+    const reporteActual = clonarReporteDemandaHRA(__ultimoReporteDemandaHRA);
+    const identificacion = reporteActual.identificacion || {};
+
+    if (identificacion.identificacionIncompleta) {
+      const continuar = confirm(
+        "La identificación de esta liquidación está incompleta. ¿Quieres agregarla al acumulado de todos modos?"
+      );
+
+      if (!continuar) return;
+    }
+
+    const claveActual = obtenerClaveReporteDemandaHRA(reporteActual);
+
+    const yaExiste = __acumuladoDemandaHRA.some(function (reporte) {
+      return obtenerClaveReporteDemandaHRA(reporte) === claveActual;
+    });
+
+    if (yaExiste) {
+      const reemplazar = confirm(
+        "Ya existe una liquidación acumulada para el mismo trabajador, RUT y periodo. ¿Quieres reemplazarla?"
+      );
+
+      if (!reemplazar) return;
+
+      __acumuladoDemandaHRA = __acumuladoDemandaHRA.filter(function (reporte) {
+        return obtenerClaveReporteDemandaHRA(reporte) !== claveActual;
+      });
+    }
+
+    reporteActual.fechaAgregadoAcumulado = new Date().toISOString();
+
+    __acumuladoDemandaHRA.push(reporteActual);
+
+    const contenedorAcumulado = document.getElementById(
+      "demanda_resumen_acumulado"
+    );
+
+    renderResumenAcumuladoDemandaHRA(contenedorAcumulado);
+
+    alert("Liquidación agregada al acumulado Demanda HRA.");
+  }
 
 
   function construirDataReporte(params) {

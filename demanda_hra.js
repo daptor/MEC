@@ -1056,8 +1056,6 @@ function extraerSC(textoCompleto) {
 
 const {
 
-  identificacion,
-
   jornada,
 
   tipoSueldoBase,
@@ -1604,6 +1602,24 @@ formatearCLP(sueldoBaseDetectado) +
     if (!data) return "";
 
     const fechaGeneracion = new Date().toLocaleString("es-CL");
+    const identificacion = data.identificacion || {};
+
+    const nombreTrabajador =
+      identificacion.nombreTrabajador || "No detectado";
+
+    const rutTrabajador =
+      identificacion.rutTrabajador || "No detectado";
+
+    const periodoTexto =
+      identificacion.periodoTexto || "No detectado";
+
+    const cargo =
+      identificacion.cargo || "No detectado";
+
+    const advertenciaIdentificacion =
+      typeof identificacion.advertenciaIdentificacion === "string"
+        ? identificacion.advertenciaIdentificacion
+        : "";
 
     const jornada = data.jornada;
     const tipoSueldoBase = data.tipoSueldoBase || "no-detectado";
@@ -1700,10 +1716,51 @@ formatearCLP(sueldoBaseDetectado) +
       "<body>" +
       '<div class="doc">' +
 
-      "<h1>Informe individual - Demanda HRA</h1>" +
-      '<div class="muted">Generado el ' +
-      escapeHtml(fechaGeneracion) +
-      "</div>" +
+"<h1>Informe individual - Demanda HRA</h1>" +
+'<div class="muted">Generado el ' +
+escapeHtml(fechaGeneracion) +
+"</div>" +
+
+"<h2>Identificación de la liquidación</h2>" +
+'<div class="grid">' +
+
+'<div class="card">' +
+'<div class="label">Trabajador</div>' +
+'<div class="valor">' +
+escapeHtml(nombreTrabajador) +
+"</div>" +
+"</div>" +
+
+'<div class="card">' +
+'<div class="label">RUT</div>' +
+'<div class="valor">' +
+escapeHtml(rutTrabajador) +
+"</div>" +
+"</div>" +
+
+'<div class="card">' +
+'<div class="label">Periodo</div>' +
+'<div class="valor">' +
+escapeHtml(periodoTexto) +
+"</div>" +
+"</div>" +
+
+'<div class="card">' +
+'<div class="label">Cargo</div>' +
+'<div class="valor">' +
+escapeHtml(cargo) +
+"</div>" +
+"</div>" +
+
+"</div>" +
+
+(
+  advertenciaIdentificacion
+    ? '<div style="margin-top:12px; padding:12px; border:1px solid #fbbf24; background:#fffbeb; border-radius:10px; color:#92400e;">' +
+      escapeHtml(advertenciaIdentificacion) +
+      "</div>"
+    : ""
+) +
 
       bloqueAdvertencias +
 
@@ -1767,6 +1824,7 @@ formatearCLP(sueldoBaseDetectado) +
       "</div>" +
 
       "</div>" +
+
 
       "<h2>Bonos</h2>" +
       '<div class="grid">' +
@@ -1934,44 +1992,53 @@ formatearCLP(sueldoBaseDetectado) +
     );
   }
 
-  function descargarInformeIndividualDemandaHRA() {
-    if (!__ultimoReporteDemandaHRAHtml) {
-      alert("Primero debes generar un análisis antes de descargar el informe.");
-      return;
-    }
-
-    const fecha = new Date();
-    const yyyy = fecha.getFullYear();
-    const mm = String(fecha.getMonth() + 1).padStart(2, "0");
-    const dd = String(fecha.getDate()).padStart(2, "0");
-    const hh = String(fecha.getHours()).padStart(2, "0");
-    const min = String(fecha.getMinutes()).padStart(2, "0");
-
-    const nombreArchivo =
-      "informe-individual-demanda-hra-" +
-      yyyy +
-      mm +
-      dd +
-      "-" +
-      hh +
-      min +
-      ".html";
-
-    const blob = new Blob([__ultimoReporteDemandaHRAHtml], {
-      type: "text/html;charset=utf-8",
-    });
-
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = nombreArchivo;
-    document.body.appendChild(a);
-    a.click();
-
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+function descargarInformeIndividualDemandaHRA() {
+  if (!__ultimoReporteDemandaHRAHtml) {
+    alert("Primero debes generar un análisis antes de descargar el informe.");
+    return;
   }
+
+  const identificacion =
+    (__ultimoReporteDemandaHRA && __ultimoReporteDemandaHRA.identificacion)
+      ? __ultimoReporteDemandaHRA.identificacion
+      : {};
+
+  const rutArchivo = slugArchivoDemandaHRA(
+    identificacion.rutTrabajador || "rut-no-detectado"
+  );
+
+  const periodoArchivo = slugArchivoDemandaHRA(
+    identificacion.periodoTexto || "periodo-no-detectado"
+  );
+
+  const trabajadorArchivo = slugArchivoDemandaHRA(
+    identificacion.nombreTrabajador || "trabajador-no-detectado"
+  );
+
+  const nombreArchivo =
+    "demanda-hra-" +
+    rutArchivo +
+    "-" +
+    periodoArchivo +
+    "-" +
+    trabajadorArchivo +
+    ".html";
+
+  const blob = new Blob([__ultimoReporteDemandaHRAHtml], {
+    type: "text/html;charset=utf-8",
+  });
+
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = nombreArchivo;
+  document.body.appendChild(a);
+  a.click();
+
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 
 
   function construirDataReporte(params) {

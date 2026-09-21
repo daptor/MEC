@@ -641,7 +641,7 @@ if (window.userPlan === "pro") {
     const regexColacion = /COLACION\s*\((\d+)\)\s*\$\s*([\d.,]+)/i;
     const regexDiferenciaMovilizacion = /DIFERENCIA\s*MOVILIZACION\s*\$\s*([\d.,]+)/i;
     const regexDiferenciaColacion = /DIFERENCIA\s*COLACION\s*\$\s*([\d.,]+)/i;
-    const regexCaja = /CAJA\s*\((\d+)\)\s*\$\s*([\d.]+)/i;
+    const regexCaja = /ASIG\s*\.\s*DE\s*CAJA\s*\((\d+)\)\s*\$\s*([\d.,]+)/i;
     const regexDiferenciaCaja = /DIF(?:ERENCIA)?(?:\s+ASIG\.?)?(?:\s+DE)?\s*CAJA.*?\$\s*([\d\.]+)/i;
 
     if (!archivo || !jornadaSeleccionada) {

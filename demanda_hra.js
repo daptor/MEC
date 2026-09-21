@@ -2978,27 +2978,28 @@ const data = construirDataReporte({
   }
 
   // -------------------- UI principal --------------------
-  async function analizarArchivoDemandaHora() {
-    try {
-      const fileEl = document.getElementById("fileInput");
-      const file = fileEl && fileEl.files ? fileEl.files[0] : null;
+async function analizarArchivoDemandaHora() {
+  try {
+    const fileEl = document.getElementById("fileInput");
+    const file = fileEl && fileEl.files ? fileEl.files[0] : null;
 
-      const contenedor = document.getElementById("resultadoAnalisis");
+    const contenedor = document.getElementById("resultadoAnalisis");
 
-      if (!file) {
-        alert("⚠ Debes seleccionar una liquidación PDF.");
-        return;
-      }
+    // Limpiar resultados de gratificación al entrar a Demanda
+    const gratificacionMec = document.getElementById('gratificacionMec');
+    if (gratificacionMec) {
+      gratificacionMec.style.display = 'none';
+    }
 
-      if (!contenedor) {
-        alert("❌ No existe #resultadoAnalisis en el HTML.");
-        return;
-      }
+    const resultadoGratificacion = document.getElementById('resultadoGratificacion');
+    if (resultadoGratificacion) {
+      resultadoGratificacion.innerHTML = '';
+    }
 
-      if (typeof pdfjsLib === "undefined") {
-        alert("❌ No está cargado pdfjsLib.");
-        return;
-      }
+    if (!file) {
+      alert("⚠ Debes seleccionar una liquidación PDF.");
+      return;
+    }
 
 const jornada = obtenerJornadaSeleccionada();
 const textoCompleto = await leerPdfComoTextoCompleto(file);

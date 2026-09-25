@@ -339,3 +339,5 @@ function realizarCalculo(datos, pdfSeleccionado, seleccion) {
     resultadoDiv.innerHTML = detalleHTML;
 
 }
+
+// --- ARCHIVO ACTUASLIZADO 8-9-2026 ---

@@ -1386,3 +1386,231 @@ input:focus, select:focus, textarea:focus,
   background: transparent !important;
   border: none !important;
 }
+
+/* ==========================================================
+   MEC 1.0 — FINIQUITO
+   ESTÉTICA MEC 1.1
+   CAJAS POR SECCIÓN — NO POR CADA TEXTO
+   SOLO VISUAL — NO MODIFICA FUNCIONALIDAD
+   ========================================================== */
+
+#screen-finiquito {
+  max-width: 480px;
+  box-sizing: border-box;
+}
+
+/* ==========================================================
+   TÍTULO
+   ========================================================== */
+
+#screen-finiquito h2 {
+  margin-top: 0;
+  margin-bottom: 18px;
+  font-size: 24px;
+  font-weight: 700;
+  text-align: center;
+  color: #333;
+  text-shadow: none;
+}
+
+/* ==========================================================
+   FORMULARIO
+   ========================================================== */
+
+#screen-finiquito label {
+  display: block;
+  margin-top: 12px;
+  margin-bottom: 5px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+#screen-finiquito input[type="date"],
+#screen-finiquito input[type="number"],
+#screen-finiquito input[type="file"] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  margin: 0 0 6px 0;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  color: #333;
+  font-size: 14px;
+  box-shadow: none;
+}
+
+#screen-finiquito input[type="file"] {
+  margin-top: 12px;
+  padding: 9px;
+  cursor: pointer;
+}
+
+#screen-finiquito input:focus {
+  outline: none;
+  border-color: #56ab2f;
+  box-shadow: 0 0 0 2px rgba(86, 171, 47, 0.15);
+}
+
+/* ==========================================================
+   BOTONES
+   ========================================================== */
+
+#screen-finiquito button {
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 8px;
+  padding: 11px 14px;
+  margin: 10px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  background: #56ab2f;
+  color: #fff;
+  box-shadow: none;
+}
+
+#screen-finiquito button:hover {
+  filter: brightness(0.96);
+  transform: none;
+}
+
+#screen-finiquito .backBtn,
+#screen-finiquito #refrescarFiniquito {
+  background: #56ab2f;
+  color: #fff;
+  border: none;
+}
+
+/* ==========================================================
+   RESULTADO PRINCIPAL
+   ========================================================== */
+
+#resultadosFiniquito {
+  margin-top: 18px;
+  text-align: left;
+}
+
+/* UNA sola caja para todo el resumen */
+
+.finiquito-resultado {
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #e1e5e9;
+  border-radius: 9px;
+  box-shadow: none;
+}
+
+/* Textos normales, SIN cajas individuales */
+
+.finiquito-resultado p {
+  margin: 8px 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  line-height: 1.45;
+  font-size: 14px;
+}
+
+/* Separadores entre grupos */
+
+.finiquito-resultado hr {
+  border: 0;
+  border-top: 1px solid #e5e7eb;
+  margin: 14px 0;
+}
+
+/* Total */
+
+.finiquito-total {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #2f7d1f;
+}
+
+/* ==========================================================
+   DETALLE DE LIQUIDACIONES
+   ========================================================== */
+
+#resultadosNoFiniquito {
+  margin-top: 18px;
+  text-align: left;
+}
+
+/* Caja general */
+
+.finiquito-no-finiquito {
+  padding: 16px;
+  background: #f8faf8;
+  border: 1px solid #e1e5e9;
+  border-radius: 9px;
+  box-shadow: none;
+}
+
+.finiquito-no-finiquito h3 {
+  margin-top: 0;
+  margin-bottom: 14px;
+  font-size: 17px;
+  color: #333;
+  text-align: left;
+  text-shadow: none;
+}
+
+/* ==========================================================
+   CADA MES = UNA CAJA
+   ========================================================== */
+
+.finiquito-pdf {
+  padding: 13px;
+  margin-bottom: 12px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+/* Nombre del mes */
+
+.finiquito-pdf p:first-child {
+  margin-top: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #2f7d1f;
+}
+
+/* Texto dentro de la caja, SIN CAJAS */
+
+.finiquito-pdf p {
+  margin: 7px 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+/* Listas */
+
+.finiquito-pdf ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.finiquito-pdf li {
+  margin: 4px 0;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+/* ==========================================================
+   BOTÓN BORRAR
+   ========================================================== */
+
+#screen-finiquito #refrescarFiniquito {
+  margin-top: 0 !important;
+  transform: translateY(-10px);
+}

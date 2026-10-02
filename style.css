@@ -1612,5 +1612,5 @@ input:focus, select:focus, textarea:focus,
 
 #screen-finiquito #refrescarFiniquito {
   margin-top: 0 !important;
-  transform: translateY(3px);
+  transform: translateY(-8px);
 }
